@@ -1,0 +1,26 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <config>
+      <jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <library>
+          <artist>
+            <name>Lenny</name>
+            <album>
+              <name>Greatest hits</name>
+              <year>2000</year>
+              <song>
+                <name>Are you gonne go my way</name>
+                <format>mp3</format>
+                <location>my music</location>
+                <length>1</length>
+              </song>
+            </album>
+          </artist>
+        </library>
+      </jukebox>
+    </config>
+  </edit-config>
+</rpc>

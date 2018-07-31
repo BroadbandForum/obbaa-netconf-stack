@@ -1,0 +1,18 @@
+<pma xmlns="urn:org:bbf:pma">
+	<pmadevices>
+		<pmadevice>
+            <deviceId>device1</deviceId>
+			<jukebox xmlns="http://example.com/ns/example-jukebox">
+				<library>
+					<artist>
+						<name>Lenny</name><!-- Matcher -->
+						<album>
+							<name>Circus</name><!-- Matcher -->
+							<year>2000</year> <!-- Thing to be changed -->
+						</album>
+					</artist>
+				</library>
+			</jukebox>
+		</pmadevice>
+	</pmadevices>
+</pma>

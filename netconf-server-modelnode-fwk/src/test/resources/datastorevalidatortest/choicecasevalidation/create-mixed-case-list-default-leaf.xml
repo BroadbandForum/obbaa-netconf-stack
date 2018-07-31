@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <default-container-or-list-choice-case>
+        <name>Default list case with non default leaf</name>
+        <default-list-leaf>Non default leaf</default-list-leaf>
+    </default-container-or-list-choice-case>
+</validation>

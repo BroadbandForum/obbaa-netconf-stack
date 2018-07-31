@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<extraInfo>
+			<someData>
+				<data1>value1</data1>
+				<data2>value2</data2>
+			</someData>
+		</extraInfo>
+		<result-anyxml>failed</result-anyxml>
+	</when-validation>
+</validation>

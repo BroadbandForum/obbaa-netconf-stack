@@ -1,0 +1,28 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <test-option>set</test-option>
+      <config>
+        <jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="create">
+          <name>first jukebox</name>
+          <library>
+            <artist>
+              <name>Lenny</name>
+              <album>
+                <name>Greatest hits</name>
+               </album>
+            </artist>
+          </library>
+          <extraInfo>
+            <someData>
+              <about>
+                <firstJukebox/> <!--Mandatory anyXml in container jukebox-->
+              </about>
+            </someData>
+          </extraInfo>
+        </jukebox>
+      </config>
+  </edit-config>
+</rpc>

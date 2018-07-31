@@ -1,0 +1,28 @@
+submodule ietf-yang-library-submodule {
+  belongs-to ietf-yang-library {
+    prefix yanglib;
+  }
+
+  organization 
+    "TBD";
+    
+  contact 
+    "TBD";
+
+  revision 2016-06-21 {
+    description 
+      "Initial revision.";
+    reference
+      "TBD";
+  }
+
+  container a {
+      
+    container b {
+
+		leaf c {
+			type string;
+		}
+    }
+  }
+}

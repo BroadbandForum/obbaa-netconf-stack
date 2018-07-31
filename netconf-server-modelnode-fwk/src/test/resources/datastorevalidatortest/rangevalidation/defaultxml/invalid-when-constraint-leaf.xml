@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<result-leaf>9</result-leaf>
+	</when-validation>
+</validation>

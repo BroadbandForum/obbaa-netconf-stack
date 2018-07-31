@@ -1,0 +1,65 @@
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+    <jbox:library>
+      <jbox:artist>
+        <jbox:name>Lenny</jbox:name>
+        <jbox:album>
+          <jbox:genre>jbox:jazz</jbox:genre>
+          <jbox:name>Greatest hits</jbox:name>
+          <jbox:year>2000</jbox:year>
+          <jbox:song>
+            <jbox:format>mp3</jbox:format>
+            <jbox:location>desktop/mymusic</jbox:location>
+            <jbox:name>Are you gonne go my way</jbox:name>
+          </jbox:song>
+          <jbox:song>
+            <jbox:format>flac</jbox:format>
+            <jbox:location>desktop/mymusic</jbox:location>
+            <jbox:name>Fly Away</jbox:name>
+          </jbox:song>
+          <jbox:admin>
+            <jbox:label>Sony</jbox:label>
+          </jbox:admin>
+        </jbox:album>
+        <jbox:album>
+          <jbox:genre>jbox:rock</jbox:genre>
+          <jbox:name>Circus</jbox:name>
+          <jbox:year>1995</jbox:year>
+          <jbox:song>
+            <jbox:format>amr</jbox:format>
+            <jbox:location>desktop/mymusic</jbox:location>
+            <jbox:name>Rock and roll is dead</jbox:name>
+          </jbox:song>
+          <jbox:song>
+            <jbox:format>wma</jbox:format>
+            <jbox:location>desktop/mymusic</jbox:location>
+            <jbox:name>Circus</jbox:name>
+          </jbox:song>
+          <jbox:song>
+            <jbox:format>mp3</jbox:format>
+            <jbox:location>desktop/mymusic</jbox:location>
+            <jbox:name>Beyond the 7th Sky</jbox:name>
+          </jbox:song>
+          <jbox:admin>
+            <jbox:label>Sony</jbox:label>
+          </jbox:admin>
+        </jbox:album>
+        <jbox:album>
+          <jbox:name>Strut</jbox:name>
+          <jbox:year>2014</jbox:year>
+          <jbox:song>
+            <jbox:name>New York City</jbox:name>
+          </jbox:song>
+        </jbox:album>
+      </jbox:artist>
+    </jbox:library>
+  </jbox:jukebox>
+  <toaster:toaster xmlns:toaster="http://netconfcentral.org/ns/toaster">
+    <toaster:toasterManufacturer>LG</toaster:toasterManufacturer>
+    <toaster:toasterModelNumber>toasterModelNumber</toaster:toasterModelNumber>
+    <toaster:toasterStatus>up</toaster:toasterStatus>
+  </toaster:toaster>
+  <blah>
+    <moreBlah></moreBlah>
+  </blah>
+</config>

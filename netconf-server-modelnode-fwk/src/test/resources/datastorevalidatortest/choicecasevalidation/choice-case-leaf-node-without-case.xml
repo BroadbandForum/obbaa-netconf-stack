@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<choicecase xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"
+		nc:operation="create">
+		<name>choice case 1</name>
+	</choicecase>
+</validation>

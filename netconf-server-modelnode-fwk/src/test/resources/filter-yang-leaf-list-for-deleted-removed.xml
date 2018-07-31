@@ -1,0 +1,13 @@
+  <jukebox xmlns="http://example.com/ns/example-jukebox-with-singer">
+    <library>
+      <artist>
+        <album>
+          <name>Circus</name>
+          <song>
+          	<name>Circus</name>
+          </song>
+        </album>
+      </artist>
+    </library>
+  </jukebox>
+  

@@ -1,0 +1,100 @@
+module example-jukebox {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox";
+
+    prefix jbox;
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+
+    identity genre {
+      description "Base for all genre types";
+    }
+
+    identity alternative {
+      base genre;
+      description "Alternative music";
+    }
+
+    identity blues {
+      base genre;
+      description "Blues music";
+    }
+
+    identity country {
+      base genre;
+      description "Country music";
+    }
+
+    identity jazz {
+      base genre;
+      description "Jazz music";
+    }
+
+    identity pop {
+      base genre;
+      description "Pop music";
+    }
+
+    identity rock {
+      base genre;
+      description "Rock music";
+    }
+
+    container jukebox {
+      presence
+        "An empty container indicates that the jukebox
+        service is available";
+      description
+        "Represents a jukebox resource, with a library, playlists,
+        and a play operation.";
+
+      container player {
+        description
+          "Represents the jukebox player resource.";
+        leaf gap {
+          type decimal64 {
+            fraction-digits 1;
+            range "0.0 .. 2.0";
+          }
+          units "tenths of seconds";
+          description
+            "Time gap between each song";
+        }
+      }  // container player
+    }  // container jukebox
+
+    rpc play {
+      description
+        "Control function for the jukebox player";
+      input {
+        leaf playlist {
+          type string;
+          mandatory true;
+          description "playlist name";
+        }
+
+        leaf song-number {
+          type uint32;
+          mandatory true;
+          description
+            "Song number in playlist to play";
+        }
+      }
+    }  // rpc play
+  }  // module example-jukebox

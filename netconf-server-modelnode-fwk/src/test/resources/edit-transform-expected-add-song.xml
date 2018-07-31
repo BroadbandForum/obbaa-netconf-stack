@@ -1,0 +1,6 @@
+<jbox:album xmlns:jbox="http://example.com/ns/example-jukebox">
+	<jbox:name>Circus</jbox:name>
+	<jbox:song xmlns:ns0="urn:ietf:params:xml:ns:netconf:base:1.0" ns0:operation="create">
+		<jbox:name>Thin Ice</jbox:name>
+	</jbox:song>
+</jbox:album>

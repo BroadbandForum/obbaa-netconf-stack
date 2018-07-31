@@ -1,0 +1,24 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Circus</name>
+                <year>1995</year>
+                <song>
+                    <name>Circus</name>
+                    <singer-ordered-by-user xc:operation="create">singerB</singer-ordered-by-user>
+                    <singer-ordered-by-user xc:operation="create" yang:insert="before" yang:value="singerB">singerA</singer-ordered-by-user>
+                    <singer-ordered-by-user xc:operation="create" yang:insert="after" yang:value="singerB">singerC</singer-ordered-by-user>
+                    <singer-ordered-by-user xc:operation="create" yang:insert="last">singerLast</singer-ordered-by-user>
+                    <singer-ordered-by-user xc:operation="create" yang:insert="first">singerFirst</singer-ordered-by-user>
+                    <sample-ordered-by-user xc:operation="create">sample2</sample-ordered-by-user>
+                    <sample-ordered-by-user xc:operation="create" yang:insert="before" yang:value="sample2">sample1</sample-ordered-by-user>
+                    <sample-ordered-by-user xc:operation="create" yang:insert="after" yang:value="sample2">sample3</sample-ordered-by-user>
+                    <sample-ordered-by-user xc:operation="create" yang:insert="last">sample4</sample-ordered-by-user>
+                    <sample-ordered-by-user xc:operation="create" yang:insert="first">sample0</sample-ordered-by-user>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

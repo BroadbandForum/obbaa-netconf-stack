@@ -1,0 +1,22 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <test-option>set</test-option>
+    <config>
+      <pma:pma xmlns:pma="urn:org:bbf:pma">
+        <pma:device-holder>
+          <pma:name>OLT1</pma:name>
+          <pma:device>
+            <pma:device-id>R1.S1.LT1.P1.ONT1</pma:device-id>
+            <pma:connection-initiator>pma</pma:connection-initiator>
+            <pma:device-state>
+              <pma:reachable>true</pma:reachable>
+            </pma:device-state>
+          </pma:device>
+        </pma:device-holder>
+      </pma:pma>
+    </config>
+  </edit-config>
+</rpc>

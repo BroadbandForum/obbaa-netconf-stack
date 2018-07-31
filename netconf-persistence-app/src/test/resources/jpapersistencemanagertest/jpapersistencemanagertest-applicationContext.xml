@@ -1,0 +1,17 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+			 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			 xmlns:context="http://www.springframework.org/schema/context"
+			 xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:annotation-config/>
+
+	<bean id="entityManagerFactory" class="org.broadband_forum.obbaa.netconf.persistence.jpa.JPAEntityManagerFactory">
+		<constructor-arg value="pma_test"/>
+	</bean>
+
+	<bean id="entityDataStoreManager" class="org.broadband_forum.obbaa.netconf.persistence.jpa.JPAEntityDataStoreManager">
+		<constructor-arg ref="entityManagerFactory"/>
+	</bean>
+
+</beans>

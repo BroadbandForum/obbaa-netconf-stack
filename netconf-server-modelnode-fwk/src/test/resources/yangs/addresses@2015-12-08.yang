@@ -1,0 +1,65 @@
+module addresses {
+
+	yang-version 1;
+
+	namespace "test:addresses";
+
+	prefix "addr";
+
+    revision "2015-12-08" {
+        description "Test.";
+        reference "";
+    }
+
+	list home-address{
+	    description "List of home addresses";
+
+	    key address-name;
+
+        leaf address-name{
+	        type string;
+	        description
+	        " name of the address, don't know what else can abe a key";
+	    }
+	    leaf address{
+	        type string;
+	    }
+        uses telephone-numbers;
+
+	}
+	list office-address{
+    	    description "List of office addresses";
+
+    	    key address-name;
+
+    	     leaf address-name{
+    	        type string;
+    	        description
+    	        " name of the address, don't know what else can abe a key";
+    	    }
+    	    leaf address{
+            	        type string;
+            }
+            uses telephone-numbers;
+
+    }
+    grouping telephone-numbers {
+        list telephone-number {
+            description
+                "A list of telephone numbers.";
+            key type;
+
+            leaf type {
+                type string;
+                description
+                    "type telephone";
+                }
+
+            leaf number {
+                type string;
+                description
+                    "the number";
+            }
+        }
+    }
+}

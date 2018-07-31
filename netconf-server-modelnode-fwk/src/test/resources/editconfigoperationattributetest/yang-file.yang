@@ -1,0 +1,33 @@
+module default-example {
+
+    namespace "urn:org:bbf:pma";
+    prefix "pma";
+    
+    revision "2015-09-16" {
+      description "Initial version.";
+    }
+
+    container operation-example {
+        list list-a {
+            key "a1";
+            leaf a1 {
+                type string;
+            }
+            leaf a2 {
+                type string;
+            }
+            
+            
+            list list-b { // sub list of list-a
+                key "b1";
+                leaf b1 {
+                    type string;
+                }
+                
+                leaf b2 {
+                    type string;
+                }
+            }
+        }
+    }
+}

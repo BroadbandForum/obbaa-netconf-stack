@@ -1,0 +1,33 @@
+// Contents of "test-deviation-module"
+module test-deviation-module {
+    namespace "urn:opendaylight:test-deviation-module";
+    prefix "test-deviation-module";
+
+    revision 2017-10-11 {
+        description "Initial revision";
+    }
+
+    container top-test-container {
+        leaf test-leaf-for-add {
+            type string;
+        }
+
+        leaf-list test-leaflist-for-add {
+            type int32;
+        }
+
+        leaf test-leaf-for-replace {
+            type int32;
+            mandatory true;
+        }
+
+        leaf test-leaf-for-delete {
+            type string;
+            default "1";
+        }
+
+        leaf test-leaf-for-not-supported {
+            type uint32;
+        }
+    }
+}

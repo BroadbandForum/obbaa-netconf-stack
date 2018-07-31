@@ -1,0 +1,32 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <library>
+    <artist xc:operation="create"><!-- thing to be rolled back -->
+      <name>Depeche Mode</name>
+      <album>
+        <name>Violator</name>
+        <year>1990</year>
+        <song>
+          <name>Enjoy the silence</name>
+        </song>
+      </album>
+      <album>
+        <name>Some Great Reward</name>
+        <year>1984</year>
+        <song>
+          <name>People are people</name>
+        </song>
+      </album>
+    </artist>
+    <artist>
+      <name>Lenny</name>
+      <album>
+        <name>Greatest hits</name>
+        <year>2001</year> <!-- thing to be rolled back -->
+      </album>
+      <album>
+        <name>Circus</name>
+        <year>-1</year> <!-- error -->
+      </album>
+    </artist>
+  </library>
+</jukebox>

@@ -1,0 +1,541 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.broadband_forum.obbaa.netconf.api.client;
+
+import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.CopyConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.DeleteConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
+import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.GetConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.KillSessionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.LockRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.Set;
+import java.util.concurrent.Future;
+
+/**
+ * A session given to netconf clients, can be used to send netconf messages to a netconf server. Following is an
+ * example on how to build a
+ * lock request and send the message to the server.
+ * <p>
+ * <pre>
+ * NetconfClientSession session = ... //get the session using the client dispatcher. See implementations of
+ * {@link NetconfClientDispatcher} to find out how to get a NetconfClientSession.
+ * LockRequest lockReq = new LockRequest().setTarget("running");
+ * NetConfResponse res = session.lock(lockReq).get();
+ *
+ * @author keshava
+ */
+public interface NetconfClientSession {
+
+    public static final String GET_METHOD = "get";
+    public static final String TYPE = "type";
+    public static final String GET_CONFIG_METHOD = "getConfig";
+    public static final String EDIT_CONFIG_METHOD = "editConfig";
+    public static final String COPY_CONFIG_METHOD = "copyConfig";
+    public static final String RPC_METHOD = "rpc";
+    public static int DEFAULT_KEEP_ALIVE_PROBES = 3;
+    public static long DEFAULT_KEEP_ALIVE_TIMEOUT_MILLIS = 10000;
+    public static final long DEFAULT_CONNECT_TIMEOUT_SECS = 10L;
+
+    void setMessageId(AbstractNetconfRequest request);
+
+    /**
+     * Perform Netconf <get-config> operation.
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <rpc message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     *   <get-config>
+     *       <source>
+     *           <running />
+     *       </source>
+     *       <filter type="subtree">
+     *           <top xmlns="http://example.com/schema/1.2/config">
+     *               <users />
+     *           </top>
+     *       </filter>
+     *   </get-config>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  GetConfigFilter filter = new GetConfigFilter()
+     *                                   .setType("subtree")
+     *                                   .setXmlFilters(DocumentUtils.getInstance().getElementByName(requestDocument,
+     *                                   "top"));//Add the Element "top" here
+     *  GetConfigRequest request = new GetConfigRequest()
+     *                                   .setSourceRunning()
+     *                                   .setFilter(filter);
+     *  NetConfResponse response = session.getConfig(request).get();}
+     * </pre>
+     *
+     * @param request {@link GetConfigRequest} containing request parameters.
+     * @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> getConfig(GetConfigRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <edit-config>}operation.
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     *     <edit-config>
+     *         <target>
+     *             <running />
+     *         </target>
+     *         <default-operation>merge</default-operation>
+     *         <test-option>test-then-set</test-option>
+     *         <error-option>rollback-on-error</error-option>
+     *         <config>
+     *             <configuration xmlns="http://example.com/schema/1.2/config">
+     *                 <protocols>
+     *                     <rip>
+     *                         <message-size operation="replace">255</message-size>
+     *                     </rip>
+     *                 </protocols>
+     *             </configuration>
+     *         </config>
+     *     </edit-config>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  List<{@link EditConfigElement }> configElements = new ArrayList<>();
+     *  {@link EditConfigElement} configElement = new EditConfigElement();
+     *  configElement.setConfigElementContent(confgurationElement);//Set <configuration> org.w3c.dom.Element as
+     *  content here
+     *  configElements.add(configElement);
+     *  {@link EditConfigRequest } request = new EditConfigRequest()
+     *                                       .setTargetRunning()
+     *                                       .setTestOption(EditConfigTestOptions.TEST_THEN_SET)
+     *                                       .setErrorOption(EditConfigErrorOptions.ROLLBACK_ON_ERROR)
+     *                                       .setDefaultOperation(EditConfigDefaultOperations.MERGE)
+     *                                       .setConfigElements(configElements);
+     *  NetConfResponse response =  session.editConfig(request).get();}
+     * </pre>
+     *
+     * @param request {@link EditConfigRequest} containing request parameters.
+     * @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException if the the request is not valid.
+     */
+    public Future<NetConfResponse> editConfig(EditConfigRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code<copy-config>} operation.
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<copy-config>
+     * 		<target>
+     * 			<running />
+     * 		</target>
+     * 		<source>
+     * 			<url>https://user:password@example.com/cfg/new.txt</url>
+     * 		</source>
+     * 	</copy-config>
+     * </rpc>
+     *
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  CopyConfigRequest request = new CopyConfigRequest()
+     *                                       .setTargetRunning()
+     *                                       .setSource("https://user:password@example.com/cfg/new.txt", true);
+     *  NetConfResponse response = session.copyConfig(request).get();
+     *  }
+     *
+     *  @param request {@link CopyConfigRequest}
+     *  @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> copyConfig(CopyConfigRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code<delete-config>} operation. <b>Example:</b>
+     * <p>
+     * <pre>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<delete-config>
+     * 		<target>
+     * 			<startup />
+     * 		</target>
+     * 	</delete-config>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     * DeleteConfigRequest request = new DeleteConfigRequest()
+     *                                          .setTarget("startup");
+     * NetConfResponse respone = session.deleteConfig(request).get();
+     * }
+     *  @param request {@link DeleteConfigRequest}
+     *  @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> deleteConfig(DeleteConfigRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <lock>} operation
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<lock>
+     * 		<target>
+     * 			<candidate />
+     * 		</target>
+     * 	</lock>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     * LockRequest request = new LockRequest()
+     *                                  .setTarget(DataStore.CANDIDATE);
+     * NetConfResponse respone = session.lock(request).get();}
+     * </pre>
+     *
+     * @param request {@link LockRequest}
+     * @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> lock(LockRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <unlock>} operation
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<unlock>
+     * 		<target>
+     * 			<candidate />
+     * 		</target>
+     * 	</unlock>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  UnLockRequest request = new UnLockRequest()
+     *                                   .setTarget(DataStore.CANDIDATE);
+     *  NetConfResponse respone = session.unlock(request).get();
+     *  }
+     *  @param request {@link UnLockRequest}
+     *  @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> unlock(UnLockRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <get>} operation.
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<get>
+     * 		<filter type="subtree">
+     * 			<top xmlns="http://example.com/schema/1.2/stats">
+     * 				<interfaces>
+     * 					<interface>
+     * 						<ifName>eth0</ifName>
+     * 					</interface>
+     * 				</interfaces>
+     * 			</top>
+     * 		</filter>
+     * 	</get>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  NetconfFilter filter = new NetconfFilter()
+     *                                    .setType("subtree")
+     *                                    .setXmlFilters(DocumentUtils.getInstance().getElementByName
+     *                                    (requestDocument, "top"));
+     *  GetRequest request = new GetRequest().setFilter(filter);
+     *  NetConfResponse response = session.get(request).get();}
+     * </pre>
+     *
+     * @param request {@link GetRequest}
+     * @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> get(GetRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <rpc>} operation.
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<download-pma-configuration-to-device xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 		<device>device1</device>
+     * 	</download-pma-configuration-to-device>
+     * </rpc>
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<upload-pma-configuration-to-device xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 		<device>device1</device>
+     * 	</upload-pma-configuration-to-device>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  NetconfRpcRequest request = new NetconfRpcRequest();
+     *  NetConfResponse response = session.rpc(request).get();}
+     * </pre>
+     *
+     * @param request {@link NetconfRpcRequest}
+     * @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> rpc(NetconfRpcRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Method to send a RPC Message directly without using Message POJOs.
+     *
+     * @param request
+     * @return
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> sendRpc(AbstractNetconfRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <create-subscription>} operation.
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * <create-subscription xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+     * 	      </create-subscription>
+     *
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  CreateSubscriptionRequest request = new CreateSubscriptionRequest();
+     *  NetConfResponse response = session.createSubscription(request).get();}
+     * </pre>
+     *
+     * @param request
+     * @return
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> createSubscription(CreateSubscriptionRequest request, NotificationListener
+            notificationListener)
+            throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <close-session> } operation.
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<close-session />
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     *  CloseSessionRequest request = new CloseSessionRequest();
+     *  NetConfResponse response = session.closeSession(request).get();}
+     * </pre>
+     *
+     * @param request {@link CloseSessionRequest}
+     * @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> closeSession(CloseSessionRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Perform Netconf {@code <kill-session> } operation
+     * <p>
+     * <pre>
+     * <b>Example:</b>
+     * {@code
+     * --------------------------------
+     * RPC xml request
+     * --------------------------------
+     * <?xml version="1.0" encoding="UTF-8"?>
+     * <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+     * 	<kill-session>
+     * 		<session-id>4</session-id>
+     * 	</kill-session>
+     * </rpc>
+     * --------------------------------
+     * Corresponding NetconfRequest
+     * --------------------------------
+     * KillSessionRequest request = new KillSessionRequest()
+     *                                       .setSessionId(4);
+     * NetConfResponse response = session.killSession(request).get();}
+     * </pre>
+     *
+     * @param request
+     * @return A Future reference to get the response.
+     * @throws NetconfMessageBuilderException
+     */
+    public Future<NetConfResponse> killSession(KillSessionRequest request) throws NetconfMessageBuilderException;
+
+    public Future<NetConfResponse> action(ActionRequest request) throws NetconfMessageBuilderException;
+
+    /**
+     * Get the capability of the connected server. The capabilities are exchanged during session establishment via
+     * netconf {@code <hello>}
+     * message.
+     * <p>
+     * <pre>
+     * See RFC 6242 section-8.
+     * </pre>
+     *
+     * @param capability - fully formatted capability name For example :
+     *                   <p>
+     *                   <pre>
+     *                   1. "urn:ietf:params:netconf:capability:startup:1.0"
+     *                   2. "http://example.net/router/2.3/myfeature"
+     *
+     *                   </pre>
+     * @return true if the server has the given capability, false otherwise.
+     */
+    public boolean getServerCapability(String capability);
+
+    /**
+     * Get session identifier of the NETCONF session. This session identifier is set by the netconf server during
+     * {@code <hello> message exchange.}
+     *
+     * @return current session id
+     */
+    public int getSessionId();
+
+    public void addSessionListener(NetconfClientSessionListener listener);
+
+    public void sessionClosed();
+
+    /**
+     * call home device client session needs to provide remote address to map into deviceId configuration in pma
+     *
+     * @return
+     */
+    public SocketAddress getRemoteAddress();
+
+    /**
+     * If call home device remote address does not resolve to device Id, then close session.
+     * <p>
+     * Note:- This is not closeSession or KillSession request. This is used reject call home device request from device
+     *
+     * @throws InterruptedException
+     */
+    public void close() throws InterruptedException, IOException;
+
+    void closeAsync();
+
+    /**
+     * Get the capabilities of the connected server. The capabilities are exchanged during session establishment via
+     * netconf {@code <hello>}
+     * message.
+     *
+     * @return
+     */
+    public Set<String> getServerCapabilities();
+
+    /**
+     * Sends a transport specific keep-alive message.
+     * Throws a {@link IOException} if a response is not received within specified timeout.
+     *
+     * @param timeout - the timeout for response for a keep-alive message.
+     */
+    public void sendHeartBeat(long timeout) throws InterruptedException, IOException;
+
+    boolean isOpen();
+
+    long getCreationTime();
+
+    /**
+     * Increments the number of successviely failed keep-alive attempt.
+     *
+     * @return
+     */
+    int incrementAndGetFailedKACount();
+
+    /**
+     * Resets the KA Failure counter to 0.
+     */
+    void resetKAFailureCount();
+
+    /**
+     * The time in milli seconds when the last data was sent.
+     *
+     * @return
+     */
+    long getIdleTimeStart();
+
+    void closeGracefully() throws IOException;
+}

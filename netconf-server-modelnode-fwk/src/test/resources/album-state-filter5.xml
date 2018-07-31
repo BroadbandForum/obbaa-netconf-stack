@@ -1,0 +1,12 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name/>
+            <album>
+                <song>
+                    <format>flac</format>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

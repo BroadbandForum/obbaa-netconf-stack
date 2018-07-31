@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <choicecase>
+        <name>create mixed case 1</name>
+        <leaf-case-mixed>Mixed case leaf type value</leaf-case-mixed>
+    </choicecase>
+</validation>

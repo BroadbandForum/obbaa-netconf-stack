@@ -1,0 +1,10 @@
+<operation-example xmlns="urn:org:bbf:pma">
+  <list-a operation="create">
+    <a1>a1</a1>
+    <a2>a2</a2>
+    <list-b operation="create">
+        <b1>b1</b1>
+        <b2>b2</b2>
+    </list-b>
+  </list-a>
+</operation-example>

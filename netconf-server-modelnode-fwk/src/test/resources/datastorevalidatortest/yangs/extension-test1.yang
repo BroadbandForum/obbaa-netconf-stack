@@ -1,0 +1,42 @@
+module extension-test {
+
+    yang-version 1;
+
+    namespace "urn:org:bbf:pma:extension:test";
+
+    prefix "extTest";
+
+    import dummy-extensions { prefix "anvext"; }
+
+    include extension-test-container;
+
+    revision "2015-12-14" {
+        description "Initial version.";
+    }
+
+    augment "/extTest:someAbs/" {
+
+        container validation {
+
+            leaf leaf1 {
+                type int8;
+            }
+
+            leaf someContainerRefLeaf {
+                type leafref {
+                    path "/someAbs/validation/someContainer/ref";
+                }
+                anvext:treat-as-relative-path;
+            }
+
+            container someContainer {
+                leaf ref {
+                    anvext:treat-as-relative-path;
+                    type leafref {
+                        path "/someAbs/validation/leaf1";
+                    }
+                }
+            }
+        }
+    }
+}

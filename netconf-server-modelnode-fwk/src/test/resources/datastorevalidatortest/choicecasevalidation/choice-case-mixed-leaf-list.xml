@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <choicecase>
+        <name>Mixed case with non default leaf-list case</name>
+        <leaflist-case-mixed>first leaf-list</leaflist-case-mixed>
+        <leaflist-case-mixed>second leaf-list</leaflist-case-mixed>
+    </choicecase>
+</validation>

@@ -1,0 +1,5 @@
+<city xmlns="http://www.test-company.com/solutions/anv-weather-app" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0"
+      xc:operation="create">
+    <city-name>Chennai</city-name>
+    <country-name>India</country-name>
+</city>

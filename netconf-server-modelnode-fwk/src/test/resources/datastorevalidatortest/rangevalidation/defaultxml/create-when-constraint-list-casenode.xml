@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<choicecase>
+			<list-case-failed>
+				<failed-id>1</failed-id>
+				<failed-value>value1</failed-value>
+			</list-case-failed>
+			<list-case-failed>
+				<failed-id>2</failed-id>
+				<failed-value>value2</failed-value>
+			</list-case-failed>
+		</choicecase>
+	</when-validation>
+</validation>

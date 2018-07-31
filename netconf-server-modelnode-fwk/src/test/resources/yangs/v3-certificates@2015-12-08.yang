@@ -1,0 +1,18 @@
+module v3-certificates {
+
+	yang-version 1;
+
+	namespace "test:v3-certificates";
+
+	prefix "cert";
+
+    revision "2015-12-08" {
+        description "Test YANG module to try Parent and child having different namespaces, See v3-pma-certificates@2015-12-08.yang where a
+        child augments pma-certs";
+        reference "";
+    }
+
+	container certificate-mgmt{
+
+    }
+}

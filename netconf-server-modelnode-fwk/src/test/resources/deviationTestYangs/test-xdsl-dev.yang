@@ -1,0 +1,40 @@
+module test-xdsl-dev {
+
+  namespace "urn:xxxxx-org:yang:test-xdsl-dev";
+            
+  prefix "xdsl-dev";
+
+  import ietf-interfaces { prefix if; }
+  import bbf-xdsl { prefix xdsl; }
+  
+  organization 
+    "TBD";
+    
+  contact 
+    "TBD";
+    
+  description 
+    "Dummy deviation module to test NAV support of deviations
+     Primarily uses 'legal' deviations as defined in bbf2016.707.00
+     A few 'illegal' deviations are added for cmpleteness.
+     Focus: augment & grouping";
+  
+  revision 2017-07-05 {
+    description 
+      "Initial revision.";
+    reference
+      "TBD";
+  }
+  
+/* Example of 'add'.
+   - Add a restriction on the number of elements in a leaf-list or list 
+   - Add a constraint on valid data by use of a must statement
+*/
+  
+  deviation "/if:interfaces/if:interface/xdsl:line/xdsl:supported-mode" {
+    deviate add {
+    max-elements 2;
+    }
+  }
+ 
+}

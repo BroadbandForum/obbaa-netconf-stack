@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<boolean-leaf>true</boolean-leaf>
+		<check-boolean-leaf>The boolean leaf requires true</check-boolean-leaf>
+	</when-validation>
+</validation>

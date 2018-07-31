@@ -1,0 +1,5 @@
+<rpc message-id="111" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <create-subscription xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+        <stream>NETCONF</stream>
+    </create-subscription>
+</rpc>

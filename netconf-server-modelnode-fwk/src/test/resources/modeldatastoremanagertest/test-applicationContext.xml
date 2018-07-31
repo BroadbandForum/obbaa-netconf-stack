@@ -1,0 +1,25 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+  <context:annotation-config/>
+
+  <bean id="entityManagerFactory" class="org.broadband_forum.obbaa.netconf.persistence.jpa.JPAEntityManagerFactory">
+    <constructor-arg value="hsql"/>
+     <constructor-arg name="properties">
+        <map key-type="java.lang.String" value-type="java.lang.String">
+        	<entry key="hibernate.cache.use_second_level_cache" value="true"/>
+        	<entry key="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory"/>
+        </map>
+    </constructor-arg>
+  </bean>
+  <bean id="persistenceManagerUtil" class="org.broadband_forum.obbaa.netconf.persistence.jpa.ThreadLocalPersistenceManagerUtil">
+    <constructor-arg ref="entityManagerFactory"/>
+  </bean>
+  <bean id="jukeboxDao" class="org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.annotation.dao.JukeboxDao">
+    <constructor-arg ref="persistenceManagerUtil"/>
+  </bean>
+
+</beans>

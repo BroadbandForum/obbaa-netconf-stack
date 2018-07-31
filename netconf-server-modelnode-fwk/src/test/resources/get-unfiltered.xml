@@ -1,0 +1,37 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <jukebox xmlns="http://example.com/ns/example-jukebox">
+      <library>
+        <album-count>2</album-count>
+        <artist-count>1</artist-count>
+        <song-count>5</song-count>
+        <artist>
+          <name>Lenny</name>
+          <album>
+            <name>Greatest hits</name>
+            <year>0</year>
+            <song>
+              <name>Are you gonne go my way</name>
+            </song>
+            <song>
+              <name>Fly Away</name>
+            </song>
+          </album>
+          <album>
+            <name>Circus</name>
+            <year>0</year>
+            <song>
+              <name>Rock and roll is dead</name>
+            </song>
+            <song>
+              <name>Circus</name>
+            </song>
+            <song>
+              <name>Beyond the 7th Sky</name>
+            </song>
+          </album>
+        </artist>
+      </library>
+    </jukebox>
+  </data>
+</rpc-reply>

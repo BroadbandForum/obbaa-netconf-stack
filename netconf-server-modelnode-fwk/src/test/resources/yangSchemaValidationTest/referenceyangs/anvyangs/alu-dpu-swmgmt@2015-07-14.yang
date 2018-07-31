@@ -1,0 +1,221 @@
+module alu-dpu-swmgmt {
+
+	yang-version 1;
+
+    namespace "urn:org:bbf:pma:alu-dpu-swmgmt";
+
+    prefix dpu-swmgmt;
+    
+    import "ietf-yang-types" {
+    	prefix yang;
+    }
+    
+    import "alu-pma-types" {
+        prefix alu-pma;
+    }
+    
+    import alu-pma { prefix "pma"; }
+    
+	organization "Test Company";
+
+    contact "support at test-company.com";
+
+    description
+      "DPU Software Management Module";
+
+    revision "2015-07-14";
+    
+    typedef sw-version {
+		type string;
+     }
+
+	typedef activation-status {
+	    type enumeration {
+	           enum "complete" {
+	              value 0;
+	              description "Activation is complete.";
+	           }
+	
+	           enum "failed" {
+	              value 2;              
+	              description "Activation failed.";
+	           }          
+	     }
+	 }
+
+	 augment "/pma:pma/pma:device-holder/pma:device" {
+	    when "pma:hardware-type='G.FAST'";
+		container swmgmt{
+			container active-sw-version {
+				config false;
+			     description
+			        "Top-level container for info on dpu Active SW versions.";
+			      leaf name {
+			            type sw-version;
+			            config false;
+			            description
+			                 "Depicts the Active SW version on the DPU.";
+			     }
+			 
+			     leaf last-successful-activate-timestamp {
+			          type yang:date-and-time;
+			          config false;
+			          description
+			            "Depicts the timestamp of the last suuccessful activate.";
+			      }  
+			     
+		} //container dpuActiveSwVersion
+		
+			container passive-sw-version {
+				config false;
+			     //if-feature download-without-activation;
+			     description
+			        "Top-level container for all info on dpu passive SW versions.";
+			     leaf name {
+			            type sw-version;
+			            config false;
+			            description
+			                 "Depicts the Passive SW version on the DPU.";
+			     }
+			 
+			     leaf last-download-timestamp {
+			          type yang:date-and-time;
+			          config false;
+			          description
+			            "Depicts the timestamp of the recent successful download.";
+			     }  
+			  
+		} //container dpuPassiveSwVersion
+		
+			container device-info {
+					config false;
+			        description
+			            "Top-level container for all info on dpu HW versions.";
+			        leaf device-hw-type {
+			           type string;
+			           config false;
+			           description
+			             "Depicts the Hardware type of the Device. This is more of Mnemonic
+			 
+			              Rule: a device hardware-type may not change in the lifetime of
+			              the device. For example, a software upgrade or hardware
+			              plug-in shall have no effect on the device type";
+			        }
+		} //container dpuHWInfo
+		
+		
+			container last-attempted-activation-monitor { 
+			 	  config false;
+			      leaf sw-version-name {
+			            type sw-version;
+			            config false;
+			            description
+			                 "Depicts the SW version on the DPU which was last attempted for activation.";
+			     }
+			 
+			     leaf  activation-status {
+			            type activation-status;
+			            config false;
+			            description
+			                 "Depicts the status of activation of the software in the last attempt.";
+			      }
+			 
+			      leaf last-attempted-activate-timestamp {
+			          type yang:date-and-time;
+			          config false;
+			          description
+			            "Depicts the timestamp of the last activate attempt.";
+			      }  
+			 
+			      leaf trouble-shooting-info { 
+			        type string;
+			        config false; 
+			        description "Depicts the trouble shooting information if need be."; 
+			      } 
+		}
+		
+		container last-attempted-download-monitor {
+			  config false; 
+		      leaf sw-version-name {
+		            type sw-version;
+		            config false;
+		            description
+		                 "Depicts the SW version on the DPU which was last attempted for download.";
+		     }
+		
+		     leaf  download-status {
+		            type activation-status;
+		            config false;
+		            description
+		                 "Depicts the status of download of the software in the last attempt.";
+		
+		      }
+		
+		      leaf last-attempted-download-timestamp {
+		          type yang:date-and-time;
+		          config false;
+		          description
+		            "Depicts the timestamp of the last download attempt.";
+		      }  
+		
+		 
+		      leaf troubleshooting-info { 
+		        type string;
+		        config false; 
+		        description "Depicts the trouble shooting information /reason code if need be."; 
+		      } 
+		
+			}
+		}//swmgmt
+	}
+	
+	rpc download-software-image {
+	
+	    input {
+	    	leaf download-url {
+	             mandatory true;
+	             type alu-pma:url;
+	       }
+	    
+	       leaf max-num-retries {
+	         type uint16;
+	       }
+	      
+	       leaf retry-interval {
+	          type uint16;
+	          units mins;
+	       }
+	
+			//it shoudl always be true in phase 1
+	       leaf activate-on-download {
+	            //if-feature download-without-activation;
+	            type boolean;
+	            description
+	                    "Depicts should an activation occur on download.";
+	       }
+	
+	       /*leaf delayed-activate {
+	             if-feature download-without-activation;
+	             type boolean;
+	             description
+	                    "This depicts when the activation should occur - DelayedOnReboot or Immediate.";
+	       } */
+	  } //input
+	} //rpc download
+	
+	 
+	
+	rpc activate-software-image {
+	//    if-feature download-without-activation;
+	    input {
+	       leaf planned-image-name {
+	             type sw-version;
+	       }
+	
+	       leaf delayed-activate {
+	            type boolean;
+	       } //activate
+	    } //input
+	} //rpc activate
+
+}

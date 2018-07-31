@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<must-validation>
+		<interface>
+			<ifType>ethernet</ifType>
+			<ifMTU>1500</ifMTU>
+			<ifMTU2>1400</ifMTU2>
+			<ifIndex>99</ifIndex>
+			<ifInfo>
+				<someData>
+					<data1>value1</data1>
+					<data2>value2</data2>
+				</someData>
+			</ifInfo>
+		</interface>	
+	</must-validation>
+</validation>

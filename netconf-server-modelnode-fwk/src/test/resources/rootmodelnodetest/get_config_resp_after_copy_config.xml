@@ -1,0 +1,18 @@
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <data>
+    <awa:config xmlns:awa="http://www.test-company.com/solutions/anv-weather-app">
+      <awa:https-proxy>
+        <awa:password>new-password</awa:password>
+        <awa:proxy-host>new-proxy-host</awa:proxy-host>
+        <awa:proxy-port>8000</awa:proxy-port>
+        <awa:username>new-user</awa:username>
+      </awa:https-proxy>
+    </awa:config>
+    <awa:root-container xmlns:awa="http://www.test-company.com/solutions/anv-weather-app">
+      <awa:dummy-container>
+        <awa:leaf1>value</awa:leaf1>
+        <awa:leaf2>111</awa:leaf2>
+      </awa:dummy-container>
+    </awa:root-container>
+  </data>
+</rpc-reply>

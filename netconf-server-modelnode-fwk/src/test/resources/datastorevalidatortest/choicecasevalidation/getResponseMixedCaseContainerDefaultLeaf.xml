@@ -1,0 +1,15 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+    <data>
+        <validation:validation xmlns:validation="urn:org:bbf:pma:validation">
+            <validation:default-container-or-list-choice-case>
+                <validation:name>Default container case with non default leaf</validation:name>
+                <validation:default-container-leaf>Non default leaf</validation:default-container-leaf>
+                <validation:default-container-wo-default-leaf-value/>
+                <validation:default-list>
+                    <validation:name-list>Default value for name-list</validation:name-list>
+                    <validation:value-list>Default value for value-list</validation:value-list>
+                </validation:default-list>
+            </validation:default-container-or-list-choice-case>
+        </validation:validation>
+    </data>
+</rpc-reply>

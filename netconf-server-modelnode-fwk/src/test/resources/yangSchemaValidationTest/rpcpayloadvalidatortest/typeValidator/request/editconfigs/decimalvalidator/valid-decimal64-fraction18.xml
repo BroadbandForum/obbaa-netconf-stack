@@ -1,0 +1,43 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+	<edit-config>
+		<target>
+			<running />
+		</target>
+		<test-option>set</test-option>
+		<config>
+			<validation xmlns="urn:org:bbf:pma">
+				// fraction 18
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>8</id>
+                    <decimal64-fraction18-type>-9.223372036854775808</decimal64-fraction18-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>9</id>
+                    <decimal64-fraction18-type>9.223372036854775807</decimal64-fraction18-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>10</id>
+                    <decimal64-fraction18-type>3.13</decimal64-fraction18-type>
+                </type-validation>
+                
+                // fraction18 - no range
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>11</id>
+                    <decimal64-fraction18-without-range-type>-9.223372036854775808</decimal64-fraction18-without-range-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>12</id>
+                    <decimal64-fraction18-without-range-type>9.223372036854775807</decimal64-fraction18-without-range-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>13</id>
+                    <decimal64-fraction18-without-range-type>3.15</decimal64-fraction18-without-range-type>
+                </type-validation>
+                
+                
+               
+                
+			</validation>
+		</config>
+	</edit-config>
+</rpc>

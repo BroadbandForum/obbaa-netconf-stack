@@ -1,0 +1,12 @@
+submodule extension-test-container {
+    belongs-to extension-test {
+        prefix extTest;
+    }
+
+    revision 2015-12-14 {
+        description "Initial revision";
+    }
+
+    container someAbs {
+    }
+}

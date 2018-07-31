@@ -1,0 +1,38 @@
+module datastore-validation-crossTree-test {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:yang:test:cross:tree:reference";
+	
+	prefix "ctr";
+
+	import datastore-validator-test { prefix "validation"; }
+
+	
+	revision "2017-09-15" {
+	      description "Initial version.";
+	}
+	
+	
+	container CrossTest {
+		
+		container xml-subtree {
+
+			list list1{
+				key key;
+				
+				leaf key {
+					must "/validation:validation/validation:xml-subtree/validation:list1[current()]/someKey = current()";
+					type string;
+				}
+				
+				leaf leaf1 {
+					type leafref {
+						path "/validation:validation/validation:xml-subtree/validation:list1[current()/../key]/listLeaf";					
+					}
+				}
+			}
+		}
+	}
+	
+}

@@ -1,0 +1,21 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+	<edit-config>
+		<target>
+			<running />
+		</target>
+		<test-option>set</test-option>
+		<config>
+			<pma xmlns="urn:org:bbf:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+				<pma-swmgmt>
+					<pma-svc>
+						<pma-swver-ctl-dpu xc:operation="create">
+							<delayed-activate>false</delayed-activate>
+							<planned-sw-version-url>ftp://nhtoan:123456@192.168.95.175/demo2/SW001</planned-sw-version-url>
+							<download-sw-version-url>ftp://nhtoan:123456@192.168.95.175/demo2/SW001</download-sw-version-url>
+						</pma-swver-ctl-dpu>
+					</pma-svc>
+				</pma-swmgmt>
+			</pma>
+		</config>
+	</edit-config>
+</rpc>

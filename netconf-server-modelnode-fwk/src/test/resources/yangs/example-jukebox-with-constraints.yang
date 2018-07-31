@@ -1,0 +1,359 @@
+module example-jukebox-with-constraints {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox-with-constraints";
+
+    prefix jbox;
+
+    import ietf-restconf {
+      prefix rc;
+    }
+    
+    import ietf-yang-types {
+    	prefix yang;
+    }
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+
+    identity genre {
+      description "Base for all genre types";
+    }
+
+    identity alternative {
+      base genre;
+      description "Alternative music";
+    }
+
+    identity blues {
+      base genre;
+      description "Blues music";
+    }
+
+    identity country {
+      base genre;
+      description "Country music";
+    }
+
+    identity jazz {
+      base genre;
+      description "Jazz music";
+    }
+
+    identity pop {
+      base genre;
+      description "Pop music";
+    }
+
+    identity rock {
+      base genre;
+      description "Rock music";
+    }
+
+ 
+    container jukebox {
+      presence
+        "An empty container indicates that the jukebox
+        service is available";
+      description
+        "Represents a jukebox resource, with a library, playlists,
+        and a play operation.";
+      container library {
+        description
+          "Represents the jukebox library resource.";
+        list artist {
+          key "name";
+          description
+            "Represents one artist resource within the
+            jukebox library resource.";
+          leaf name {
+            type string {
+              length "1..5";
+            }
+            description
+              "The name of the artist.";
+          }
+          
+          list album {
+            key "name";
+            max-elements 5;
+            description
+              "Represents one album resource within one
+              artist resource, within the jukebox library.";
+            leaf name {
+              type string {
+				pattern "[0-9a-zA-Z\s+]*";
+                length "1..25";
+              }
+              description
+                "The name of the album.";
+            }
+
+            leaf genre {
+              type identityref {
+                base genre;
+              }
+              description
+                "The genre identifying the type of music on
+                the album.";
+            }
+
+            leaf year1 {
+              type uint16 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf year2 {
+              type uint32 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf year3 {
+              type uint64 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf year4 {
+              type uint8 {
+                range "128 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf year5 {
+              type int16 {
+                range "-3276 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf year6 {
+              type int32 {
+                range "-214748364 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf year7 {
+              type int64 {
+                range "-922337203685477580 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf year8 {
+              type int8 {
+                range "-100 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf decimal_year {
+              type decimal64 {
+              	fraction-digits 2;
+                range "-9223372036854775.08 .. 92233720368547758.07";
+              }
+              description
+                "The year the album was released";
+            }
+            
+            leaf binary_name {
+              type binary {
+                length "1 .. 3"; //total number of octets
+              }
+              description
+                "The name of the album.";
+            }
+
+            container admin {
+              description
+                "Administrative information for the album.";
+              leaf label {
+                type string;
+                description
+                  "The label that released the album.";
+              }
+
+              leaf catalogue-number {
+                type string;
+                description
+                  "The album's catalogue number.";
+              }
+              
+              leaf expire-date {
+              	type yang:date-and-time;
+              	description
+              		"The expire date of admin.";
+              }
+              
+              leaf media-address {
+              	type yang:phys-address;
+              	description
+              		"Physical address of jukebox";
+              }
+            }  // container admin
+
+            list song {
+              key "name";
+              description
+                "Represents one song resource within one
+                album resource, within the jukebox library.";
+              leaf name {
+                type string {
+                  length "1 .. max";
+                }
+                description
+                  "The name of the song";
+              }
+
+              leaf location {
+                type string;
+                mandatory true;
+                description
+                  "The file location string of the
+                 media file for the song";
+              }
+
+              leaf format {
+                type string;
+                description
+                  "An identifier string for the media type
+                  for the file associated with the
+                  'location' leaf for this entry.";
+              }
+
+              leaf length {
+                type uint32;
+                units "seconds";
+                description
+                  "The duration of this song in seconds.";
+              }
+            }  // list song
+          }  // list album
+        }  // list artist
+
+        leaf artist-count {
+          type uint32;
+          units "songs";
+          config false;
+          description
+            "Number of artists in the library";
+        }
+
+        leaf album-count {
+          type uint32;
+          units "albums";
+          config false;
+          description
+            "Number of albums in the library";
+        }
+
+        leaf song-count {
+          type uint32;
+          units "songs";
+          config false;
+          description
+            "Number of songs in the library";
+        }
+      }  // container library
+
+      list playlist {
+        key "name";
+        description
+          "Example configuration data resource";
+        leaf name {
+          type string;
+          description
+            "The name of the playlist.";
+        }
+
+        leaf description {
+          type string;
+          description
+            "A comment describing the playlist.";
+        }
+
+        list song {
+          key "index";
+          ordered-by user;
+          description
+            "Example nested configuration data resource";
+          leaf index {
+            type uint32;
+            description
+              "An arbitrary integer index for this
+              playlist song.";
+          }
+
+          leaf id {
+            type rc:data-resource-identifier;
+            mandatory true;
+            description
+              "Song identifier. Must identify an instance of
+              /jukebox/library/artist/album/song/name.";
+          }
+        }  // list song
+      }  // list playlist
+
+      container player {
+        description
+          "Represents the jukebox player resource.";
+        leaf gap {
+          type decimal64 {
+            fraction-digits 1;
+            range "0.0 .. 2.0";
+          }
+          units "tenths of seconds";
+          description
+            "Time gap between each song";
+        }
+      }  // container player
+    }  // container jukebox
+
+    rpc play {
+      description
+        "Control function for the jukebox player";
+      input {
+        leaf playlist {
+          type string;
+          mandatory true;
+          description "playlist name";
+        }
+
+        leaf song-number {
+          type uint32;
+          mandatory true;
+          description
+            "Song number in playlist to play";
+        }
+      }
+    }  // rpc play
+  }  // module example-jukebox

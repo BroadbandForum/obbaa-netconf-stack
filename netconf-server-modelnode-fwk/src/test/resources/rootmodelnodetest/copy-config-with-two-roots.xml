@@ -1,0 +1,16 @@
+<config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <config xmlns="http://www.test-company.com/solutions/anv-weather-app">
+    <https-proxy >
+      <proxy-host>new-proxy-host</proxy-host>
+      <proxy-port>8000</proxy-port>
+      <username>new-user</username>
+      <password>new-password</password>
+    </https-proxy>
+  </config>
+  <root-container xmlns="http://www.test-company.com/solutions/anv-weather-app">
+    <dummy-container>
+      <leaf1>value</leaf1>
+      <leaf2>111</leaf2>
+    </dummy-container>
+  </root-container>
+</config>

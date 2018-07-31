@@ -1,0 +1,43 @@
+module bbf-if-type {
+
+  namespace "urn:broadband-forum-org:yang:bbf-if-type";  
+  prefix bbfift;
+  
+  import ietf-interfaces {
+    prefix if;
+  }
+  
+  organization 
+    "TBD";
+    
+  contact 
+    "TBD";
+    
+  description 
+    "A YANG module which defines interface types that are needed
+     for BBF applications but are not defined in iana-if-type";
+  
+  revision 2015-12-22 {
+    description 
+      "Initial revision.";
+    reference
+      "RFC 7223: ietf-interfaces; iana-if-type";
+  }
+  
+  identity bbf-interface-type {
+    base if:interface-type;
+    description
+      "This identity is used as a base for all interface types
+       defined by the BBF that are not in the 'ifType definitions' 
+       registry maintained by IANA.";
+  }
+  
+  identity xdsl {
+    base bbf-interface-type;
+    description 
+      "An interface which supports one or more DSL or G.fast
+       technologies";
+  }
+}  
+  
+

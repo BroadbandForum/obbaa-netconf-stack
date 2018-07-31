@@ -1,0 +1,49 @@
+module tester {
+
+    namespace "http://netconfcentral.org/ns/tester";
+
+    prefix "testPrefix";
+
+    revision 2008-07-14 {
+      description "RFC 5277 version.";
+    }
+
+    container state-root {
+      config false;
+
+      container streams {
+
+        list stream {   
+          key name;
+          
+          leaf name {
+            type string;
+          }
+          
+          leaf description {
+            type string;
+          }
+        }
+      }
+    }
+   container state-container {
+   	  leaf name {
+   	  	type string;
+   	  }
+   	  
+   	  leaf value {
+   	  	type string;
+   	  }
+      container person {
+        config false;
+        leaf name {          
+            type string;
+        }
+
+        leaf address {
+         	type string;
+        }  
+      }
+    }
+
+}

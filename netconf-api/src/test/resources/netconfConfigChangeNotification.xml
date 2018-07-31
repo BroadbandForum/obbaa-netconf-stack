@@ -1,0 +1,15 @@
+<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+    <eventTime>2016-04-25T15:17:29+07:00</eventTime>
+    <netconf-config-change xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-notifications">
+        <datastore>running</datastore>
+        <changed-by>
+            <user-name>admin</user-name>
+            <session-id>2</session-id>
+            <source-host>192.168.92.62</source-host>
+        </changed-by>
+        <edit>
+            <target xmlns:prefix1="namespace1" xmlns:prefix2="namespace2">/prefix1:pma/prefix2:device-holder[prefix2:name=OLT-1]</target>
+            <operation>remove</operation>
+        </edit>
+    </netconf-config-change>
+</notification>

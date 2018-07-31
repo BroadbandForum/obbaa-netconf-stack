@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" >
+    <choicecase>
+        <name>Mixed case with non default list case</name>
+        <list-case-mixed xc:operation="remove">
+            <name-case-mixed>list entry 1</name-case-mixed>
+        </list-case-mixed>
+    </choicecase>
+</validation>

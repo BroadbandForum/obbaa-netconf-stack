@@ -1,0 +1,34 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+	<data>
+		<jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+			<jbox:library>
+				<jbox:artist>
+					<jbox:name>Lenny</jbox:name>
+					<jbox:album>
+                        <jbox:name>Greatest hits</jbox:name>
+						<jbox:year>2000</jbox:year>
+						<jbox:song>
+							<jbox:name>Are you gonne go my way</jbox:name>
+							<jbox:format>mp3</jbox:format>
+							<jbox:location>desktop/mymusic</jbox:location>
+						</jbox:song>
+						<jbox:song>
+							<jbox:name>Fly Away</jbox:name>
+							<jbox:format>mp3</jbox:format>
+							<jbox:location>desktop/mymusic</jbox:location>
+						</jbox:song>
+						<jbox:dummy-container1>
+							<jbox:dummy-leaf>value1</jbox:dummy-leaf>
+						</jbox:dummy-container1>
+						<jbox:dummy-container2>
+							<jbox:dummy-leaf>value1</jbox:dummy-leaf>
+						</jbox:dummy-container2>
+					</jbox:album>
+                    <jbox:album>
+                        <jbox:name/>
+                    </jbox:album>
+				</jbox:artist>
+			</jbox:library>
+		</jbox:jukebox>
+	</data>
+</rpc-reply>

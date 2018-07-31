@@ -1,0 +1,53 @@
+module example-billboard {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox";
+
+    prefix billboard;
+
+    import ietf-restconf {
+      prefix rc;
+    }
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Billboard Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+ 
+    container billboard {
+		choice arward-type {
+			case album-case {
+				list album {
+					key "name";
+					leaf name {
+						type string {
+						length "1 .. max";
+					  }
+					}
+				}  // end list album
+			}// end album-case
+			case single-case {
+				list song {
+					key "name";
+             
+					leaf name {
+						type string {
+							length "1 .. max";
+						}
+					}
+				}  //end list song
+			}// end single-case        
+		}
+	}  // end container billboard
+}//end example-billboard

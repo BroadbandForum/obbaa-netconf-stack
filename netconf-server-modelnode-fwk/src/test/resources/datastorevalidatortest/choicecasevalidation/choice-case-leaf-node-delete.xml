@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<choicecase>
+		<leaf-case2 xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="delete">Value 2</leaf-case2>
+	</choicecase>
+</validation>

@@ -1,0 +1,47 @@
+module xpath-evaluator-test {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma:xe";
+	
+	prefix "xe";
+	
+	revision "2015-12-18" {
+	      description "Initial version.";
+	}
+	
+    container node1 {                                               // level 1
+        container node2 {                                           // level 2
+            leaf node2-name {
+                type string;
+            }
+            
+            list node3 {                                            // level 3
+                key node3-name;
+                leaf node3-name {
+                    type string;
+                }
+                
+                leaf-list node3-leaflist {
+                    type string;
+                }
+                
+                leaf node3-int32 {
+                    type int32;
+                }
+                
+                list node4 {                                        // level 4
+                    key node4-name;
+                    leaf node4-name {
+                        type string;
+                    }
+                    
+                    leaf-list node4-leaflist {
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+
+}

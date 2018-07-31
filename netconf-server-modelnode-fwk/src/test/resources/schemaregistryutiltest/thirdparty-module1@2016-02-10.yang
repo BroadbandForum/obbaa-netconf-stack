@@ -1,0 +1,26 @@
+module thirdparty-module1 {
+
+  namespace "urn:thirdparty-module1";
+    prefix tp1;
+
+  organization "TBD";
+  contact
+    "TBD";
+  description
+    "This module contains a collection of YANG definitions for
+     managing top level FAST configuration and augmenations to
+     ietf-interfaces.";
+
+  revision 2016-02-10 {
+      description
+        "Initial revision.";
+      reference "TBD";
+  }
+
+  identity crypto-alg {
+       description
+          "Base identity from which all crypto algorithms
+           are derived.";
+   }
+
+}

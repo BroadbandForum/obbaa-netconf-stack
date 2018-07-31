@@ -1,0 +1,4 @@
+<match-criteria xmlns:ns0="urn:ietf:params:xml:ns:netconf:base:1.0" ns0:operation="merge"
+                              xmlns="urn:bbf:yang:bbf-sub-interface-tagging">
+    <untagged ns0:operation="delete"/>
+</match-criteria>

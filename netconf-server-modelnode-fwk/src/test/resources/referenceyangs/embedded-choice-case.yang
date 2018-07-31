@@ -1,0 +1,43 @@
+module embedded-choice-case {
+  yang-version 1;
+  namespace "urn:embedded-choice-case-test";
+  prefix ecct;
+
+  revision 2015-12-14 {
+    description
+      "Initial version.";
+  }
+
+  container root-container {
+      list tconts {
+        key "name";
+        leaf name {
+            type string;
+        }
+
+        container tm-root {
+          choice children-type {
+            case queues {
+              list queue {
+                key "id";
+                leaf id {
+                  type string;
+                }
+                choice cfg-type {
+                  case inline {
+                    leaf priority {
+                      type string;
+                    }
+                    leaf weight {
+                      type string;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+}

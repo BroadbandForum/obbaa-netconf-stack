@@ -1,0 +1,9 @@
+<rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <copy-config>
+        <target>
+            <url>https://user:password@example.com/cfg/target.txt</url>
+        </target>
+        <source>
+        </source>
+    </copy-config>
+</rpc>

@@ -1,0 +1,86 @@
+module yang-with-choice-cases-augmenting-module {
+  yang-version 1;
+  namespace "test:yang-with-choice-cases-augmenting-module";
+  prefix ywccam;
+
+  import yang-with-choice-cases { prefix ywcc; }
+  description
+    "Example Choice case module. There are dessert choices based on season.
+     When season is summer, one gets to choose ice-creams, on winter, one gets hot cake choices.
+     Again in case of ice creams you get choice of syrups.
+     See also yang-with-choice-cases@2016-05-16.yang";
+
+  revision 2016-05-16 {
+    description
+      "Initial version.";
+  }
+
+  augment "/ywcc:dessert" {
+    choice seasonal-choices {
+      case summer {
+        when "season = 'summer'";
+        uses ice-cream-group;
+      }
+      case winter {
+        when "season = 'winter'";
+        uses hot-cakes-group;
+      }
+    }
+  }
+
+  grouping ice-cream-group {
+    description
+      "Ice creams";
+    container ice-cream {
+      leaf flavour {
+        type string;
+        description
+          "Flavour of your choice.";
+      }
+      choice syrup-choices {
+        case vanilla {
+          when "flavour = 'vanilla'";
+          uses vanilla-syrup-group;
+        }
+        case strawberry {
+          when "flavour = 'strawberry'";
+          uses strawberry-syrup-group;
+        }
+      }
+    }
+  }
+
+  grouping strawberry-syrup-group {
+    container strawberry-syrup {
+      leaf quantity {
+        type uint8;
+      }
+    }
+  }
+
+  grouping vanilla-syrup-group {
+    container vanilla-syrup {
+      leaf quantity {
+        type uint8;
+      }
+    }
+  }
+
+  grouping hot-cakes-group {
+    description
+      "Hot Cakes";
+    container cake {
+      leaf flavour {
+        type string;
+        description
+          "Flavour of your choice.";
+      }
+      list topping {
+        key "topping-type";
+        leaf topping-type {
+          type string;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer">
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album-ordered-by-user>
+				<name>AlbumA</name>
+				<year>2000</year>
+			</album-ordered-by-user>
+		</artist>
+	</library>
+</jukebox>

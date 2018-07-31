@@ -1,0 +1,23 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="merge"> <!-- Explicitly mentioning operation as merge -->
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album>
+				<name>Greatest hits</name>
+				<!-- Add 2 songs -->
+				<song>
+					<name>Sing my way</name>
+					<location>desktop/mymusic</location>
+				</song>
+				<song>
+					<name>Musical feast</name>
+					<location>desktop/mymusic</location>
+				</song>
+				<!-- Delete 1 song -->
+				<song xc:operation="delete">
+					<name>Fly Away</name>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

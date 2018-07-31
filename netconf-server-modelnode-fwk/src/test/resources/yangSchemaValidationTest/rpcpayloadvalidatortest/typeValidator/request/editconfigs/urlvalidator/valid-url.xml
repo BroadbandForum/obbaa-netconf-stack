@@ -1,0 +1,40 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+	<edit-config>
+		<target>
+			<running />
+		</target>
+		<test-option>set</test-option>
+		<config>
+			<validation xmlns="urn:org:bbf:pma">
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>1</id>
+                    <url-type>ftp://abc:123456@192.168.95.174/test/abc.txt</url-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>2</id>
+                    <url-type>sftp://abc:123456@www.google.com/test/abc.txt</url-type>
+                </type-validation>
+				<type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+					<id>3</id>
+					<url-type>http://username:password@example.com/dir/file.txt</url-type>
+				</type-validation>
+				<type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+					<id>3</id>
+					<url-type>https://username:password@example.com/dir/file.txt</url-type>
+				</type-validation>
+				<type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+					<id>3</id>
+					<url-type>http://example.com/dir/file.txt</url-type>
+				</type-validation>
+				<type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+					<id>3</id>
+					<url-type>https://example.com/dir/file.txt</url-type>
+				</type-validation>
+				<type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+					<id>3</id>
+					<url-type>tftp://example.com/dir/file.txt</url-type>
+				</type-validation>
+			</validation>
+		</config>
+	</edit-config>
+</rpc>

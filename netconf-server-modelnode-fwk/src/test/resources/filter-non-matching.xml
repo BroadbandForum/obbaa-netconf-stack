@@ -1,0 +1,7 @@
+ <jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+       <artist>
+        <name>Not Lenny</name>
+      </artist>
+    </library>
+  </jukebox>

@@ -1,0 +1,23 @@
+module feature-test {
+    namespace "feature-testNS";
+    prefix "featuretest";
+
+    feature test-feature-1 {
+        description
+          "This feature means that the systems support test-feature-1";
+      }
+    
+    feature test-feature-2 {
+        description
+          "This feature means that the systems support test-feature-1";
+      }
+    
+    container test-container-a {
+        if-feature test-feature-1;
+
+        leaf test-leaf-a {
+            type string;
+        }
+    }
+
+}

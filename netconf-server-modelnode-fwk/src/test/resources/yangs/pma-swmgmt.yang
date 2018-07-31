@@ -1,0 +1,170 @@
+module pma-swmgmt {
+
+    namespace "urn:org:bbf:pma";
+    prefix "pma";
+    
+    revision "2015-07-14" {
+      description "Initial version.";
+      reference "PMA";
+    }
+    
+    typedef sw-version {
+        type string;
+    }
+    
+    typedef device-info {
+        type string;
+    }
+    
+    typedef url {
+        type string {
+            pattern '((http|https|tftp)://|(ftp|sftp)://((\S+:\S+)@))([\S&&[^/]]+)/([\S&&[^:]]+)';
+        }
+    }
+    
+    container pma-swmgmt {
+    	container pma-svc {
+	        list pma-swver-ctl-dpu {
+	             key "dpu-hwver-type dpu-tag";
+	             
+	             leaf dpu-hwver-type {
+	                 type device-info;
+	                 description
+	                    "Depicts the device Hardware version type based on which the software versions are applied.";
+	             }
+	             
+	             leaf dpu-tag {
+	                 type string;
+	                 mandatory false;
+	                 description
+	                       "Depicts the Hardware version tag based on which the software versions are applied.";
+	             }
+	         
+	             leaf delayed-activate {
+	                 type boolean;
+	                 description
+	                      "Depicts when the SW should get activated, is it immediate or on next reboot";
+	             }
+	         
+	             // This SW version should get activated on the device. 
+	             // In case of delayed activation, the value here is not applicable.
+	             // The download version becomes the planned active version on delayed activate.
+	             leaf planned-sw-version-url {
+	             	 when "delayed-activate != true";
+	                 type url;
+	                 description
+	                      "Depicts the planned SW version for the DPU of that specific hardware type. This is next in line which would get activated.
+	                            Typical value for URL can be as ftp://user:password@host/downloadPath/swImageName";
+	             }
+	          
+	             // This version should correspond to the Passive SW Bank.
+	             leaf download-sw-version-url { 
+	                 type url;
+	                 description
+	                       "Depicts the downloaded SW version on the DPU for that specific HW type.
+	                            Typical value for URL can be as ftp://user:password@host/downloadPath/swImageName;";
+	             }
+	             
+	             leaf num-dpus-matching-hwver-dputag {
+	                   type  uint32;
+	                   config false;
+	                   description
+	                        "Depicts the number of DPUs that are referenced by this specific HW type and DPU Tag, corresponding to the exact match.";
+	             }
+	 
+	               leaf num-dpus-matching-active-swversion {
+	                   type  uint32;
+	                   config false;
+	                   description
+	                        "Depicts the number of DPUs that are referenced by this specific HW type/DPU Tag, corresponding to the exact match for active sw version on DPU and Planned SW version on PMA.";
+	               }
+	
+	               leaf num-dpus-non-matching-active-swversion  {
+	                   type  uint32;
+	                   config false;
+	                   description
+	                        "Depicts the number of DPUs that are referenced by this specific HW type/DPU Tag, but having a mismatch in active sw version on DPU and Planned SW version on PMA.";
+	               }
+	 
+	              leaf num-dpus-matching-download-swversion {
+	                   type  uint32;
+	                   config false;
+	                   description
+	                        "Depicts the number of DPUs that are referenced by this specific HW type/DPU Tag, corresponding to the exact match for passive sw version on DPU and Download SW version on PMA.";
+	               }
+	             
+	         } // list pma-swver-ctl-dpu
+         } // container pma-svc
+         
+         container pma-swver-override {
+	         list pma-dpu-sw-version-override {
+	            key "dpu-id";
+	            
+	            leaf dpu-id {
+	                type string;
+	                description
+	                    "Depicts the DPU Id on which the software versions are applied.";
+	            }
+	            
+	            leaf planned-sw-version-url {
+	                type url;
+	                description
+	                    "Depicts the planned SW version for the DPU of that specific hardware type. This is next in line which would get activated.
+	                        Typical value for URL can be as ftp://user:password@host/downloadPath/swImageName";
+	            }
+	            
+	            leaf download-sw-version-url {
+	                type url;
+	                description
+	                    "Depicts the downloaded SW version on the DPU for that specific HW type.
+	                        Typical value for URL can be as ftp://user:password@host/downloadPath/swImageName;";
+	            }
+	            
+	            leaf delayed-activate {
+	                type boolean;
+	                mandatory false;
+	                description
+	                    "Depicts when the SW should get activated, is it immediate or on next reboot";
+	            }
+	        } // list pma-dpu-sw-version-override
+	    } // container pma-swver-override
+        
+        
+        container pma-retry-policy {
+            description
+                "Top-level container for configuring retry policies.";
+            leaf max-num-retries {
+                type uint16;
+                description
+                   "Depicts the number of retries of download, before giving up.";
+            }
+             
+            leaf retry-interval {
+                type uint16;
+                description
+                       "Depicts how often it should retry attempt. The unit for this attribute is in minutes.";
+            }
+         
+        } // container pma-retry-policy
+        
+        container pma-dpu-sw-control {
+             description
+                "This helps throttle the download requests over time to reduce the overload on FTP servers. For Eg. 1000 devices over 20 mins can be downloaded.
+                 The same can be used for controlling the activation.";
+             leaf max-num-devices {
+                 type uint16;       
+                 default 1000;
+                 description
+                    "Maximum number of devices that can be downloaded/activated over a specified time.";
+             }
+             leaf time-interval {
+                 type uint16;
+                 default 20;
+                 units minute;
+                 description
+                    "The time interval over which maximum devices will be download attempted. The next of downloads/activate will be only after this interval.";
+             }
+        } // pma-dpu-sw-control
+         
+    } // container pma-swmgmt
+}

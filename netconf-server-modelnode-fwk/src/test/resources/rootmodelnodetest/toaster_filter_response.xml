@@ -1,0 +1,7 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <toaster xmlns="http://netconfcentral.org/ns/toaster">
+      <toasterModelNumber>toasterModelNumber</toasterModelNumber>
+    </toaster>
+  </data>
+</rpc-reply>

@@ -1,0 +1,72 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+      <jbox:library>
+        <jbox:album-count>3</jbox:album-count>
+        <jbox:artist-count>1</jbox:artist-count>
+        <jbox:song-count>6</jbox:song-count>
+        <jbox:artist>
+          <jbox:name>Lenny</jbox:name>
+          <jbox:album>
+            <jbox:genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:jazz</jbox:genre>
+            <jbox:name>Greatest hits</jbox:name>
+            <jbox:year>2000</jbox:year>
+            <jbox:song>
+              <jbox:format>mp3</jbox:format>
+              <jbox:location>desktop/mymusic</jbox:location>
+              <jbox:name>Are you gonne go my way</jbox:name>
+            </jbox:song>
+            <jbox:song>
+              <jbox:format>flac</jbox:format>
+              <jbox:location>desktop/mymusic</jbox:location>
+              <jbox:name>Fly Away</jbox:name>
+            </jbox:song>
+            <jbox:admin>
+              <jbox:label>Sony</jbox:label>
+            </jbox:admin>
+          </jbox:album>
+          <jbox:album>
+            <jbox:genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:rock</jbox:genre>
+            <jbox:name>Circus</jbox:name>
+            <jbox:year>1995</jbox:year>
+            <jbox:song>
+              <jbox:format>amr</jbox:format>
+              <jbox:location>desktop/mymusic</jbox:location>
+              <jbox:name>Rock and roll is dead</jbox:name>
+            </jbox:song>
+            <jbox:song>
+              <jbox:format>wma</jbox:format>
+              <jbox:location>desktop/mymusic</jbox:location>
+              <jbox:name>Circus</jbox:name>
+            </jbox:song>
+            <jbox:song>
+              <jbox:format>mp3</jbox:format>
+              <jbox:location>desktop/mymusic</jbox:location>
+              <jbox:name>Beyond the 7th Sky</jbox:name>
+            </jbox:song>
+            <jbox:admin>
+              <jbox:label>Sony</jbox:label>
+            </jbox:admin>
+          </jbox:album>
+          <jbox:album>
+            <jbox:name>AlbumWithoutGenre</jbox:name>
+            <jbox:year>1995</jbox:year>
+            <jbox:admin>
+              <jbox:label>Sony</jbox:label>
+            </jbox:admin>
+            <jbox:song>
+              <jbox:name>SomeSong</jbox:name>
+              <jbox:location>desktop/mymusic</jbox:location>
+              <jbox:format>amr</jbox:format>
+            </jbox:song>
+          </jbox:album>
+        </jbox:artist>
+      </jbox:library>
+    </jbox:jukebox>
+    <toast:toaster xmlns:toast="http://netconfcentral.org/ns/toaster" >
+      <toast:toasterManufacturer>toasterManufacturer</toast:toasterManufacturer>
+      <toast:toasterModelNumber>toasterModelNumber</toast:toasterModelNumber>
+      <toast:toasterStatus>up</toast:toasterStatus>
+    </toast:toaster>
+  </data>
+</rpc-reply>

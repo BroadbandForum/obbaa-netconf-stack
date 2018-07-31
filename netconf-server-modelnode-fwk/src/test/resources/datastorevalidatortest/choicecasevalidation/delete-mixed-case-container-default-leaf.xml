@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" >
+    <default-container-or-list-choice-case>
+        <name>Default container case with non default leaf</name>
+        <default-container-leaf xc:operation="delete">Non default leaf</default-container-leaf>
+    </default-container-or-list-choice-case>
+</validation>

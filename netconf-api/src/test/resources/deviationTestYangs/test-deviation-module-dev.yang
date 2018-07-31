@@ -1,0 +1,45 @@
+// Contents of "test-deviation-module-dev"
+module test-deviation-module-dev {
+    namespace "urn:opendaylight:test-deviation-module-dev";
+    prefix "test-deviation-module-dev";
+
+    import test-deviation-module { prefix "test-deviation-module"; }
+
+    revision 2017-10-11 {
+        description "Initial revision";
+    }
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaflist-for-add" {
+        deviate add {
+            max-elements 2;
+            min-elements 1;
+        }
+    }
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-add" {
+        deviate add {
+            default "defaultValue";
+        }
+    }
+    
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-replace" {
+        deviate replace {
+            type int64 {
+                range 0..1000;
+            }
+            mandatory false;
+        }
+    }
+    
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-delete" {
+        deviate delete {
+            default "1";
+        }
+    }
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-not-supported" {
+        deviate not-supported;
+    }
+
+}

@@ -1,0 +1,11 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <library>
+    <artist xc:operation="create">
+      <name>Lenny</name>
+        <album>
+          <name></name>
+          <year>1995</year>
+        </album>
+    </artist>
+  </library>
+</jukebox>

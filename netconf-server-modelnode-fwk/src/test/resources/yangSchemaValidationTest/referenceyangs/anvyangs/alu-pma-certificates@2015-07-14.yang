@@ -1,0 +1,126 @@
+module alu-pma-certificates {
+
+	yang-version 1;
+	
+	namespace "urn:org:bbf:pma:alu-pma-certificates";
+	
+	prefix "cert";
+
+    import ietf-yang-types { prefix yang; }
+    
+    revision "2015-07-14" {
+        description "Initial version.";
+        reference "PMA";
+    }
+
+    grouping pma-certificates-group {
+    	
+	    container certificate-mgmt{
+	        container trusted-ca-certs {
+	
+	            description
+	                "A list of Certificate Authority (CA) certificates that
+	                a NETCONF server can use to authenticate NETCONF client
+	                certificates.  A client's certificate is authenticated
+	                if there is a chain of trust to a configured trusted CA
+	                certificate.  The client certificate MAY be accompanied
+	                with additional certificates forming a chain of trust.
+	                The client's certificate is authenticated if there is
+	                path-validation from any of the certificates it presents
+	                to a configured trust anchor.";
+	
+	            uses x509-certificates;
+	        }
+	        container pma-certs {
+	            description
+	                "A list of PMA's X509 certificates that are signed by a
+	                Certificate Authority(CA). This certificate is produced by PMA
+	                for authentication by its NETCONF peer. This certificate
+	                is PMA's public key that is signed by the CA.";
+	
+	            uses x509-certificates;
+	        }
+	        grouping x509-certificates {
+	            list certificate {
+	                description
+	                    "A list of X 509 certificates.";
+	                key id;
+	
+	                leaf id {
+	                    type string;
+	                    description
+	                        "Unique id of the certificate.";
+	                    }
+	
+	                ordered-by system;
+	
+	                leaf cert-binary {
+	                    type binary;
+	                    description
+	                        "The binary certificate structure as specified by RFC 5246, Section 7.4.6, i.e.,: opaque ASN.1Cert<1..2^24>";
+	                    reference
+	                        "RFC 5246: The Transport Layer Security (TLS)
+	                        Protocol Version 1.2";
+	                }
+	                leaf subject {
+	                    type string;
+	                    config false;
+	                    description
+	                        "The subject name exactly as it is encoded in the
+	                        X509 certificate.
+	                        The organizationName portion of the certificate's subject
+	                        name must be present.  All other fields are optional.  Any
+	                        optional field present must be prepended with <CR>
+	                        (carriage return, U+000D) <LF> (line feed, U+000A).
+	                        Ordering of fields present must conform to the following:
+	                        organizationName <CR> <LF>
+	                        countryName <CR> <LF>
+	                        stateOrProvinceName <CR> <LF>
+	                        localityName <CR> <LF>
+	                        organizationalUnitName <CR> <LF>
+	                        organizationalUnitName=<Manufacturing Location> <CR> <LF>
+	                        commonName";
+	                }
+	                leaf issuer {
+	                    type string;
+	                    config false;
+	                    description
+	                        "The issuer name exactly as it is encoded in the
+	                        X509 certificate.
+	                        The commonName portion of the certificate's issuer
+	                        name must be present.  All other fields are optional.  Any
+	                        optional field present must be prepended with <CR>
+	                        (carriage return, U+000D) <LF> (line feed, U+000A).
+	                        Ordering of fields present must conform to the following:
+	                        CommonName <CR><LF>
+	                        countryName <CR><LF>
+	                        stateOrProvinceName <CR><LF>
+	                        localityName <CR><LF>
+	                        organizationName <CR><LF>
+	                        organizationalUnitName <CR><LF>
+	                        organizationalUnitName=<Manufacturing Location>";
+	                }
+	                leaf serial-number {
+	                    type binary;
+	                    config false;
+	                    description
+	                        "This certificate's serial number, represented as
+	                        an octet string.";
+	                }
+	                leaf valid-not-before {
+	                    type yang:date-and-time;
+	                    config false;
+	                    description
+	                        "The start validity time & date of this certificate.";
+	                }
+	                leaf valid-not-after {
+	                    type yang:date-and-time;
+	                    config false;
+	                    description
+	                        "The expiration time & date of this certificate.";
+	                }
+	            }
+	        }
+		}
+    }
+}

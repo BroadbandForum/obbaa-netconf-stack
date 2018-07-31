@@ -1,0 +1,8 @@
+
+#581
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc-reply xmlns:ncx="http://netconfcentral.org/ns/yuma-ncx"
+  xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <!-- this wil throw array index exption -->
+</rpc-reply>
+##

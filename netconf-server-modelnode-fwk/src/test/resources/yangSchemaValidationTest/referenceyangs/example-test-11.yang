@@ -1,0 +1,36 @@
+module example-test-11 {
+
+    yang-version 1.1;
+
+    namespace
+      "http://example.com/ns/example-test-11";
+
+    prefix test;
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Data Model Module";
+
+    revision "2017-14-02" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+        
+    container player {
+        leaf gap {
+          type decimal64 {
+            fraction-digits 1;
+            range "0.0 .. 2.0";
+          }
+          units "tenths of seconds";
+          description
+            "Time gap between each song";
+        }
+    }  // container player
+
+  }  // module example-test-11

@@ -1,0 +1,80 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="2">
+    <data xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+        <pma:pma xmlns:pma="urn:org:bbf:pma">
+            <pma:device-holder>
+                <pma:name>OLT1</pma:name>
+            </pma:device-holder>
+            <pma:certificate-mgmt>
+                <pma:pma-certs>
+                    <pma:certificate>
+                        <pma:cert-binary>MIIDMTCCAhkCCQCd9zk5l5MMjzANBgkqhkiG9w0BAQUFADBnMQswCQYDVQQGEwJJ
+                            TjELMAkGA1UECAwCS0ExDDAKBgNVBAcMA0JMUjEnMCUGA1UECgweUE1BIFJvb3Qg
+                            Q2VydGlmaWNhdGUgQXV0aG9yaXR5MRQwEgYDVQQDDAtyb290LmNhLmNvbTAgFw0x
+                            NTA1MTExMjQzMzNaGA8zMzg0MDQyMzEyNDMzM1owTDELMAkGA1UEBhMCSU4xCzAJ
+                            BgNVBAgMAktBMQwwCgYDVQQHDANCTFIxDDAKBgNVBAoMA1BNQTEUMBIGA1UECwwL
+                            cG1hLmFsdS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCidcj4
+                            C+GO6u2C/Bj6+DavvGcdfoKvRB7YpRozXw/2c7qMy4qM6uOcrwgMtVHQ7yNO6yqc
+                            ufNSEzDUsiCogh7tZce9fYVlhyv556NIp0QqtS8UIAOoWV7ypc17wSKy9/KFqxTg
+                            eLyOwNfI3ud8TJ8xi1P95Al+Zf7HnZYArPgI5P3NpkJB/Y8WH2ro6bNMgB5RLzu0
+                            bTRFA+RGSfBUs8oB1i1ky80hD6vJK9isFnIqXarSyc8Gh27gTwROPzb4IJxNad6e
+                            AGGwYnzGBkrglNVYeWbT1q8/z9ZAGcyNLRYwy8KYQuzJDxKmFfszpFJy/63uW3B0
+                            pkoDz7wmfxs3zKxRAgMBAAEwDQYJKoZIhvcNAQEFBQADggEBAMzWckF6Fy6WEBYn
+                            R6o7O7uJ+/uN+1P2pzshqLQqVvzrIwZPivSOEsu/beuDYq8DOyQU+OoiilvpMk4j
+                            pLS76JIFjOzfS/vndaBhns/g6zgXOwLZIUXw2QOnK6gbMw5P4JkVb/cXIpeiST9w
+                            4j0RoeL37HOLYds9jL/FzIgwxv0/ATV6wf4OTbrrDA1tv45qENyaiXeyheIJk3Xv
+                            j8nIack3caYLtHXlmMsFBQ/opaZ8IGnydlq/2Qz5JvhVrBjQFj0qzuyIWWNorrF2
+                            C1fHISxAh8vF6Q4PLo3Z6EyJEOZfoCKSdJQEXANVlXPnAdPgFefC1yZiUOu2rUvS
+                            kcD7Ps8=</pma:cert-binary>
+                        <pma:id>cert1</pma:id>
+                    </pma:certificate>
+                </pma:pma-certs>
+                <pma:trusted-ca-certs>
+                    <pma:certificate>
+                        <pma:cert-binary>MIIDoTCCAomgAwIBAgIJAO7afCGXwLN2MA0GCSqGSIb3DQEBBQUAMGcxCzAJBgNV
+                            BAYTAklOMQswCQYDVQQIDAJLQTEMMAoGA1UEBwwDQkxSMScwJQYDVQQKDB5QTUEg
+                            Um9vdCBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFDASBgNVBAMMC3Jvb3QuY2EuY29t
+                            MB4XDTE1MDUxMTEyNDEzNFoXDTE4MDIyODEyNDEzNFowZzELMAkGA1UEBhMCSU4x
+                            CzAJBgNVBAgMAktBMQwwCgYDVQQHDANCTFIxJzAlBgNVBAoMHlBNQSBSb290IENl
+                            cnRpZmljYXRlIEF1dGhvcml0eTEUMBIGA1UEAwwLcm9vdC5jYS5jb20wggEiMA0G
+                            CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDcWE7mZI+zfV30+/lNf8vYV+CM1agj
+                            JHSc/HwJy7Hw4CSzHbd0sBjlpdD1tcXycUVqxlWcA9P3DvehyFaaFGn9VnscYhPT
+                            gpNm7qS2w54XTwHjfr+l0H/y2fp16PslHsX7NNx3vev6LNtMzQCIDCAnurQvnN7s
+                            NKDP5CDSsWCiN0aW13VfN3RIWfAk3k3vAwfT3bcW+2eFlkhIf1mVGxuh715w6gkO
+                            ZPXnIWWSuTZqzBnW1Kr8c+6ZxRT7c3Y9SX0f+FmHcY9tEqAMb7Tm6P7eeL1YsPEx
+                            DJzoOBJ9s9GsuHZ5Ad82fLsYOoFd2kMzpA6CAyRBqBCYf67uA8JzQh9rAgMBAAGj
+                            UDBOMB0GA1UdDgQWBBRQBa+VIisb1Dw5SFxZ0kjhgbu+/DAfBgNVHSMEGDAWgBRQ
+                            Ba+VIisb1Dw5SFxZ0kjhgbu+/DAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUA
+                            A4IBAQAqnEYHWtIUeJficcyZj3YEEmcKFB9XypS59Ul1rQqLpFrabdA9qP9AMwYU
+                            N0PRQNe3Wi6q+LTDKbEcbetj8Gkkv8lkaSISiY/uiVSUSrSinQgkHGsTFE2PuAE/
+                            2aEftTkOilVkjdRrgo8rKmi4laU7e3gBBobRyCpQ2/sb423Y3K/Jrd36Xx5myObd
+                            5dWRgbGyM2GfNHdWLKoal6fyG5aYyDkXRZznxcELdewCgMelYfGajopIquekB6r2
+                            K8lN/4ntszl87JmbZoFL8aIVMnkpo4C+WXtgjtOsmjEuQOY8JH5sZHyEWlZFYTj3
+                            +Ik+dAMKkMdRJSCza2DLTJ//hvVE</pma:cert-binary>
+                        <pma:id>rootCA1</pma:id>
+                    </pma:certificate>
+                </pma:trusted-ca-certs>
+            </pma:certificate-mgmt>
+            <pma:device-plugs>
+                <pma:device-plug>
+                    <pma:hardware-type>JUKEBOX</pma:hardware-type>
+                    <pma:interface-version>1.0</pma:interface-version>
+                </pma:device-plug>
+                <pma:device-plug>
+                    <pma:hardware-type>G.FAST</pma:hardware-type>
+                    <pma:interface-version>1.0</pma:interface-version>
+                </pma:device-plug>
+            </pma:device-plugs>
+            <pma:anv-state />
+            <pma:pma-swmgmt>
+                <pma:pma-svc />
+                <pma:pma-swver-override />
+            </pma:pma-swmgmt>
+            <pma:users>
+                <pma:user>
+                    <pma:password>$5$[B@430bcf9c$951d433386282cd4aae242301257a234485b310e0ca88539699bbe0a7dd55044</pma:password>
+                    <pma:username>UT</pma:username>
+                </pma:user>
+            </pma:users>
+        </pma:pma>
+    </data>
+</rpc-reply>

@@ -1,0 +1,304 @@
+module anv-alarms {
+
+    namespace "http://www.test-company.com/solutions/anv-alarms";
+    prefix alarms;
+
+    import "ietf-yang-types" { prefix yang; }
+
+    description
+        "This module is an interface for managing alarms.";
+
+    revision 2016-05-03 {
+        description
+                "Initial version";
+        reference
+                "PMA";
+    }
+
+    /*
+     * Common types
+     */
+
+    typedef resource {
+        type instance-identifier {
+            require-instance false;
+        }
+        description
+                "The instance-identifier used to identify a particular instance
+                node in the data tree.";
+    }
+
+    typedef alarm-text {
+        type string {
+            length "1..1024";
+        }
+        description
+                "The string used to inform operators about the alarm. This MUST
+                contain enough information for an operator to be able to understand
+                the problem and how to resolve it. If this string contains structure,
+                this format should be clearly documented for programs to be able
+                to parse that information.";
+    }
+
+    identity alarm-identity {
+        description
+                "Base identity for alarm types. A unique identification of the
+                alarm, not including the resource. Different resources can share
+                alarm types. If the resource reports the same alarm type, it is
+                to be considered to be the same alarm. The alarm type is a simplification
+                of the different X.733 and 3GPP alarm IRP alarm correlation mechanisms
+                and it allows for hierarchical extensions. A string-based qualifier
+                can be used in addition to the identity in order to have different
+                alarm types based on information not known at design-time, such
+                as values in textual SNMP Notification var-binds. Standards and
+                vendors can define sub-identities to clearly identify specific
+                alarm types. This identity is abstract and shall not be used for
+                alarms.";
+    }
+
+    /* Alarm type */
+    typedef alarm-type-id {
+        type identityref {
+            base alarm-identity;
+        }
+        description
+                "Identifies an alarm type. The description of the alarm type id
+                MUST indicate if the alarm type is abstract or not. An abstract
+                alarm type is used as a base for other alarm type ids and will
+                not be used as a value for an alarm or be present in the alarm
+                inventory.";
+    }
+
+    /*
+     * Groupings
+     */
+
+    grouping common-alarm-parameters {
+        description
+                "Common parameters for an alarm. This grouping is used both in
+                the alarm list and in the notification representing an alarm state
+                change.";
+
+        leaf resource {
+            type resource;
+            mandatory true;
+            description
+                        "The alarming resource.  See also 'alt-resource'.";
+        }
+
+        leaf alarm-type-id {
+            type alarm-type-id;
+            mandatory true;
+            description
+                        "This leaf provides a unique identification of the alarm type.
+                        Note this field is not currently used to identify an alar";
+        }
+    }
+
+    grouping alarm-status-parameters {
+        description
+                "Parameters for an alarm state. This grouping is used both in
+                the alarm list's status-change list and in the notification representing
+                an alarm state change.";
+
+        leaf last-status-change {
+            type yang:date-and-time;
+            mandatory true;
+            description
+                        "The time the status of the alarm changed. The value represents
+                        the time the real alarm state change appeared in the resource
+                        and not when it was added to the alarm list.";
+        }
+        leaf last-perceived-severity {
+            type severity-with-clear;
+            mandatory true;
+            description
+                        "The severity of the alarm as defined by X.733. Note the severity
+                        is fixed per alarm and it is driven by corresponding application.";
+            reference
+                        "ITU Recommendation X.733, 'Information Technology - Open Systems
+                        Interconnection - System Management: Alarm Reporting Function',
+                        1992";
+        }
+        leaf last-alarm-text {
+            type alarm-text;
+            mandatory true;
+            description
+                        "A user friendly text describing the alarm state change.";
+            reference
+                        "Additional Text from ITU Recommendation X.733, 'Information Technology
+                        - Open Systems Interconnection - System Management: Alarm Reporting
+                        Function', 1992";
+        }
+    }
+
+    grouping alarm-status-change-parameters {
+        description
+                "Parameters for an alarm state change. Alarm status is changed
+                when the application triggered alarmON/alarmOFF. This grouping
+                is used both in the alarm list's status-change list and in the
+                notification representing an alarm state change.";
+
+        uses alarm-status-parameters;
+
+        leaf last-alarm-condition {
+            type alarm-condition;
+            mandatory true;
+            description
+                        "The alarmON/alarmOFF condition of the alarm.";
+            reference
+                        "ITU Recommendation X.733, 'Information Technology - Open Systems
+                        Interconnection - System Management: Alarm Reporting Function',
+                        1992";
+        }
+    }
+
+    typedef severity {
+        type enumeration {
+            enum indeterminate {
+                value 2;
+                description
+                                "Indicates that the severity level could not be determined. This
+                                level SHOULD be avoided.";
+            }
+            enum minor {
+                value 3;
+                description
+                                "The 'minor' severity level indicates the existence of a non-service
+                                affecting fault condition and that corrective action should be
+                                taken in order to prevent a more serious (for example, service
+                                affecting) fault. Such a severity can be reported, for example,
+                                when the detected alarm condition is not currently degrading the
+                                capacity of the resource.";
+            }
+            enum warning {
+                value 4;
+                description
+                                "The 'warning' severity level indicates the detection of a potential
+                                or impending service affecting fault, before any significant effects
+                                have been felt. Action should be taken to further diagnose (if
+                                necessary) and correct the problem in order to prevent it from
+                                becoming a more serious service affecting fault.";
+            }
+            enum major {
+                value 5;
+                description
+                                "The 'major' severity level indicates that a service affecting
+                                condition has developed and an urgent corrective action is required.
+                                Such a severity can be reported, for example, when there is a
+                                severe degradation in the capability of the resource and its full
+                                capability must be restored.";
+            }
+            enum critical {
+                value 6;
+                description
+                                "The 'critical' severity level indicates that a service affecting
+                                condition has occurred and an immediate corrective action is required.
+                                Such a severity can be reported, for example, when a resource
+                                becomes totally out of service and its capability must be restored.";
+            }
+        }
+        description
+                "The severity level of the alarm.";
+        reference
+                "ITU Recommendation X.733, 'Information Technology - Open Systems
+                Interconnection - System Management: Alarm Reporting Function',
+                1992";
+    }
+
+    typedef severity-with-clear {
+        type union {
+            type enumeration {
+                enum cleared {
+                    value 1;
+                    description
+                                        "The alarm is cleared by the instrumentation.";
+                }
+            }
+            type severity;
+        }
+        description
+                "The severity level of the alarm including clear. This is used
+                only in state changes for an alarm.";
+    }
+    typedef alarm-condition {
+        type enumeration {
+            enum alarmon {
+                value 1;
+                description
+                                "The alarm is ON.";
+            }
+            enum alarmoff {
+                value 2;
+                description
+                                "The alarm is OFF.";
+            }
+        }
+        description
+                "The alarmON/alarmOFF condition";
+    }
+
+    /*
+     * Notifications
+     */
+
+    notification alarm-notification {
+        description
+                "This notification is used to report a state change for an alarm.
+                The same notification is used for sending a newly raised alarm,
+                a cleared alarm or changing the text and/or severity of an existing
+                alarm.";
+
+        list alarm {
+            key "resource alarm-type-id";
+
+            description
+                        "The list of alarms.";
+
+            uses common-alarm-parameters;
+            uses alarm-status-change-parameters;
+        }
+    }
+
+    /*
+     * RPCs
+     */
+
+    rpc retrieve-active-alarms {
+        input {
+            leaf max-number-of-alarms {
+                default 1000;
+                type int32 {
+                    range "1..max";
+                }
+                description
+                                "The maximum number of alarms to be returned in the output.";
+            }
+            leaf offset {
+                type binary;
+                description
+                                "The database offset for the first alarm in the chunk to be collected.
+                                The offset is typically not provided in the initial invocation
+                                of the RPC then, the next-offset returned by the first RPC call
+                                is used as input for the second call and so on, till no next-offset
+                                is returned.";
+            }
+        }
+        // input
+        output {
+            leaf offset {
+                type binary;
+                description
+                                "See description of offset as input. Not returned when the end
+                                of the current alarm list is reached.";
+            }
+            list alarm {
+                key "resource alarm-type-id";
+                description
+                                "The list of alarms.";
+                uses common-alarm-parameters;
+                uses alarm-status-parameters;
+            }
+        }
+    }
+}

@@ -1,0 +1,132 @@
+module test-action {
+       yang-version 1.1;
+       namespace "urn:example:test-action";
+       prefix "test";
+
+       import ietf-yang-types {
+         prefix "yang";
+       }
+
+   	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+   	
+       list server {
+         key name;
+         leaf name {
+           type string;
+         }
+         action resetInRootList {
+           input {
+             leaf reset-at {
+               type yang:date-and-time;
+               mandatory true;
+              }
+            }
+            output {
+              leaf reset-finished-at {
+                type yang:date-and-time;
+                mandatory true;
+              }
+            }
+          }
+        }
+       
+       container test-action-container {
+           action container-reset {
+               input {
+                 leaf reset-at {
+                   type yang:date-and-time;
+                   mandatory true;
+                  }
+                }
+                output {
+                  leaf reset-finished-at {
+                    type yang:date-and-time;
+                    mandatory true;
+                  }
+                }
+              }
+           list action-list {
+               key name;
+               leaf name {
+                 type string;
+               }
+               action reset {
+                 input {
+                   leaf reset-at {
+                     type yang:date-and-time;
+                     mandatory true;
+                    }
+                  }
+                  output {
+                    leaf reset-finished-at {
+                      type yang:date-and-time;
+                      mandatory true;
+                    }
+                  }
+                }
+            }
+           uses action-group;
+        }
+       
+       augment "/test:test-action-container" {
+       action augmented-reset {
+           input {
+             leaf reset-at {
+               type yang:date-and-time;
+               mandatory true;
+              }
+            }
+            output {
+              leaf reset-finished-at {
+                type yang:date-and-time;
+                mandatory true;
+              }
+            }
+          }
+       }
+       
+       grouping action-group {
+           action grouping-reset {
+               input {
+                 leaf reset-at {
+                   type yang:date-and-time;
+                   mandatory true;
+                  }
+                }
+                output {
+                  leaf reset-finished-at {
+                    type yang:date-and-time;
+                    mandatory true;
+                  }
+                }
+              }
+       }
+       /*
+        * Notifications
+        */
+
+       notification test-notification {
+
+           list alarm {
+               key "name";
+
+               leaf name {
+                   type string;
+               }
+           }
+       }
+
+       /*
+        * RPCs
+        */
+
+       rpc test-rpc {
+           input {
+               leaf input-leaf {
+                   type string;
+               }
+           }
+       }
+      }

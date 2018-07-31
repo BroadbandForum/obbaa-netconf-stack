@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<list-type>
+			<list-id>1</list-id>
+			<list-value>value1</list-value>
+		</list-type>
+		<list-type>
+			<list-id>2</list-id>
+			<list-value>value2</list-value>
+		</list-type>
+	</when-validation>
+</validation>

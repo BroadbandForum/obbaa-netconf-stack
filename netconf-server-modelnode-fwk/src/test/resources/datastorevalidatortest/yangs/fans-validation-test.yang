@@ -1,0 +1,60 @@
+module fans-validation-test {
+
+    yang-version 1;
+
+    namespace "urn:opendaylight:fans-validation-test";
+    prefix "fanstest";
+
+    import datastore-validator-test { prefix "validation"; }
+
+    revision 2017-07-11 {
+        description "Initial revision";
+    }
+
+    augment "/validation:validation" {
+
+        container test-vnos {
+            description
+                        "Container for the list of test-VNOs.";
+            list test-vno {
+                key "name";
+                description
+                                "test-list";
+                leaf name {
+                    type string;
+                }
+            }
+        }
+    }
+
+    augment "/validation:validation/validation:someList/validation:someInnerList" {
+        container test-slicing {
+            description
+                        "The slicing container holds the configuration of the slices that
+                        are made for this device.";
+            list test-slice {
+                description
+                                "For each configured slice of the device, this list supports the
+                                configuration of the resources within the device allocated to
+                                VNOs.";
+                key "virtual-device-id";
+                leaf virtual-device-id {
+                    description
+                                        "The id of the virtual device.";
+                    mandatory true;
+                    type string;
+                }
+                leaf vno {
+                    description
+                                        "A reference to the VNO authorized to access the device.";
+                    mandatory true;
+                    type leafref {
+                        path "/validation:validation/test-vnos/test-vno/name";
+                    }
+                }
+            }
+            // list test-slice
+        }
+        // container test-slicing
+    }
+}

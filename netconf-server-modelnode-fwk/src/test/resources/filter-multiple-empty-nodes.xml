@@ -1,0 +1,11 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+	<library>
+		<artist>
+			<album>
+				<song>
+					<name>Greatesthits</name>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

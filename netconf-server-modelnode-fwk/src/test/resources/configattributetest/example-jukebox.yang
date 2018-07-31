@@ -1,0 +1,143 @@
+module example-jukebox {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox";
+
+    prefix jbox;
+
+    import "example-jukebox-types" { prefix ejt; }
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+    identity jazz {
+      base ejt:genre;
+      description "Jazz music";
+    }
+
+    identity label {
+      description "Base for all label types";
+    }
+
+    identity indie {
+        base label;
+        description "Independent";
+    }
+
+    identity imprint {
+        base label;
+        description "Imprint";
+    }
+
+    typedef resource {
+        type instance-identifier {
+            require-instance false;
+        }
+        description
+                "Dummy instance identifier";
+    }
+
+
+     identity dummy-id-ref3 {
+        base ejt:dummy-id-ref;
+        description "dummy-id-ref3";
+     }
+
+    container jukebox {
+      presence
+        "An empty container indicates that the jukebox
+        service is available";
+      description
+        "Represents a jukebox resource, with a library, playlists,
+        and a play operation.";
+      container library {
+        description
+          "Represents the jukebox library resource.";
+        list artist {
+          key "name";
+          description
+            "Represents one artist resource within the
+            jukebox library resource.";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "The name of the artist.";
+          }
+
+          list album {
+            key "name";
+            description
+              "Represents one album resource within one
+              artist resource, within the jukebox library.";
+            leaf name {
+              type string {
+                length "1 .. max";
+              }
+              description
+                "The name of the album.";
+            }
+
+            leaf-list singer {
+                type string;
+                description "A list of singers";
+            } // leaf-list singer
+
+            leaf genre {
+              type identityref {
+                base ejt:genre;
+              }
+              description
+                "The genre identifying the type of music on
+                the album.";
+            }
+
+            leaf label {
+              type identityref {
+                base label;
+              }
+              description
+                "The label of the album.";
+            }
+
+            leaf year {
+              type uint16 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+
+            leaf resource {
+                type resource;
+                mandatory true;
+                description
+                   "Dummy instance identifier";
+            }
+
+            leaf-list dummy-leaflist-id-ref {
+                type identityref {
+                    base ejt:dummy-id-ref;
+                }
+                description "A dummy leaflist of type id-ref";
+            } // leaf-list dummy-id-ref
+
+          }  // list album
+        }  // list artist
+      }  // container library
+    }  // container jukebox
+  }  // module example-jukebox

@@ -1,0 +1,6 @@
+<toaster:toaster xmlns:toaster="http://netconfcentral.org/ns/toaster">
+  <toaster:toasterManufacturer>LG</toaster:toasterManufacturer>
+  <!-- invalid lenght -->
+  <toaster:toasterModelNumber>toasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumbertoasterModelNumber</toaster:toasterModelNumber>
+  <toaster:toasterStatus>blah</toaster:toasterStatus>
+</toaster:toaster>

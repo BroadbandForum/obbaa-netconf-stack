@@ -1,0 +1,17 @@
+<album xmlns="http://example.com/ns/example-jukebox">
+    <song>
+        <name>song-name-1</name>
+        <format>mp3</format>
+        <cd>
+            <stock>100</stock>
+        </cd>
+    </song>
+    <song>
+        <name>song-name-2</name>
+        <location>somelocation</location>
+        <format>mp3</format>
+        <cd>
+            <stock>200</stock>
+        </cd>
+    </song>
+</album>

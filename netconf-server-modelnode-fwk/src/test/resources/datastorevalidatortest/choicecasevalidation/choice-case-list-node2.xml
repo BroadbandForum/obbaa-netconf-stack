@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<choicecase>
+		<name>create list case 2</name>
+		<list-case2>
+			<name-case2>case2 name 1</name-case2>
+			<value-case2>case2 value 1</value-case2>
+		</list-case2>
+		<list-case2>
+			<name-case2>case2 name 2</name-case2>
+			<value-case2>case2 value 2</value-case2>
+		</list-case2>
+		<list-case2>
+			<name-case2>case2 name 3</name-case2>
+			<value-case2>case2 value 3</value-case2>
+		</list-case2>
+	</choicecase>
+</validation>

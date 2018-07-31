@@ -1,0 +1,7 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <jukebox xmlns="http://example.com/ns/example-jukebox">
+      <library/>
+    </jukebox>
+  </data>
+</rpc-reply>

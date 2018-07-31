@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<choicecase>
+		<name>create container case 1</name>
+		<container-case1>
+			<container-case1-leaf1>case1-leaf1 value</container-case1-leaf1>
+			<container-case1-leaf2>case1-leaf2 value</container-case1-leaf2>
+		</container-case1>
+	</choicecase>
+</validation>
+

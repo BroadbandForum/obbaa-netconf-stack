@@ -1,0 +1,15 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+  <library>
+    <artist>
+      <name>Lenny</name>
+      <album>
+        <name>Greatest hits</name>
+        <year>2001</year> <!-- thing to be rolled back -->
+      </album>
+      <album>
+        <name>Circus</name>
+        <year>-1</year> <!-- error,cannot set -1 as year -->
+      </album>
+    </artist>
+  </library>
+</jukebox>

@@ -1,0 +1,25 @@
+module augment-default-example {
+
+    namespace "urn:org:bbf:pma:augment";
+    prefix "ag";
+    
+    import default-example {
+    	prefix "pma";
+    }
+    
+    revision "2015-09-16" {
+      description "Initial version.";
+    }
+
+	augment "/pma:operation-example" {
+        list list-c {
+            key "c1";
+            leaf c1 {
+                type string;
+            }
+            leaf c2 {
+                type string;
+            }
+        }
+    }
+}

@@ -1,0 +1,109 @@
+// Contents of "alu-pma-statistics"
+module alu-pma-statistics {
+	
+	yang-version 1;
+	
+    namespace "urn:org:bbf:pma:alu-pma-statistics";
+    
+    prefix "state";
+
+    revision 2015-07-14 {
+        description "Initial revision";
+    }
+    
+    grouping pma-statisticts-group {
+    
+	    container anv-state {
+	
+	        leaf number-of-get-requests {
+	            type uint32;
+	            config false;
+	            description "The number of get requests.";
+	        }
+	
+	        leaf number-of-get-config-requests {
+	            type uint32;
+	            config false;
+	            description "The number of get-config requests.";
+	        }
+	
+	        leaf number-of-edit-config-requests {
+	            type uint32;
+	            config false;
+	            description "The number of edit-config requests.";
+	        }
+	        
+	        leaf number-of-rpc-requests {
+	            type uint32;
+	            config false;
+	            description "The number of rpc requests.";
+	        }
+	
+	        leaf number-of-configured-devices {
+	            type uint32;
+	            config false;
+	            description "The number of configured devices.";
+	        }
+	
+	        leaf number-of-connected-devices {
+	            type uint32;
+	            config false;
+	            description "The number of connected devices.";
+	        }
+	        
+	        leaf number-of-misaligned-devices {
+                type uint32;
+                config false;
+                description "The number of misaligned devices.";
+            }
+            
+            leaf number-of-devices-with-configuration-errors {
+                type uint32;
+                config false;
+                description
+                    "The current number of devices with state 'configuration-error'=true.";
+            }
+            
+            leaf number-of-devices-modified-by-LCT {
+                type uint32;
+                config false;
+                description
+                    "The current number of devices with state 'modified-by-LCT'=true.";
+            }
+            
+            leaf number-of-new-devices {
+                type uint32;
+                config false;
+                description
+                    "The current number of devices with a 'new device' alarm (non created device)";
+            }
+	        
+	        leaf number-of-sbi-get-requests {
+	            type uint32;
+	            config false;
+	            description "The number of get requests.";
+	        }
+	
+	        leaf number-of-sbi-get-config-requests {
+	            type uint32;
+	            config false;
+	            description "The number of get-config requests.";
+	        }
+	
+	        leaf number-of-sbi-edit-config-requests {
+	            type uint32;
+	            config false;
+	            description "The number of edit-config requests.";
+	        }
+	        
+	        leaf number-of-sbi-rpc-requests {
+	            type uint32;
+	            config false;
+	            description "The number of rpc requests.";
+	        }
+	        
+		}
+	    
+    }
+
+}

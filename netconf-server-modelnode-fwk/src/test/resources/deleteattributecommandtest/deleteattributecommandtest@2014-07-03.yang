@@ -1,0 +1,57 @@
+module deleteattributecommandtest {
+  yang-version 1;
+  namespace "unit:test:dact";
+  prefix dact;
+
+  revision 2014-07-03 {
+    description
+      "Initial version.";
+  }
+
+  identity gender;
+
+  identity male {
+    base dact:gender;
+  }
+
+  identity female {
+    base dact:gender;
+  }
+
+  container family {
+    container father {
+      leaf name {
+        type string;
+      }
+      leaf gender {
+        default "dact:male";
+        type identityref {
+          base dact:gender;
+        }
+      }
+      
+      leaf dress {
+    	  default "white";
+    	  type string;
+    	  when "../name = 'father'";
+      }
+    }
+    container mother {
+      leaf name {
+        type string;
+      }
+      leaf husband-name {
+        default "/dact:family/dact:father/dact:name";
+        type instance-identifier {
+          require-instance false;
+        }
+      }
+      leaf gender {
+        default "dact:female";
+        type identityref {
+          base dact:gender;
+        }
+      }
+    }
+  }
+}

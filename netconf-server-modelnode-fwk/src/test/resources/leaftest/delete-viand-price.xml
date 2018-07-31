@@ -1,0 +1,8 @@
+<restaurant xmlns="http://example.com/ns/example-restaurant" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <menu>
+        <viand>
+            <name>Crawfish pasta</name>
+            <price xc:operation="delete">180</price>
+        </viand>
+    </menu>
+</restaurant>

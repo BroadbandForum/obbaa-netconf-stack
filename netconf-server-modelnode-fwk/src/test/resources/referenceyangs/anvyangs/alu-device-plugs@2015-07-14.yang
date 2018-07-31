@@ -1,0 +1,69 @@
+// Contents of "device-type"
+module alu-device-plugs {
+ 
+	yang-version 1;
+	
+	namespace "urn:org:bbf:pma:alu-device-plugs";
+	
+	prefix "plug";
+	
+    revision "2015-07-14" {
+        description "Initial version.";
+        reference "PMA";
+    }
+    
+    grouping device-plugs-group {
+        container device-plugs {
+        	config false;
+
+            leaf device-plug-count {
+                type string;
+                config false;
+            }
+
+            list device-plug {
+
+                key "hardware-type interface-version";
+
+                description "List of device plugs currently supported by this instance of
+                                PMA. A device plug is identified by a hardware-type and interface-version.
+                                Reference to a device plug (EG provided when creating a device)
+                                should use explicit reference to this list, as a leafref.";
+
+                leaf hardware-type {
+                    type string;
+                    config false;
+                }
+
+                leaf interface-version {
+                    type string;
+                    config false;
+                }
+
+                leaf-list capabilities {
+                    type string;
+                    config false;
+                }
+
+                leaf-list module-path {
+                    type string;
+                    config false;
+                }
+
+                leaf default-xml {
+                    type string;
+                    config false;
+                }
+                
+                leaf misalignment-netconf-operation {
+	        		type enumeration {
+			           enum edit-config;
+			           enum copy-config;
+			    	}
+	        		config false;
+	        	}
+            }
+        }
+    }
+}
+

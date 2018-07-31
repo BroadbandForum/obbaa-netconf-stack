@@ -1,0 +1,21 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+	message-id="1">
+	<data>
+		<pma:default-example xmlns:pma="urn:org:bbf:pma">
+			<pma:list-a>
+				<pma:a1>key2</pma:a1>
+				<pma:a2>a2</pma:a2>
+				<pma:container-b>
+					<pma:b1>b1</pma:b1>
+					<pma:container-c>
+						<pma:c1>c1</pma:c1>
+					</pma:container-c>
+				</pma:container-b>
+				<pma:container-d />
+				<caps:container-e xmlns:caps="urn:com:test:pma:caps">
+					<caps:e1>e1</caps:e1>
+				</caps:container-e>
+			</pma:list-a>
+		</pma:default-example>
+	</data>
+</rpc-reply>

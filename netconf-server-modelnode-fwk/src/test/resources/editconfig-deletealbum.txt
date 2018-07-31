@@ -1,0 +1,6 @@
+Containment [merge,jukebox,http://example.com/ns/example-jukebox,user]
+ Containment [merge,library,http://example.com/ns/example-jukebox,user]
+  Containment [merge,artist,http://example.com/ns/example-jukebox,user]
+   Match [name,Lenny,http://example.com/ns/example-jukebox]
+   Containment [delete,album,http://example.com/ns/example-jukebox,user]
+    Match [name,Circus,http://example.com/ns/example-jukebox]

@@ -1,0 +1,32 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+	<edit-config>
+		<target>
+			<running />
+		</target>
+		<test-option>set</test-option>
+		<config>
+			<validation xmlns="urn:org:bbf:pma">
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>1</id>
+                    <enum-type>unknown</enum-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>2</id>
+                    <enum-type>value1</enum-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>3</id>
+                    <enum-type>value2</enum-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>4</id>
+                    <enum-ref-type>failed</enum-ref-type>
+                </type-validation>
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>5</id>
+                    <enum-ref-type>complete</enum-ref-type>
+                </type-validation>
+			</validation>
+		</config>
+	</edit-config>
+</rpc>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+ <leaf-ref>
+  <music>
+   <album>
+     <name>Album1</name>
+     <track>
+       <name>AlbumTrack1</name>
+       <singer>AlbumTrackSinger1</singer>
+     </track>
+   </album>
+   <album>
+     <name>Name1</name>
+     <track>
+       <name>Name2</name>
+       <singer>Name3</singer>
+       <composer>Name3</composer>
+     </track>
+   </album>
+  </music>
+ </leaf-ref>
+</validation>

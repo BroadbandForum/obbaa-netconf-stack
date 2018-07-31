@@ -1,0 +1,23 @@
+submodule example-test-submodule {
+
+    yang-version 1;
+    
+    belongs-to example-test {
+	    prefix test;
+	}
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Submodule of example-test";
+
+    revision "2017-14-02" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+  }  // module example-test-submodule

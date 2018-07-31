@@ -1,0 +1,21 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <library>
+    <artist xc:operation="replace"><!-- thing to be rolled back -->
+      <name>Lenny</name>
+      <album>
+        <name>Strut</name>
+        <year>2014</year>
+        <song>
+          <name>The Chamber</name>
+        </song>
+      </album>
+      <album>
+        <name>5</name>
+        <year>-1</year>
+        <song>
+          <name>Live</name>
+        </song>
+      </album>
+    </artist>
+  </library>
+</jukebox>

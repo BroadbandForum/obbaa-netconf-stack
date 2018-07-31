@@ -1,0 +1,98 @@
+module country-universe {
+  yang-version 1;
+  namespace "http://test-company.test/country-universe";
+  prefix ut;
+
+  revision 2017-06-14;
+
+  container world {
+    leaf no-of-countires {
+      config false;
+      type string;
+    }
+    list country {
+      key "country-name";
+      leaf country-name {
+        type string;
+      }
+      leaf no-of-states {
+        config false;
+        type string;
+      }
+      list state {
+        key "name";
+        leaf name {
+          type string;
+        }
+        leaf chief-name {
+          type string;
+        }
+        leaf short-name {
+          type string;
+        }
+        leaf no-of-districts {
+          config false;
+          type string;
+        }
+        list district {
+          key "name";
+          leaf name {
+            type string;
+          }
+          leaf mayor-name {
+            type string;
+          }
+        }
+      }
+    }
+  }
+  list universe {
+    key "name";
+    leaf name {
+      type string;
+    }
+    list galaxy {
+      key "name";
+      leaf name {
+        type string;
+      }
+      leaf pet-name {
+        type string;
+      }
+      leaf no-of-stars {
+        config false;
+        type string;
+      }
+      list planetary-system {
+        key "system-name";
+        leaf system-name {
+          type string;
+        }
+        container planets {
+          leaf no-of-planets {
+            config false;
+            type string;
+          }
+          list planet {
+            key "planet-name another-planet-key";
+            leaf planet-name {
+              type string;
+            }
+            leaf another-planet-key {
+              type string;
+            }
+            list satellite {
+              key "container another-satellite-key";
+              leaf container {
+                type string;
+              }
+              leaf another-satellite-key {
+                type string;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

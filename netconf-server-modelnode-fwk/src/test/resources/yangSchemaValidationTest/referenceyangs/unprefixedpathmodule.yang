@@ -1,0 +1,79 @@
+module unprefixedpathmodule {
+
+    yang-version 1;
+
+    namespace
+        "http://example.com/ns/unprefixedpathmodule";
+
+    prefix upmod;
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+        "Example Data Model Module";
+
+    revision "2017-06-15" {
+        description "Initial version.";
+        reference
+                "example.com document 1-4673";
+    }
+   
+    container test-container-one {
+        description
+                "Test container one";
+
+        leaf name-one {
+            type string;
+        }
+    }
+    
+    grouping group1 {
+        container groupContainer1 {
+            leaf groupContainerLeaf1 {
+               type leafref {
+                   path "upmod:test-container-one/upmod:name-one";
+                }
+            }
+        }
+        container groupContainer1-a {
+        	container groupContainer1-a-a {
+                leaf groupContainerLeaf1-a-a {
+                   type leafref {
+                       path "upmod:test-container-one/upmod:name-one";
+                    }
+                }
+                grouping group1-a-a {
+                	container groupContainer1-a-a-a {
+                        leaf groupContainerLeaf1-a-a-a {
+                           type leafref {
+                               path "upmod:test-container-one/name-one";
+                            }
+                        }
+                    }	
+            	}
+            }
+        }
+    }
+    
+    grouping test-grouping {
+        leaf leaf-a {
+            description
+                        "Test Leaf A";
+            type leafref {
+                path "../../upmod:test-container-one/upmod:name-one";
+            }
+        }
+    }
+    
+    container test-container-two {
+        description
+                "Test container two";
+
+        leaf name-two {
+            type string;
+        }
+        uses test-grouping; 
+    } 
+}

@@ -1,0 +1,23 @@
+module yang-with-choice-cases {
+  yang-version 1;
+  namespace "test:yang-with-choice-cases";
+  prefix ywcc;
+
+  description
+    "Example Choice case module. There are dessert choices based on season.
+     When season is summer, one gets to choose ice-creams, on winter, one gets hot cake choices.
+     Again in case of ice creams you get choice of syrups.
+     See also yang-with-choice-cases-augmenting-module@2016-05-16.yang";
+
+  revision 2016-05-16 {
+    description
+      "Initial version.";
+  }
+
+  container dessert {
+    leaf season {
+      type string;
+      mandatory true;
+    }
+  }
+}

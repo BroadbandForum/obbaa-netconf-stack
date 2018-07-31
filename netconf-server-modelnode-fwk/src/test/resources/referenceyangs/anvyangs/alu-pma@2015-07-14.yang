@@ -1,0 +1,369 @@
+module alu-pma {
+ 
+	yang-version 1;
+	
+    namespace "urn:org:bbf:pma";
+    prefix "pma";
+    
+    import ietf-yang-types { prefix yang; }
+    import ietf-inet-types { prefix inet; }
+    
+    import alu-device-plugs {
+    	prefix "plug";
+    }
+    
+    import alu-pma-certificates {
+    	prefix "certs";
+    }
+    
+    import alu-pma-swmgmt {
+    	prefix "swmgmt";
+    }
+
+    import alu-pma-statistics {
+        prefix "stats";
+    }
+    
+    import alu-pma-users {
+    	prefix "users";
+    }
+
+	description  "Example PMA Data Model Module";
+
+    revision "2015-07-14" {
+      description "Initial version.";
+      reference "PMA";
+    }
+
+    typedef authentication-method-type {
+        type enumeration {
+            enum username-and-password;
+            enum host-key;
+            enum x509-certificate;
+            enum unknown;
+        }
+    }
+
+    typedef transport-protocol {
+        type enumeration {
+            enum ssh;
+            enum tls;
+        }
+    }
+
+    typedef connection-initiator-type {
+        type enumeration {
+            enum device;
+            enum pma;
+        }
+    }
+
+    typedef datastore {
+        type enumeration {
+            enum running;
+            enum startup;
+            enum candidate;
+        }
+    }
+
+
+    grouping device-state-group {
+        description
+                    "A set of state attributes applicable to a device.";
+        container device-state {
+        	config false;
+
+            leaf reachable {
+                config false;
+                type boolean;
+                description
+                                    "True if the device is considered reachable from the PMA. A device
+                                    is considered reachable as long as it replies to the periodic
+                                    SSH/TLS keep-alive messages from the PMA.";
+            }
+
+            leaf reachable-last-change {
+                config false;
+                type yang:date-and-time;
+                description
+                                    "The time stamp in the PMA when the 'reachable' state was last
+                                    changed.";
+            }
+
+            leaf number-of-pending-tasks {
+                config false;
+                type uint8;
+                description
+                                    "The number of pending <edit-config> tasks towards the device.";
+            }
+
+            leaf aligned {
+                config false;
+                type boolean;
+                description
+                                    "True is device sync status. False device out of sync";
+            }
+
+            leaf configuration-error {
+                config false;
+                type boolean;
+                description
+                                    "True is the last <edit-config> or <copy-config> task was rejected
+                                    by the device with a fatal error.";
+            }
+
+            leaf modified-by-local-craft-terminal {
+                config false;
+                type boolean;
+                description
+                                    "True is the device was last modified by the local craft terminal.";
+            }
+
+            leaf configuration-change-counter {
+                config false;
+                type uint32;
+                description
+                                    "Wrap-around counter of the successful <edit-config> requests
+                                    sent by the PMA to the device since a device restart was detected.";
+            }
+            
+            // SBI Statistics Start
+            leaf number-of-get-requests {
+	            type uint32;
+	            config false;
+	            description "The number of get requests.";
+	        }
+	
+	        leaf number-of-get-config-requests {
+	            type uint32;
+	            config false;
+	            description "The number of get-config requests.";
+	        }
+	
+	        leaf number-of-edit-config-requests {
+	            type uint32;
+	            config false;
+	            description "The number of edit-config requests.";
+	        }
+            // SBI Statistics End
+        }
+    }
+
+    grouping discovered-device-properties-group {
+        description
+                    "A set of device attributes that are discovered when the device
+                    initiates communication.";
+        container discovered-device-properties {
+
+			config false;
+            leaf ip-address {
+                type inet:ip-address;
+                config false;
+                description "The device IP address.";
+            }
+
+            leaf ip-port {
+                type inet:port-number;
+                config false;
+                description "The device port number.";
+            }
+
+            leaf transport-protocol {
+                type transport-protocol;
+                config false;
+                description
+                                    "The transport protocol used between PMA and the device. Selected
+                                    by the device as part of the call-home.";
+            }
+
+            leaf device-authentication-method {
+                type authentication-method-type;
+                config false;
+                description
+                                    "The authentication method used by the device to be authenticated
+                                    by the PMA. Only certificate or host-key are valid. Only certificate
+                                    is supported. 'Unknown' at device creation.";
+            }
+        }
+    }
+
+    grouping configured-device-properties-group {
+        description
+                    "A set of device attributes that are configured when the PMA initiates
+                    communication.";
+        container configured-device-properties {
+            leaf ip-address {
+                type inet:ip-address;
+                mandatory true;
+                description "The device IP address.";
+            }
+            leaf ip-port {
+                type inet:port-number;
+                mandatory true;
+                description "The device port number.";
+            }
+            leaf transport-protocol {
+                type transport-protocol;
+                mandatory true;
+                description
+                                    "The transport protocol used between PMA and the device. Selected
+                                    by the device as part of the call-home.";
+            }
+            leaf pma-authentication-method {
+                type authentication-method-type;
+                mandatory true;
+                description
+                                    "The authentication method used by the PMA to be authenticated
+                                    by the device. 'Unknown' is not valid.";
+            }
+            leaf username {
+                type string;
+                default "";
+                description
+                                    "The username is only valid for SSH, but applicable to all authentication
+                                    methods.";
+            }
+            leaf password {
+                type string;
+                default "";
+                description
+                                    "The password is only valid for SSH, and applicable username-and-password
+                                    authentication methods.";
+            }
+        }
+    }
+ 
+	container pma {
+ 
+        list device-holder {
+
+            description
+                        "Named container for a list of devices. The container is typically
+                        an OLT. The container is identified by the OLT Name When using
+                        the call-home feature, the OLT name is used to compute the Access_Node_ID
+                        in the Circuit-ID corresponding with the device in the DHCP server." ;
+
+            key name;
+
+            leaf name {
+                type string {
+                	pattern '(\S+)';
+                }
+                description "The name of the device container.";
+            }
+
+            leaf number-of-devices {
+                type uint32;
+                config false;
+                description
+                                "The number of devices in this device list.";
+            }
+            // Check if really useful
+
+            list device {
+
+                key device-id;
+
+                description
+                                "A device.";
+                leaf device-id {
+                    type string {
+                    	pattern '(\S+)';
+                    }
+                    description
+                                        "The Circuit ID of the device, without the OLT name";
+                }
+
+                leaf hardware-type {
+                    type string;
+                    mandatory true;
+                    description
+                                        "A string that uniquely identify the hardware type of device.
+                                        Rule: a device hardware-type may not change in the lifetime of
+                                        the device. For example, a software upgrade or hardware plug-in
+                                        shall have no effect on the device type";
+                }
+                leaf interface-version {
+                    type string;
+                    mandatory true;
+                    description
+                                        "The interface-version is used to identify the version of the
+                                        management interface of the device. Rule: The value of configuration-version
+                                        shall be incremented if any of the following item is updated after
+                                        a software upgrade: o A YANG model o A capability o The factory-default
+                                        configuration";
+                }
+
+                leaf connection-initiator {
+                    type connection-initiator-type ;
+                    mandatory true;
+                    description
+                                        "The peer responsible to initiate communication.";
+                }
+                choice connection-initiator-params {
+                    case device {
+                    	when "pma:connection-initiator = 'device'";
+                        uses discovered-device-properties-group;
+                    }
+                    case pma {
+                        when "pma:connection-initiator = 'pma'";
+                        uses configured-device-properties-group;
+                    }
+                }
+                uses device-state-group;
+            }
+        }
+
+        uses   plug:device-plugs-group;
+        uses  certs:pma-certificates-group;
+        uses swmgmt:pma-swmgmt-group;
+        uses  users:pma-users-group;
+        uses  stats:pma-statisticts-group;
+        
+	}
+	
+
+
+    grouping device-ref {
+        description
+                "Re-usable reference to a device instance in the PMA.";
+        leaf device-holder-name {
+        	mandatory true;
+            type leafref {
+                path "/pma/device-holder/name";
+            }
+        }
+        leaf device-id {
+        	mandatory true;
+            type leafref {
+                path "/pma/device-holder[name = current()/../device-holder-name]"
+                + "/device/device-id";
+            }
+        }
+    }
+
+    rpc download-pma-configuration-to-device {
+        description
+                "Pushes the copy of the device configuration from the specified
+                PMA datastore to the specified device datastore, using <copy-config>.
+                Uses standard RPC mechanisms to report success, error & error
+                message. In case of error, the error message returned by <copy-config>
+                is returned 'as is' in the error message of this rpc";
+        input {
+            uses device-ref;
+        }
+    }
+
+    rpc upload-device-configuration-to-pma {
+        description
+                "Uploads the specified device datastore to the copy of the device
+                configuration in the specified PMA datastore, using <get-config>.
+                Uses standard RPC mechanisms to report success, error & error
+                message.";
+        input {
+               uses device-ref;
+        }
+    }
+    
+
+}

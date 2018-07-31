@@ -1,0 +1,81 @@
+module extension-test {
+
+    yang-version 1;
+
+    namespace "urn:org:bbf:pma:extension:test";
+
+    prefix "extTest";
+
+    import dummy-extensions { prefix "anvext"; }
+
+    include extension-test-container;
+
+    revision "2015-12-14" {
+        description "Initial version.";
+    }
+
+    typedef someTypeDef {
+        type leafref {
+            path "/someAbs/validation/leaf1";
+        }
+
+        description "description";
+        anvext:treat-as-relative-path;
+    }
+
+    augment "/extTest:someAbs/" {
+
+        container validation {
+
+            leaf leaf1 {
+                type int8;
+            }
+
+            leaf extLeaf {
+                type leafref {
+                    path "/someAbs/validation/leaf1";
+                }
+                anvext:treat-as-relative-path;
+            }
+
+            leaf extLeaf1 {
+                anvext:treat-as-relative-path;
+                type leafref {
+                    path "/extTest:someAbs/extTest:validation/extTest:leaf1";
+                }
+            }
+
+            leaf extLeaf2 {
+                anvext:treat-as-relative-path;
+                type int8;
+                when "/someAbs/validation/leaf1 > 10";
+            }
+
+            leaf extLeaf3 {
+                anvext:treat-as-relative-path;
+                type int8;
+                when "count(/someAbs/validation/leaf1) > 1";
+            }
+
+            leaf someContainerRefLeaf {
+                type leafref {
+                    path "/someAbs/validation/someContainer/ref";
+                }
+                anvext:treat-as-relative-path;
+            }
+
+            leaf someTypeDefLeaf {
+                type someTypeDef;
+            }
+
+            container someContainer {
+                leaf ref {
+                    anvext:treat-as-relative-path;
+                    type leafref {
+                        path "/someAbs/validation/leaf1";
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,604 @@
+module bbf-fast {
+		namespace "urn:ietf:params:xml:ns:yang:bbf-fast-vop";
+		prefix bbf-fast;
+
+		import alu-pma {
+			prefix "pma";
+	    }
+		
+		organization 
+				"TBD";
+
+		contact 
+				"TBD";
+
+		description 
+				"An experimental YANG module supporting Vector of Profiles 
+				for FAST lines (G.FAST). 
+
+                The supported profiles are 
+                        - Data Rate Profile
+                        - Spectrum Profile
+                        - Noise Margin Profile
+                        - Vectoring Profile
+                 ";
+
+		revision 2015-02-27 {
+				description 
+						"Initial revision.";
+				reference
+						"TBD";            
+		}
+
+
+		typedef data-rate {
+				type uint32;
+				units "1000 bit/second";
+				description
+						"Data rate in kbps.";
+		}
+
+
+		typedef psd-level {
+				type uint8 {
+						range "0..255";
+				}
+				units "-0.5 dBm/Hz";
+				description
+						"Defines a PSD level in the range 0 to -127.5 dBm/Hz.";
+		}
+
+		typedef sub-carrier-index {
+				type uint16 {
+						range "0..4095";
+				}
+				description
+						"Identifies a sub-carrier.";
+		}
+
+
+	augment "/pma:pma/pma:device-holder/pma:device" {
+        when "pma:hardware-type='G.FAST'";
+		container configs {
+				description
+						"G.fast configuration";
+
+				container profiles {
+						description
+								"Configuration profiles.";
+
+						/* Service profile related paramters. */
+						list downstream-data-rate-profile {
+								key name;
+								description
+										"A list of downstream data-rate profiles.";
+
+								leaf name {
+										type string;
+										description
+												"Uniquely identifies the profile.";
+								}
+
+
+								leaf maximum-net-data-rate {
+										type data-rate;
+										default 4294967295;
+										description
+												"Defines the value of the maximum net data rate (see clause
+												11.4.2.2/G.9701).";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.1 (MAXNDR).";
+								}
+
+								leaf minimum-expected-throughput {
+										type data-rate;
+										default 0;
+										description
+												"Defines the value of the minimum expected throughput (see
+												clause 11.4.2.1/G.9701).";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.2 (MAXETR).";
+								}
+
+								leaf maximum-gamma-data-rate {
+										type data-rate;
+										default 4294967295;
+										description
+												"Defines the maximum value of the GDR (see clause
+												7.11.1.3/G.9701). The GDR shall not exceed MAXGDR at the
+												start of showtime and during showtime. ";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.3 (MAXGDR).";
+								}
+
+
+								leaf minimum-gamma-data-rate {
+										type data-rate;
+										default 0;
+										description
+												"Defines the minimum value of the GDR (see clause
+												7.11.1.3/G.9701). The GDR may be lower than MINGDR. If the
+												GDR is lower than MINGDR at initialization or when GDR
+												becomes lower than MINGDR during showtime, a threshold
+												crossing alert occurs.";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.4 (MINGDR).";
+								}
+
+						}
+
+
+						list upstream-data-rate-profile {
+								key name;
+								description
+										"A list of upstream data-rate profiles.";
+
+								leaf name {
+										type string;
+										description
+												"Uniquely identifies the profile.";
+								}
+
+								leaf maximum-net-data-rate {
+										type data-rate;
+										default 4294967295;
+										description
+												"Defines the value of the maximum net data rate (see clause
+												11.4.2.2/G.9701).";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.1 (MAXNDR).";
+								}
+
+								leaf minimum-expected-throughput {
+										type data-rate;
+										default 0;
+										description
+												"Defines the value of the minimum expected throughput (see
+												clause 11.4.2.1/G.9701).";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.2 (MAXETR).";
+								}
+
+								leaf maximum-gamma-data-rate {
+										type data-rate;
+										default 4294967295;
+										description
+												"Defines the maximum value of the GDR (see clause
+												7.11.1.3/G.9701). The GDR shall not exceed MAXGDR at the
+												start of showtime and during showtime. ";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.3 (MAXGDR).";
+								}
+
+
+								leaf minimum-gamma-data-rate {
+										type data-rate;
+										default 0;
+										description
+												"Defines the minimum value of the GDR (see clause
+												7.11.1.3/G.9701). The GDR may be lower than MINGDR. If the
+												GDR is lower than MINGDR at initialization or when GDR
+												becomes lower than MINGDR during showtime, a threshold
+												crossing alert occurs.";
+										reference
+												"ITU-T G.997.2 clause 7.2.1.4 (MINGDR).";
+								}
+
+						}
+
+
+
+						/* line specturm profile. */
+
+						list line-spectrum-profile {
+								key name;
+								description
+										"A list of line spectrum profiles.";
+
+								leaf name {
+										type string;
+										description
+												"A name that uniquely identifies the
+												profile.";
+								}
+
+								container downstream {
+										description
+												"Downstream specific line spectrum configuration
+												parameters.";
+
+										/* G.997.2 Clause 7.1.2 Power and Spectrum Usage */
+										leaf max-agg-tx-power {
+												type int16 {
+														range "-310..310"; /* -31.0 to 31.0dBm */
+												}
+												units 0.1dBm;
+												default 40;
+												description
+														"Defines the maximum aggregate transmit power at the U-O2
+														reference point during initialization and showtime
+														(in dBm).";
+												reference
+														"ITU-T G.997.2 clause 7.1.2.1 (MAXATPds) and clause 7.1.2.2
+														(MAXATPus); ITU-T G.9701 Clause 7.3.2";
+										}
+
+
+										list psd-mask {
+												key sub-carrier-index;
+												max-elements 32;
+												description
+														"This list defines the PSD mask applicable at the U-O2
+														reference point.  Each entry in the list defines a
+														breakpoint of the PSD mask.  Requirements for a valid PSD
+														mask are defined in G.9701 clauses 7.3.1.1.2.1 and
+														7.3.1.1.2.2.";
+												reference
+														"ITU-T G.997.2 clause 7.1.2.5 (PSDMASKds) and clause 7.1.2.6
+														(PSDMASKds); ITU-T G.9701 clauses 7.3.1.1.2.1 and
+														7.3.1.1.2.2.";
+
+
+												leaf sub-carrier-index {
+														type sub-carrier-index;
+														description
+																"Identifies the sub-carrier for which psd-level applies.";
+												}
+
+												leaf psd-level {
+														type psd-level;
+														description
+																"The PSD level of the referenced sub-carrier.";
+												}
+
+										}
+
+								}  /* list line-spectrum-profile - container downstream - ends. */
+
+								container upstream {
+										description
+												"Upstream specific line spectrum configuration parameters.";
+
+
+										/* G.997.2 Clause 7.1.2 Power and Spectrum Usage */
+										leaf max-agg-tx-power {
+												type int16 {
+														range "-310..310"; /* -31.0 to 31.0dBm */
+												}
+												units 0.1dBm;
+												default 40;
+												description
+														"Defines the maximum aggregate transmit power at the U-O2
+														reference point during initialization and showtime
+														(in dBm).";
+												reference
+														"ITU-T G.997.2 clause 7.1.2.1 (MAXATPds) and clause 7.1.2.2
+														(MAXATPus); ITU-T G.9701 Clause 7.3.2";
+										}
+
+
+										list psd-mask {
+												key sub-carrier-index;
+												max-elements 32;
+												description
+														"This list defines the PSD mask applicable at the U-O2
+														reference point.  Each entry in the list defines a
+														breakpoint of the PSD mask.  Requirements for a valid PSD
+														mask are defined in G.9701 clauses 7.3.1.1.2.1 and
+														7.3.1.1.2.2.";
+												reference
+														"ITU-T G.997.2 clause 7.1.2.5 (PSDMASKds) and clause 7.1.2.6
+														(PSDMASKds); ITU-T G.9701 clauses 7.3.1.1.2.1 and
+														7.3.1.1.2.2.";
+
+
+												leaf sub-carrier-index {
+														type sub-carrier-index;
+														description
+																"Identifies the sub-carrier for which psd-level applies.";
+												}
+
+												leaf psd-level {
+														type psd-level;
+														description
+																"The PSD level of the referenced sub-carrier.";
+												}
+										}
+
+								}  /* list line-spectrum-profile - upstream ends*/
+
+						}   /* list line-spectrum-profile ends. */
+
+
+						/* TDD profile details - Starts */
+
+						list tdd-profile {
+								key name;
+								description
+										"A list of time division duplexing(TDD) profiles";
+
+								leaf name {
+										type string;
+										description
+												"A name that uniquely identifies the
+												profile.";
+								}
+
+
+								leaf total-symbol-periods {
+										type uint8 {
+												range "23 | 36";
+										}
+										default 36;
+										description
+												"Defines the total number of symbol periods in a TDD
+												frame.";
+										reference
+												"ITU-T G.997.2 clause 7.1.1.1 (MF); ITU-T G.9701 clause
+												10.5.";
+								}
+								
+								leaf downstream-symbol-periods {
+										type uint8 {
+												range "6..32";
+										}
+										default 28;
+										description
+												"Defines the total number of symbol positions in a TDD frame
+												allocated for downstream transmission. The total number of
+												symbol positions in a TDD frame allocated for upstream
+												transmission is calculated as Mus = MF-1-Mds.";
+
+										reference
+												"ITU-T G.997.2 clause 7.1.1.1 (Mds); ITU-T G.9701 Clause
+												10.5";
+								}
+
+								must "(total-symbol-periods = 23 and downstream-symbol-periods >= 6 and downstream-symbol-periods <= 19) or "
+									+"(total-symbol-periods = 36 and downstream-symbol-periods >= 10 and downstream-symbol-periods <= 32)" {
+												error-message
+														"When the total symbol periods is 23, the valid range of
+														downstream symbol periods is 6 to 19.
+														When the total symbol periods is 36, the valid range of
+														downstream symbol periods is 10 to 32";
+												description
+														"Validate the range based on the total symbol period";
+										}
+
+								leaf cyclic-extension {
+										type uint8 {
+												range "4 | 8 | 10 | 12 | 14 | 16 | 20 | 24 | 30 | 33";
+										}
+										units "N/64 samples";
+										default 10;
+										description
+												"Defines the cyclic extension(Lcp) to be used. The units
+												are in N/64 samples, where N = index of the highest
+												supported downstream data-bearing sub-carrier as defined
+												for the enabled profile (see Table 6-1/G.9701) plus one.";
+										reference
+												"ITU-T G.997.2 clause 7.1.1.3; ITU-T G.9701 clause 10.4.4";
+								}
+
+						} /* list tdd-profile ends. */
+
+
+                        /* Noise Margin Profile. */
+						list noise-margin-profile {
+								key name;
+								description
+										"A list of noise margin profiles.";
+
+								leaf name {
+										type string;
+										description
+												"A name that uniquely identifies the profile.";
+								}
+								
+								container downstream {
+										description
+												"Downstream noise margin profile";
+										
+										container noise-margin {
+												description
+														"Noise margin parameters";
+
+												leaf target-noise-margin {
+														type uint16 {
+																range "0..310" {
+																		description
+																				"Defines a range equivalent to 0 to 31 dB.";
+																}
+														}
+														units "0.1 dB";
+														default 60;
+														description
+																"Defines the  target noise margin for the Channel
+																Initialization Policy.";
+														reference
+																"ITU-T G.997.2 clause 7.1.3.1 (TARSNRMds) and clause 7.1.3.2
+																(TARSNRMus); ITU-T G.9701 clause 12.3.7.";
+												}
+
+												leaf minimum-noise-margin {
+														type uint16 {
+																range "0..310" {
+																		description
+																				"Defines a range equivalent to 0 to 31 dB.";
+																}
+														}
+														units "0.1 dB";
+														default 0;
+														description
+																"Defines the minimum noise margin the FTU receiver shall
+																tolerate.  If the noise margin (SNRM) falls below this
+																level, the FTU receiver requests the FTU transmitter to
+																increase the FTU transmit power.  If an increase to FTU
+																transmit power is not possible, a loss-of-margin(lom) defect
+																occurs. Upon persistency of the lom defect, the FTU receiver
+																triggers a re-initialization (see clause 12.1.4.2/G.9701).";
+														reference
+																"ITU-T G.997.2 clause 7.1.3.5 (MINSNRMds) and clause 7.1.3.6
+																(MINSNRMus); ITU-T G.9701 clause 12.3.4.2.1.";
+												}
+
+										}
+
+								}
+
+								container upstream {
+										description
+												"Upstream noise margin profile";
+
+										container noise-margin {
+												description
+														"Noise margin parameters";
+
+												leaf target-noise-margin {
+														type uint16 {
+																range "0..310" {
+																		description
+																				"Defines a range equivalent to 0 to 31 dB.";
+																}
+														}
+														units "0.1 dB";
+														default 60;
+														description
+																"Defines the  target noise margin for the Channel
+																Initialization Policy.";
+														reference
+																"ITU-T G.997.2 clause 7.1.3.1 (TARSNRMds) and clause 7.1.3.2
+																(TARSNRMus); ITU-T G.9701 clause 12.3.7.";
+												}
+												leaf maximum-noise-margin {
+														type uint16 {
+																range "0..310 | 511" {
+																		description
+																				"Defines a range equivalent to 0 to 31 dB.
+																				Special value 511: No maximum bound.";
+																}
+														}
+														units "0.1 dB";
+														default 511;
+														description
+																"Defines the maximum noise margin used in the Channel
+																Initialization Policy.
+																A special value, 511, indicates there is no maximum bound
+																for the noise margin (i.e., the maximum noise margin is
+																				infinite).";
+														reference
+																"ITU-T G.997.2 clause 7.1.3.3 (MAXSNRMds) and clause 7.1.3.4
+																(MAXSNRMus); ITU-T G.9701 clause 12.3.7.";
+												}
+
+												leaf minimum-noise-margin {
+														type uint16 {
+																range "0..310" {
+																		description
+																				"Defines a range equivalent to 0 to 31 dB.";
+																}
+														}
+														units "0.1 dB";
+														default 0;
+														description
+																"Defines the minimum noise margin the FTU receiver shall
+																tolerate.  If the noise margin (SNRM) falls below this
+																level, the FTU receiver requests the FTU transmitter to
+																increase the FTU transmit power.  If an increase to FTU
+																transmit power is not possible, a loss-of-margin(lom) defect
+																occurs. Upon persistency of the lom defect, the FTU receiver
+																triggers a re-initialization (see clause 12.1.4.2/G.9701).";
+														reference
+																"ITU-T G.997.2 clause 7.1.3.5 (MINSNRMds) and clause 7.1.3.6
+																(MINSNRMus); ITU-T G.9701 clause 12.3.4.2.1.";
+												}
+
+										}
+								}
+
+						}  /* list noise-margin-profile ends*/
+
+                        
+                        /* Vectorng profile parameters. */
+						list vectoring-profile {
+								key name;
+								description
+										"A list of vectoring profiles.";
+
+								leaf name {
+										type string;
+										description
+												"A name that uniquely identifies the profile.";
+								}
+								container downstream {
+										description
+												"Downstream vectoring parameters";
+										leaf fext-cancel-enabled {
+												type boolean;
+												default true;
+												description
+														"Defines whether FEXT cancellation in the given direction
+														from all the other vectored lines into the line in the
+														vectored group is enabled or disabled.";
+												reference
+														"ITU-T G.997.2 clause 7.1.7.1 (FEXT_CANCEL_ENABLEds) and
+														clause 7.1.7.2 (FEXT_CANCEL_ENABLEds); ITU-T G.9701 clause
+														11.4.3.1.";
+										}
+								}
+								container upstream {
+										description
+												"Upstream vectoring parameters";
+
+										leaf fext-cancel-enabled {
+												type boolean;
+												default true;
+												description
+														"Defines whether FEXT cancellation in the given direction
+														from all the other vectored lines into the line in the
+														vectored group is enabled or disabled.";
+												reference
+														"ITU-T G.997.2 clause 7.1.7.1 (FEXT_CANCEL_ENABLEds) and
+														clause 7.1.7.2 (FEXT_CANCEL_ENABLEds); ITU-T G.9701 clause
+														11.4.3.1.";
+										}
+
+								}
+
+						}
+
+
+
+
+
+				}  /* /bbf-fast:configs/bbf-fast:profiles */
+
+				container vectors {
+						description
+								"Vectors of profiles";
+				}
+
+				container thresholds {
+						description
+								"G.fast thresholds";
+
+						container profiles {
+								description
+										"Threshold profiles.";
+						}
+
+						container templates {
+								description
+										"Templates of profiles";
+						}
+				}
+		}
+	}
+
+
+
+
+
+
+
+}

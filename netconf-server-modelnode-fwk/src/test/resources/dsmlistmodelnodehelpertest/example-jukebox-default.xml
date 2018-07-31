@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album>
+				<name>Greatest hits</name>
+				<year>2000</year>
+				<admin>
+					<label>Sony</label>
+				</admin>
+				<song>
+					<name>Are you gonne go my way</name>
+					<location>desktop/mymusic</location>
+					<format>mp3</format>
+					<singer>Michael</singer>
+					<singer>Anderson</singer>
+					<singer>Johnson</singer>
+				</song>
+				<song>
+					<name>Fly Away</name>
+					<location>desktop/mymusic</location>
+					<format>flac</format>
+					<singer>Jackson</singer>
+					<singer>Madona</singer>
+				</song>
+			</album>
+			<album>
+				<name>Circus</name>
+				<genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:rock</genre>
+				<year>1995</year>
+				<admin>
+					<label>Sony</label>
+				</admin>
+				<song>
+					<name>Rock and roll is dead</name>
+					<location>desktop/mymusic</location>
+					<format>amr</format>
+					<singer>Peter</singer>
+				</song>
+				<song>
+					<name>Circus</name>
+					<location>desktop/mymusic</location>
+					<format>wma</format>
+					<singer>Johnson</singer>
+					<singer>Angelina</singer>
+				</song>
+				<song>
+					<name>Beyond the 7th Sky</name>
+					<location>desktop/mymusic</location>
+					<format>mp3</format>
+					<singer>Julie</singer>
+				</song>
+			</album>
+			<album-ordered-by-user>
+				<name>AlbumA</name>
+				<year>2000</year>
+			</album-ordered-by-user>
+		</artist>
+	</library>
+</jukebox>

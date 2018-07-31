@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+  <import resource="classpath:modeldatastoremanagertest/test-applicationContext.xml"/>
+
+  <bean id="rootModelNodeAggregator"
+        class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl">
+    <constructor-arg ref="schemaRegistry"/>
+    <constructor-arg ref="modelNodeHelperRegistry"/>
+    <constructor-arg ref="dsmProxy"/>
+    <constructor-arg ref="subSystemRegistry"/>
+  </bean>
+
+  <bean id="jukeboxContainerSchemaNode" class="org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode"
+        factory-bean="schemaRegistry" factory-method="getDataSchemaNode">
+    <constructor-arg type="org.opendaylight.yangtools.yang.model.api.SchemaPath">
+      <util:constant static-field="org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.JUKEBOX_SCHEMA_PATH"/>
+    </constructor-arg>
+  </bean>
+
+  <bean id="modelNodeDSM" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.AnnotationBasedModelNodeDataStoreManager">
+    <constructor-arg ref="persistenceManagerUtil"/>
+    <constructor-arg ref="entityRegistry"/>
+    <constructor-arg ref="schemaRegistry"/>
+    <constructor-arg ref="modelNodeHelperRegistry"/>
+    <constructor-arg ref="subSystemRegistry"/>
+    <constructor-arg ref="modelNodeDSMRegistry"/>
+  </bean>
+
+  <bean id="dsmProxy" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TestTxUtils" factory-method="getTxDecoratedDSM">
+    <constructor-arg ref="persistenceManagerUtil"/>
+    <constructor-arg ref="modelNodeDSM"/>
+  </bean>
+
+  <bean id="entityRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistryImpl">
+  </bean>
+  <bean id="modelNodeHelperRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl">
+         <constructor-arg ref="schemaRegistry"/>
+  </bean>
+  <bean id="subSystemRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistryImpl"/>
+
+  <bean id="schemaRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl">
+    <!--<constructor-arg>
+      <bean class="TestUtil" factory-method="getJukeBoxYangs">
+      </bean>
+    </constructor-arg>-->
+    <constructor-arg ref="noLockService"/>
+  </bean>
+
+  <bean id="noLockService" class="org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService"/>
+
+  <bean id="jukeboxService" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ModelService">
+    <property name="moduleName" value="example-jukebox"/>
+    <property name="moduleRevision" value="2014-07-03"/>
+    <property name="defaultXmlPath" value="/jukebox-default.xml"/>
+    <property name="defaultSubsystem" ref="jukeboxSubSystem"/>
+    <property name="yangFilePaths">
+      <list>
+        <value>/lazyrootmodelnodeaggregatortest/external/example-jukebox@2014-07-03.yang</value>
+        <value>/lazyrootmodelnodeaggregatortest/external/ietf-inet-types.yang</value>
+        <value>/lazyrootmodelnodeaggregatortest/external/ietf-restconf.yang</value>
+        <value>/lazyrootmodelnodeaggregatortest/external/ietf-yang-types.yang</value>
+      </list>
+    </property>
+  </bean>
+
+
+
+  <bean id="jukeboxSubSystem" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NoopSubSystem">
+  </bean>
+
+  <bean id="modelServiceDeployer" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ModelServiceDeployerImpl">
+    <constructor-arg ref="modelNodeDSMRegistry"/>
+    <constructor-arg ref="modelNodeHelperRegistry"/>
+    <constructor-arg ref="subSystemRegistry"/>
+    <constructor-arg ref="rpcRequestHandlerRegistry"/>
+    <constructor-arg ref="modelNodeHelperDeployer"/>
+    <constructor-arg ref="schemaRegistry"/>
+    <constructor-arg ref="noLockService"/>
+    <property name="rootModelNodeAggregator" ref="rootModelNodeAggregator"/>
+  </bean>
+
+  <bean id="modelNodeDSMRegistry"
+        class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistryImpl"
+        factory-method="getInstance"/>
+
+  <bean id="rpcRequestHandlerRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.RpcRequestHandlerRegistryImpl"/>
+  
+  <bean id="modelNodeHelperDeployer" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityModelNodeHelperDeployer">
+    <constructor-arg ref="modelNodeHelperRegistry"/>
+    <constructor-arg ref="schemaRegistry"/>
+    <constructor-arg ref="dsmProxy"/>
+    <constructor-arg ref="entityRegistry"/>
+    <constructor-arg ref="subSystemRegistry"/>
+  </bean>
+</beans>
+

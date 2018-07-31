@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+<choicecase>
+	<name>create leaf-list case node 1</name>
+	<leaflist-leaf-case3>create leaf in leaf-list choice case</leaflist-leaf-case3>
+</choicecase>
+</validation>

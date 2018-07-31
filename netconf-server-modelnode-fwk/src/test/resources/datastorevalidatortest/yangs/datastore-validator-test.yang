@@ -1,0 +1,2389 @@
+module datastore-validator-test {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma:validation";
+	
+	prefix "validation";
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+	
+	identity some-identity {
+	}
+	
+	identity identity1 {
+		base some-identity;
+	}
+	
+	identity identity2 {
+		base some-identity;
+	}
+
+	    
+    grouping group1 {
+        container groupContainer1 {
+            leaf groupContainerLeaf1 {
+               type leafref {
+                   path "validation:validation/validation:validation";
+                }
+            }
+        }
+    }
+    
+    grouping group-ref {
+        leaf group-name {
+            mandatory true;
+            type string;
+        }
+        leaf group-id {
+            mandatory true;
+            type string;
+        }
+    }
+    
+    container validation1 {
+        must "count(list1) <= 1";
+    	leaf leaf1 {
+    		type string;
+    	}
+    	
+    	list list1{
+    		key key1;
+    		leaf key1{
+    			type string;
+    		}
+    	}
+    }
+    
+    container validation2 {
+        must "count(list1[enabled='true']) <= 1";
+    	leaf leaf1 {
+    		type string;
+    	}
+    	
+    	list list1{
+    		key key1;
+    		leaf key1{
+    			type string;
+    		}
+    		leaf enabled {
+    	        type boolean;
+    	        default "true";
+    		}
+    	}
+    }
+    
+    container validation3 {
+    	
+    	
+    	leaf otherTreeRelativePath {
+    		type leafref {
+    			path "../../validation/validation";
+    		}
+    	}
+	
+    	leaf someLeaf1 {
+        	when "../../validation/validation = 'otherRoot'";
+			type string;    		
+    	}
+    	
+        leaf someLeaf {
+        	must "count(../../validation/booleanCurrent) > 0 and not(contains(../../validation/validation, 'Other'))";
+        	type string;
+        }
+        
+    	list list1{
+    		key key1;
+    		leaf key1{
+    			type string;
+    		}
+    		container container1 {
+    			must "count(../container1/list2[enabled='true']) <= 1";
+    			list list2{
+    				key key2;
+    				leaf key2{
+    					type string;
+    				}
+    				
+    	    		leaf enabled {
+    	    	        type boolean;
+    	    	        default "true";
+    	    		}
+    				list list3{
+    					key key3;
+    					leaf key3{
+    						type string;
+    					}
+    				}
+    			}
+    		}
+    	}
+    }
+
+    
+    container validation {
+    
+    	container sameContainerAsRoot {
+    		
+    		container validation {
+    			leaf validation1 {
+    				type leafref { 
+    					path "/validation:validation/validation:validation";
+    				}
+    			}
+    				
+    		}
+    	}
+    	
+    	list booleanCurrent {
+    		key key;
+    		
+    		leaf key {
+    			type string;
+    		}
+    		
+    		leaf leaf1 {
+    			must "boolean(current()/../leaf2)";
+    			type string;
+    		}
+    		
+    		leaf leaf2 {
+    			type boolean;
+    		}
+    	}
+    	list mustMandatory {
+    		must "./mandatoryLeaf";
+    		key key;
+    		leaf key {
+    			type string;
+    		}
+    		
+    		leaf mandatoryLeaf {
+    			type string;
+    		}
+    		
+    		container mustMandatoryContainer {
+    			must "./mandatoryContainer";
+    			container mandatoryContainer {
+    				must "./mandatoryList";
+    				list mandatoryList {
+    					key key;
+    					leaf key {
+    						type string;
+    					}
+    				}
+    				leaf-list mandatoryLeafList {
+    					when "../mandatoryList";
+    					type string;
+    				}
+    				
+    				leaf anotherLeaf {
+    					type string;
+    					when "../mandatoryLeafList";
+    				}
+    			}
+    		}
+    	}
+    	
+    	list someList {
+    		must "sum(/validation/someList/sumValue) < 100 and sum(../someList/sumValue) > 5";
+    		
+    		key key;
+    		leaf key {
+    			type string;
+    		}
+    		
+    		leaf sumValue {
+    			must "not(contains(.,10))";
+    			type int8;
+    		}
+    		
+    		
+    	}
+		leaf validation {
+			type string;
+			mandatory false;
+		}
+		
+		leaf symbol-leaf-1.1_2 {
+			type string;
+			must " . = ../validation";
+		}
+		
+		leaf crossConstant {
+			type int8;
+			must ". = 10 and 'validation' = ../validation and 1 = 1";
+		}
+		
+		leaf constantCheck {
+			type int8;
+			must ". = 10 and 10 = ../crossConstant";
+		}
+		
+		leaf defaultLeaf {
+			default "1";
+			type string;
+			when "../validation = 'default'";
+		}
+		
+		list selfOrCount {
+			key index;
+
+			leaf index {
+				must " . = 0 or count(../../selfOrCount[index = 0]) > 0";
+				type int8;
+			}
+		}
+		
+		leaf valueCheck {
+			type int8;
+			must ". > 0";
+		}
+		
+		leaf-list valueCheck1 {
+			type int8;
+			must ". > 0";
+		}
+		
+		container validate-parent-container-on-when-deletion {
+			
+			leaf leaf1 {
+				type int8;
+			}
+			
+			container for-leaf-list {
+				leaf-list leafList{
+					type int8;
+				}
+				
+				container innerContainer {
+					leaf leaf1 {
+						type int8;
+						when "../../../leaf1 > 0";
+					}
+				}
+			}
+			
+			container for-leaf-list1 {
+				leaf-list leafList{
+					type int8;
+				}
+				
+				leaf-list leafList1{
+					type int8;
+				}
+				
+				container innerContainer {
+					leaf leaf1 {
+						type int8;
+						when "../../../leaf1 > 0";
+					}
+				}
+			}
+			
+			container for-leaf {
+				leaf leaf1 {
+					type int8;
+				}
+				
+				leaf leaf2 {
+					type int8;
+				}
+				
+				container innerContainer {
+					leaf leaf1 {
+						type int8;
+						when "../../../leaf1 > 0";
+					}
+				}
+			}
+			
+			container for-container {
+				
+				container container1 {
+					presence "yes";
+				}
+				
+				container innerContainer {
+					leaf leaf1 {
+						type int8;
+						when "../../../leaf1 > 0";
+					}
+				}
+			}
+			
+			container for-list {
+
+				list list1 {
+					key key1;
+					
+					leaf key1 {
+						type string;
+					}
+				}
+				
+				container innerContainer {
+					leaf leaf1 {
+						type int8;
+						when "../../../leaf1 > 0";
+					}
+				}
+				
+			}
+		}
+		
+		container mandatory-validation-container {
+			presence "mandatory";
+			
+			container leafValidation {
+				leaf leaf1 {
+					mandatory true;
+					type int8;
+				}
+				
+				leaf leafDefault {
+					default 0;
+					type int8;
+					when "../../../validation = 'mandatory'";
+				}
+			}
+			
+			container leafListValidation {
+				presence "mandatory";
+				leaf-list leafList {
+					min-elements 1;
+					type int8;
+				}
+				
+				container innerContainer {
+					
+					leaf-list leafList1 {
+						min-elements 1;
+						type int8;
+					}
+				}
+				
+			}
+			
+			container listValidation {
+				presence "listValidation";
+				
+				list list1 {
+					min-elements 1;
+					
+					key leaf1 ;
+					
+					leaf leaf1 {
+						type int8;
+					}
+					
+					container innerContainer {
+						list innerList {
+							min-elements 1;
+							key leaf1;
+
+							leaf leaf1 {
+								type int8;
+							}
+							
+							leaf defaultLeaf {
+								type int8;
+								when "../leaf1 = 0";
+								default 0;
+							}
+						}
+					}
+				}
+			}
+
+			container choiceValidation {
+				presence "choice";
+				
+				choice choice1 {
+					case case1 {
+						leaf leaf1 {
+							type int8;
+						}
+					}
+					
+					case case2 {
+						when "../../../../validation = 'choice'";
+						leaf leaf2 {
+							type int8;
+							mandatory true;
+						}
+						
+						leaf-list leafList1 {
+							min-elements 1;
+							type int8;
+						}
+						
+						choice case2Choice {
+							mandatory true;
+							
+							case case2ChoiceCase1 {
+								leaf case2leaf1 {
+									type int8;
+									when "../leaf2 = 10";
+								}
+							}
+							
+							case case2ChoiceCase2 {
+								when "../leaf2 != 10";
+
+								list case2ChoiceList1 {
+									min-elements 1;
+									
+									key leaf1;
+									
+									leaf leaf1 {
+										type int8;
+									}
+									
+									container someContainer {
+										
+										leaf leaf1 {
+											default 0;
+											type int8;
+										}
+										
+										container someContainer {
+											when "../leaf1 = 0";
+											
+											leaf leaf2 {
+												default 0;
+												type int8;
+											}
+											
+											choice choice1 {
+												default case2;
+												
+												case case1 {
+													leaf leafCase1 {
+														type int8;
+													}
+												}
+												
+												case case2 {
+													leaf leafCase2 {
+														type int8;
+														default 0;
+													}
+												}
+												
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				choice choice2 {
+					mandatory true;
+					when "../../../validation = 'choice2'";
+					case case1 {
+						leaf leaf11 {
+							type int8;
+						}
+						
+						leaf leaf11B {
+							default 0;
+							when "../../../validation = 'choice2'";
+							type int8;
+						}
+						
+						leaf leaf11C {
+							default 0;
+							when "../leaf11 = 0";
+							type int8;
+						}
+					}
+					
+					case case2 {
+						leaf leaf12 {
+							type int8;
+						}
+						
+						leaf leaf13 {
+							mandatory true;
+							type int8;
+						}
+						
+						leaf-list leafList11 {
+							min-elements 1;
+							type int8;
+						}
+					}
+				}
+			}
+		}
+		container default-when-validation {
+			
+			leaf class {
+				when "../../validation = 'default-when'";
+				type int8;
+				default 10;
+			}
+			
+			container default-when-inner-class {
+				leaf innerLeaf {
+					when "../../class = 11";
+					type int8;
+					default 10;
+				}
+			}
+			
+			list default-when-list {
+				key key;
+				leaf key {
+					type string;
+				}
+				
+				leaf when {
+					when "../../class = 10 and ../../default-when-inner-class/innerLeaf = 10";
+					default 10;
+					type int8;
+				}
+			}
+		}
+		
+		leaf defaultLeaf1 {
+			default "2";
+			type string;
+			when "../validation = 'default1'";
+		}
+		
+		leaf notLeaf {
+			must "not(../validation = 'hello')";
+			type int8;				
+		}
+		
+		leaf containsLeaf {
+			must "contains(../validation,'hello')";
+			type int8;
+		}
+		
+		leaf rpcRefLeaf{
+			type string;
+		}
+		
+		leaf leafref-validation {
+           type leafref {
+               path "../validation:validation";
+            }
+        }			
+			    	
+    	list newList {
+    		key validation;
+    		
+    		leaf validation {
+    			type string;
+    		}
+    	}
+    	
+    	container parent-validation {
+    		leaf parent {
+    			type string;
+    		}
+    		
+    		list parentList {
+
+    			key parent;
+    			
+    			leaf parent {
+    				type string;
+    				when "../../parent = 'parent'";
+    			}
+    			
+    			container parentContainer {
+    				
+    				container parent {
+    					
+    					container parent {
+    						leaf parent {
+    							type string;
+    						}
+    					}
+    				}
+    			}
+    		}
+    		
+    		
+    	}
+    	
+    	container class-validation {
+    		
+    		leaf class {
+    			type string;
+    		}
+    		
+    		leaf class1 {
+    			type string;
+    			default '1';
+    			when "../class = 'class'";
+    		}
+            container someClass {
+
+                leaf someLeafRef {
+                    type leafref {
+                        path "current()/../../class";
+                    }
+                }
+            }
+
+    		list caseList {
+				key class;
+				
+				leaf class {
+					type string;
+					when "../../class = 'class'";
+				}
+				
+				container classContainer {
+					when "../class='class' and ../../class='class'";
+					leaf class {
+						type string;
+					}
+				}
+				container innerClass {
+					list class {
+						key class;
+						leaf class {
+							type string;
+						}
+						
+						container innerClass {
+							container class {
+								list class {
+									key class;
+									
+									leaf class {
+										type string;
+									}
+									
+									container innerClass {
+										leaf class {
+											type instance-identifier {
+												require-instance "true";
+											}
+										}
+									}
+								}
+							}
+						}
+						
+					}
+				}
+				
+				leaf refClass1 {
+					when "../innerClass/class[class = current()]/innerClass/class/class[current()]/class = 'class'";
+					type string;
+				}
+				
+				leaf refClass2 {
+					type leafref {
+						path "../innerClass/class[class = current()/../refClass1]/innerClass/class/class[current()/../refClass2]/class";
+					}
+				}
+    		}
+    		
+    		leaf class2 {
+    			when "../validation:caseList[validation:class = current()]/validation:classContainer/validation:class = 'class'";
+    			type string;
+    		}
+    		
+    		leaf class3 {
+    			when "../caseList[current()]/class = 'class'";
+    			type string;
+    		}
+    	}
+    	
+    
+	    container identity-validation {
+
+	    	leaf leaf1 {
+	    		type identityref {
+	    			base some-identity;
+	    		}
+	    	}
+	    	
+	    	leaf leaf2 {
+	    		when "../leaf1 = 'identity1'";
+	    		type int8;
+	    	}
+	    	
+	    	leaf leaf3 {
+	    		type identityref {
+	    			base identity2;
+	    		}
+	    	}
+	    	
+	    	leaf leaf4 {
+	    		when "../leaf3 = 'validation:identity2'";
+	    		type int8;
+	    	}
+	    }
+	    
+        list list-range {
+            key id;
+            
+            leaf id {
+                type string;
+            }
+            
+            leaf value {
+                type string;
+            }
+            
+            max-elements 2;
+        }
+        
+       list single-unique {
+            key id;
+
+            unique "value";
+
+            leaf id {
+                type string;
+            }
+
+            leaf value {
+                type string;
+            }
+
+            leaf status {
+                type string;
+            }
+        }
+
+        list multi-unique {
+            key id;
+
+            unique "value status";
+
+            leaf id {
+                type string;
+            }
+
+            leaf value {
+                type string;
+            }
+
+            leaf status {
+                type string;
+            }
+
+        }
+
+         
+        container arithmetic-validation{
+           presence "arithmetic-validation";
+           
+           leaf value1 {
+                   type int8;
+                   mandatory true;
+           }
+           
+           leaf mod-leaf {
+           		when "../value1 mod 5 = 0";
+           		type int8;
+           	}
+           	
+           	leaf all-arith-leaf {
+           		when "../value1 + ../value1 <= 50 - ../value1 and ../value1 * ../value1 or ../value1 div 3 = 5 and ../value1 mod 2 = 1";
+           		type int8;
+           	}
+           	
+           	leaf all-must-leaf {
+           		must "../value1 + ../value1 <= 50 - ../value1 and ../value1 * ../value1 or ../value1 div 3 = 5 and ../value1 mod 2 = 1";
+           		type int8;
+           	}  
+           	
+           	leaf abs-leaf {
+           		when "/validation/arithmetic-validation/value1 + 10 = 10 + /validation:validation/validation:arithmetic-validation/validation:value1";
+           		type int8;
+           	}
+           
+           leaf fail-must-leaf {
+           		must "../value1 + 10 < 0";
+           		type int8;
+           	}
+           
+           leaf value2 {
+                   when "../value1+10 > 20";
+                   type int8;
+           }
+           
+           leaf value3 {
+           		   when "../value1 + ../value2 - 10 > 10";
+           		   type int8;
+           }
+           
+           leaf value4 {
+           		   when "../value1 + ../value2 < ../value3 * ../value1";
+           		   type int8;
+           }
+
+           leaf value5 {
+           		   when "../value2 - ../value1 < ../value4 div ../value1";
+           		   type int8;
+           }
+           
+		   container error-path-validation {
+           
+           		   list wrong-path-validation {
+           		   		when "../value1 > 10";
+           		   		key key1;
+           		   		
+           		   		leaf key1{
+           		   			type int8;
+           		   		}
+           		   }
+		   }
+		   
+           container must-validation {
+           		   must " ../value5 * ../value4 >= ../value1 and ../value1 + ../value2 < ../value4 * ../value4";
+           		   
+           		   container fail-must-validation {
+           		   		must " ../../value1 < 0";
+           		   }
+           		   
+           }
+        }
+        
+        container count-validation {
+			leaf-list countable {
+				type string;
+				max-elements 2;
+			}
+			
+			leaf-list countable1 {
+				type string;
+			}
+
+  		    leaf value1 {
+		   		when "/validation/leaflist-range[count(leaflist-type) = 2]";
+		   		type int8;
+		    }
+		    
+		    leaf value2 {
+				when "count(countable) = 0";
+		    	type int8;
+		    }
+		    
+		    leaf valueCurrent {
+		    	must "count(../countable) = 1 and (../../count-validation/countable = current())";
+		    	type string;
+		    }
+		    
+		    leaf twoLeafList {
+		    	must "count(countable) = count(../countable1) and ../countable = ../countable1";
+		    	type int8;
+		    } 
+		    
+		    list count-list {	
+		    	key leaf1;
+		    	
+		    	leaf leaf1 {
+		    		when "count(count-list) = 1";
+		    		type int8;
+		    	}
+		    	
+		    	leaf leaf2 {
+		    		when "count(/validation/count-validation/count-list) = 1 and . != 0 and count(../../count-list[leaf1=current()]) = 0";
+		    		type int8;
+		    	}
+		    	
+		    }
+        }  
+		
+        container leaflist-range {
+        	presence "leaflist-range";
+            leaf-list leaflist-type {
+                type string;
+                min-elements 2;
+                max-elements 3;
+            }
+            
+            leaf-list dummy {
+            	type int8;
+            }
+        }
+        
+        leaf-list dummy {
+        	type int8;
+        }
+        
+        container leaf-ref {
+        	list artist {
+        		key "name";
+        		leaf name {
+        			type string {
+        				length "1 .. max";
+        			}
+        			description
+        			"the artist of certain song";
+        		}
+        	}
+        	list album {
+        		key "name";
+        		leaf name {
+        			type string {
+        				length "1 .. max";
+        			}
+        			description
+        			"the artist of certain song";
+        		}
+	        	list song {
+	        		key "name";
+	        		leaf name {
+		              type string {
+		                length "1 .. max";
+		              }
+	              	}
+	              	leaf artist-name {
+		               type leafref {
+		                   path "../../../artist/name";
+		                }
+	            	}
+	        	}
+	        	leaf song-count {
+	        		type int32;
+	        	}
+        	}
+        	
+        	container music {
+        		leaf kind {
+        			type string {
+        			  length "1 .. max";
+        			}
+        		}
+        		leaf favourite-album {
+        			type leafref {
+        				path "../../album/name";
+        			}
+        		}
+        		leaf favourite-song {
+        			type leafref {
+        			  path "../../album[name = current()/../favourite-album]/song/name";
+        			}
+        		}
+        	}
+        	
+        	container current-alone {
+        		leaf current-leaf {
+        			type leafref {
+        				path "/validation/leaf-ref/album/name";
+        			}
+        		}
+        		
+        		list current-alone-list {
+        			key key;
+        			
+        			leaf key {
+        				type int8;
+        			}
+        			
+        			leaf current-alone {
+        				when "../../current-alone-list[current()]/current-alone = .";
+        				type int8;
+        			}
+        		}
+        		
+        		leaf current-alone-list-leaf {
+        			when "../current-alone-list[current()]/current-alone = .";
+        			type int8;
+        		}
+        		
+        		leaf current-alone-leaf {
+        			when "/validation/leaf-ref/album[current()]/song-count >= 10";
+        			type leafref {
+        				path "../current-leaf";
+        			}
+        		}
+        		leaf current-parent-leaf {
+        			when "/validation/leaf-ref/album[name = current()/../current-leaf]/song-count >= 10";
+        			type leafref {
+        				path "../current-leaf";
+        			}
+        		}
+        		leaf-list current-leaf-list {
+        			when "/validation/leaf-ref/album[name = current()/../current-leaf]/song-count >= 10";
+        			type string;
+        		}
+        	}
+            
+        	container current-multi-parent {
+        		leaf current-some-leaf {
+        			type string;
+        		}
+        		
+        		list name-list{
+        			key "name";
+        			leaf name {
+        				type string;
+        			}
+        			
+        			leaf name-count {
+        				type string;
+        			}
+        		}
+        		
+        		list album-name-list{
+        			key "name";
+			   		leaf name {
+				 		type string;
+			   		}
+			   		
+			   		leaf current-album-list-leaf {
+	        			type leafref {
+	        				path "../../../album[name = current()/../../current-some-leaf]/song-count";
+	        			}
+	        		}
+			   		
+			   		leaf two-current-leaf {
+			   			type leafref {
+			   				path "current()/../../name-list[name = current()/../../current-some-leaf]/name-count";
+			   			}
+			   		}
+			   		
+			   		leaf nested-current-leaf {
+			   			type leafref {
+			   				path "../../../album[name = current()/../../name-list[name = current()/../../current-some-leaf]/name-count]/song-count";
+			   			}
+			   		}
+        		}
+        	}
+        	
+           container stateValue {
+              leaf value1 {
+                  type string;
+                  config false;
+              }
+           }
+                
+        	
+        }
+        
+   container instance-identifier-example {
+        	container address {
+        	 list national {
+        	   key "national-id";
+        	   leaf national-id {
+        	   	 type string;
+        	   }
+        	   leaf national-name {
+        	   	 type string;
+        	   }
+			   list province {
+				   key "province-id";
+				   leaf province-id {
+					 type string;
+				   }
+				   leaf province-name {
+					 type string;
+				   }
+				   list district {
+					key "district-id";
+				    leaf district-id {
+					 type string;
+					}
+					leaf district-name {
+					 type string;
+					}
+				   }
+			   }
+			   
+        	 }
+        	}
+        	
+        	list classz {
+        		key "class-id class-name";
+        		leaf class-id {
+        			type string;
+        		}
+        		leaf class-name {
+        			type string;
+        		}
+        		leaf number-students {
+        			type uint8;
+        		}
+        		
+        	}
+        	
+        	list subject {
+        	  key "subject-id";
+        	  leaf subject-id {
+        	  	type string;
+        	  }
+        	  leaf subject-name {
+        	  	type string;
+        	  }
+        	
+        	}
+        	
+        	leaf-list leaflist {
+	    		type instance-identifier {
+						require-instance "true";
+					}
+        	}
+        	
+        	leaf leaf1 {
+        		 type string;
+        	}
+
+			list student {
+				key "student-id";
+				leaf student-id {
+					type string;
+				}
+				leaf student-name {
+					type string;
+				}
+				leaf student-instance-identifier1 {
+					type instance-identifier {
+						require-instance "true";
+					}
+				}
+				leaf student-instance-identifier2 {
+					type instance-identifier {
+						require-instance "false";
+					}
+					
+				}
+				
+			}
+			
+			
+        }
+        
+        container choicecase {
+    		presence "choiceCase";
+	    	leaf name {
+	    		type string;
+	    	}
+	    	
+	    	list list1-type {
+	    		key list-key;
+	    		leaf list-key{
+	    			type string;
+	    		}
+	    		
+	    		choice choice1 {
+	    			case case1 {
+	    				leaf case-leaf1{
+	    					type string;
+	    				}
+	    			}
+	    			case case2 {
+	    				leaf case-leaf2{
+	    					type string;
+	    				}
+	    			}
+	    		}
+	    	}
+	    	
+	    	choice leaf-type {
+	    		default leaf-type-case1;
+	    		case leaf-type-case1 {
+	    			leaf leaf-case1 {
+	    				type string;
+	    				default "Default value 1";
+	    			}
+	    		}
+	    		case leaf-type-case2 {
+	    			leaf leaf-case2 {
+	    				type string;
+	    			}
+	    			
+	    			leaf leaf2-case2 {
+	    				type string;
+	    			}
+	    		}
+	    	}
+
+	    	choice leaf-empty-type {
+                default leaf-empty-type-case1;
+                case leaf-empty-type-case1 {
+                    leaf leaf-empty-case1 {
+                        type empty;
+                    }
+                }
+                case leaf-empty-type-case2 {
+                    leaf leaf-empty-case2 {
+                        type empty;
+                    }
+                }
+            }
+	    	
+	    	choice leaflist-type {
+	    		case leaflist-type-case1 {
+	    			leaf-list leaflist-case1 {
+	    				type string;
+	    			}
+	    		}
+	    		case leaflist-type-case2 {
+	    			leaf-list leaflist-case2 {
+	    				type string;
+	    			}
+	    		}
+	    		case leaflist-type-case3 {
+                    leaf leaflist-leaf-case3 {
+                        type string;
+                    }
+                }
+	    	}
+
+	    	choice list-type {
+	    		case list-type-case1 {
+	    			list list-case1 {
+	    				key name-case1;
+	    				leaf name-case1 {
+	    					type string;
+	    				}
+	    				leaf value-case1 {
+	    					type string;
+	    				}
+	    			}
+	    		}
+	    		case list-type-case2 {
+	    			list list-case2 {
+	    				key name-case2;
+	    				leaf name-case2 {
+	    					type string;
+	    				}
+	    				leaf value-case2 {
+	    					type string;
+	    				}
+	    			}
+	    		}
+	    	}
+
+	    	choice mixed-case {
+	    	    default leaf-type-case-mixed;
+	    		case leaf-type-case-mixed {
+	    			leaf leaf-case-mixed {
+	    				type string;
+	    				default "Default value for mixed case";
+	    			}
+	    		}
+	    		case list-type-case-mixed {
+	    			list list-case-mixed {
+                        key name-case-mixed;
+                        leaf name-case-mixed {
+                            type string;
+                        }
+                        leaf value-case-mixed {
+                            type string;
+                        }
+                    }
+                }
+                case container-type-case-mixed {
+                    container container-case-mixed {
+                        leaf value-case-mixed {
+                            type string;
+                        }
+                    }
+                }
+                case leaflist-type-case-mixed {
+                    leaf-list leaflist-case-mixed {
+                        type string;
+                    }
+                }
+            }
+
+			choice container-type {
+			    default container-type-case2;
+				case container-type-case1 {
+					container container-case1 {
+						leaf container-case1-leaf1 {
+							type string;
+						}
+						leaf container-case1-leaf2 {
+							type string;
+						}
+					}
+				}
+				case container-type-case2 {
+					container container-case2 {
+						leaf container-case2-leaf1 {
+							type string;
+							default "Default value for container-type";
+						}
+					}
+				}
+			}
+    	}
+
+    	container default-container-or-list-choice-case{
+    	    leaf name {
+        	    type string;
+        	}
+            choice default-container-choice {
+                default default-container;
+                case default-container-leaf {
+                    leaf default-container-leaf {
+                        type string;
+                    }
+                }
+                case default-container-list {
+                    list default-container-list {
+                        key name-case;
+                        leaf name-case {
+                            type string;
+                        }
+                        leaf value-case {
+                            type string;
+                        }
+                    }
+                }
+                case default-container {
+                    container default-container {
+                        leaf container-leaf-default {
+                            type string;
+                            default "Default value for leaf in default container case";
+                        }
+                    }
+                }
+            }
+
+            choice default-list-choice {
+                default default-list;
+                case default-list-leaf {
+                    leaf default-list-leaf {
+                        type string;
+                    }
+                }
+                case default-list {
+                    list default-list {
+                        key "name-list value-list";
+                        leaf name-list {
+                            type string;
+                            default "Default value for name-list";
+                        }
+                        leaf value-list {
+                            type string;
+                            default "Default value for value-list";
+                        }
+                    }
+                }
+                case default-list-container {
+                    container list-default-container {
+                        leaf default-list-container-leaf {
+                            type string;
+                        }
+                    }
+                }
+            }
+
+            choice default-container-choice2 {
+                default default-container-wo-default-leaf-value;
+                case default-container-leaf2 {
+                    leaf default-container-leaf2 {
+                        type string;
+                    }
+                }
+                case default-container-list2 {
+                    list default-container-list2 {
+                        key name-case2;
+                        leaf name-case2 {
+                            type string;
+                        }
+                        leaf value-case2 {
+                            type string;
+                        }
+                    }
+                }
+                case default-container-wo-default-leaf-value {
+                    container default-container-wo-default-leaf-value {
+                        leaf container-leaf-wo-default-value {
+                            type string;
+                        }
+                    }
+                }
+            }
+
+            choice default-list-choice2 {
+                default default-list-wo-def-value-for-some-key;
+                case default-list-leaf2 {
+                    leaf default-list-leaf2 {
+                        type string;
+                    }
+                }
+                case default-list-wo-def-value-for-some-key{
+                    list default-list-wo-def-value-for-some-key {
+                        key "leaf1 leaf2 leaf3";
+                        leaf leaf1 {
+                            type string;
+                            default "Default value for leaf1";
+                        }
+                        leaf leaf2 {
+                            type string;
+                            default "Default value for leaf2";
+                        }
+                        leaf leaf3 {
+                            type string;
+                        }
+                    }
+                }
+                case default-list-container2 {
+                    container list-default-container2 {
+                        leaf default-list-container-leaf2 {
+                            type string;
+                        }
+                    }
+                }
+            }
+    	}
+
+    	container must-validation {
+	    
+	    	leaf data-status {
+	         	type enumeration {
+		        	enum success;
+		        	enum failed;
+		        	enum in-progress;
+	            }
+	        }
+	    
+	    	leaf leaf-type {
+	    		type string;
+	    		must "../interface/ifMTU <= 5000 and ../interface/ifMTU >= 100" {
+	             	error-message "An MTU must be  100 .. 5000";
+	         	}
+	    	}
+	    	
+	    	container interface {
+	    		leaf ifType {
+	            	type enumeration {
+	                	enum ethernet;
+	                	enum atm;
+	             	}
+	         	}
+	         	
+	         	leaf ifMTU {
+             		type uint32;
+         		}
+         		
+         		leaf ifMTU2 {
+         			type uint32;
+         		}
+         		
+         		leaf ifIndex {
+         			type int8;
+         		}
+         		
+         		leaf-list ifEntry {
+		    		type string;
+		    		must "../../data-status != 'failed'" {
+		             	error-message "An ifEntry must be success or in-progress";
+		         	}
+		    	}
+		        
+		        must "ifType = 'ethernet' and ifMTU = 1500" {
+	             	error-message "An ethernet MTU must be 1500";
+	         	}
+	         	
+	         	must "ifMTU2 = 1400" {
+	         		error-app-tag "custom-error-app-tag";
+	             	error-message "A MTU2 must be 1400";
+	         	}
+	         	
+	         	list data {
+	         		key data-id;
+	         		leaf data-id {
+	         			type int8;
+	         		}
+	         		
+	         		leaf data-value {
+	         			type int32;
+	         		}
+	         		
+	         		must "../../data-status = 'success' and data-value <= 10000 and data-value >= 64" {
+	             		error-message "data-value must be  64 .. 10000";
+	         		}
+	         		
+	         	}
+				
+				anyxml ifInfo{
+					must "../ifIndex <= '200' and ../ifIndex >= 100" {
+						error-message "An ifIndex must be 100 .. 200";
+					}
+				}
+	        }
+
+	    }
+    	
+    	container when-validation {
+    	
+	    	leaf leaf-type {
+	    		when "../result-leaf >= 10";
+	    		type string;
+	    	}
+	    	
+	    	
+	    	leaf-list leaflist-type {
+	    		when "../result-leaflist >= 5 and ../result-leaflist <= 10";
+	    		type string;
+	    	}
+	    	
+	    	leaf not-equal {
+	    		when "../result-leaf != 10";
+	    		type string;
+	    	}
+	    	
+	    	leaf result-leaf {
+	    		type int8;
+	    	}
+	    	leaf result-leaflist {
+	    		type int8;
+	    	}
+	    	leaf result-container {
+	    		type int8;
+	    	}
+	    	leaf result-list {
+	    		type int8;
+	    	}
+	    	leaf boolean-leaf {
+	    		type boolean;
+	    	}
+	    	
+	    	leaf NotEqualLeaf1 {
+	    	    when "../result-leaf != 0";
+	    	    type string;
+	    	}
+	    	
+	    	leaf NotEqualLeaf2 {
+	    	    when "/validation/when-validation/result-leaf != 10";
+	    	    type string;
+	    	}
+	    	 
+            leaf NotEqualLeaf3 {
+                when "../result-leaf != 0 and /validation/when-validation/result-leaf != 15";
+                type string;
+            }
+
+	    	leaf absoluteLeaf {
+	    		when "/validation/when-validation/result-leaf >= 10";
+	    		type string;
+	    	}
+	    	
+            leaf absoluteLeaf1 {
+                when "/validation/when-validation/result-leaf >= 10 and /validation/when-validation/result-leaf <= 20";
+                type string;
+            }
+
+            leaf absoluteLeaf2 {
+                when "/validation/when-validation/result-leaf >= 30 or /validation/when-validation/result-leaf <= 20";
+                type string;
+            }
+
+	    	leaf check-boolean-leaf {
+	    		when "../boolean-leaf = true and ../boolean-leaf != false";
+	    		type string;
+	    	}
+	    	
+			container container-type {		
+				when "../result-container >= 10 and ../result-container <= 20";
+				leaf container-value {
+					type string;
+				}
+			}
+			
+			list list-type {
+				when "../result-list = 10";
+			
+				key list-id;
+            
+	            leaf list-id {
+	                type string;
+	            }
+	            
+	            leaf list-value {
+	                type string;
+	            }
+			}
+			
+			// when-constraint for ChoiceCaseNode
+			container choicecase {
+				presence "choicecase";
+				leaf data-choice {
+					type int8;
+				}
+				
+				leaf result-choice {
+		    		type enumeration {
+	                	enum success;
+	                	enum failed;
+	             	}
+		    	}
+				
+				choice leaf-type {
+					case leafcase-success {
+						when "../../validation:result-choice = 'success'";
+						leaf leaf-case-success {
+							type string;
+						}
+					}
+					case leafcase-failed {
+						when "../../validation:result-choice = 'failed'";
+						leaf leaf-case-failed {
+							type string;
+						}
+					}
+				}
+				
+				choice leaflist-type {
+					case leaflist-case-success {
+						when "../../validation:result-choice = 'success'";
+						leaf-list leaflist-case-success {
+							type string;
+						}
+					}
+					case leaflist-case-failed {
+						when "../../validation:result-choice = 'failed'";
+						leaf-list leaflist-case-failed {
+							type string;
+						}
+					}
+				}
+				
+				choice container-type {
+					when "../validation:data-choice > 100";
+					case container-case-success {
+						when "../../validation:result-choice = 'success'";
+						container container-case-success {
+							leaf container-success-leaf1 {
+								type string;
+							}
+							leaf container-success-leaf2 {
+								type string;
+							}
+						}
+					}
+					case container-case-failed {
+						when "../../validation:result-choice = 'failed'";
+						container container-case-failed {
+							leaf container-failed-leaf1 {
+								type string;
+							}
+							leaf container-failed-leaf2 {
+								type string;
+							}
+						}
+					}
+				}
+				
+				choice list-type {
+					case list-case-success {
+						when "../../validation:result-choice = 'success'";
+						list list-case-success {
+							key success-id;
+							leaf success-id {
+								type int8;
+							}
+							leaf success-value {
+								type string;
+							}
+						}
+					}
+					case list-case-failed {
+						when "../../validation:result-choice = 'failed'";
+						list list-case-failed {
+							key failed-id;
+							leaf failed-id {
+								type int8;
+							}
+							leaf failed-value {
+								type string;
+							}
+						}
+					}
+				}
+
+                choice absolute-leaf-type {
+                    case absolute-case-success {
+                        when "/validation/when-validation/choicecase/result-choice = 'success'";
+                        leaf-list absolute-case-success {
+                            type string;
+                        }
+                    }
+                    case absolute-case-failed {
+                        when "/validation/when-validation/choicecase/leaflist-case-failed = 'failed'";
+                        leaf-list absolute-case-failed {
+                            type string;
+                        }
+                    }
+                }				
+
+				choice anyXml-type {
+					case anyxml-case-success {
+						when "../../validation:result-choice = 'success'";
+						anyxml data-success;
+					}
+					
+					case anyxml-case-failed {
+						when "../../validation:result-choice = 'failed'";
+						anyxml data-failed;
+					}
+				}
+			}
+
+			leaf result-anyxml {
+				type enumeration {
+                	enum failed;
+                	enum success;
+             	}
+			}
+			
+			anyxml extraInfo{
+				when "../result-anyxml = 'success'";
+			}
+			
+			leaf when-parent-local-name-leaf {
+			    when "local-name(..) = 'when-validation'";
+			    type string;
+			}
+			
+			leaf when-parent-local-name-container-leaf {
+			    when "local-name(../choicecase) = 'choicecase'";
+			    type string;
+			}
+			
+			leaf when-parent-name-leaf {
+			    when "name(..) = 'validation:when-validation'";
+			    type string;
+			}
+			
+			leaf when-parent-name-container-leaf {
+			    when "name(../choicecase) = 'validation:choicecase'";
+			    type string;
+			}
+			
+			leaf when-parent-namespace-leaf {
+			    when "namespace-uri(..) = 'urn:org:bbf:pma:validation'";
+			    type string;
+			}
+			
+            /* This is not working yet, so only the above trivial case currently works
+			leaf when-parent-namespace-container-leaf {
+			    when "namespace-uri(../choicecase) = 'urn:org:bbf:pma:validation'";
+			    type string;
+			} */
+
+	    }
+	    
+		container mandatory-validation {
+			presence "choiceCase";
+			choice mandatory-choice {
+				mandatory true;
+				
+				case non-mandatory {
+					leaf non-mandatory-leaf {
+						type string;
+					}
+				}
+				case non-mandatory-case {
+					leaf level1-default-leaf {
+						type empty;
+						default "This is default level1-default-leaf value";
+					}
+					
+					choice under-non-mandatory-case {
+						default level2-case1;
+						case level2-case1 {
+							leaf level2-leaf-case1 {
+								type string;
+								default "This is the default value of choice-case under non-mandatory-case";
+							}
+						}
+						
+						case level2-case2 {
+							leaf level2-leaf-case2 {
+								type string;
+							}
+						}
+					}
+				}
+	
+				case mandatory-case1 {
+					leaf mandatory-case1-leaf1 {
+						type string;
+						default "This is the default value of mandatory-case1-leaf1";
+					}
+				
+					leaf mandatory-case1-leaf2 {
+						type string;
+						mandatory true;
+					}
+				}
+	
+				case mandatory-case2 {
+					leaf mandatory-case2-leaf1 {
+						type string;
+						mandatory true;
+					}
+					
+					leaf mandatory-case2-leaf2 {
+						type string;
+						mandatory true;
+					}
+				}
+			}
+	    }
+		
+		container xml-subtree {
+			leaf leaf1 {
+				type string;
+			}
+		}
+		
+		container OrderByListContainer {
+			presence "orderByContainer";
+			
+		}
+		
+		container string-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf string2 {
+				type string;
+			}
+			leaf number1 {
+				type uint16;
+			}
+			leaf string-function-leaf {
+				must "string(../number1) = '42'";
+				type string;
+			}
+			leaf concat-function-leaf {
+				must "concat(../string1,../string2) = 'AB'";
+				type string;
+			}
+			leaf starts-with-function-leaf {
+				must "starts-with(../string1,'DSL')";
+				type string;
+			}
+			leaf contains-function-leaf {
+				must "contains(../string1,'DSL')";
+				type string;
+			}
+			leaf substring-function-leaf {
+				must "substring(../string1,2,3) = '234'";
+				type string;
+			}
+			leaf substring-before-function-leaf {
+				must "substring-before(../string1,'/') = '1999'";
+				type string;
+			}
+			leaf substring-after-function-leaf {
+				must "substring-after(../string1,'/') = '04/01'";
+				type string;
+			}
+			leaf string-length-function-leaf {
+				must "string-length(../string1) = 5";
+				type string;
+			}
+			leaf normalize-space-function-leaf {
+				must "normalize-space(../string1) = 'ITF 1'";
+				type string;
+			}
+			leaf translate-function-leaf {
+				must "translate(../string1,'abc-','ABC') = 'BAr'";
+				type string;
+			}
+		}
+		
+		container boolean-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf boolean-function-leaf {
+				must "boolean(../string1)";
+				type string;
+			}
+			leaf not-function-leaf {
+				must "not(boolean(../string1))";
+				type string;
+			}
+			leaf true-function-leaf {
+				must "true()";
+				type string;
+			}
+			leaf false-function-leaf {
+				must "not(false())";
+				type string;
+			}
+		}
+		
+		container number-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf number1 {
+				type decimal64 {
+					fraction-digits 2;
+				}
+			}
+			leaf number-function-leaf {
+				must "number(../string1) = 42";
+				type string;
+			}
+			leaf floor-function-leaf {
+				must "floor(../number1) = 42";
+				type string;
+			}
+			leaf ceiling-function-leaf {
+				must "ceiling(../number1) = 42";
+				type string;
+			}
+			leaf round-function-leaf {
+				must "round(../number1) = 42";
+				type string;
+			}
+		}
+    }
+    
+    rpc groupingTest {
+     input {
+      uses group1;  
+     }
+    }
+    
+    rpc leafRefTest {
+    	input {
+    		leaf leaf1 {
+    			type leafref {
+    		 		path "/validation:validation/validation:rpcRefLeaf";
+   				}
+     		}
+    	}
+    }
+    
+    rpc testRpcOutput {
+    	output {
+    		uses group-ref;
+    	    
+    		leaf test1 {
+    			type int8;
+    		}
+    		
+    		leaf test2 {
+    			when "../test1 > 10";
+    			type string;
+    		}
+
+    		leaf test3 {
+    			when "../test1 != 10";
+    			type string;
+    		}
+
+    		container container0{
+    			leaf leaf1{
+    				type string;
+    			}
+    		}
+    		container container1{
+    			container innerContainer{
+    				list innerList{
+    					key innerLeaf;
+    					
+    					leaf innerLeaf{
+    						type string;
+    					}
+    					
+    					list innerInnerList{
+    						key innerInnerLeaf1;
+    						
+    						leaf innerInnerLeaf1{
+    							type string;
+    						}
+    					}
+    					
+    				}
+    			}
+    			list list1{
+    				key leaf1;
+    				
+    				leaf leaf1{
+    					type string;
+    				}
+    			}
+    		}
+    	}
+    }
+    
+    rpc testRpc {
+        description
+                "This is a test RPC involving all types of input elements";
+        input {
+        	leaf data-status {
+	         	type enumeration {
+		        	enum success;
+		        	enum failed;
+		        	enum in-progress;
+	            }
+	        }
+	        
+	    	leaf leaf-type {
+	    		type string;
+	    		must "../validation:data-status = 'success' or ../data-status = 'in-progress'" {
+	             	error-message "data-status must be success or in-progress";
+	         	}
+	    	}
+	    	
+	    	leaf result-list {
+	    		type int8;
+	    	}
+	    	
+    		leaf-list countable{
+    			type string;
+    		}
+    		
+    		leaf countLeaf {
+    			when "count(countable) = 1";
+    			type string;
+    		}
+	    	
+	    	
+	    	list list-type {
+				when "../result-list = 10";
+			
+				key list-id;
+            
+	            leaf list-id {
+	                type string;
+	            }
+	            
+	            leaf list-value {
+	                type string;
+	            }
+	            
+	            list inside-list{
+					when "../../list-type2/list-id > 10";	            		
+					
+					key some-leaf;
+					
+	            	leaf some-leaf {
+	            		type int8;
+	            	}
+	            }
+			}
+			
+			list list-type2{
+				key list-id;
+				
+				leaf list-id {
+					type int8;
+				}
+			}
+	    	
+	    	container choicecase {
+			
+				leaf data-choice {
+					type int8;
+				}
+				
+				leaf result-choice {
+		    		type enumeration {
+	                	enum success;
+	                	enum failed;
+	             	}
+		    	}
+		    	
+		    	leaf-list leaflist {
+		    		type instance-identifier {
+						require-instance "true";
+					}
+	        	}
+				
+				choice leaf-type {
+					case leafcase-success {
+						when "../../result-choice = 'success'";
+						leaf leaf-case-success {
+							type string;
+						}
+					}
+					case leafcase-failed {
+						when "../../result-choice = 'failed'";
+						leaf leaf-case-failed {
+							type string;
+						}
+					}
+				}
+				
+				choice leaflist-type {
+					case leaflist-case-success {
+						when "../../validation:result-choice = 'success'";
+						leaf-list leaflist-case-success {
+							type string;
+						}
+					}
+					case leaflist-case-failed {
+						when "../../validation:result-choice = 'failed'";
+						leaf-list leaflist-case-failed {
+							type string;
+						}
+					}
+				}
+				
+				choice absolute-leaf-type {
+                    case absolute-case-success {
+                        when "validation/when-validation/choicecase/result-choice = 'success'";
+                        leaf-list absolute-case-success {
+                            type string;
+                        }
+                    }
+                    case absolute-case-failed {
+                        when "validation/when-validation/choicecase/leaflist-case-failed = 'failed'";
+                        leaf-list absolute-case-failed {
+                            type string;
+                        }
+                    }
+				}
+				
+				choice container-type {
+					when "../data-choice > 100";
+					case container-case-success {
+						when "../../result-choice = 'success'";
+						container container-case-success {
+							leaf container-success-leaf1 {
+								type string;
+							}
+							leaf container-success-leaf2 {
+								type string;
+							}
+						}
+					}
+					case container-case-failed {
+						when "../../result-choice = 'failed'";
+						container container-case-failed {
+							leaf container-failed-leaf1 {
+								type string;
+							}
+							leaf container-failed-leaf2 {
+								type string;
+							}
+						}
+					}
+				}
+				
+				choice list-type {
+				when "../data-choice < 50";
+					case list-case-success {
+						when "../../result-choice = 'success'";
+						list list-case-success {
+							key success-id;
+							leaf success-id {
+								type int8;
+							}
+							leaf success-value {
+								type string;
+							}
+						}
+					}
+					case list-case-failed {
+						when "../../result-choice = 'failed'";
+						list list-case-failed {
+							key failed-id;
+							leaf failed-id {
+								type int8;
+							}
+							leaf failed-value {
+								type string;
+							}
+						}
+					}
+				}
+			}
+			container instance-identifier-example {
+	        	container address {
+	        		list national {
+	        	   		key "national-id";
+	        	   		leaf national-id {
+	        	   	 		type string;
+	        	   		}
+	        	   		leaf national-name {
+	        	   	 		type string;
+	        	   		}
+				   		list province {
+					   		key "province-id";
+					   		leaf province-id {
+						 		type string;
+					   		}
+					   		leaf province-name {
+						 		type string;
+					   		}
+					   		list district {
+								key "district-id";
+					    		leaf district-id {
+						 			type string;
+								}
+								leaf district-name {
+						 			type string;
+								}
+					   		}
+				   		}
+		        	}
+		       	}
+	        	
+	        	list class {
+	        		key "class-id class-name";
+	        		leaf class-id {
+	        			type string;
+	        		}
+	        		leaf class-name {
+	        			type string;
+	        		}
+	        		leaf number-students {
+	        			type uint8;
+	        		}
+	        		
+	        	}
+	        	
+	        	list subject {
+	        	  key "subject-id";
+	        	  leaf subject-id {
+	        	  	type string;
+	        	  }
+	        	  leaf subject-name {
+	        	  	type string;
+	        	  }
+	        	
+	        	}
+	        	
+	        	leaf-list leaflist {
+		    		type instance-identifier {
+						require-instance "true";
+					}
+	        	}
+	        	
+	        	leaf leaf1 {
+	        		 type string;
+	        	}
+	
+				list student {
+					key "student-id";
+					leaf student-id {
+						type string;
+					}
+					leaf student-name {
+						type string;
+					}
+					leaf student-instance-identifier1 {
+						type instance-identifier {
+							require-instance "true";
+						}
+					}
+					leaf student-instance-identifier2 {
+						type instance-identifier {
+							require-instance "false";
+						}
+					}
+				}
+	        }
+			container leaf-ref {
+	        	list artist {
+	        		key "name";
+	        		leaf name {
+	        			type string {
+	        				length "1 .. max";
+	        			}
+	        			description
+	        			"the artist of certain song";
+	        		}
+	        	}
+	        	list album {
+	        		key "name";
+	        		leaf name {
+	        			type string {
+	        				length "1 .. max";
+	        			}
+	        			description
+	        			"the artist of certain song";
+	        		}
+		        	list song {
+		        		key "name";
+		        		leaf name {
+			              type string {
+			                length "1 .. max";
+			              }
+		              	}
+		              	leaf artist-name {
+			               type leafref {
+			                   path "../../../artist/name";
+			                }
+		            	}
+		        	}
+		        	leaf song-count {
+	        			type int32;
+	        		}
+	        	}
+	        	
+	        	container music {
+	        		leaf kind {
+	        			type string {
+	        			  length "1 .. max";
+	        			}
+	        		}
+	        		leaf favourite-album {
+	        			type leafref {
+	        				path "../../album/name";
+	        			}
+	        		}
+	        		leaf favourite-song {
+	        			type leafref {
+	        			  path "../../album[name = current()/../favourite-album]/song/name";
+	        			}
+	        		}
+	        	}
+	        	
+	        	container current-alone {
+	        		leaf current-leaf {
+	        			type leafref {
+	        				path "../../album/name";
+	        			}
+	        		}
+	        		leaf current-alone-leaf {
+	        			when "../../album[current()]/song-count >= 10";
+	        			type leafref {
+	        				path "../current-leaf";
+	        			}
+	        		}
+	        		leaf current-parent-leaf {
+	        			when "../../album[name = current()/../current-leaf]/song-count >= 10";
+	        			type leafref {
+	        				path "../current-leaf";
+	        			}
+	        		}
+	        		leaf-list current-leaf-list {
+	        			when "../../album[name = current()/../current-leaf]/song-count >= 10";
+	        			type string;
+	        		}
+	        	}
+	        	
+	        	container stateValue {
+	        	  leaf value2 {
+	        	      type leafref {
+	        	          path "/validation/leaf-ref/stateValue/value1";
+	        	      }
+	        	  }
+
+                  leaf value3 {
+                      type leafref {
+                          path "/validation:validation/validation:leaf-ref/validation:stateValue/validation:value1";
+                      }
+                  }
+	            }
+        	}	        
+	    }
+    }
+    
+    
+
+}

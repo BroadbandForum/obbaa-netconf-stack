@@ -1,0 +1,1293 @@
+module ietf-interfaces {
+
+  namespace "urn:ietf:params:xml:ns:yang:ietf-interfaces";
+  prefix if;
+
+  import alu-pma {
+		prefix "pma";
+  }
+  
+  import ietf-yang-types {
+    prefix yang;
+  }
+
+  organization
+    "IETF NETMOD (NETCONF Data Modeling Language) Working Group";
+
+  contact
+    "WG Web:   <http://tools.ietf.org/wg/netmod/>
+     WG List:  <mailto:netmod@ietf.org>
+
+     WG Chair: Thomas Nadeau
+               <mailto:tnadeau@lucidvision.com>
+
+     WG Chair: Juergen Schoenwaelder
+               <mailto:j.schoenwaelder@jacobs-university.de>
+
+     Editor:   Martin Bjorklund
+               <mailto:mbj@tail-f.com>";
+
+  description
+    "This module contains a collection of YANG definitions for
+     managing network interfaces.
+
+     Copyright (c) 2014 IETF Trust and the persons identified as
+     authors of the code.  All rights reserved.
+
+     Redistribution and use in source and binary forms, with or
+     without modification, is permitted pursuant to, and subject
+     to the license terms contained in, the Simplified BSD License
+     set forth in Section 4.c of the IETF Trust's Legal Provisions
+     Relating to IETF Documents
+     (http://trustee.ietf.org/license-info).
+
+     This version of this YANG module is part of RFC 7223; see
+     the RFC itself for full legal notices.";
+
+  revision 2014-05-08 {
+    description
+      "Initial revision.";
+    reference
+      "RFC 7223: A YANG Data Model for Interface Management";
+  }
+
+  /*
+   * Typedefs
+   */
+
+  typedef interface-ref {
+    type leafref {
+      path "/pma:pma/pma:device-holder/pma:device/if:interfaces/if:interface/if:name";
+    }
+    description
+      "This type is used by data models that need to reference
+       configured interfaces.";
+  }
+
+  typedef interface-state-ref {
+    type leafref {
+      path "/pma:pma/pma:device-holder/pma:device/if:interfaces-state/if:interface/if:name";
+    }
+    description
+      "This type is used by data models that need to reference
+       the operationally present interfaces.";
+  }
+
+  /* BBF GFAST - Typedefs added for GFast related parameters. */
+  typedef event-counter {
+    type yang:gauge32;
+    description
+      "Performance event counter.";
+  }
+
+
+
+  typedef channel-data-rate {
+    type uint32;
+    units "1000 bits per second";
+    description
+      "Represents the data rate of a bearer channel";
+  }
+
+  typedef fast-profiles {
+		  type bits {
+				  bit g.9701-profile-106a {
+						  position 0;
+						  description
+								  "ITU-T G.9701 profile 106a";
+				  }
+		  }
+		  description
+				  "Identifies supported G.FAST profiles.";
+		  reference
+				  "ITU-T G.9701 clause 6.";
+  }
+
+
+
+
+  /*
+   * Identities
+   */
+
+  identity interface-type {
+    description
+      "Base identity from which specific interface types are
+       derived.";
+  }
+
+  /*
+   * Features
+   */
+
+  feature arbitrary-names {
+    description
+      "This feature indicates that the device allows user-controlled
+       interfaces to be named arbitrarily.";
+  }
+  feature pre-provisioning {
+    description
+      "This feature indicates that the device supports
+       pre-provisioning of interface configuration, i.e., it is
+       possible to configure an interface whose physical interface
+       hardware is not present on the device.";
+  }
+
+  feature if-mib {
+    description
+      "This feature indicates that the device implements
+       the IF-MIB.";
+    reference
+      "RFC 2863: The Interfaces Group MIB";
+  }
+
+  /*
+   * Configuration data nodes
+   */
+  augment "/pma:pma/pma:device-holder/pma:device" {
+      when "pma:hardware-type='G.FAST'";
+	  container interfaces {
+	    description
+	      "Interface configuration parameters.";
+	
+	    list interface {
+	      key "name";
+	
+	      description
+	        "The list of configured interfaces on the device.
+	
+	         The operational state of an interface is available in the
+	         /interfaces-state/interface list.  If the configuration of a
+	         system-controlled interface cannot be used by the system
+	         (e.g., the interface hardware present does not match the
+	         interface type), then the configuration is not applied to
+	         the system-controlled interface shown in the
+	         /interfaces-state/interface list.  If the configuration
+	         of a user-controlled interface cannot be used by the system,
+	         the configured interface is not instantiated in the
+	         /interfaces-state/interface list.";
+	
+	     leaf name {
+	        type string;
+	        description
+	          "The name of the interface.
+	
+	           A device MAY restrict the allowed values for this leaf,
+	           possibly depending on the type of the interface.
+	           For system-controlled interfaces, this leaf is the
+	           device-specific name of the interface.  The 'config false'
+	           list /interfaces-state/interface contains the currently
+	           existing interfaces on the device.
+	
+	           If a client tries to create configuration for a
+	           system-controlled interface that is not present in the
+	           /interfaces-state/interface list, the server MAY reject
+	           the request if the implementation does not support
+	           pre-provisioning of interfaces or if the name refers to
+	           an interface that can never exist in the system.  A
+	           NETCONF server MUST reply with an rpc-error with the
+	           error-tag 'invalid-value' in this case.
+	
+	           If the device supports pre-provisioning of interface
+	           configuration, the 'pre-provisioning' feature is
+	           advertised.
+	
+	           If the device allows arbitrarily named user-controlled
+	           interfaces, the 'arbitrary-names' feature is advertised.
+	
+	           When a configured user-controlled interface is created by
+	           the system, it is instantiated with the same name in the
+	           /interface-state/interface list.";
+	      }
+	
+	      leaf description {
+	        type string;
+	        description
+	          "A textual description of the interface.
+	
+	           A server implementation MAY map this leaf to the ifAlias
+	           MIB object.  Such an implementation needs to use some
+	           mechanism to handle the differences in size and characters
+	           allowed between this leaf and ifAlias.  The definition of
+	           such a mechanism is outside the scope of this document.
+	
+	           Since ifAlias is defined to be stored in non-volatile
+	           storage, the MIB implementation MUST map ifAlias to the
+	           value of 'description' in the persistently stored
+	           datastore.
+	
+	           Specifically, if the device supports ':startup', when
+	           ifAlias is read the device MUST return the value of
+	           'description' in the 'startup' datastore, and when it is
+	           written, it MUST be written to the 'running' and 'startup'
+	           datastores.  Note that it is up to the implementation to
+	
+	           decide whether to modify this single leaf in 'startup' or
+	           perform an implicit copy-config from 'running' to
+	           'startup'.
+	
+	           If the device does not support ':startup', ifAlias MUST
+	           be mapped to the 'description' leaf in the 'running'
+	           datastore.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifAlias";
+	      }
+	/*
+	      leaf type {
+	        type identityref {
+	          base interface-type;
+	        }
+	        mandatory true;
+	        description
+	          "The type of the interface.
+	
+	           When an interface entry is created, a server MAY
+	           initialize the type leaf with a valid value, e.g., if it
+	           is possible to derive the type from the name of the
+	           interface.
+	
+	           If a client tries to set the type of an interface to a
+	           value that can never be used by the system, e.g., if the
+	           type is not supported or if the type does not match the
+	           name of the interface, the server MUST reject the request.
+	           A NETCONF server MUST reply with an rpc-error with the
+	           error-tag 'invalid-value' in this case.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifType";
+	      }
+	*/
+	      leaf enabled {
+	        type boolean;
+	        default "true";
+	        description
+	          "This leaf contains the configured, desired state of the
+	           interface.
+	
+	           Systems that implement the IF-MIB use the value of this
+	           leaf in the 'running' datastore to set
+	           IF-MIB.ifAdminStatus to 'up' or 'down' after an ifEntry
+	           has been initialized, as described in RFC 2863.
+	
+	
+	
+	           Changes in this leaf in the 'running' datastore are
+	           reflected in ifAdminStatus, but if ifAdminStatus is
+	           changed over SNMP, this leaf is not affected.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifAdminStatus";
+	      }
+	
+	      leaf link-up-down-trap-enable {
+	        if-feature if-mib;
+	        type enumeration {
+	          enum enabled {
+	            value 1;
+	          }
+	          enum disabled {
+	            value 2;
+	          }
+	        }
+	        description
+	          "Controls whether linkUp/linkDown SNMP notifications
+	           should be generated for this interface.
+	
+	           If this node is not configured, the value 'enabled' is
+	           operationally used by the server for interfaces that do
+	           not operate on top of any other interface (i.e., there are
+	           no 'lower-layer-if' entries), and 'disabled' otherwise.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB -
+	                     ifLinkUpDownTrapEnable";
+	      }
+	    }
+	  }
+	
+	  /*
+	   * Operational state data nodes
+	   */
+	
+	  container interfaces-state {
+	    config false;
+	    description
+	      "Data nodes for the operational state of interfaces.";
+	
+	    list interface {
+	      key "name";
+	
+	      description
+	        "The list of interfaces on the device.
+	
+	         System-controlled interfaces created by the system are
+	         always present in this list, whether they are configured or
+	         not.";
+	
+	      leaf name {
+	        type string;
+	        description
+	          "The name of the interface.
+	
+	           A server implementation MAY map this leaf to the ifName
+	           MIB object.  Such an implementation needs to use some
+	           mechanism to handle the differences in size and characters
+	           allowed between this leaf and ifName.  The definition of
+	           such a mechanism is outside the scope of this document.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifName";
+	      }
+	
+	      leaf type {
+	        type identityref {
+	          base interface-type;
+	        }
+	        mandatory true;
+	        description
+	          "The type of the interface.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifType";
+	      }
+	
+	      leaf admin-status {
+	        if-feature if-mib;
+	        type enumeration {
+	          enum up {
+	            value 1;
+	            description
+	              "Ready to pass packets.";
+	          }
+	          enum down {
+	            value 2;
+	            description
+	              "Not ready to pass packets and not in some test mode.";
+	          }
+	
+	
+	
+	          enum testing {
+	            value 3;
+	            description
+	              "In some test mode.";
+	          }
+	        }
+	        mandatory true;
+	        description
+	          "The desired state of the interface.
+	
+	           This leaf has the same read semantics as ifAdminStatus.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifAdminStatus";
+	      }
+	
+	      leaf oper-status {
+	        type enumeration {
+	          enum up {
+	            value 1;
+	            description
+	              "Ready to pass packets.";
+	          }
+	          enum down {
+	            value 2;
+	            description
+	              "The interface does not pass any packets.";
+	          }
+	          enum testing {
+	            value 3;
+	            description
+	              "In some test mode.  No operational packets can
+	               be passed.";
+	          }
+	          enum unknown {
+	            value 4;
+	            description
+	              "Status cannot be determined for some reason.";
+	          }
+	          enum dormant {
+	            value 5;
+	            description
+	              "Waiting for some external event.";
+	          }
+	          enum not-present {
+	            value 6;
+	            description
+	              "Some component (typically hardware) is missing.";
+	          }
+	          enum lower-layer-down {
+	            value 7;
+	            description
+	              "Down due to state of lower-layer interface(s).";
+	          }
+	        }
+	        mandatory true;
+	        description
+	          "The current operational state of the interface.
+	
+	           This leaf has the same semantics as ifOperStatus.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifOperStatus";
+	      }
+	
+	      leaf last-change {
+	        type yang:date-and-time;
+	        description
+	          "The time the interface entered its current operational
+	           state.  If the current state was entered prior to the
+	           last re-initialization of the local network management
+	           subsystem, then this node is not present.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifLastChange";
+	      }
+	
+	      leaf if-index {
+	        if-feature if-mib;
+	        type int32 {
+	          range "1..2147483647";
+	        }
+	        mandatory true;
+	        description
+	          "The ifIndex value for the ifEntry represented by this
+	           interface.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifIndex";
+	      }
+	
+	      leaf phys-address {
+	        type yang:phys-address;
+	        description
+	          "The interface's address at its protocol sub-layer.  For
+	           example, for an 802.x interface, this object normally
+	           contains a Media Access Control (MAC) address.  The
+	           interface's media-specific modules must define the bit
+	
+	
+	           and byte ordering and the format of the value of this
+	           object.  For interfaces that do not have such an address
+	           (e.g., a serial line), this node is not present.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifPhysAddress";
+	      }
+	
+	      leaf-list higher-layer-if {
+	        type interface-state-ref;
+	        description
+	          "A list of references to interfaces layered on top of this
+	           interface.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifStackTable";
+	      }
+	
+	      leaf-list lower-layer-if {
+	        type interface-state-ref;
+	        description
+	          "A list of references to interfaces layered underneath this
+	           interface.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB - ifStackTable";
+	      }
+	
+	      leaf speed {
+	        type yang:gauge64;
+	        units "bits/second";
+	        description
+	            "An estimate of the interface's current bandwidth in bits
+	             per second.  For interfaces that do not vary in
+	             bandwidth or for those where no accurate estimation can
+	             be made, this node should contain the nominal bandwidth.
+	             For interfaces that have no concept of bandwidth, this
+	             node is not present.";
+	        reference
+	          "RFC 2863: The Interfaces Group MIB -
+	                     ifSpeed, ifHighSpeed";
+	      }
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	      container statistics {
+	        description
+	          "A collection of interface-related statistics objects.";
+	
+	        leaf discontinuity-time {
+	          type yang:date-and-time;
+	          mandatory true;
+	          description
+	            "The time on the most recent occasion at which any one or
+	             more of this interface's counters suffered a
+	             discontinuity.  If no such discontinuities have occurred
+	             since the last re-initialization of the local management
+	             subsystem, then this node contains the time the local
+	             management subsystem re-initialized itself.";
+	        }
+	
+	        leaf in-octets {
+	          type yang:counter64;
+	          description
+	            "The total number of octets received on the interface,
+	             including framing characters.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifHCInOctets";
+	        }
+	
+	        leaf in-unicast-pkts {
+	          type yang:counter64;
+	          description
+	            "The number of packets, delivered by this sub-layer to a
+	             higher (sub-)layer, that were not addressed to a
+	             multicast or broadcast address at this sub-layer.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifHCInUcastPkts";
+	        }
+	
+	
+	
+	
+	        leaf in-broadcast-pkts {
+	          type yang:counter64;
+	          description
+	            "The number of packets, delivered by this sub-layer to a
+	             higher (sub-)layer, that were addressed to a broadcast
+	             address at this sub-layer.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB -
+	                       ifHCInBroadcastPkts";
+	        }
+	
+	        leaf in-multicast-pkts {
+	          type yang:counter64;
+	          description
+	            "The number of packets, delivered by this sub-layer to a
+	             higher (sub-)layer, that were addressed to a multicast
+	             address at this sub-layer.  For a MAC-layer protocol,
+	             this includes both Group and Functional addresses.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB -
+	                       ifHCInMulticastPkts";
+	        }
+	
+	        leaf in-discards {
+	          type yang:counter32;
+	          description
+	            "The number of inbound packets that were chosen to be
+	             discarded even though no errors had been detected to
+	             prevent their being deliverable to a higher-layer
+	             protocol.  One possible reason for discarding such a
+	             packet could be to free up buffer space.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	
+	
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifInDiscards";
+	        }
+	
+	        leaf in-errors {
+	          type yang:counter32;
+	          description
+	            "For packet-oriented interfaces, the number of inbound
+	             packets that contained errors preventing them from being
+	             deliverable to a higher-layer protocol.  For character-
+	             oriented or fixed-length interfaces, the number of
+	             inbound transmission units that contained errors
+	             preventing them from being deliverable to a higher-layer
+	             protocol.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifInErrors";
+	        }
+	
+	        leaf in-unknown-protos {
+	          type yang:counter32;
+	          description
+	            "For packet-oriented interfaces, the number of packets
+	             received via the interface that were discarded because
+	             of an unknown or unsupported protocol.  For
+	             character-oriented or fixed-length interfaces that
+	             support protocol multiplexing, the number of
+	             transmission units received via the interface that were
+	             discarded because of an unknown or unsupported protocol.
+	             For any interface that does not support protocol
+	             multiplexing, this counter is not present.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifInUnknownProtos";
+	        }
+	
+	
+	
+	
+	
+	        leaf out-octets {
+	          type yang:counter64;
+	          description
+	            "The total number of octets transmitted out of the
+	             interface, including framing characters.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifHCOutOctets";
+	        }
+	
+	        leaf out-unicast-pkts {
+	          type yang:counter64;
+	          description
+	            "The total number of packets that higher-level protocols
+	             requested be transmitted, and that were not addressed
+	             to a multicast or broadcast address at this sub-layer,
+	             including those that were discarded or not sent.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifHCOutUcastPkts";
+	        }
+	
+	        leaf out-broadcast-pkts {
+	          type yang:counter64;
+	          description
+	            "The total number of packets that higher-level protocols
+	             requested be transmitted, and that were addressed to a
+	             broadcast address at this sub-layer, including those
+	             that were discarded or not sent.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB -
+	                       ifHCOutBroadcastPkts";
+	        }
+	
+	
+	        leaf out-multicast-pkts {
+	          type yang:counter64;
+	          description
+	            "The total number of packets that higher-level protocols
+	             requested be transmitted, and that were addressed to a
+	             multicast address at this sub-layer, including those
+	             that were discarded or not sent.  For a MAC-layer
+	             protocol, this includes both Group and Functional
+	             addresses.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB -
+	                       ifHCOutMulticastPkts";
+	        }
+	
+	        leaf out-discards {
+	          type yang:counter32;
+	          description
+	            "The number of outbound packets that were chosen to be
+	             discarded even though no errors had been detected to
+	             prevent their being transmitted.  One possible reason
+	             for discarding such a packet could be to free up buffer
+	             space.
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifOutDiscards";
+	        }
+	
+	        leaf out-errors {
+	          type yang:counter32;
+	          description
+	            "For packet-oriented interfaces, the number of outbound
+	             packets that could not be transmitted because of errors.
+	             For character-oriented or fixed-length interfaces, the
+	             number of outbound transmission units that could not be
+	             transmitted because of errors.
+	
+	
+	
+	
+	             Discontinuities in the value of this counter can occur
+	             at re-initialization of the management system, and at
+	             other times as indicated by the value of
+	             'discontinuity-time'.";
+	          reference
+	            "RFC 2863: The Interfaces Group MIB - ifOutErrors";
+	        }
+	      }
+	
+	      /* BBF - GFAST related parameters defined here. */
+		  container fast-channel {
+				  config false;
+				  description
+						  "Bearer channel state data for G.FAST interfaces.";
+	
+				  container performance {
+						  description
+								  "Performance parameters";
+	
+						  container intervals-15min {
+								  description
+										  "15 minute interval performance history";
+	
+								  container current {
+										  description
+												  "Contains the counts that are currently accumulating.";
+	
+										  container ftu-o {
+												  description
+														  "Fast Transceiver Unit - central Office";
+	
+	
+												  leaf code-violations {
+														  type event-counter;
+														  description
+																  "Reports a count of the cyclic redundancy check anomalies
+																  (crc).  The cyclic redundancy check anomaly (crc) is defined
+																  in clause 11.3.1.1/G.9701.";
+														  reference
+																  "ITU-T G.997.2 clause 7.8.4 (CURR/PREV_NE/FE_15/24_CV).";
+												  }
+										  }
+	
+										  container ftu-r {
+												  description
+														  "Fast Transceiver Unit - Remote side";
+	
+												  leaf code-violations {
+														  type event-counter;
+														  description
+																  "Reports a count of the cyclic redundancy check anomalies
+																  (crc).  The cyclic redundancy check anomaly (crc) is defined
+																  in clause 11.3.1.1/G.9701.";
+														  reference
+																  "ITU-T G.997.2 clause 7.8.4 (CURR/PREV_NE/FE_15/24_CV).";
+												  }
+										  }
+								  }
+						  } /*container intervals-15min ends. */
+				  } /* container channel-performance ends. */
+				 
+	
+	              /* Bitrate configurations. */ 
+				  container status {
+						  description
+								  "Channel status parameters";
+	
+						  container downstream {
+								  description
+										  "Downstream channel status";
+	
+								  leaf net-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the net data rate as defined in clause
+												  11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.1.1 (NDR).";
+								  }
+	
+								  leaf expected-throughput {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the expected throughput as defined in clause
+												  11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.1.2 (ETR).";
+								  }
+	
+								  leaf gamma-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the net data rate as defined in clause 7.11.1.1,
+												  lowered by any throughput capability limitations remaining
+														  in the DRA or L2+ functions, assuming no user data is
+														  transmitted over all the other lines.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.1.3 (GDR).";
+								  }
+								  leaf attainable-net-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the attainable net data rate as defined in
+												  clause 11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.2.1 (ATTNDR).";
+								  }
+	
+								  leaf attainable-expected-throughput {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the attainable expected throughput as defined
+												  in clause 11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.2.2 (ATTETR).";
+								  }
+	
+								  leaf attainable-gamma-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the attainable net data rate (as defined in clause
+												  7.11.2.1), lowered by any throughput capability limitations
+												  remaining in the DRA or L2+ functions, assuming no user data
+												  is transmitted over all the other Lines, and assuming MAXGDR
+												  (as defined in clause 7.2.1.3) is configured to its maximum
+												  valid value.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.2.3 (ATTGDR).";
+								  }
+	
+						  }
+	
+						  container upstream {
+								  description
+										  "Upstream channel status";
+								  
+								  leaf net-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the net data rate as defined in clause
+												  11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.1.1 (NDR).";
+								  }
+	
+								  leaf expected-throughput {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the expected throughput as defined in clause
+												  11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.1.2 (ETR).";
+								  }
+	
+								  leaf gamma-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the net data rate as defined in clause 7.11.1.1,
+												  lowered by any throughput capability limitations remaining
+														  in the DRA or L2+ functions, assuming no user data is
+														  transmitted over all the other lines.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.1.3 (GDR).";
+								  }
+								  leaf attainable-net-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the attainable net data rate as defined in
+												  clause 11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.2.1 (ATTNDR).";
+								  }
+	
+								  leaf attainable-expected-throughput {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the attainable expected throughput as defined
+												  in clause 11.4.1.1.x/G.9701.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.2.2 (ATTETR).";
+								  }
+	
+								  leaf attainable-gamma-data-rate {
+										  type channel-data-rate;
+										  config false;
+										  description
+												  "Reports the attainable net data rate (as defined in clause
+												  7.11.2.1), lowered by any throughput capability limitations
+												  remaining in the DRA or L2+ functions, assuming no user data
+												  is transmitted over all the other Lines, and assuming MAXGDR
+												  (as defined in clause 7.2.1.3) is configured to its maximum
+												  valid value.";
+										  reference
+												  "ITU-T G.997.2 clause 7.11.2.3 (ATTGDR).";
+								  }
+						  } /* container upstream ends. */
+				  }  /* container status ends. */
+	
+		  }  /* Container fast-channel ends. */
+	
+	
+	              /* Fast-line related parameters. */
+				  container fast-line {
+						  config false;
+						  description
+								  "Line state data for G.FAST interfaces.";
+	
+						  /* Inventory details for the interface. */
+						  container inventory {
+								  config false;
+								  description
+										  "Inventory parameters.";
+	
+								  container ftu-o {
+										  description
+												  "Inventory parameters reported by the FTU-O.";
+										  leaf g.994.1-vendor-id {
+												  type string {
+													//	  length "8"; // octets
+														  length "0..16"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the  ITU-T G.994.1 vendor ID as inserted by the
+														  FTU-O/FTU-R in the ITU-T G.994.1 CL message and as
+														  defined in clause 9.3.3.1/G.994.1.";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.1.1 (FTUO_GHS_VENDOR) and
+														  7.13.1.2 (FTUR_GHS_VENDOR).";
+										  }
+	
+										  leaf version-number {
+												  type string {
+													//	  length "0..16"; // octets
+														  length "0..32"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the version number as inserted by the FTU-O/FTU-R
+														  in the embedded operations channel (see clause
+																		  11.2.2.10/G.9701). It is for version control and is vendor
+														  specific information.";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.1.3 (FTUO_VERSION) and clause
+														  7.4.6 (FTUR_VERSION).";
+										  }
+								  }
+	
+								  container ftu-r {
+										  description
+												  "Inventory parameters reported by the FTU-R.";
+										  leaf g.994.1-vendor-id {
+												  type string {
+													//	  length "8"; // octets
+														  length "0..16"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the  ITU-T G.994.1 vendor ID as inserted by the
+														  FTU-O/FTU-R in the ITU-T G.994.1 CL message and as
+														  defined in clause 9.3.3.1/G.994.1.";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.1.1 (FTUO_GHS_VENDOR) and
+														  7.13.1.2 (FTUR_GHS_VENDOR).";
+										  }
+	
+										  leaf version-number {
+												  type string {
+													//	  length "0..16"; // octets
+														  length "0..34"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the version number as inserted by the FTU-O/FTU-R
+														  in the embedded operations channel (see clause
+																		  11.2.2.10/G.9701). It is for version control and is vendor
+														  specific information.";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.1.3 (FTUO_VERSION) and clause
+														  7.4.6 (FTUR_VERSION).";
+										  }
+								  }
+	
+								  container dpu {
+										  description
+												  "Inventory parameters reported by the DPU.";
+	
+										  leaf system-vendor-id {
+												  type string {
+													//	  length "8"; // octets
+														  length "0..16"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the DPU/NT system vendor ID as inserted by the
+														  FTU-O/FTU-R in the embedded operations channel (see clause
+																		  11.2.2.10/G.9701) and as defined in clause 9.3.3.1/G.994.1.
+														  ";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.2.1 (DPU_SYSTEM_VENDOR) and
+														  clause 7.13.2.2 (NT_SYSTEM_VENDOR).";
+										  }
+	
+										  leaf serial-number {
+												  type string {
+														  length "0..32"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the DPU/NT serial number as inserted by the
+														  FTU-O/FTU-R in the embedded operations channel (see clause
+																		  11.2.2.10/G.9701). It is vendor specific information. The
+														  combination of system vendor ID and system serial number
+														  creates a unique number for each DPU/NT.";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.2.3 (DPU_SYSTEM_SERIALNR) and
+														  clause 7.13.2.4 (NT_SYSTEM_SERIALNR).";
+										  }
+								  }
+	
+								  container nt {
+										  description
+												  "Inventory parameters reported by the NT.";
+										  leaf system-vendor-id {
+												  type string {
+													//	  length "8"; // octets
+														  length "0..16"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the DPU/NT system vendor ID as inserted by the
+														  FTU-O/FTU-R in the embedded operations channel (see clause
+																		  11.2.2.10/G.9701) and as defined in clause 9.3.3.1/G.994.1.
+														  ";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.2.1 (DPU_SYSTEM_VENDOR) and
+														  clause 7.13.2.2 (NT_SYSTEM_VENDOR).";
+										  }
+	
+										  leaf serial-number {
+												  type string {
+														  length "0..32"; // octets
+												  }
+												  config false;
+												  description
+														  "Reports the DPU/NT serial number as inserted by the
+														  FTU-O/FTU-R in the embedded operations channel (see clause
+																		  11.2.2.10/G.9701). It is vendor specific information. The
+														  combination of system vendor ID and system serial number
+														  creates a unique number for each DPU/NT.";
+												  reference
+														  "ITU-T G.997.2 clause 7.13.2.3 (DPU_SYSTEM_SERIALNR) and
+														  clause 7.13.2.4 (NT_SYSTEM_SERIALNR).";
+										  }
+								  }
+						  } /* container inventory ends. */
+	
+	                      /* Full Init counters. */
+						  container performance {
+								  description
+										  "Performance parameters";
+	
+								  container intervals-15min {
+										  description
+												  "15 minute interval performance history";
+	
+										  container current {
+												  description
+														  "Contains the counts that are currently accumulating.";
+	
+												  container ftu-o {
+														  description
+																  "Fast Transceiver Unit - central Office";
+	
+														  leaf full-initializations {
+																  type event-counter;
+																  description
+																		  "Reports a count of the full initialization primitives
+																		  (full_init).  The full initialization primitive (full_init)
+																		  is defined in clause 11.3.1.5/G.9701. ";
+																  reference
+																		  "ITU-T G.997.2 clause 7.7.13 (CURR/PREV_15/24_FULL_INITS).";
+														  }
+												  }
+										  }
+								  } /*  container intervals-15min ends. */
+						  } /* container performace - Full Init counters ends. */
+	
+	
+	                      /* Line Status.  Showtime state, Noise Margin Data. */
+	
+						  container status {
+								  description
+										  "Status parameters";
+	
+								  leaf profile {
+										  type fast-profiles;
+										  config false;
+										  description
+												  "Reports for each profile whether operation according to
+												  that profile is enabled or disabled. Only one profile can be
+												  enabled.";
+										  reference
+												  "ITU-T G.997.2 clause 7.10.1.1 (PROFILE); ITU-T G.9701
+												  clause 6.";
+								  }
+	
+	
+								  container downstream {
+										  description
+												  "Line status parameters associatd with the downstream
+												  direction";
+	
+										  /* G.997.2 Clause 7.10.3 Signal to noise ratio margin */
+										  leaf snr-margin {
+												  type int16 {
+														  range "-511..511 | 512";  /* -51.1dB to 51.1dB */
+												  }
+												  units "0.1 dB";
+												  config false;
+	
+												  description
+														  "Reports the signal-to-noise ratio margin (as defined in
+														  clause 9.8.3.2/G.9701 and 11.4.1.3/G.9701).
+														  A special value, 512, indicates that the signal-to-noise
+														  ratio margin is out of the range to be represented.";
+												  reference
+														  "ITU-T G.997.2 clause 7.10.3.1 (SNRMds) and clause 7.10.3.2
+														  (SNRMus); ITU-T G.9701 Clause 9.8.3.2 and 11.4.1.3.";
+										  }
+	
+	
+										  /* G.997.2 Clause 7.10.5 Acutal aggregate transmit power */
+										  leaf actual-agg-tx-power {
+												  type int16 {
+														  range "-512 | -310..310";  /* -31.0dB to 31.0dB */
+												  }
+												  units "0.1 dB";
+												  config false;
+	
+												  description
+														  "Reports the total amount of transmit power delivered by the
+														  FTU at the U-O2 reference point, at the instant of
+														  measurement.
+														  A special value, -512, indicates that the downstream actual
+														  aggregate transmit power is out of the range to be
+														  represented.";
+												  reference
+														  "ITU-T G.997.2 clause 7.10.5.1 (ACTATPds) and clause
+														  7.10.5.2 (ACTATPus); ITU-T G.9701 Clause 9.8.3.2 and
+														  11.4.1.5.";
+										  }
+	
+										  container robust-management-channel {
+												  description
+														  "Managment objects associated with the robust management
+														  channel(RMC)";
+	
+												  /* G.997.2 Clause 7.10.12 Robust Management Channel(RMC) */
+												  leaf snr-margin {
+														  type int16 {
+																  range "-512 | -511..511";
+														  }
+														  units 0.1dB;
+														  description
+																  "Reports the signal-to-noise ratio margin (as defined in
+																  clause 11.4.1.4/G.9701) for the RMC.
+																  A special value, -512, indicates that the signal-to-noise
+																  ratio margin for the RMC is out of the range to be
+																  represented.";
+														  reference
+																  "ITU-T G.997.2 clause 7.10.12.1 (SNRMRMCds) and clause
+																  7.10.12.2 (SNRMRMCus); ITU-T G.9701 Clause 11.4.1.4.";
+												  }
+										  }
+								  }  /* container downstream  - ends */
+	
+	
+	
+								  container upstream {
+										  description
+												  "Line status parameters associatd with the downstream
+												  direction";
+	
+	
+										  /* G.997.2 Clause 7.10.3 Signal to noise ratio margin */
+										  leaf snr-margin {
+												  type int16 {
+														  range "-511..511 | 512";  /* -51.1dB to 51.1dB */
+												  }
+												  units "0.1 dB";
+												  config false;
+	
+												  description
+														  "Reports the signal-to-noise ratio margin (as defined in
+														  clause 9.8.3.2/G.9701 and 11.4.1.3/G.9701).
+														  A special value, 512, indicates that the signal-to-noise
+														  ratio margin is out of the range to be represented.";
+												  reference
+														  "ITU-T G.997.2 clause 7.10.3.1 (SNRMds) and clause 7.10.3.2
+														  (SNRMus); ITU-T G.9701 Clause 9.8.3.2 and 11.4.1.3.";
+										  }
+	
+										  container robust-management-channel {
+												  description
+														  "Managment objects associated with the robust management
+														  channel(RMC)";
+	
+												  /* G.997.2 Clause 7.10.12 Robust Management Channel(RMC) */
+												  leaf snr-margin {
+														  type int16 {
+																  range "-512 | -511..511";
+														  }
+														  units 0.1dB;
+														  description
+																  "Reports the signal-to-noise ratio margin (as defined in
+																  clause 11.4.1.4/G.9701) for the RMC.
+																  A special value, -512, indicates that the signal-to-noise
+																  ratio margin for the RMC is out of the range to be
+																  represented.";
+														  reference
+																  "ITU-T G.997.2 clause 7.10.12.1 (SNRMRMCds) and clause
+																  7.10.12.2 (SNRMRMCus); ITU-T G.9701 Clause 11.4.1.4.";
+												  }
+										  }
+								  }  /*  container upstream - ends*/
+						  }  /* container status - ends*/
+				  } /* container fast-line ends. */
+	    }
+	  }
+  
+  }
+
+}

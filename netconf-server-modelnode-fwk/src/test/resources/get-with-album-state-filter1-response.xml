@@ -1,0 +1,15 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+    <data>
+        <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+            <jbox:library>
+                <jbox:artist>
+                    <jbox:name>Lenny</jbox:name>
+                    <jbox:album>
+                        <jbox:name>Greatest hits</jbox:name>
+                        <jbox:album-song-count>2</jbox:album-song-count>
+                    </jbox:album>
+                </jbox:artist>
+            </jbox:library>
+        </jbox:jukebox>
+    </data>
+</rpc-reply>

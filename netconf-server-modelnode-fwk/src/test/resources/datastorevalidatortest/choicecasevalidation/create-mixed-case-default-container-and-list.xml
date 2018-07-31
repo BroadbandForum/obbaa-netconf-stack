@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <default-container-or-list-choice-case>
+        <name>Default container and default list</name>
+    </default-container-or-list-choice-case>
+</validation>

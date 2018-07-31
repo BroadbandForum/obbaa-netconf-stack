@@ -1,0 +1,21 @@
+<rpc message-id="0" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <config>
+            <bbf-fast:configs xmlns:bbf-fast="urn:ietf:params:xml:ns:yang:bbf-fast-vop">
+                <bbf-fast:profiles>
+                    <bbf-fast:downstream-data-rate-profile xmlns:ns="urn:ietf:params:xml:ns:netconf:base:1.0"
+                        ns:operation="create">
+                        <bbf-fast:name>DeviceProfileTest100</bbf-fast:name>
+                        <bbf-fast:maximum-net-data-rate>1</bbf-fast:maximum-net-data-rate>
+                        <bbf-fast:minimum-expected-throughput>1</bbf-fast:minimum-expected-throughput>
+                        <bbf-fast:maximum-gamma-data-rate>1</bbf-fast:maximum-gamma-data-rate>
+                        <bbf-fast:minimum-gamma-data-rate>1</bbf-fast:minimum-gamma-data-rate>
+                    </bbf-fast:downstream-data-rate-profile>
+                </bbf-fast:profiles>
+            </bbf-fast:configs>
+        </config>
+    </edit-config>
+</rpc>

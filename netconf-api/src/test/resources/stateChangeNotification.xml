@@ -1,0 +1,7 @@
+<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+    <eventTime>2016-02-02T13:33:35+07:00</eventTime>
+    <state-change-notification xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-notifications">
+        <target>song-count</target>
+        <value>8</value>
+    </state-change-notification>
+</notification>

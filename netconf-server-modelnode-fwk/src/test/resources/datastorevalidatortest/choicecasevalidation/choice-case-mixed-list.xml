@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <choicecase>
+        <name>Mixed case with non default list case</name>
+        <list-case-mixed>
+            <name-case-mixed>list entry 1</name-case-mixed>
+            <value-case-mixed>some value</value-case-mixed>
+        </list-case-mixed>
+        <list-case-mixed>
+            <name-case-mixed>list entry 2</name-case-mixed>
+            <value-case-mixed>some value 2</value-case-mixed>
+        </list-case-mixed>
+    </choicecase>
+</validation>

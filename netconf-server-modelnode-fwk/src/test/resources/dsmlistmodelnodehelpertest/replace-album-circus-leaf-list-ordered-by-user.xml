@@ -1,0 +1,25 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+	<library>
+		<artist>
+			<name>Lenny</name><!-- Matcher -->
+			<album>
+				<name>Circus</name><!-- Matcher -->
+				<year>1995</year> <!-- Matcher -->
+				<song>
+					<name>Circus</name><!-- Matcher -->
+					<!-- Create some singer -->
+					<singer-ordered-by-user>singerA</singer-ordered-by-user>
+					<singer-ordered-by-user>singerB</singer-ordered-by-user>
+					<singer-ordered-by-user>singerC</singer-ordered-by-user>
+					<singer-ordered-by-user>singerD</singer-ordered-by-user>
+					<!-- Merge cases -->
+					<singer-ordered-by-user xc:operation="replace">singerB</singer-ordered-by-user><!-- Shouldn't be added -->
+					<singer-ordered-by-user xc:operation="replace" yang:insert="last">singerA</singer-ordered-by-user>
+					<singer-ordered-by-user xc:operation="replace" yang:insert="first">singerD</singer-ordered-by-user>
+					<singer-ordered-by-user xc:operation="replace" yang:insert="after" yang:value="singerD">singerC</singer-ordered-by-user>
+					<singer-ordered-by-user xc:operation="replace" yang:insert="before" yang:value="singerD">singerB</singer-ordered-by-user>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

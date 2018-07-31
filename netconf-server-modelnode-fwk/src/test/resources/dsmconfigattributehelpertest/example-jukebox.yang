@@ -1,0 +1,197 @@
+module example-jukebox {
+    
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox";
+
+    prefix "jbox";
+    
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+
+    identity genre {
+      description "Base for all genre types";
+    }
+
+    identity alternative {
+      base genre;
+      description "Alternative music";
+    }
+
+    identity blues {
+      base genre;
+      description "Blues music";
+    }
+
+    identity country {
+      base genre;
+      description "Country music";
+    }
+
+    identity jazz {
+      base genre;
+      description "Jazz music";
+    }
+
+    identity pop {
+      base genre;
+      description "Pop music";
+    }
+
+    identity rock {
+      base genre;
+      description "Rock music";
+    }
+
+    container jukebox {
+      presence
+        "An empty container indicates that the jukebox
+        service is available";
+      description
+        "Represents a jukebox resource, with a library, playlists,
+        and a play operation.";
+
+      container library {
+        description
+          "Represents the jukebox library resource.";
+        list artist {
+          key "name";
+          description
+            "Represents one artist resource within the
+            jukebox library resource.";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "The name of the artist.";
+          }
+
+          list album {
+            key "name";
+            description
+              "Represents one album resource within one
+              artist resource, within the jukebox library.";
+            leaf name {
+              type string {
+                length "1 .. max";
+              }
+              description
+                "The name of the album.";
+            }
+
+            leaf genre {
+              type identityref {
+                base genre;
+              }
+              description
+                "The genre identifying the type of music on
+                the album.";
+            }
+
+            leaf year {
+              type uint16 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+
+            container dummy-container1 {
+              description
+                "Dummy container 1.";
+              leaf dummy-leaf {
+                type string;
+                description
+                  "Dummy container 1.";
+              }
+            }
+
+            container dummy-container2 {
+              description
+                "Dummy container 2";
+              leaf dummy-leaf {
+                type string;
+                description
+                  "Dummy container 2.";
+              }
+            }
+
+            list song {
+              key "name";
+              description
+                "Represents one song resource within one
+                album resource, within the jukebox library.";
+              leaf name {
+                type string {
+                  length "1 .. max";
+                }
+                description
+                  "The name of the song";
+              }
+
+              leaf location {
+                type string;
+                mandatory true;
+                description
+                  "The file location string of the
+                 media file for the song";
+              }
+
+              leaf format {
+                type string;
+                description
+                  "An identifier string for the media type
+                  for the file associated with the
+                  'location' leaf for this entry.";
+              }
+
+              leaf length {
+                type uint32;
+                units "seconds";
+                description
+                  "The duration of this song in seconds.";
+              }
+            }  // list song
+          }  // list album
+        }  // list artist
+
+        leaf artist-count {
+          type uint32;
+          units "songs";
+          config false;
+          description
+            "Number of artists in the library";
+        }
+
+        leaf album-count {
+          type uint32;
+          units "albums";
+          config false;
+          description
+            "Number of albums in the library";
+        }
+
+        leaf song-count {
+          type uint32;
+          units "songs";
+          config false;
+          description
+            "Number of songs in the library";
+        }
+      }  // container library
+    }  // container jukebox
+  }  // module example-jukebox

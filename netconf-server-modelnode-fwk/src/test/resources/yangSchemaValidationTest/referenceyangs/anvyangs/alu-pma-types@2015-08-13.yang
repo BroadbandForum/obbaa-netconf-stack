@@ -1,0 +1,19 @@
+module alu-pma-types {
+
+   namespace "urn:org.bbf:pma-types";
+   prefix "alu-pma";
+   
+   revision 2015-08-13 {
+     description
+      "Initial revision.";
+     reference
+      "RFC 6021: Common YANG Data Types";
+   }
+   
+   typedef url {
+        type string {
+            pattern '((http|https|tftp)://|(ftp|sftp)://((\S+:\S+)@))([\S&&[^/]]+)/([\S&&[^:]]+)';
+        }
+    }
+   
+}

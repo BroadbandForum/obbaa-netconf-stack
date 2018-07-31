@@ -1,0 +1,183 @@
+module datastore-derived-from {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:yang:test:derived:from";
+	
+	prefix "ddf";
+	
+	import datastore-validator-test { prefix "validation"; }
+	
+	revision "2017-08-20" {
+	      description "Initial version.";
+	}
+	
+	identity base-identity {
+		
+	}
+	identity some-identity {
+		base base-identity;
+	}
+	
+	identity identity1 {
+		base some-identity;
+	}
+	
+	identity identity2 {
+		base some-identity;
+	}
+	
+	identity identity3 {
+		base validation:some-identity;
+	}
+	
+	identity identity4 {
+		base identity3;
+	}
+	
+	identity some-identity1 {
+		base base-identity;
+	}
+	
+	identity some-identity2 {
+		base base-identity;
+	}
+	
+	augment "/validation:validation/validation:xml-subtree"{
+		container augmentTest {
+			
+			leaf baseType {
+				type identityref {
+					base base-identity;
+				}
+			}
+			
+			leaf derivedType {
+				type identityref {
+					base some-identity;
+				}
+			}
+			
+			leaf baseTypeFromDifferentModule {
+				type identityref {
+					base validation:some-identity;
+				}
+			}
+			
+			list idRefDeleteTest {
+				key key1;
+				
+				leaf key1 {
+					type identityref {
+						base validation:some-identity;
+					}
+				}
+				
+				leaf someLeaf {
+					type string;
+				}
+				
+				leaf someLeaf1 {
+					when "../someLeaf = 'hello'";
+					type string;
+					default "1";
+				}
+				
+			}
+			list list1 {
+				key leaf1;
+				leaf leaf1 {
+					type string;
+				}
+				
+				leaf leafUnwanted {
+					type string;
+					must 'derived-from-or-self(../../list1[current()]/leaf3, "some-identity")';
+				}
+				
+				leaf leaf3 {
+					type identityref {
+						base base-identity;
+					}
+				}
+				
+				leaf leaf2 {
+					when 'derived-from(../../list1[current()]/leaf3, "some-identity")';
+					type string;
+				}
+				
+				leaf leaf4 {
+					when 'derived-from-or-self(/validation:validation/validation:xml-subtree/augmentTest/list1[current()]/leaf3,"identity1") = true';
+					type string;
+				}
+				
+				list list2 {
+					when 'derived-from(../../list1[current()]/leaf3, "some-identity")';
+					key leaf1;
+					
+					leaf leaf1 {
+						type string;
+					}
+				}
+			}
+		}
+	}
+	
+	augment "/validation:validation/validation:xml-subtree/augmentTest" {
+		when '../../validation:validation = "nothing"';
+
+		container someThing {
+			leaf someThing {
+				type string;
+				default "0";
+			}
+		}
+
+	}
+	
+	augment "/validation:validation/validation:xml-subtree/augmentTest" {
+		when 'derived-from(baseType, "some-identity")';
+		container aug1 {
+			leaf leaf1 {
+				type string;
+			}
+		}
+	}
+	
+	augment "/validation:validation/validation:xml-subtree/augmentTest" {
+		when 'derived-from-or-self(baseType, "some-identity")';
+		container aug2 {
+			leaf leaf1 {
+				type string;
+			}
+		}
+	}
+	
+	augment "/validation:validation/validation:xml-subtree/augmentTest" {
+		when 'derived-from(/validation:validation/validation:xml-subtree/ddf:augmentTest/ddf:baseTypeFromDifferentModule, "validation:some-identity")';
+		container aug3 {
+			leaf leaf2{
+				type string;
+			}
+		}
+	}
+	
+	augment "/validation:validation/validation:xml-subtree/augmentTest/aug1" {
+		when "leaf1 = 'hello'";
+		container aug1 {
+			leaf leaf1 {
+				type string;
+			}
+		}
+	}
+	
+	augment "/validation:validation/validation:xml-subtree/augmentTest" {
+        when 'derived-from-or-self(baseType, "some-identity1") or 
+        	  derived-from-or-self(baseType, "some-identity2")' ;
+    	container aug4 {
+    		leaf leaf1 {
+				type string;
+			}
+    	}
+    }
+}

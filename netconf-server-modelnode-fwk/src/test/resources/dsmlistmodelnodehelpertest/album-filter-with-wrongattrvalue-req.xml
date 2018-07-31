@@ -1,0 +1,12 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Circus</name>
+                <genre>paper</genre> <!-- Wrong value -->
+                <year>1995</year>
+            </album>
+        </artist>
+    </library>
+</jukebox>

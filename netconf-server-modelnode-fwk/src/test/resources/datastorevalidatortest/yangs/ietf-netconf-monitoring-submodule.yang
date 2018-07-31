@@ -1,0 +1,28 @@
+submodule ietf-netconf-monitoring-submodule {
+  belongs-to ietf-netconf-monitoring {
+    prefix ncm;
+  }
+
+  organization 
+    "TBD";
+    
+  contact 
+    "TBD";
+
+  revision 2010-10-04 {
+    description 
+      "Initial revision.";
+    reference
+      "TBD";
+  }
+
+  container a {
+      
+    container b {
+
+		leaf c {
+			type string;
+		}
+    }
+  }
+}

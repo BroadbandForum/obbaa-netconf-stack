@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <leaflist-range>
+        <leaflist-type>value 1</leaflist-type>
+        <leaflist-type>value 2</leaflist-type>
+    </leaflist-range>
+</validation>

@@ -1,0 +1,53 @@
+module example-restaurant {
+	yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-restaurant";
+
+    prefix restaurant;
+
+	revision "2014-07-03" {
+          description "Initial version.";
+
+    }
+	container restaurant {
+		leaf name {
+			mandatory true;
+			type string;
+		}
+		leaf location {
+			type string;
+		}
+		
+		leaf opening-time {
+			type string;
+			default "24/7";
+		}
+		leaf owner {
+		    type string {
+		        length "1..128";
+		    }
+		}
+		
+		container menu {
+			list viand{
+				key name;
+				leaf name {
+					type string;
+				}
+				
+				leaf price {
+					type uint32;
+					default 0;
+					units "k (vnd)";
+				}
+			}
+		
+		}
+		leaf count-viands {
+			type uint32;
+			units "viands";
+			config false;
+		}		
+	}
+}

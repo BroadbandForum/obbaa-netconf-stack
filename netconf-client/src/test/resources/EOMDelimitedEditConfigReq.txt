@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <default-operation>merge</default-operation>
+        <test-option>test-then-set</test-option>
+        <error-option>rollback-on-error</error-option>
+        <config>
+            <configuration xmlns="http://example.com/schema/1.2/config">
+                <protocols>
+                    <rip>
+                        <message-size xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="replace">255</message-size>
+                    </rip>
+                </protocols>
+            </configuration>
+        </config>
+    </edit-config>
+</rpc>]]>]]>

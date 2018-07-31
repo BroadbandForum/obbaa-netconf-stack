@@ -1,0 +1,9 @@
+<config xmlns="http://www.test-company.com/solutions/anv-weather-app" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0"
+        xc:operation="replace">
+    <https-proxy>
+        <proxy-host>global.proxy.bbf.org</proxy-host>
+        <proxy-port>8000</proxy-port>
+        <username>user</username>
+        <password>psswd</password>
+    </https-proxy>
+</config>

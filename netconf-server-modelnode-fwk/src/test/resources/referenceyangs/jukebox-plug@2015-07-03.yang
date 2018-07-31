@@ -1,0 +1,42 @@
+module jukebox-plug1 {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox";
+
+    prefix jbox-plug;
+
+    import example-jukebox {
+      prefix jbox;
+    }
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "The plug that augments example-jukebox with the very famous fade effect";
+
+    revision "2015-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+    augment "/jbox:jukebox/jbox:player" {
+        when "jbox:jukebox/jbox:player='G.FAST'";
+        container fad-effect-container {
+            leaf fade-effect {
+                type boolean;
+                default false;
+                description
+                    "Should there be a fade effect between songs in playlist";
+                reference
+                    "Jukebox software for Dummies";
+            }
+        }
+
+    }
+
+}

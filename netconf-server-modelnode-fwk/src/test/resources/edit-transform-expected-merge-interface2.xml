@@ -1,0 +1,9 @@
+<interfaces xmlns:ns0="urn:ietf:params:xml:ns:netconf:base:1.0" ns0:operation="merge" xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces">
+	<interface>
+		<bbf-qos-pol:classifier-action-entry-cfg xmlns:bbf-qos-pol="urn:broadband-forum-org:yang:bbf-qos-policies">
+			<bbf-qos-pol:action-type>xdsl</bbf-qos-pol:action-type>
+		</bbf-qos-pol:classifier-action-entry-cfg>
+		<name>ethernet:1/1/1/1:123456</name>
+		<type xmlns:if="urn:ietf:params:xml:ns:yang:ietf-interfaces">if:xdsl</type>
+	</interface>
+</interfaces>

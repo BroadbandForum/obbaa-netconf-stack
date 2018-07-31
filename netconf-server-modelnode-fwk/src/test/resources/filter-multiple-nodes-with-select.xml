@@ -1,0 +1,20 @@
+
+  <jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+      <artist>
+        <album>
+          <name>Circus</name>
+          <song/>
+        </album>
+                <album>
+          <name>Greatest hits</name>
+        </album>
+        <album>
+          <name>Non match</name>
+        </album>
+        <album>
+          <name>Non match2</name>
+        </album>
+      </artist>
+    </library>
+  </jukebox>

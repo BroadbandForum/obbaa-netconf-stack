@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<validation>validation</validation>
+	<newList>
+		<validation>validation</validation>
+	</newList>
+	<newList>
+		<validation>anotherValidation</validation>
+	</newList>
+</validation>

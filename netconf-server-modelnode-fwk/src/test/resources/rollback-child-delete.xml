@@ -1,0 +1,18 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <library>
+    <artist>
+      <name>Lenny</name>
+      <album>
+        <name>Greatest hits</name>
+        <year>2001</year> <!-- thing to be rolled back -->
+        <albumimage xc:operation="delete"><!-- thing to be rolled back -->
+            <imageid>1</imageid>
+        </albumimage>
+      </album>
+      <album>
+        <name>Circus</name>
+        <year>-1</year> <!-- error -->
+      </album>
+    </artist>
+  </library>
+</jukebox>

@@ -1,0 +1,18 @@
+
+#581
+<?xml version="1.0" encoding="UTF-8"?>
+<rpc-reply xmlns:ncx="http://netconfcentral.org/ns/yuma-ncx"
+  xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <rpc-error>
+    <error-type>transport</error-type>
+    <error-tag>malformed-message</error-tag>
+    <error-severity>error</error-severity>
+    <error-app-tag>data-invalid</error-app-tag>
+    <error-message xml:lang="en">invalid protocol framing characters received</error-message>
+    <error-info>
+      <error-number xmlns="http://netconfcentral.org/ns/yuma-ncx">378</error-number>
+      <extra-data-added-to-make-it-fail/>
+    </error-info>
+  </rpc-error>
+</rpc-reply>
+##

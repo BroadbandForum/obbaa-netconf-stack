@@ -1,0 +1,26 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+  <library>
+    <artist>
+      <name>Lenny</name>
+        <album-ordered-by-user xc:operation="replace" yang:insert="first">
+          <name>AlbumB</name>
+          <year>1995</year>
+        </album-ordered-by-user>
+        <album-ordered-by-user xc:operation="replace" yang:insert="last">
+          <name>AlbumC</name>
+          <year>1995</year>
+        </album-ordered-by-user>
+        <album-ordered-by-user xc:operation="replace" yang:insert="after" yang:key="[name='AlbumC']">
+          <name>AlbumD</name>
+          <year>1995</year>
+        </album-ordered-by-user>
+        <album-ordered-by-user xc:operation="replace" yang:insert="before" yang:key="[name='AlbumC']">
+          <name>AlbumE</name>
+          <year>1995</year>
+        </album-ordered-by-user>
+        <album-ordered-by-user xc:operation="replace" yang:insert="before" yang:key="[name='AlbumB']">
+          <name>AlbumA</name>
+        </album-ordered-by-user>
+    </artist>
+  </library>
+</jukebox>

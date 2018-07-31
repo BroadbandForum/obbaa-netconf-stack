@@ -1,0 +1,48 @@
+module certificates {
+
+	yang-version 1;
+
+	namespace "test:certificates";
+
+	prefix "cert";
+
+    import ietf-yang-types { prefix yang; }
+
+    revision "2015-12-08" {
+        description "Test.";
+        reference "";
+    }
+
+	container certificate-mgmt{
+		container trusted-ca-certs {
+			uses x509-certificates;
+		}
+		container pma-certs {
+			uses x509-certificates;
+		}
+		grouping x509-certificates {
+			list certificate {
+				description
+					"A list of X 509 certificates.";
+				key id;
+
+				leaf id {
+					type string;
+					description
+						"Unique id of the certificate.";
+					}
+
+				ordered-by system;
+
+				leaf cert-binary {
+					type string;
+					description
+						"The binary certificate structure as specified by RFC 5246, Section 7.4.6, i.e.,: opaque ASN.1Cert<1..2^24>";
+					reference
+						"RFC 5246: The Transport Layer Security (TLS)
+						Protocol Version 1.2";
+				}
+			}
+		}
+    }
+}

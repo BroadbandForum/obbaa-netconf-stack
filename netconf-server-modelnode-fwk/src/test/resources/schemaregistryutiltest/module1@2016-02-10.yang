@@ -1,0 +1,30 @@
+module module1 {
+  namespace "urn:module1";
+  prefix module1prefix;
+
+  import thirdparty-module1 {
+    	prefix "tp1";
+  }
+
+  import thirdparty-module2 {
+      	prefix "tp2";
+  }
+
+  identity des {
+        base "tp1:crypto-alg";
+        description "DES crypto algorithm";
+  }
+
+  organization "TBD";
+  contact
+    "TBD";
+  description
+    "An experimental YANG module supporting Vector of Profiles
+     for FAST lines.";
+
+  revision 2016-02-10 {
+    description
+      "Initial revision.";
+    reference "TBD";
+  }
+}

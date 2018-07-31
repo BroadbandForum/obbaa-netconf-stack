@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<instance-identifier-example>
+		<address>
+			<national>
+				<national-id>VN</national-id>
+				<national-name>Viet Nam</national-name>
+			</national>
+		</address>
+		<subject>
+			<subject-id>SJ001</subject-id>
+			<subject-name>Math</subject-name>
+		</subject>
+
+		<classz>
+			<class-id>Cl001</class-id>
+			<class-name>Math class</class-name>
+		</classz>
+	</instance-identifier-example>
+</validation>

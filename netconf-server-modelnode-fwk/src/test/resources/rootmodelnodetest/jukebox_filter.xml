@@ -1,0 +1,10 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+  <library>
+    <artist>
+      <name>Lenny</name>
+      <album>
+        <genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:rock</genre>
+      </album>
+    </artist>
+  </library>
+</jukebox>

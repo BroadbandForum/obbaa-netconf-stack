@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+<choicecase>
+	<name>create leaf of empty type</name>
+	<leaf-empty-case2/>
+</choicecase>
+</validation>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <mandatory-validation>
+        <mandatory-case2-leaf1>
+            This is mandatory leaf1 inside case.
+            Missing mandatory leaf2
+        </mandatory-case2-leaf1>
+    </mandatory-validation>
+</validation>

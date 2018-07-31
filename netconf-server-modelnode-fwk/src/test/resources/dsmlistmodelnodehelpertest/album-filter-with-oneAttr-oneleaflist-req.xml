@@ -1,0 +1,17 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Greatest hits</name>
+                <year>2000</year>
+                <song>
+                 	<location />
+                 	<format />
+                    <name>Are you gonne go my way</name>
+                    <singer>Johnson</singer>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

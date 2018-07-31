@@ -1,0 +1,23 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Circus</name>
+                <admins>
+                   <admin>
+                       <label>admin1</label>
+                   </admin>
+                </admins>
+            </album>
+            <album>
+                <name>Greatest hits</name>
+                <admins>
+                    <admin>
+                        <label>admin3</label>
+                    </admin>
+                </admins>
+            </album>
+        </artist>
+    </library>
+</jukebox>

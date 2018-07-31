@@ -1,0 +1,62 @@
+module yang-file {
+
+    namespace "urn:org:bbf:pma";
+    prefix "pma";
+    
+    revision "2015-07-27" {
+      description "Initial version.";
+    }
+
+    container default-example {
+        list list-a {
+            key "a1";
+            leaf a1 {
+                type string;
+            }
+            leaf a2 {
+                type string;
+                default "a2";
+            }
+            
+            leaf a3 {
+                type string;
+                // no default;
+            }
+            
+            container container-b { // sub-container of list-a
+                leaf b1 {
+                    type string;
+                    default "b1";
+                }
+                
+                container container-c { // sub-container of container-b
+                    leaf c1 {
+                        type string;
+                        default "c1";
+                    }
+                }
+            }
+            
+            container container-d { // sub-container of list-a
+                leaf d1 {
+                    type string;
+                    // no default value;
+                }
+            }
+            
+            container container-e { // sub-container of list-a
+                presence "presence container";
+                leaf e1 {
+                    type string;
+                    default "e1";
+                }
+                
+                leaf e2 {
+                	type string;
+                	default "e2";
+                	when "../e1 = 'e2'";
+                }
+            }
+        }
+    }
+}

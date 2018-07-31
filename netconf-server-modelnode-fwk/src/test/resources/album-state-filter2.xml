@@ -1,0 +1,11 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name></name>
+            <album>
+                <name/>
+                <album-song-count>3</album-song-count>
+            </album>
+        </artist>
+    </library>
+</jukebox>

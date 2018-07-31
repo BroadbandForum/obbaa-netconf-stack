@@ -1,0 +1,24 @@
+module default-capability-test {
+
+    namespace "urn:com:test:pma:caps";
+    prefix "caps";
+    
+    import yang-file {
+    	prefix pma;
+  	}
+    
+    revision "2015-07-27" {
+      description "Initial version.";
+    }
+    
+    
+    augment "/pma:default-example/pma:list-a" {
+    	when "pma:a1 = 'key2'";
+    	container container-e { // sub-container of list-a
+                leaf e1 {
+                    type string;
+                    default "e1";
+                }
+		}
+	}
+}

@@ -1,0 +1,53 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <jukebox xmlns="http://example.com/ns/example-jukebox">
+      <library>
+        <artist>
+          <name>Lenny</name>
+          <album>
+            <genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:jazz</genre>
+            <name>Greatest hits</name>
+            <year>2000</year>
+            <song>
+              <format>mp3</format>
+              <location>desktop/mymusic</location>
+              <name>Are you gonne go my way</name>
+            </song>
+            <song>
+              <format>flac</format>
+              <location>desktop/mymusic</location>
+              <name>Fly Away</name>
+            </song>
+            <admin>
+              <label>Sony</label>
+            </admin>
+          </album>
+          <album>
+            <name>AlbumWithoutGenre</name>
+            <year>1995</year>
+            <admin>
+              <label>Sony</label>
+            </admin>
+            <song>
+              <name>SomeSong</name>
+              <location>desktop/mymusic</location>
+              <format>amr</format>
+            </song>
+          </album>
+          <album>
+            <name>Circus</name>
+            <year>1995</year>
+            <song>
+              <name>Magdalene</name>
+              <location>here</location>
+            </song>
+            <song>
+              <name>Thin Ice</name>
+              <location>there</location>
+            </song>
+          </album>
+        </artist>
+      </library>
+    </jukebox>
+  </data>
+</rpc-reply>

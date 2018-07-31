@@ -1,0 +1,10 @@
+<rpc message-id="4" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <copy-config>
+        <source>
+            <running />
+        </source>
+        <target>
+            <candidate />
+        </target>
+    </copy-config>
+</rpc>

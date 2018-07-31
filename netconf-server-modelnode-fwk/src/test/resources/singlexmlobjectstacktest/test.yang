@@ -1,0 +1,59 @@
+module test {
+  namespace "urn:test";
+  prefix testprefix;
+
+  organization "TBD";
+  contact
+    "TBD";
+  description
+    "Test module";
+
+  revision 2016-02-10 {
+    description
+      "Initial revision.";
+    reference "TBD";
+  }
+
+  container rootContainer1 {
+    leaf leaf1 {
+      type string;
+    }
+    container level1Container1 {
+      leaf leaf4 {
+        type string;
+      }
+    }
+    list list2 {
+      key "list2Key";
+      leaf list2Key {
+        type string;
+      }
+      leaf leaf5 {
+        type string;
+      }
+    }
+  }
+  container rootContainer2 {
+    leaf leaf2 {
+      type string;
+    }
+  }
+  list list1 {
+    key "listKey";
+    leaf listKey {
+      type string;
+    }
+    leaf leaf3 {
+      type string;
+    }
+    list list3 {
+      key "list3Key";
+      leaf list3Key {
+        type string;
+      }
+      leaf leaf6 {
+        type string;
+      }
+    }
+  }
+}

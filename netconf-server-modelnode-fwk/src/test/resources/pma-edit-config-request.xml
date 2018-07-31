@@ -1,0 +1,32 @@
+<rpc message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+	<edit-config>
+		<target>
+			<running />
+		</target>
+		<default-operation>merge</default-operation>
+		<test-option>set</test-option>
+		<error-option>stop-on-error</error-option>
+		<config>
+			<pma xmlns="urn:org:bbf:pma">
+				<pmadevices>
+					<pmadevice>
+						<deviceId>device0</deviceId>
+						<jukebox xmlns="http://example.com/ns/example-jukebox">
+							<library>
+								<artist>
+									<name>Lenny</name>
+									<!-- Matcher -->
+									<album>
+										<name>Circus</name>
+										<!-- Matcher -->
+										<year>2000</year> <!-- Thing to be changed -->
+									</album>
+								</artist>
+							</library>
+						</jukebox>
+					</pmadevice>
+				</pmadevices>
+			</pma>
+		</config>
+	</edit-config>
+</rpc>

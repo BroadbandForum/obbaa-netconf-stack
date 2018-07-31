@@ -1,0 +1,27 @@
+module module2 {
+
+  namespace "urn:module2";
+    prefix module2prefix;
+
+  import module1 {
+       prefix "module1prefix";
+  }
+
+  import thirdparty-module3 {
+     	prefix "tp3";
+  }
+
+  organization "TBD";
+  contact
+    "TBD";
+  description
+    "This module contains a collection of YANG definitions for
+     managing top level FAST configuration and augmenations to
+     ietf-interfaces.";
+
+  revision 2016-02-10 {
+      description
+        "Initial revision.";
+      reference "TBD";
+  }
+}

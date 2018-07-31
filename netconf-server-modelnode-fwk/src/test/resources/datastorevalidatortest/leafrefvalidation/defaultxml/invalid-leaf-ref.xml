@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <leaf-ref>
+    	<artist>
+    		<name>LENY</name>
+    	</artist>
+    	<album>
+    		<name>Album1</name>
+	    	<song>
+	    		<name>Circus</name>
+	    		<artist-name>ABC</artist-name>
+	    	</song>
+	    	<song>
+	    		<name>Last Christmas</name>
+	    		<artist-name>LENY</artist-name>
+	    	</song>
+        </album>
+    </leaf-ref>
+
+</validation>

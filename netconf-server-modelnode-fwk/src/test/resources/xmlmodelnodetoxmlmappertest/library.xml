@@ -1,0 +1,20 @@
+<library xmlns="http://example.com/ns/example-jukebox">
+    <artist>
+        <name>Artist1</name>
+        <album>
+            <name>album11</name>
+            <year>2016</year>
+        </album>
+    </artist>
+    <artist>
+        <name>Artist2</name>
+        <album>
+            <name>album21</name>
+            <year>1947</year>
+        </album>
+        <album>
+            <name>album22</name>
+            <year>1948</year>
+        </album>
+    </artist>
+</library>

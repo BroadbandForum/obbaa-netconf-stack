@@ -1,0 +1,4 @@
+<favourite-song xmlns="http://example.com/ns/example-jukebox">
+		<name>Demo Name</name>
+		<description>Demo Description</description>
+</favourite-song>

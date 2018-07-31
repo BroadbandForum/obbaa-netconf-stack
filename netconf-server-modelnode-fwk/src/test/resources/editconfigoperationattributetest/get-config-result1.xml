@@ -1,0 +1,14 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <operation-example xmlns="urn:org:bbf:pma">
+      <list-a>
+        <a1>a1</a1>
+        <a2>a2</a2>
+        <list-b>
+            <b1>b1</b1>
+            <b2>b2</b2>
+        </list-b>
+      </list-a>
+    </operation-example>
+  </data>
+</rpc-reply>

@@ -1,0 +1,75 @@
+module weather-app {
+  yang-version 1;
+  namespace "http://www.test-company.com/solutions/anv-weather-app";
+  prefix awa;
+
+  revision 2016-04-25 {
+    description
+      "Initial version.";
+    reference "See http://tiger.in.test-company.com:8090/display/EPG/Complete+application+blueprint";
+  }
+
+  container config {
+    description
+      "configurations across the weather app system";
+    container https-proxy {
+      description
+        "https proxy configuration for weather app system";
+      leaf proxy-host {
+        type string;
+      }
+      leaf proxy-port {
+        type uint16;
+      }
+      leaf username {
+        type string;
+      }
+      leaf password {
+        type string;
+      }
+    }
+  }
+
+  container root-container {
+    description
+      "Root container";
+    container dummy-container {
+      description
+        "Dummy container";
+      leaf leaf1 {
+        type string;
+      }
+      leaf leaf2 {
+        type uint16;
+      }
+    }
+  }
+
+  list city {
+    key "city-name country-name";
+    description
+      "List of configured cities whose forecast can be retrieved.";
+    leaf city-name {
+      type string;
+    }
+    leaf country-name {
+      type string;
+    }
+    list forecast {
+      config false;
+      key "day";
+      description
+        "Forecast for the given day.";
+      leaf day {
+        type string;
+      }
+      leaf forecast {
+        type string;
+      }
+    }
+  }
+  rpc refresh {
+    description
+      "refreshes predictions from the weather service";
+  }
+}

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<choicecase>
+			<container-case-success>
+				<container-success-leaf1>leaf1</container-success-leaf1>
+				<container-success-leaf2>leaf2</container-success-leaf2>
+			</container-case-success>
+		</choicecase>
+	</when-validation>
+</validation>

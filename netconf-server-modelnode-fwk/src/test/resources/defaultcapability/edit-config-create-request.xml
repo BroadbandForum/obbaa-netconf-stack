@@ -1,0 +1,5 @@
+<default-example xmlns="urn:org:bbf:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <list-a xc:operation="create">
+    <a1>key1</a1>
+  </list-a>
+</default-example>

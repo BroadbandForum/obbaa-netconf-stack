@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<instance-identifier-example>
+		<leaflist>/validation/instance-identifier-example/leaf1</leaflist>
+		<student>
+			<student-id>ST001</student-id>
+			<student-name>Student 1</student-name>
+			<student-instance-identifier1>/validation/instance-identifier-example/leaf1
+			</student-instance-identifier1>
+		</student>
+	</instance-identifier-example>
+</validation>

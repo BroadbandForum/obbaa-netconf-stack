@@ -1,0 +1,45 @@
+module yang-with-parent-child-same-qname {
+    yang-version 1;
+    namespace "urn:yang-with-parent-child-same-qname";
+    prefix ywpcsq;
+
+    revision 2016-07-11 {
+    description
+      "Initial version.";
+    }
+
+    container root {
+        container same-qname1 {
+            list same-qname1 {
+                key key-leaf;
+
+                leaf key-leaf {
+                    type string;
+                }
+
+                leaf value-leaf {
+                    type string;
+                }
+            }
+        }
+        container same-qname2 {
+            container same-qname2 {
+                leaf some-leaf {
+                    type string;
+                }
+            }
+        }
+    }
+
+    list root-list{
+        leaf list-leaf {
+            type string;
+        }
+
+        container child{
+            leaf container-leaf {
+                type string;
+            }
+        }
+    }
+}

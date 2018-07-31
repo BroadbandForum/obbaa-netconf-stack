@@ -1,0 +1,5 @@
+<node4 xmlns="urn:org:bbf:pma:xe">
+    <node4-name>node4 2</node4-name>
+    <node4-leaflist>node4 leaflist 3</node4-leaflist>
+    <node4-leaflist>node4 leaflist 4</node4-leaflist>
+</node4>

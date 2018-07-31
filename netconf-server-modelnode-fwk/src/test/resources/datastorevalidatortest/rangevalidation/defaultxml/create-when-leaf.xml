@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<leaf-type>when-condition is true when result is greater than 10</leaf-type>
+	</when-validation>
+</validation>

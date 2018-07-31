@@ -1,0 +1,73 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <jukebox xmlns="http://example.com/ns/example-jukebox">
+      <library>
+        <artist>
+          <name>Lenny</name>
+          <album>
+            <name>Greatest hits</name>
+            <genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:jazz</genre>
+            <year>2000</year>
+            <song>
+              <name>Are you gonne go my way</name>
+              <format>mp3</format>
+              <location>desktop/mymusic</location>
+            </song>
+            <song>
+              <name>Fly Away</name>
+              <format>flac</format>
+              <location>desktop/mymusic</location>
+            </song>
+            <admin>
+              <label>Sony</label>
+            </admin>
+          </album>
+          <album>
+            <name>Circus</name>
+            <genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:rock</genre>
+            <year>1995</year>
+            <song>
+              <name>Rock and roll is dead</name>
+              <format>amr</format>
+              <location>desktop/mymusic</location>
+            </song>
+            <song>
+              <name>Circus</name>
+              <format>wma</format>
+              <location>desktop/mymusic</location>
+            </song>
+            <song>
+              <name>Beyond the 7th Sky</name>
+              <format>mp3</format>
+              <location>desktop/mymusic</location>
+            </song>
+            <admin>
+              <label>Sony</label>
+            </admin>
+          </album>
+          <album>
+            <name>AlbumWithoutGenre</name>
+            <year>1995</year>
+            <admin>
+              <label>Sony</label>
+            </admin>
+            <song>
+              <name>SomeSong</name>
+              <location>desktop/mymusic</location>
+              <format>amr</format>
+            </song>
+          </album>
+        </artist>
+      </library>
+    </jukebox>
+    <toast:toaster xmlns:toast="http://netconfcentral.org/ns/toaster">
+      <toast:toasterManufacturer>toasterManufacturer</toast:toasterManufacturer>
+      <toast:toasterModelNumber>toasterModelNumber</toast:toasterModelNumber>
+      <toast:toasterStatus>up</toast:toasterStatus>
+    </toast:toaster>
+    <testPrefix:state-container xmlns:testPrefix="http://netconfcentral.org/ns/tester">
+      <testPrefix:name>default-name</testPrefix:name>
+      <testPrefix:value>test</testPrefix:value>
+    </testPrefix:state-container>
+  </data>
+</rpc-reply>

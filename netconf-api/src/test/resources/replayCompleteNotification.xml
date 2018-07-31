@@ -1,0 +1,4 @@
+<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+    <eventTime>2016-04-26T16:13:01+07:00</eventTime>
+    <replayComplete xmlns="urn:ietf:params:xml:ns:netmod:notification" />
+</notification>

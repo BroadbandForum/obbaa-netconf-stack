@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<leaflist-type>the constraint evaluates to true when result-leaflist from 5 to 10</leaflist-type>		
+	</when-validation>
+</validation>

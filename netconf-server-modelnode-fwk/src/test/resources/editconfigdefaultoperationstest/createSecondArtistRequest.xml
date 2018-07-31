@@ -1,0 +1,29 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album>
+				<name>A new Album</name>
+				<year>2015</year>
+				<song>
+					<name>Hi there</name>
+				</song>
+				<song xc:operation="merge">
+					<name>New song</name>
+                    <location>here</location>
+				</song>
+			</album>
+		</artist>
+		<artist>
+			<name>New artist</name>
+			<album>
+				<name>his album</name>
+				<year>2015</year>
+				<song xc:operation="create">
+					<name>his song</name>
+                    <location>there</location>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

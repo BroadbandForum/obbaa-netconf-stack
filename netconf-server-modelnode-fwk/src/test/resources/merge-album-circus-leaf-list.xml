@@ -1,0 +1,17 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer">
+	<library>
+		<artist>
+			<name>Lenny</name><!-- Matcher -->
+			<album>
+				<name>Circus</name><!-- Matcher -->
+				<year>1995</year> <!-- Matcher -->
+				<song>
+					<name>Circus</name><!-- Matcher -->
+					<singer>Johnson</singer><!-- Matcher : will not created -->
+					<singer>William</singer>
+					<singer>Angelina</singer>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

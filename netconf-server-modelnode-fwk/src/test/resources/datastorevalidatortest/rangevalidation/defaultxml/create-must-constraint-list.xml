@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<must-validation>
+		<interface>
+			<data>
+				<data-id>1</data-id>
+				<data-value>10000</data-value>
+			</data>
+			<data>
+				<data-id>2</data-id>
+				<data-value>64</data-value>
+			</data>
+		</interface>
+	</must-validation>
+</validation>

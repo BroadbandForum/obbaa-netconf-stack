@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" >
+    <choicecase xc:operation="delete">
+        <name>create mixed case 1</name>
+    </choicecase>
+</validation>

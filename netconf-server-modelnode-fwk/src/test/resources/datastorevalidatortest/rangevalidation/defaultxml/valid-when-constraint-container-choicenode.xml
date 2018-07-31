@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<choicecase>
+			<data-choice>101</data-choice>
+			<result-choice>success</result-choice>
+		</choicecase>
+	</when-validation>
+</validation>

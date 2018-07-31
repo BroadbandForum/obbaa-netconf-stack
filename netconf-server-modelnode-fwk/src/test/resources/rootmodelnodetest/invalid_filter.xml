@@ -1,0 +1,13 @@
+<myOwnModelWhichIsNotThereInServer xmlns="http://blah/blah">
+  <this>
+    <should>
+      <not/>
+      <get>
+        <a>
+          <reply/>
+        </a>
+      </get>
+    </should>
+  </this>
+</myOwnModelWhichIsNotThereInServer>
+

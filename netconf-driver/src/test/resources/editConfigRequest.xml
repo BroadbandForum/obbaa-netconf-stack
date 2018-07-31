@@ -1,0 +1,24 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="3">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <test-option>set</test-option>
+        <config>
+            <pma xmlns="urn:org:bbf:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+                <device-holder xc:operation="create">
+                    <name>OLT-1234</name>
+                    <device>
+                        <device-id>device1</device-id>
+                        <hardware-type>JUKEBOX</hardware-type>
+                        <interface-version>1.0</interface-version>
+                        <connection-initiator>device</connection-initiator>
+                        <jukebox xmlns="http://example.com/ns/example-jukebox">
+                            <library />
+                        </jukebox>
+                    </device>
+                </device-holder>
+            </pma>
+        </config>
+    </edit-config>
+</rpc>

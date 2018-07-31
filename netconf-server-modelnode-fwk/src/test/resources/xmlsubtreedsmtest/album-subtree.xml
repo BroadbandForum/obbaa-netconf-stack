@@ -1,0 +1,11 @@
+<album xmlns="http://example.com/ns/example-jukebox">
+    <song>
+        <name>Let it go</name>
+        <format>mp3</format>
+    </song>
+    <song>
+        <name>Pocketful of Sunshine</name>
+        <location>somelocation</location>
+        <format>mp3</format>
+    </song>
+</album>

@@ -1,0 +1,11 @@
+<node3 xmlns="urn:org:bbf:pma:xe">
+	<node3-name>node3 2</node3-name>
+	<node3-leaflist>node3 leaflist 3</node3-leaflist>
+	<node3-leaflist>node3 leaflist 4</node3-leaflist>
+	<node3-int32>456</node3-int32>
+	<node4>
+		<node4-name>node4 3</node4-name>
+		<node4-leaflist>node4 leaflist 5</node4-leaflist>
+		<node4-leaflist>node4 leaflist 6</node4-leaflist>
+	</node4>
+</node3>

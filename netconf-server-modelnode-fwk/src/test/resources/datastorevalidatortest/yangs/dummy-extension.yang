@@ -1,0 +1,17 @@
+module dummy-extensions {
+    yang-version 1;
+     
+    namespace "http://www.test-company.com/solutions/anv-yang-extensions";
+    prefix "anvext";
+     
+    description "YANG extensions to be used in PMA";
+     
+    revision "2016-01-07" {
+        description "Initial version.";
+    }  
+ 
+	extension  treat-as-relative-path {
+		description
+			"Indicates the absolute path is augment with device-specific path and the relative path has to be validated";
+	}
+}

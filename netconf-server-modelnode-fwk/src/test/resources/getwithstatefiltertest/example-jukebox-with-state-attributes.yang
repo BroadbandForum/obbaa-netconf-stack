@@ -1,0 +1,62 @@
+module example-jukebox-with-state-attributes {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox";
+
+    prefix jbox;
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module with artist having state leaf and leaf-list attributes";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+ 
+    container jukebox {
+      presence
+        "An empty container indicates that the jukebox
+        service is available";
+      description
+        "Represents a jukebox resource, with a library";
+      container library {
+        description
+          "Represents the jukebox library resource.";
+        list artist {
+          key "name";
+          description
+            "Represents one artist resource within the
+            jukebox library resource.";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "The name of the artist.";
+          }
+
+          leaf album-count {
+              type uint32;
+              config false;
+              description
+                "Number of albums made by artist";
+          }
+
+          leaf-list awards {
+            type string;
+            config false;
+            description
+              "Awards received by this artist";
+          }
+        }  // list artist
+      }  // container library
+    }  // container jukebox
+  }  // module example-jukebox

@@ -1,0 +1,43 @@
+module choice-case-module {
+  yang-version 1;
+  namespace "urn:choice-case-test";
+  prefix cct;
+
+  revision 2015-12-14 {
+    description
+      "Initial version.";
+  }
+
+  container device-manager {
+    list device-holder {
+      key "name";
+      leaf name {
+        type string;
+      }
+      list device {
+        key "device-id";
+        leaf device-id {
+          type string;
+        }
+        choice conn-type {
+          case call-home-duid {
+            leaf duid {
+              type string;
+              default "Default value 1";
+            }
+          }
+          case non-call-home {
+            container configured-device-properties {
+              leaf ip-address {
+                type string;
+              }
+              leaf ip-port {
+                type string;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

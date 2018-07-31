@@ -1,0 +1,314 @@
+module datastore-validator-test {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma:validation";
+	
+	prefix "validation";
+	
+	import dummy-extensions { prefix "anvext"; }
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+	
+	
+	identity some-identity {
+	}
+	
+	identity identity1 {
+		base some-identity;
+	}
+	
+	identity identity2 {
+		base some-identity;
+	}
+
+	    
+    grouping group1 {
+        container groupContainer1 {
+            leaf groupContainerLeaf1 {
+               type leafref {
+                   path "validation:validation/validation:validation";
+                }
+            }
+        }
+    }
+    
+    grouping group-ref {
+        leaf group-name {
+            mandatory true;
+            type string;
+        }
+        leaf group-id {
+            mandatory true;
+            type string;
+        }
+    }
+    
+    container validation {
+    	
+    	leaf validation {
+    		type string;
+    	}
+    	
+		container xml-subtree {
+			
+	    	list orderByUser {
+	    		ordered-by user;
+	    		key key;
+	    		leaf key {
+	    			type string;
+	    			}
+	    	}
+    	
+	    	leaf-list orderByUserLeaf {
+	    		ordered-by user;
+	    		type string;
+	    	}
+
+	    	leaf leaf1 {
+				type string;
+			}
+			
+			list list1 {
+				when "../leaf1 = 'hello'";
+				key someKey;
+				
+				leaf someKey {
+					type string;
+				}
+				
+				leaf-list listLeaf{
+					type string;
+					min-elements 2;
+					max-elements 2;
+				}
+			}
+			container multiContainer {
+				
+				leaf listKeyName {
+					type string;
+					must "/validation/xml-subtree/list1[someKey]/someKey = .";
+				}
+				
+				leaf listKeyName1 {
+					type string;
+					must "count(/validation/xml-subtree/list1[someKey]/someKey) > 0";
+				}
+				
+				container level1 {
+					container level2 {
+						container level3 {
+							presence "test-presence";
+							list list1 {
+								min-elements 2;
+								
+								key key1;
+								
+								leaf key1 {
+									type string;
+								}
+							}
+						}
+					}
+				}
+			}
+			container container1 {
+				when "../leaf1 != 'hello'";
+				list list1 {
+					key key1;
+					leaf key1 {
+						type int8;
+					}
+					
+					choice choice-leaf {
+						case choice-leaf1 {
+							when "../../key1 < 10 ";
+							leaf choiceLeaf1 {
+								type int8;
+							}
+							
+							leaf-list choice-leafList {
+								must "../choiceLeaf1 > 0";
+								min-elements 2;
+								max-elements 10;
+								type int8;
+							}
+						}
+						case choice-leaf2 {
+							when "../../key1 > 10 ";
+							leaf choiceLeaf2 {
+								type int8;
+							}
+						}
+					}
+				}
+			}
+			
+			container container2 {
+				when "../leaf1 = 'HELLO'";
+				
+				leaf leaf1 {
+					default 0;
+					type int8;
+				}
+				
+			}
+		}
+		list someList { //entity
+			
+			key someKey;
+			
+			leaf someKey {
+				type string;
+			}
+			
+			list someInnerList { //entity
+				key someKey;
+				
+				leaf someKey {
+					type string;
+				}
+				
+				container childContainer { //xml tree
+					container stateCheck {
+						config false;
+						leaf leaf1 {
+							type string;
+						}
+						
+						leaf leaf3 {
+							type string;
+						}
+					}
+					list xmlList {
+						key xmlListLeaf ;
+						 
+						leaf xmlListLeaf {
+							type int8;
+						}
+						
+						leaf type {
+							type int64;
+						}
+					}
+					
+					list xmlList2 {
+						key xmlListLeaf;
+						
+						leaf xmlListLeaf {
+							type int8;
+						}
+						
+						leaf type {
+							must "/validation/someList/someInnerList/childContainer/xmlList[xmlListLeaf = current()]/type > ../xmlListLeaf";
+							type int64;
+							anvext:treat-as-relative-path;
+						}
+						
+						leaf-list leafList{
+							when "../../xmlList[xmlListLeaf = current()/../xmlListLeaf]/type > 10";
+							min-elements 2;
+							max-elements 4;
+							type string;
+						}
+						
+					}
+					container multiContainer {
+
+						leaf crossReference {
+							must "../../xmlList/type > 10";
+							type int8;
+						}
+
+						list otherContainerList  {
+							key key1;
+							
+							leaf key1 {
+								type int8;
+							}
+							
+							leaf ref {
+								type int8;
+							}
+							
+						}
+						list multiContainerList {
+							key key1;
+							leaf key1 {
+								type int8;
+							}
+							
+							leaf ref {
+								must "/validation:validation/validation:someList/validation:someInnerList/validation:childContainer/validation:multiContainer/validation:otherContainerList[validation:key1 = current()]/validation:ref > 10";
+								type int8;
+								anvext:treat-as-relative-path;
+							}
+						}
+						container level1 {
+							container level2 {
+								container level3 {
+									list list1 {
+										min-elements 0;
+										
+										key key1;
+										
+										leaf key1 {
+											type int8;
+										}
+										
+										leaf condition{
+											type int64;
+										}
+										
+										leaf-list leafList {
+											when "../condition > 10";
+											min-elements 2;
+											max-elements 3;
+											type string;
+										}
+										
+										leaf ref{
+											type leafref {
+												path "/validation/someList/someInnerList/childContainer/multiContainer/level1/level2/level3/list1/key1";
+											}
+										}
+										
+									}
+								}
+							}
+						}
+					}
+					
+				}
+
+				list orderByUserList {
+					key someKey;
+					ordered-by user;
+					
+					leaf someKey {
+						type string;
+					}
+					
+				}
+
+			}
+
+			
+		}
+
+		list orderByUserList {
+			key someKey;
+			ordered-by user;
+			
+			leaf someKey {
+				type string;
+			}
+			
+		}
+    }
+     
+    
+
+}

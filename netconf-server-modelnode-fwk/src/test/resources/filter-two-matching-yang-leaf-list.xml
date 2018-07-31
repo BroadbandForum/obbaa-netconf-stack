@@ -1,0 +1,17 @@
+  <jukebox xmlns="http://example.com/ns/example-jukebox-with-singer">
+    <library>
+      <artist>
+        <album>
+          <name>Greatest hits</name>
+          <song>
+          	<name />
+          	<location />
+          	<singer>Michael</singer>
+			<singer>Anderson</singer>
+			<singer>Jackson</singer>
+          </song>
+        </album>
+      </artist>
+    </library>
+  </jukebox>
+  

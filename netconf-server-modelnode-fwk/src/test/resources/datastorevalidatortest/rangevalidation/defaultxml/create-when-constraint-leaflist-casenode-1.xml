@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<choicecase>
+			<leaflist-case-success>leaflist 1</leaflist-case-success>
+			<leaflist-case-success>leaflist 2</leaflist-case-success>
+		</choicecase>
+	</when-validation>
+</validation>

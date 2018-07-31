@@ -1,0 +1,23 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <library>
+    <artist>
+      <name>Lenny</name>
+      <album xc:operation="replace">
+        <name>Circus</name>
+        <year>1995</year>
+        <song>
+		  <name>Rock and roll is dead</name>
+		  <location>desktop/mymusic</location>
+		  <singer>Peter</singer>
+		  <singer>Adam</singer>
+		</song>
+        <song>
+          <name>Thin Ice</name>
+          <location>desktop/mymusic</location>
+		  <singer>Candy</singer>
+		  <singer>George</singer>
+        </song>
+      </album>
+    </artist>
+  </library>
+</jukebox>

@@ -1,0 +1,29 @@
+module feature-test {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma:feature:test";
+	
+	prefix "extTest";
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+	
+	feature test-feature1 {
+      description
+        "For UT";
+    }
+    
+    feature test-feature2 {
+      description
+        "For UT";
+    }
+	
+    container test {
+    	
+    	leaf leaf1 {
+    		type int8;
+    	}
+    }
+}

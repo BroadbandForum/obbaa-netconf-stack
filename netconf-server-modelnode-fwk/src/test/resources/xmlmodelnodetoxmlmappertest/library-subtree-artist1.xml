@@ -1,0 +1,7 @@
+<artist xmlns="http://example.com/ns/example-jukebox">
+    <name>Artist1</name>
+    <album>
+        <name>album11</name>
+        <year>2016</year>
+    </album>
+</artist>

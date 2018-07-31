@@ -1,0 +1,6 @@
+<song xmlns="http://example.com/ns/example-jukebox">
+    <name>Hello</name>
+    <location>somelocation</location>
+    <format>mp3</format>
+    <singer>Singer3</singer>
+</song>

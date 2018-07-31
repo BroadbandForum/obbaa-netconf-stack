@@ -1,0 +1,41 @@
+// Contents of "pma-user"
+module alu-pma-users {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma:alu-pma-users";
+	
+	prefix "user";
+	
+	revision "2015-07-14" {
+	      description "Initial version.";
+	      reference "PMA";
+	}
+
+	grouping pma-users-group {
+    	
+    	container users {
+    		
+    		leaf user-count {
+    			config false;
+    			type uint32;
+    		}
+    		
+    		list user {
+    			
+    			key username;
+    			
+    			leaf username {
+    				type string {
+    						
+    				}
+    			}
+    			leaf password {
+    				type string {
+    					
+    				}
+    			}
+    		}
+    	}
+    }
+}

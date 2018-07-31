@@ -1,0 +1,4 @@
+<jbox:album xmlns:ns0="urn:ietf:params:xml:ns:netconf:base:1.0" ns0:operation="merge" xmlns:jbox="http://example.com/ns/example-jukebox">
+	<jbox:name>Circus</jbox:name>
+	<jbox:year>1996</jbox:year>
+</jbox:album>

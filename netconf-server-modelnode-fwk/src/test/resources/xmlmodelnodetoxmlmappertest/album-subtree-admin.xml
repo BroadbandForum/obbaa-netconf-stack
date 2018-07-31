@@ -1,0 +1,4 @@
+<admin xmlns="http://example.com/ns/example-jukebox">
+    <label>someLabel</label>
+    <catalogue-number>some catalogue number</catalogue-number>
+</admin>

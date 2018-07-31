@@ -1,0 +1,7 @@
+<eat-out xmlns="http://example.com/ns/eat-out">
+    <restaurant-type>chinese</restaurant-type>
+    <restaurant-address>
+        <name>3 quarters chinese</name>
+        <street>MG Road</street>
+    </restaurant-address>
+</eat-out>

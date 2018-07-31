@@ -1,0 +1,17 @@
+<rpc message-id="333" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <edit-config>
+        <target>
+            <running />
+        </target>
+        <config>
+            <bbf-fast:configs xmlns:bbf-fast="urn:ietf:params:xml:ns:yang:bbf-fast-vop">
+                <bbf-fast:profiles>
+                    <bbf-fast:downstream-data-rate-profile xmlns:ns="urn:ietf:params:xml:ns:netconf:base:1.0"
+                        ns:operation="remove">
+                        <bbf-fast:name>DeviceProfileTest100</bbf-fast:name>
+                    </bbf-fast:downstream-data-rate-profile>
+                </bbf-fast:profiles>
+            </bbf-fast:configs>
+        </config>
+    </edit-config>
+</rpc>

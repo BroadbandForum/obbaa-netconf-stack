@@ -1,0 +1,10 @@
+<operation-example xmlns="urn:org:bbf:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <list-a operation="replace">
+    <a1>a1</a1>
+    <a2>a22</a2>
+    <list-b xc:operation="replace">
+        <b1>b11</b1>
+        <b2>b22</b2>
+    </list-b>
+  </list-a>
+</operation-example>

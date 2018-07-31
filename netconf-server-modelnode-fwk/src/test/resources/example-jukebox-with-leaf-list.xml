@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer">
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album>
+				<name>Greatest hits</name>
+				<genre xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">jbox:jazz</genre>
+				<year>2000</year>
+				<admin>
+					<label>Sony</label>
+					<catalogue-number>521</catalogue-number>
+				</admin>
+				<song>
+					<name>Are you gonne go my way</name>
+					<location>desktop/mymusic</location>
+					<format>mp3</format>
+					<length>320</length>
+					<singer>Michael</singer>
+					<singer>Anderson</singer>
+					<singer>Jackson</singer>
+                    <singer></singer>
+				</song>
+				<song>
+					<name>Fly Away</name>
+					<location>desktop/mymusic</location>
+					<format>flac</format>
+					<length>480</length>
+					<singer>Jackson</singer>
+					<singer>Madona</singer>
+				</song>
+			</album>
+			<album>
+				<name>Circus</name>
+				<genre xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">jbox:rock</genre>
+				<year>1995</year>
+				<admin>
+					<label>Sony</label>
+					<catalogue-number>8421</catalogue-number>
+				</admin>
+				<song>
+					<name>Rock and roll is dead</name>
+					<location>desktop/mymusic</location>
+					<format>amr</format>
+					<length>600</length>
+					<singer>Peter</singer>
+				</song>
+				<song>
+					<name>Circus</name>
+					<location>desktop/mymusic</location>
+					<format>wma</format>
+					<length>180</length>
+					<singer>Johnson</singer>
+					<singer>Angelina</singer>
+				</song>
+				<song>
+					<name>Beyond the 7th Sky</name>
+					<location>desktop/mymusic</location>
+					<format>mp3</format>
+					<length>420</length>
+					<singer>Julie</singer>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

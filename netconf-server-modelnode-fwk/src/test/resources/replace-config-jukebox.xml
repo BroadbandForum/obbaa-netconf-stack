@@ -1,0 +1,17 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="replace">
+    <library>
+        <artist>
+            <name>FNMS-1742</name>
+            <album>
+                <name>There should be only this album in Jukebox</name>
+                <year>1995</year>
+                <song>
+                    <name>We dont talk anymore</name>
+                </song>
+                <song>
+                    <name>Close</name>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

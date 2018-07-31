@@ -1,0 +1,48 @@
+module eat-out {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/eat-out";
+
+    prefix eo;
+
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2016-08-17" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+
+    rpc eat-out {
+      description
+        "Lets eat outside";
+      input {
+
+        leaf restaurant-type {
+          type string;
+          mandatory true;
+        }
+
+        container restaurant-address {
+            leaf name {
+              type string;
+              mandatory true;
+            }
+            leaf street {
+              type string;
+              mandatory true;
+            }
+        }
+      }
+    }  // rpc play
+  }  // module example-jukebox

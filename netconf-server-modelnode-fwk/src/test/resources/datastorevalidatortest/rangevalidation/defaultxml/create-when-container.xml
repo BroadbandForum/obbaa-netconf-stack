@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<when-validation>
+		<container-type>
+			<container-value>the constraint evaluates to true when result-container from 10 to 20</container-value>
+		</container-type>
+	</when-validation>
+</validation>

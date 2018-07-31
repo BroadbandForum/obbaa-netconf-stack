@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<must-validation>
+		<leaf-type>test</leaf-type>
+	</must-validation>
+</validation>

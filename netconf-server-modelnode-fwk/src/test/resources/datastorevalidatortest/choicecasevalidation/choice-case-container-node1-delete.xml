@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+	<choicecase>
+		<name>create container case 1</name>
+		<container-case1 xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="delete"></container-case1>
+	</choicecase>
+</validation>
+

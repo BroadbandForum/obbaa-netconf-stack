@@ -1,0 +1,31 @@
+module occupation {
+  yang-version 1;
+  namespace "unit:test:caft:occupation";
+  prefix dacto;
+
+ import parents {
+    prefix dactp;
+  }
+
+  revision 2014-07-03 {
+    description
+      "Initial version.";
+  }
+
+ augment "/dactp:family/dactp:father" {
+    container occupation {
+          leaf name {
+            type string;
+      }
+    }
+ }
+
+ augment "/dactp:family/dactp:mother" {
+     container occupation {
+           leaf name {
+             type string;
+      }
+    }
+  }
+
+}

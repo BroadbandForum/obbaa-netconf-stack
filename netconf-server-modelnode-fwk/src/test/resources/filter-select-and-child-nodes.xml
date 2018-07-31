@@ -1,0 +1,11 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <album>
+                <year>2000</year>
+                <year/>
+            </album>
+        </artist>
+    </library>
+</jukebox>
+
