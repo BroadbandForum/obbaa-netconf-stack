@@ -9,4 +9,4 @@ This repository contains NETCONF Stack used in OB-BAA project (https://github.co
 
 ##	Documentation
 Relevant documentation for Installation, Commissioning & Usage are under docs folder in obbaa repository. 
-Alternatively the user documentation can also be accessed at https://obbaa.braoadband-forum.org.
+Alternatively the user documentation can also be accessed at https://obbaa.broadband-forum.org.
