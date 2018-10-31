@@ -41,6 +41,8 @@ import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entitie
         .TM_ROOT_PATH;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants
         .WEIGHT_QNAME;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants
+    .WEIGHT;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_SCHEMA_PATH;
@@ -64,6 +66,11 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SONG_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.STOCK_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.FORMAT;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LOCATION;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -403,7 +410,7 @@ public class XmlSubtreeDSMTest {
     public void testFindNodesArtistSubtree() throws DataStoreException, AnnotationAnalysisException {
         initialiseLibrarySubtreeEntity();
         HashMap<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute("1948"));
+        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1948"));
 
         List<ModelNode> albumModelNodes = m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, configAttributes,
                 m_artist2NodeId);
@@ -465,7 +472,7 @@ public class XmlSubtreeDSMTest {
         assertTrue(libraryModelNode instanceof ModelNodeWithAttributes);
         assertEquals(LIBRARY_LOCAL_NAME, libraryModelNode.getQName().getLocalName());
 
-        keys.put(NAME_QNAME, new GenericConfigAttribute(ARTIST2_NAME));
+        keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, ARTIST2_NAME));
         List<ModelNode> artistModelNodes = m_aggregatedDSM.findNodes(ARTIST_SCHEMA_PATH, keys, m_libraryNodeId);
         assertEquals(1, artistModelNodes.size());
         ModelNode artistModelNode = artistModelNodes.get(0);
@@ -477,7 +484,7 @@ public class XmlSubtreeDSMTest {
         artistModelNodes = m_aggregatedDSM.findNodes(ARTIST_SCHEMA_PATH, keys, m_libraryNodeId);
         assertEquals(2, artistModelNodes.size());
 
-        keys.put(NAME_QNAME, new GenericConfigAttribute(ALBUM2_NAME));
+        keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, ALBUM2_NAME));
         List<ModelNode> albumModelNodes = m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys, m_artist2NodeId);
         assertEquals(1, albumModelNodes.size());
         ModelNode albumModelNode = albumModelNodes.get(0);
@@ -486,7 +493,7 @@ public class XmlSubtreeDSMTest {
         assertEquals(ALBUM_SCHEMA_PATH, albumModelNode.getModelNodeSchemaPath());
 
         keys.clear();
-        keys.put(NAME_QNAME, new GenericConfigAttribute("Pocketful of Sunshine"));
+        keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Pocketful of Sunshine"));
         List<ModelNode> songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
         assertEquals(1, songModelNodes.size());
         XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) songModelNodes.get(0);
@@ -495,7 +502,7 @@ public class XmlSubtreeDSMTest {
         assertEquals("Pocketful of Sunshine", songModelNode.getAttributes().get(NAME_QNAME).getStringValue());
 
         keys.clear();
-        keys.put(FORMAT_QNAME, new GenericConfigAttribute("mp3"));
+        keys.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
         songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
         assertEquals(2, songModelNodes.size());
         songModelNode = (XmlModelNodeImpl) songModelNodes.get(0);
@@ -509,8 +516,8 @@ public class XmlSubtreeDSMTest {
         assertEquals(SONG_SCHEMA_PATH, songModelNode.getModelNodeSchemaPath());
 
         keys.clear();
-        keys.put(FORMAT_QNAME, new GenericConfigAttribute("mp3"));
-        keys.put(LOCATION_QNAME, new GenericConfigAttribute("somelocation"));
+        keys.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
+        keys.put(LOCATION_QNAME, new GenericConfigAttribute(LOCATION, JB_NS, "somelocation"));
         songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
         assertEquals(1, songModelNodes.size());
         songModelNode = (XmlModelNodeImpl) songModelNodes.get(0);
@@ -520,14 +527,14 @@ public class XmlSubtreeDSMTest {
         assertEquals(SONG_SCHEMA_PATH, songModelNode.getModelNodeSchemaPath());
 
         keys.clear();
-        keys.put(FORMAT_QNAME, new GenericConfigAttribute("mp3"));
-        keys.put(LOCATION_QNAME, new GenericConfigAttribute("someOtherlocation"));
+        keys.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
+        keys.put(LOCATION_QNAME, new GenericConfigAttribute(LOCATION, JB_NS, "someOtherlocation"));
         songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
         assertEquals(0, songModelNodes.size());
 
         setAlbum22Year("1948");
         keys.clear();
-        keys.put(YEAR_QNAME, new GenericConfigAttribute("1948"));
+        keys.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1948"));
         albumModelNodes = executeWithResetScope(() -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys,
                 m_artist2NodeId));
         assertEquals(1, albumModelNodes.size());
@@ -537,7 +544,7 @@ public class XmlSubtreeDSMTest {
         assertEquals(ALBUM_SCHEMA_PATH, albumModelNode.getModelNodeSchemaPath());
 
         keys.clear();
-        keys.put(YEAR_QNAME, new GenericConfigAttribute("2016"));
+        keys.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "2016"));
         albumModelNodes = executeWithResetScope(() -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys,
                 m_artist2NodeId));
         assertEquals(0, albumModelNodes.size());
@@ -615,7 +622,7 @@ public class XmlSubtreeDSMTest {
         XmlModelNodeImpl libraryModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH,
                 new ModelNodeKey(new LinkedHashMap<>()), m_jukeboxNodeId);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("new-artist"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist"));
         XmlModelNodeImpl artistModelNode = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -632,7 +639,7 @@ public class XmlSubtreeDSMTest {
                         ModelNodeKey(keys),
                 m_libraryNodeId);
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("album23"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album23"));
         XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 updatedArtistModelNode, m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -649,7 +656,7 @@ public class XmlSubtreeDSMTest {
                         ModelNodeKey(keys),
                 m_artist2NodeId);
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("Pocketful of Sunshine"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Pocketful of Sunshine"));
         XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -673,7 +680,7 @@ public class XmlSubtreeDSMTest {
 
         // Case 1: Add one artist to existing library container
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("new-artist"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist"));
         ModelNodeWithAttributes artistModelNode = new ModelNodeWithAttributes(ARTIST_SCHEMA_PATH, m_libraryNodeId,
                 m_modelNodeHelperRegistry, null, m_schemaRegistry, null);
         artistModelNode.setAttributes(configAttributes);
@@ -683,7 +690,7 @@ public class XmlSubtreeDSMTest {
 
         // Case 2: Add one album to existing artist list
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("album23"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album23"));
         XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(), null,
                 m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
@@ -699,7 +706,7 @@ public class XmlSubtreeDSMTest {
                         ModelNodeKey(keys),
                 m_artist2NodeId);
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("Cake by the ocean"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Cake by the ocean"));
         XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -725,7 +732,7 @@ public class XmlSubtreeDSMTest {
         XmlModelNodeImpl libraryModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH,
                 new ModelNodeKey(new LinkedHashMap<>()), m_jukeboxNodeId);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("new-artist"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist"));
         XmlModelNodeImpl artistModelNode = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -748,7 +755,7 @@ public class XmlSubtreeDSMTest {
 
         // Case 1b: Add one more artist in between to existing library container
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("new-artist-in-between"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist-in-between"));
         XmlModelNodeImpl artistModelNode1 = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -769,7 +776,7 @@ public class XmlSubtreeDSMTest {
 
         // Case 1c: Add one more artist at last position to existing library container
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("new-artist-again"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist-again"));
         XmlModelNodeImpl artistModelNode2 = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -797,7 +804,7 @@ public class XmlSubtreeDSMTest {
                         ModelNodeKey(keys),
                 m_libraryNodeId);
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("album23"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album23"));
         XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 updatedArtistModelNode, m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -821,7 +828,7 @@ public class XmlSubtreeDSMTest {
 
         // Case 2b: Add one more album at position 0 to existing artist list
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("album24"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album24"));
 
         XmlModelNodeImpl albumModelNode1 = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
@@ -840,7 +847,7 @@ public class XmlSubtreeDSMTest {
                         ModelNodeKey(keys),
                 m_artist2NodeId);
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("Pocketful of Sunshine"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Pocketful of Sunshine"));
         XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -863,7 +870,7 @@ public class XmlSubtreeDSMTest {
 
         // Case 3b: Add one more song at position 0 to existing album list
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("One more Pocketful of Sunshine"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "One more Pocketful of Sunshine"));
         XmlModelNodeImpl songModelNode1 = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry,
@@ -894,7 +901,7 @@ public class XmlSubtreeDSMTest {
         assertNull(albumModelNode.getAttribute(YEAR_QNAME));
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.clear();
-        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute("1947"));
+        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1947"));
         m_aggregatedDSM.updateNode(albumModelNode, m_artist2NodeId, configAttributes, null, false);
         albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
         assertEquals("1947", albumModelNode.getAttribute(YEAR_QNAME).getStringValue());
@@ -910,7 +917,7 @@ public class XmlSubtreeDSMTest {
         assertEquals("123", cdpNode.getAttribute(IP_PORT_QNAME).getStringValue());
 
         Map<QName, ConfigLeafAttribute> configAttrs = new HashMap<>();
-        configAttrs.put(IP_ADDRESS_QNAME, new GenericConfigAttribute("135.249.45.153"));
+        configAttrs.put(IP_ADDRESS_QNAME, new GenericConfigAttribute("ip-address", CHOICE_CASE_NS, "135.249.45.153"));
         m_aggregatedDSM.updateNode(cdpNode, getDevice1Id(), configAttrs, null, false);
 
         modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR));
@@ -935,7 +942,7 @@ public class XmlSubtreeDSMTest {
         assertEquals("leaf-value", listNode.getAttribute(leafQname).getStringValue());
 
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(leafQname, new GenericConfigAttribute("leaf-value2"));
+        configAttributes.put(leafQname, new GenericConfigAttribute("value-leaf", YWPCSQ_NS, "leaf-value2"));
         m_aggregatedDSM.updateNode(listNode, parentId, configAttributes, null, false);
         listNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(fromString(YWPCSQ_CLWSQ1_SP_STR), modelNodeKey,
                 parentId);
@@ -1137,7 +1144,7 @@ public class XmlSubtreeDSMTest {
         assertEquals("1", initialQueue.getAttribute(WEIGHT_QNAME).getStringValue());
 
         Map<QName, ConfigLeafAttribute> configAttrs = new HashMap<>();
-        configAttrs.put(WEIGHT_QNAME, new GenericConfigAttribute("2"));
+        configAttrs.put(WEIGHT_QNAME,new GenericConfigAttribute(WEIGHT, NS, "2"));
         m_aggregatedDSM.updateNode(initialQueue, parentId, configAttrs, null, false);
 
         ModelNodeWithAttributes updatedQueue = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(QUEUE_PATH, key,
@@ -1329,7 +1336,7 @@ public class XmlSubtreeDSMTest {
         assertNull(songModelNode.getAttribute(locationQname));
 
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(locationQname, new GenericConfigAttribute("somelocation"));
+        configAttributes.put(locationQname, new GenericConfigAttribute(LOCATION, JB_NS, "somelocation"));
         m_aggregatedDSM.updateNode(songModelNode, m_albumNodeId, configAttributes, null, false);
         songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
         assertEquals("somelocation", songModelNode.getAttributes().get(locationQname).getStringValue());
@@ -1346,7 +1353,7 @@ public class XmlSubtreeDSMTest {
         // Update with one singer
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>();
-        values.add(new GenericConfigAttribute("Singer1"));
+        values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
         leafLists.put(SINGER_QNAME, values);
         m_aggregatedDSM.updateNode(songModelNode, m_albumNodeId, null, leafLists, false);
         songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
@@ -1359,7 +1366,7 @@ public class XmlSubtreeDSMTest {
 
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
         List<ConfigLeafAttribute> valuesList = new ArrayList<>();
-        valuesList.add(0, new GenericConfigAttribute("Singer1"));
+        valuesList.add(0, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>(valuesList);
         leafLists.put(SINGER_QNAME, values);
         m_aggregatedDSM.updateNode(getSingerModelNode("Singer1", m_songNodeId), m_songNodeId, null, leafLists, 0,
@@ -1374,7 +1381,7 @@ public class XmlSubtreeDSMTest {
         XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH,
                 new ModelNodeKeyBuilder().appendKey(NAME_QNAME, "My Song").build(), m_albumNodeId);
         configAttributes = new HashMap<>();
-        configAttributes.put(SINGER_QNAME, new GenericConfigAttribute(singerName));
+        configAttributes.put(SINGER_QNAME, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, singerName));
         XmlModelNodeImpl singerModelNode = new XmlModelNodeImpl(SINGER_SCHEMA_PATH, configAttributes, Collections
                 .<Element>emptyList(),
                 songModelNode, parentId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,

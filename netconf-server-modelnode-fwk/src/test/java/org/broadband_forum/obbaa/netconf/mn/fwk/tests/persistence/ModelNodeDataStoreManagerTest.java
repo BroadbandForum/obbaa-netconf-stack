@@ -46,6 +46,9 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants
         .MY_HOME_ADDRESS_KARNATAKA_560092;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
+
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.OFFICE_ADDRESS;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.OFFICE_ADDRESSES_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.OFFICE_CELL;
@@ -515,8 +518,8 @@ public class ModelNodeDataStoreManagerTest {
         ModelNodeWithAttributes homeAddressModelNode = new ModelNodeWithAttributes(HOME_ADDRESSES_SCHEMA_PATH, null,
                 null, null, m_schemaRegistry, m_dataStoreManager);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(ADDRESS_NAME_Q_NAME, new GenericConfigAttribute("new-home"));
-        configAttributes.put(ADDRESS_Q_NAME, new GenericConfigAttribute("new-home-address"));
+        configAttributes.put(ADDRESS_NAME_Q_NAME, new GenericConfigAttribute("address-name", ADDR_NS, "new-home"));
+        configAttributes.put(ADDRESS_Q_NAME, new GenericConfigAttribute("address", ADDR_NS, "new-home-address"));
         homeAddressModelNode.setAttributes(configAttributes);
 
         m_dataStoreManager.createNode(homeAddressModelNode, TestConstants.EMPTY_NODE_ID);
@@ -529,8 +532,8 @@ public class ModelNodeDataStoreManagerTest {
         ModelNodeWithAttributes telephoneNumberModelNode = new ModelNodeWithAttributes(HOME_TELPHONE_SCHEMA_PATH,
                 null, null, null, m_schemaRegistry, m_dataStoreManager);
         configAttributes = new HashMap<>();
-        configAttributes.put(TELEPHONE_TYPE_QNAME, new GenericConfigAttribute(LAND_LINE));
-        configAttributes.put(TELEPHONE_NUMBER_QNAME, new GenericConfigAttribute("someNumber"));
+        configAttributes.put(TELEPHONE_TYPE_QNAME, new GenericConfigAttribute("type", ADDR_NS, LAND_LINE));
+        configAttributes.put(TELEPHONE_NUMBER_QNAME, new GenericConfigAttribute("number", ADDR_NS, "someNumber"));
         telephoneNumberModelNode.setAttributes(configAttributes);
         ModelNodeId homeAddressNodeId = new ModelNodeId().addRdn(new ModelNodeRdn(CONTAINER, ADDR_NS, "home-address")
         ).addRdn(new
@@ -586,8 +589,8 @@ public class ModelNodeDataStoreManagerTest {
                 null, null, null,
                 m_schemaRegistry, m_dataStoreManager);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(TELEPHONE_TYPE_QNAME, new GenericConfigAttribute(LAND_LINE));
-        configAttributes.put(TELEPHONE_NUMBER_QNAME, new GenericConfigAttribute(HOME_LAND_LINE));
+        configAttributes.put(TELEPHONE_TYPE_QNAME, new GenericConfigAttribute("type", ADDR_NS, LAND_LINE));
+        configAttributes.put(TELEPHONE_NUMBER_QNAME, new GenericConfigAttribute("number", ADDR_NS, HOME_LAND_LINE));
         telephoneNumberModelNode.setAttributes(configAttributes);
 
         m_dataStoreManager.removeNode(telephoneNumberModelNode, TestConstants.HOME_ADDRESS_NODE_ID);
@@ -640,7 +643,7 @@ public class ModelNodeDataStoreManagerTest {
 
         //Add location to song
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(locationQname, new GenericConfigAttribute("somelocation"));
+        configAttributes.put(locationQname, new GenericConfigAttribute("location", JB_NS, "somelocation"));
         m_dataStoreManager.updateNode(getSongModelNode("Entity Refactor", m_albumId), m_albumId, configAttributes,
                 null, false);
         modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH,
@@ -671,7 +674,7 @@ public class ModelNodeDataStoreManagerTest {
 
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>();
-        values.add(new GenericConfigAttribute("Singer1"));
+        values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
         leafLists.put(SINGER_QNAME, values);
         m_dataStoreManager.updateNode(getSingerModelNode("Singer1", m_songId), m_songId, null, leafLists, false);
         modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH,
@@ -692,7 +695,7 @@ public class ModelNodeDataStoreManagerTest {
 
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
         List<ConfigLeafAttribute> valuesList = new ArrayList<ConfigLeafAttribute>();
-        valuesList.add(0, new GenericConfigAttribute("Singer1"));
+        valuesList.add(0, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>(valuesList);
         leafLists.put(SINGER_QNAME, values);
         m_dataStoreManager.updateNode(getSingerModelNode("Singer1", m_songId), m_songId, null, leafLists, 0, false);
@@ -833,7 +836,7 @@ public class ModelNodeDataStoreManagerTest {
         ModelNodeWithAttributes singerModelNode = new ModelNodeWithAttributes(SINGER_SCHEMA_PATH, parentId, null,
                 null, m_schemaRegistry, m_dataStoreManager);
         configAttributes = new HashMap<>();
-        configAttributes.put(SINGER_QNAME, new GenericConfigAttribute(singerName));
+        configAttributes.put(SINGER_QNAME, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, singerName));
         singerModelNode.setAttributes(configAttributes);
         return singerModelNode;
     }
@@ -843,7 +846,7 @@ public class ModelNodeDataStoreManagerTest {
         ModelNodeWithAttributes songModelNode = new ModelNodeWithAttributes(SONG_SCHEMA_PATH, parentId, null, null,
                 m_schemaRegistry, m_dataStoreManager);
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(songName));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, songName));
         songModelNode.setAttributes(configAttributes);
         return songModelNode;
     }
@@ -853,7 +856,7 @@ public class ModelNodeDataStoreManagerTest {
         ModelNodeWithAttributes albumModelNode = new ModelNodeWithAttributes(ALBUM_SCHEMA_PATH, parentId, null, null,
                 m_schemaRegistry, m_dataStoreManager);
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(albumName));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, albumName));
         albumModelNode.setAttributes(configAttributes);
         return albumModelNode;
     }
@@ -862,7 +865,7 @@ public class ModelNodeDataStoreManagerTest {
         ModelNodeWithAttributes artistModelNode = new ModelNodeWithAttributes(ARTIST_SCHEMA_PATH, m_libraryNodeId,
                 m_modelNodeHelperRegistry, null, m_schemaRegistry, m_dataStoreManager);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(artistName));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, artistName));
         artistModelNode.setAttributes(configAttributes);
         return artistModelNode;
     }

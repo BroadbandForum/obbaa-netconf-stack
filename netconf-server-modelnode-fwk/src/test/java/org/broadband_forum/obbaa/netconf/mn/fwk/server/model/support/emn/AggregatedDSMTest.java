@@ -25,6 +25,8 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LIBRARY_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LIBRARY_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -195,12 +197,12 @@ public class AggregatedDSMTest {
         ModelNodeWithAttributes albumModelNode = new ModelNodeWithAttributes(ALBUM_SCHEMA_PATH, parentId, null, null,
                 m_schemaRegistry, null);
         Map<QName, ConfigLeafAttribute> keyAttributes = new HashMap<>();
-        keyAttributes.put(NAME_QNAME, new GenericConfigAttribute("album1"));
+        keyAttributes.put(NAME_QNAME,new GenericConfigAttribute(NAME, JB_NS, "album1"));
         albumModelNode.setAttributes(keyAttributes);
         m_aggregatedDSM.createNode(albumModelNode, parentId);
 
         Map<QName, ConfigLeafAttribute> matchCriteria = new HashMap<>();
-        matchCriteria.put(NAME_QNAME, new GenericConfigAttribute("album1"));
+        keyAttributes.put(NAME_QNAME,new GenericConfigAttribute(NAME, JB_NS, "album1"));
         m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, matchCriteria, parentId);
         when(m_mnDSM2.findNodes(ALBUM_SCHEMA_PATH, matchCriteria, parentId)).thenReturn(Collections.singletonList
                 (albumModelNode));

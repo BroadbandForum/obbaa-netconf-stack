@@ -64,7 +64,7 @@ public class MergeChildInListCommandTest {
     private static final String NAMESPACE = "namespace";
     private MergeChildInListCommand m_oneCommand = new MergeChildInListCommand();
     private ChildListHelper m_childList1Helper = mock(ChildListHelper.class);
-    private QName m_qname = QName.create("testQname");
+    private QName m_qname = QName.create(NAMESPACE, "testQname");
     private EditContext m_editContext = mock(EditContext.class);
     private ModelNode m_instance = mock(HelperDrivenModelNode.class);
     private ModelNode m_childNode = mock(ModelNode.class);
@@ -77,10 +77,11 @@ public class MergeChildInListCommandTest {
     private Collection<DataSchemaNode> dataSchemaNodeCollection = new ArrayList<>();
     private ListSchemaNode m_listSchemaNode = null;
     private QName m_keyQname;
+    private LeafSchemaNode m_keyLeafnode;
 
     @Before
     public void setUp() {
-        m_keyQname = QName.create("est");
+        m_keyQname = QName.create(NAMESPACE, "est");
     }
 
     private void initializeExecute() {
@@ -99,9 +100,8 @@ public class MergeChildInListCommandTest {
         when(m_listSchemaNode.getKeyDefinition()).thenReturn(keyDefs);
         SchemaPath listSchemaPath = SchemaPath.create(true, QName.create("urn:ns", "listNode"));
         when(m_listSchemaNode.getPath()).thenReturn(listSchemaPath);
-        LeafSchemaNode keyLeafnode = mock(LeafSchemaNode.class);
-        when(m_schemaRegistry.getDataSchemaNode(new SchemaPathBuilder().withParent(listSchemaPath).appendQName
-                (m_keyQname).build())).thenReturn(keyLeafnode);
+        m_keyLeafnode = mock(LeafSchemaNode.class);
+        when(m_schemaRegistry.getDataSchemaNode(new SchemaPathBuilder().withParent(listSchemaPath).appendQName(m_keyQname).build())).thenReturn(m_keyLeafnode);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class MergeChildInListCommandTest {
             ModelNodeCreateException {
         initializeExecute();
         Map<QName, ConfigLeafAttribute> map = new HashMap<>();
-        map.put(m_qname, new GenericConfigAttribute(CONTAINER));
+        map.put(m_qname, new GenericConfigAttribute(m_qname.getLocalName(), null, CONTAINER));
         childList.addAll(m_childList1Helper.getValue(m_parentNode, map));
         Collection<ModelNode> modelNodeCollection = new ArrayList<>();
         modelNodeCollection.add(m_childNode);
@@ -180,7 +180,7 @@ public class MergeChildInListCommandTest {
             ModelNodeCreateException {
         initializeExecute();
         InsertOperation insertOperation = new InsertOperation(InsertOperation.AFTER, TEST_VALUE);
-
+        when(m_keyLeafnode.getQName()).thenReturn(m_qname);
         when(m_editNode.getInsertOperation()).thenReturn(insertOperation);
         when(((HelperDrivenModelNode) m_instance).getModelNodeHelperRegistry()).thenReturn(m_modelNodeHelperRegistry);
         m_oneCommand.addAddInfo(m_childList1Helper, m_instance, m_editContext, m_childNode);
@@ -199,12 +199,12 @@ public class MergeChildInListCommandTest {
             ModelNodeCreateException {
         initializeExecute();
         InsertOperation insertOperation = new InsertOperation(InsertOperation.AFTER, TEST_VALUE);
-
+        when(m_keyLeafnode.getQName()).thenReturn(m_qname);
         when(m_editNode.getInsertOperation()).thenReturn(insertOperation);
         when(((HelperDrivenModelNode) m_instance).getModelNodeHelperRegistry()).thenReturn(m_modelNodeHelperRegistry);
         m_oneCommand.addAddInfo(m_childList1Helper, m_instance, m_editContext, m_childNode);
         Map<QName, ConfigLeafAttribute> keyPredicates = new HashMap<>();
-        keyPredicates.put(m_keyQname, new GenericConfigAttribute("A"));
+        keyPredicates.put(m_keyQname, new GenericConfigAttribute(m_keyQname.getLocalName(), NAMESPACE, "A"));
         childList.add(m_childNode);
         when(m_childList1Helper.getValue(m_instance, keyPredicates)).thenReturn(childList);
         try {

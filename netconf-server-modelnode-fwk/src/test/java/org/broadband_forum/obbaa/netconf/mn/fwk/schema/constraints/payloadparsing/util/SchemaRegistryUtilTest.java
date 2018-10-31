@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.io.File;
+import java.nio.file.Paths;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,8 +54,6 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 
 public class SchemaRegistryUtilTest {
-    public static final String RESOURCES_DIR = "src" + File.separator + "test" + File.separator + "resources" + File
-            .separator + "yangSchemaValidationTest" + File.separator + "referenceyangs" + File.separator + "anvyangs";
 
     SchemaRegistry m_registry;
 
@@ -196,10 +194,10 @@ public class SchemaRegistryUtilTest {
 
     @Test
     public void testCreateSchemaRegistry() throws SchemaBuildException {
-        SchemaRegistry schemaRegistry = SchemaRegistryUtil.createSchemaRegistry(Collections.singletonList
-                (RESOURCES_DIR), false, new NoLockService());
-        assertNotNull(SchemaRegistryUtil.createSchemaRegistry(Collections.singletonList(RESOURCES_DIR), false, new
-                NoLockService()));
+        String resDir = Paths.get(SchemaRegistryUtilTest.class.getResource("/yangSchemaValidationTest/referenceyangs/" +
+            "anvyangs/alu-device-plugs@2015-07-14.yang").getPath()).getParent().toString();
+        SchemaRegistry schemaRegistry = SchemaRegistryUtil.createSchemaRegistry(Collections.singletonList(resDir), false, new NoLockService());
+        assertNotNull(SchemaRegistryUtil.createSchemaRegistry(Collections.singletonList(resDir), false,new NoLockService()));
         Module module = schemaRegistry.getModule("alu-device-plugs");
         assertEquals("alu-device-plugs", module.getName());
         assertEquals("plug", module.getPrefix());

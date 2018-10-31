@@ -185,26 +185,11 @@ public abstract class HelperDrivenModelNode implements ModelNode {
         return getSubSystemRegistry().lookupSubsystem(schemaPath);
     }
 
-    protected void addXmlValue(Document document, Element parent, QName qname, ConfigLeafAttribute value, boolean
-            isKeyAttribute) {
-        if (!isKeyAttribute && value == null) {
+    protected void addXmlValue(Document document, Element parent, ConfigLeafAttribute value, boolean isKeyAttribute) {
+        if(!isKeyAttribute && value == null) {
             return;
         }
-        String namespace = null;
-        if (qname.getNamespace() != null && !qname.getNamespace().toString().isEmpty()) {
-            namespace = qname.getNamespace().toString();
-        }
-        String localName = resolveLocalName(getSchemaRegistry(), namespace, qname.getLocalName());
-
-        SchemaPath leafPath = m_schemaRegistry.getDescendantSchemaPath(getModelNodeSchemaPath(), qname);
-        Class<?> attributeType = YangTypeToClassConverter.getClassTypeBySchemaPath(m_schemaRegistry, leafPath);
-        if (InstanceIdentifierTypeDefinition.class.equals(attributeType) || QName.class.equals(attributeType)) {
-            parent.appendChild(document.importNode(value.getDOMValue(), true));
-        } else {
-            Element element = document.createElementNS(namespace, localName);
-            element.setTextContent(value.getStringValue());
-            parent.appendChild(element);
-        }
+        parent.appendChild(document.importNode(value.getDOMValue(),true));
     }
 
 
@@ -709,7 +694,7 @@ public abstract class HelperDrivenModelNode implements ModelNode {
             for (QName keyAttribute : naturalKeyHelpers.keySet()) {
                 if (isAboveDepth(params, keyAttribute)) {
                     if (!keyValues.contains(keyAttribute)) {
-                        addXmlValue(doc, parent, keyAttribute, getAttributeValue(keyAttribute, modelNodeId), true);
+                        addXmlValue(doc, parent, getAttributeValue(keyAttribute, modelNodeId), true);
                         keyValues.add(keyAttribute.getLocalName());
                         LOGGER.debug("Key Attribute Copied : " + keyAttribute);
                     }
@@ -758,7 +743,7 @@ public abstract class HelperDrivenModelNode implements ModelNode {
         Map<QName, ConfigLeafAttribute> matchCriteria = new HashMap<>();
         for (FilterMatchNode matchNode : matchNodes) {
             QName qName = m_schemaRegistry.lookupQName(matchNode.getNamespace(), matchNode.getNodeName());
-            matchCriteria.put(qName, new GenericConfigAttribute(matchNode.getFilter()));
+            matchCriteria.put(qName, new GenericConfigAttribute(qName.getLocalName(), qName.getNamespace().toString(), matchNode.getFilter()));
         }
         return m_modelNodeHelperRegistry.getChildListHelpers(this.getModelNodeSchemaPath()).get(nodeName).getValue
                 (this, matchCriteria);
@@ -835,7 +820,7 @@ public abstract class HelperDrivenModelNode implements ModelNode {
     private void copyAttributeToOutput(Document doc, Element parent, QName nodeName, ModelNodeId modelNodeId) {
         try {
             if (!isKeyAttribute(nodeName)) {
-                addXmlValue(doc, parent, nodeName, getAttributeValue(nodeName, modelNodeId), false);
+                addXmlValue(doc, parent, getAttributeValue(nodeName, modelNodeId), false);
             }
         } catch (GetAttributeException e) {
             LOGGER.error("Attribute " + nodeName.getLocalName() + " value could not be retrieved", e);
@@ -848,7 +833,7 @@ public abstract class HelperDrivenModelNode implements ModelNode {
             Collection<ConfigLeafAttribute> leafListValues = getChildLeafListValues(nodeName, modelNodeId);
             for (ConfigLeafAttribute value : leafListValues) {
                 if (value != null && value.getStringValue().equals(filterValue)) {
-                    addXmlValue(doc, parent, nodeName, value, false);
+                    addXmlValue(doc, parent, value, false);
                 }
             }
         } catch (GetAttributeException e) {
@@ -860,7 +845,7 @@ public abstract class HelperDrivenModelNode implements ModelNode {
             GetAttributeException {
         Collection<ConfigLeafAttribute> leafListValues = getChildLeafListValues(nodeName, modelNodeId);
         for (ConfigLeafAttribute value : leafListValues) {
-            addXmlValue(doc, parent, nodeName, value, false);
+            addXmlValue(doc, parent, value, false);
         }
     }
 
@@ -997,9 +982,9 @@ public abstract class HelperDrivenModelNode implements ModelNode {
                 ConfigAttributeHelper configAttributeHelper = helperEntry.getValue();
                 try {
                     if (configAttributeHelper.isMandatory()) {
-                        addXmlValue(doc, parent, configAttribute, configAttributeHelper.getValue(this), false);
+                        addXmlValue(doc, parent, configAttributeHelper.getValue(this), false);
                     } else if (configAttributeHelper.isChildSet(this)) {
-                        addXmlValue(doc, parent, configAttribute, configAttributeHelper.getValue(this), false);
+                        addXmlValue(doc, parent, configAttributeHelper.getValue(this), false);
                     }
                 } catch (GetAttributeException e) {
                     LOGGER.error("failed to add attribute to output " + configAttribute, e);
@@ -1026,7 +1011,7 @@ public abstract class HelperDrivenModelNode implements ModelNode {
                         }
                         Collection<ConfigLeafAttribute> result = leafListHelper.getValue(this);
                         for (ConfigLeafAttribute value : result) {
-                            addXmlValue(doc, parent, leafListName, value, false);
+                            addXmlValue(doc, parent, value, false);
                         }
                     }
                 }

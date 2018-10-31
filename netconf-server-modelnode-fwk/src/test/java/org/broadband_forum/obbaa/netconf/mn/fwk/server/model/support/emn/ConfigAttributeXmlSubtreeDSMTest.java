@@ -33,6 +33,9 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.RESOURCE_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -175,7 +178,7 @@ public class ConfigAttributeXmlSubtreeDSMTest {
 
         // Verify findNodes with match criteria work
         HashMap<QName, ConfigLeafAttribute> matchAttributes = new HashMap<>();
-        matchAttributes.put(YEAR_QNAME, new GenericConfigAttribute("1948"));
+        matchAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1948"));
         matchAttributes.put(GENRE_QNAME, albumModelNode.getAttribute(GENRE_QNAME));
 
         albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, matchAttributes,
@@ -184,7 +187,7 @@ public class ConfigAttributeXmlSubtreeDSMTest {
 
         //Verify findNode with match criteria works with just key
         matchAttributes = new HashMap<>();
-        matchAttributes.put(NAME_QNAME, new GenericConfigAttribute(ALBUM_NAME));
+        matchAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, ALBUM_NAME));
 
         albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, matchAttributes,
                 m_artistNodeId).get(0);
@@ -220,7 +223,7 @@ public class ConfigAttributeXmlSubtreeDSMTest {
 
         // create
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("newalbum"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "newalbum"));
         configAttributes.put(GENRE_QNAME, new IdentityRefConfigAttribute(JB_NS, "jbox",
                 DocumentUtils.getDocumentElement("<genre xmlns:jbox=\"http://example" +
                         ".com/ns/example-jukebox\">jbox:jazz</genre>")));
@@ -234,7 +237,7 @@ public class ConfigAttributeXmlSubtreeDSMTest {
 
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributesMap = new HashMap<>();
         LinkedHashSet<ConfigLeafAttribute> singerLeafList = new LinkedHashSet<>();
-        singerLeafList.add(new GenericConfigAttribute("singer3"));
+        singerLeafList.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer3"));
         leafListAttributesMap.put(SINGER_QNAME, singerLeafList);
 
         LinkedHashSet<ConfigLeafAttribute> dummyleafList = new LinkedHashSet<>();
@@ -269,7 +272,7 @@ public class ConfigAttributeXmlSubtreeDSMTest {
 
         //update the new modelnode created
         configAttributes = new HashMap<>();
-        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute("1999"));
+        configAttributes.put(YEAR_QNAME,new GenericConfigAttribute(YEAR, JB_NS, "1999"));
         configAttributes.put(GENRE_QNAME, new IdentityRefConfigAttribute(JUKEBOX_TYPES_NS, JB_TYPES_PREFIX,
                 DocumentUtils.getDocumentElement("<genre xmlns:ejt=\"http://example" +
                         ".com/ns/example-jukebox-types\">ejt:country</genre>")));
@@ -278,7 +281,7 @@ public class ConfigAttributeXmlSubtreeDSMTest {
                 "ejt:dummycontainer/ejt:dummyleaf"
         ));
 
-        singerLeafList.add(new GenericConfigAttribute("singer4"));
+        singerLeafList.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer4"));
         leafListAttributesMap.put(SINGER_QNAME, singerLeafList);
 
         IdentityRefConfigAttribute secondIdRefLeafListValue = new IdentityRefConfigAttribute(JUKEBOX_TYPES_NS, "ejt",
@@ -303,7 +306,7 @@ public class ConfigAttributeXmlSubtreeDSMTest {
         assertEquals(2, updatedAlbumNode.getLeafList(DUMMY_LEAFLIST_IDREF_QNAME).size());
 
         // remove leaf-list
-        singerLeafList.remove(new GenericConfigAttribute("singer4"));
+        singerLeafList.remove(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer4"));
         dummyleafList.remove(secondIdRefLeafListValue);
         updatedAlbumNode.setLeafLists(leafListAttributesMap);
         m_aggregatedDSM.updateNode(updatedAlbumNode, m_artistNodeId, configAttributes, leafListAttributesMap, false);

@@ -53,6 +53,9 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.JUKEBOX_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.JUKEBOX_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LIBRARY_LOCAL_NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -96,8 +99,7 @@ public class InMemoryDSMTest {
         keys.put(JukeboxConstants.NAME_QNAME, "Paramita");
         ModelNodeWithAttributes artistNode = new ModelNodeWithAttributes(m_artistSchemaPath, m_libraryNodeId, null,
                 null, m_schemaRegistry, m_inMemoryDSM);
-        artistNode.setAttributes(Collections.singletonMap(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute
-                ("Paramita")));
+        artistNode.setAttributes(Collections.singletonMap(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Paramita")));
         ModelNode createdNode = m_inMemoryDSM.createNode(artistNode, m_libraryNodeId);
         assertEquals(createdNode, artistNode);
 
@@ -135,8 +137,7 @@ public class InMemoryDSMTest {
         keys.put(JukeboxConstants.NAME_QNAME, "Paramita");
         ModelNodeWithAttributes artistNode = new ModelNodeWithAttributes(m_artistSchemaPath, m_libraryNodeId, null,
                 null, m_schemaRegistry, m_inMemoryDSM);
-        artistNode.setAttributes(Collections.singletonMap(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute
-                ("Paramita")));
+        artistNode.setAttributes(Collections.singletonMap(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Paramita")));
         ModelNode createdNode = m_inMemoryDSM.createNode(artistNode, m_libraryNodeId);
         assertEquals(createdNode, artistNode);
 
@@ -174,7 +175,7 @@ public class InMemoryDSMTest {
 
     private void addAnotherArtist() throws DataStoreException {
         SortedMap<QName, ConfigLeafAttribute> keys = new TreeMap<>();
-        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("Paramita"));
+        keys.put(JukeboxConstants.NAME_QNAME,new GenericConfigAttribute(NAME, JB_NS, "Paramita"));
         ModelNodeWithAttributes artistNode = new ModelNodeWithAttributes(m_artistSchemaPath, m_libraryNodeId, null,
                 null, m_schemaRegistry, m_inMemoryDSM);
         artistNode.setModelNodeId(m_artist2Id);
@@ -196,7 +197,7 @@ public class InMemoryDSMTest {
         libraryNode.setModelNodeId(m_libraryNodeId);
         m_inMemoryDSM.createNode(libraryNode, m_jukeboxNodeId);
 
-        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("keshava"));
+        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "keshava"));
         ModelNodeWithAttributes artistNode = new ModelNodeWithAttributes(m_artistSchemaPath, m_libraryNodeId, null,
                 null, m_schemaRegistry, m_inMemoryDSM);
         artistNode.setModelNodeId(m_artist1Id);
@@ -209,7 +210,7 @@ public class InMemoryDSMTest {
         ModelNodeWithAttributes albumNode = new ModelNodeWithAttributes(m_albumSchemaPath, m_artist1Id, null, null,
                 m_schemaRegistry, m_inMemoryDSM);
         Map<QName, ConfigLeafAttribute> albumKey = new HashMap<>();
-        albumKey.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("1st Album"));
+        albumKey.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "1st Album"));
         albumNode.setAttributes(albumKey);
         albumNode.setModelNodeId(m_album1NodeId);
         m_inMemoryDSM.createNode(albumNode, m_artist1Id);
@@ -228,8 +229,8 @@ public class InMemoryDSMTest {
         ModelNodeWithAttributes artistNode = new ModelNodeWithAttributes(m_artistSchemaPath, m_libraryNodeId, null,
                 null, m_schemaRegistry, m_inMemoryDSM);
         Map<QName, ConfigLeafAttribute> attributes = new HashMap<>();
-        attributes.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("keshava"));
-        attributes.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("Paramita"));
+        attributes.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "keshava"));
+        attributes.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Paramita"));
         artistNode.setAttributes(attributes);
         artistNode.setModelNodeId(m_artist2Id);
         m_inMemoryDSM.createNode(artistNode, m_libraryNodeId);
@@ -300,16 +301,16 @@ public class InMemoryDSMTest {
         ModelNodeWithAttributes albumNode = (ModelNodeWithAttributes) m_inMemoryDSM.findNode(m_albumSchemaPath, new
                 ModelNodeKey(albumKey), m_artist1Id);
         Map<QName, ConfigLeafAttribute> retrievedAttributes;
-        QName year = QName.create(JB_NS, JB_REVISION, "year");
+        QName year = QName.create(JB_NS,JB_REVISION, YEAR);
         retrievedAttributes = albumNode.getAttributes();
         assertNull(retrievedAttributes.get(year));
         assertTrue(albumNode.getLeafLists().isEmpty());
 
         HashMap<QName, ConfigLeafAttribute> configAttribute = new HashMap<>();
-        configAttribute.put(year, new GenericConfigAttribute("2016"));
+        configAttribute.put(year, new GenericConfigAttribute(YEAR, JB_NS, "2016"));
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>();
-        values.add(new GenericConfigAttribute("Singer1"));
+        values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
         leafLists.put(JukeboxConstants.SINGER_QNAME, values);
         m_inMemoryDSM.updateNode(albumNode, m_artist1Id, configAttribute, leafLists, false);
         albumNode = (ModelNodeWithAttributes) m_inMemoryDSM.findNode(m_albumSchemaPath, new ModelNodeKey(albumKey),
@@ -325,7 +326,7 @@ public class InMemoryDSMTest {
                 m_schemaRegistry, m_inMemoryDSM);
         jukeboxNode.setModelNodeId(m_jukeboxNodeId);
         SortedMap<QName, ConfigLeafAttribute> keys = new TreeMap<>();
-        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("testAttribute"));
+        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "testAttribute"));
         jukeboxNode.setAttributes(keys);
 
         ModelNodeWithAttributes anotherJukebox = jukeboxNode;
@@ -335,7 +336,7 @@ public class InMemoryDSMTest {
                 m_inMemoryDSM);
         anotherJukebox.setModelNodeId(m_jukeboxNodeId);
         keys = new TreeMap<>();
-        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("testAttribute1"));
+        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "testAttribute1"));
         anotherJukebox.setAttributes(keys);
         assertEquals(0, jukeboxNode.compareTo(anotherJukebox));
 
@@ -343,7 +344,7 @@ public class InMemoryDSMTest {
                 null, m_schemaRegistry, m_inMemoryDSM);
         libraryNode.setModelNodeId(m_libraryNodeId);
         keys = new TreeMap<>();
-        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute("testAttribute"));
+        keys.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "testAttribute"));
         libraryNode.setAttributes(keys);
         assertTrue(jukeboxNode.compareTo(libraryNode) < 0);
     }

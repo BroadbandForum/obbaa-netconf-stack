@@ -38,6 +38,9 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SONG_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SONG_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
@@ -244,7 +247,7 @@ public class XmlModelNodeToXmlMapperTest {
         for (int i = 0; i < songs.getLength(); i++) {
             Element song = (Element) songs.item(i);
             Element songFirstChild = getFirstChildElement(song);
-            assertEquals(NAME_QNAME.getLocalName(), songFirstChild.getNodeName());
+            assertEquals(NAME_QNAME.getLocalName(), songFirstChild.getLocalName());
             assertEquals(NAME_QNAME.getNamespace().toString(), songFirstChild.getNamespaceURI());
         }
 
@@ -289,8 +292,8 @@ public class XmlModelNodeToXmlMapperTest {
         assertEquals(2, leafLists.size());
         assertEquals(1, children.get(SONG_QNAME).get(1).getLeafList(SINGER_QNAME).size());
         Set<ConfigLeafAttribute> expectedLeafLists = new HashSet<>();
-        expectedLeafLists.add(new GenericConfigAttribute("Singer1"));
-        expectedLeafLists.add(new GenericConfigAttribute("Singer2"));
+        expectedLeafLists.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
+        expectedLeafLists.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer2"));
         assertEquals(expectedLeafLists, leafLists);
     }
 
@@ -336,18 +339,17 @@ public class XmlModelNodeToXmlMapperTest {
         childrenXml.add(artistSubtreeAlbum1);
         childrenXml.add(artistSubtreeAlbum2);
 
-        return new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, Collections.singletonMap(NAME_QNAME, new
-                GenericConfigAttribute("Artist1")),
-                childrenXml, null,
-                m_libraryNodeId,
-                m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, null);
+        return new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Artist1")),
+            childrenXml, null,
+            m_libraryNodeId,
+            m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, null);
     }
 
     private XmlModelNodeImpl getAlbumXmlModelNode() {
         List<Element> childrenXml;
         Map<QName, ConfigLeafAttribute> configAttributes = new LinkedHashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("album11"));
-        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute("2016"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album11"));
+        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "2016"));
         Element albumSubtreeAdmin = TestUtil.loadAsXml(ALBUM_SUBTREE_ADMIN_XML);
         Element albumSubtreeSong1 = TestUtil.loadAsXml(ALBUM_SUBTREE_SONG1_XML);
         Element albumSubtreeSong2 = TestUtil.loadAsXml(ALBUM_SUBTREE_SONG2_XML);

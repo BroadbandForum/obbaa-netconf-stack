@@ -20,6 +20,9 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.JB_NS;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
+
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGet;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfig;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfigWithOrder;
@@ -189,8 +192,8 @@ public class DsmListModelNodeHelperTest {
         // Case 1 : When all keys are specified in filter, findNode is to be called
         verifyGet(m_netconfServer, ALBUM_FILTER_WITH_ALLKEYS_REQUEST, ALBUM_FILTER_WITH_ALLKEYS_RESPONSE, MESSAGE_ID);
         Map<QName, ConfigLeafAttribute> keys = new HashMap<>();
-        keys.put(YEAR_QNAME, new GenericConfigAttribute("2000"));
-        keys.put(NAME_QNAME, new GenericConfigAttribute(albumName));
+        keys.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "2000"));
+        keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, albumName));
         // 3 including edits initially
         verify(m_modelNodeDsmSpy, times(3)).findNodes(ALBUM_SCHEMA_PATH, keys, m_artistNodeId);
 
@@ -248,8 +251,7 @@ public class DsmListModelNodeHelperTest {
     }
 
     @Test
-    public void testLeafListCreateOrderedByUser() throws ModelNodeInitException, SAXException, IOException,
-            SchemaBuildException {
+    public void testLeafListCreateOrderedByUser() throws Exception {
         String xmlFilePath = TestUtil.class.getResource(LEAFLIST_EDITCONFIG_CREATE_ORDERED_BY_USER_REQUEST_XML)
                 .getPath();
         YangUtils.loadXmlDataIntoServer(m_netconfServer, xmlFilePath);
@@ -260,8 +262,7 @@ public class DsmListModelNodeHelperTest {
     }
 
     @Test
-    public void testLeafListMergeOrderedByUser() throws ModelNodeInitException, SAXException, IOException,
-            SchemaBuildException {
+    public void testLeafListMergeOrderedByUser() throws Exception {
         String xmlFilePath = TestUtil.class.getResource(LEAFLIST_EDITCONFIG_MERGE_ORDERED_BY_USER_REQUEST_XML)
                 .getPath();
         YangUtils.loadXmlDataIntoServer(m_netconfServer, xmlFilePath);
@@ -272,8 +273,7 @@ public class DsmListModelNodeHelperTest {
     }
 
     @Test
-    public void testEditConfigReplaceOrderedByUser() throws ModelNodeInitException, SAXException, IOException,
-            SchemaBuildException {
+    public void testEditConfigReplaceOrderedByUser() throws Exception {
         String xmlFilePath = TestUtil.class.getResource(LEAFLIST_EDITCONFIG_REPLACE_ORDERED_BY_USER_REQUEST_XML)
                 .getPath();
         YangUtils.loadXmlDataIntoServer(m_netconfServer, xmlFilePath);
@@ -306,8 +306,7 @@ public class DsmListModelNodeHelperTest {
     }
 
     @Test
-    public void testTwoOrderByUserForLeafLists() throws ModelNodeInitException, SAXException, IOException,
-            SchemaBuildException {
+    public void testTwoOrderByUserForLeafLists() throws Exception {
         String xmlFilePath = TestUtil.class.getResource
                 (LEAFLIST_EDITCONFIG_FOR_TWO_LEAFLIST_TYPES_ORDER_BY_USER_REQUEST_XML).getPath();
         YangUtils.loadXmlDataIntoServer(m_netconfServer, xmlFilePath);

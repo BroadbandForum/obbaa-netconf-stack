@@ -193,7 +193,7 @@ public class StateAttributeUtilTest {
         Document expected = DocumentUtils.stringToDocument(FileUtil.loadAsString("/filter/response3.xml"));
         Document doc = DocumentUtils.createDocument();
         FilterNode filterNode = new FilterNode("repositories", NAMESPACE);
-        filterNode.addMatchNode("repository", NAMESPACE, "mvn:org.bbf/feature/1.0.0/xml/features");
+        filterNode.addMatchNode("repository", NAMESPACE, "mvn:org.bbf/feature/1.1.0/xml/features");
         Element element = StateAttributeUtil.applyFilter(input.getDocumentElement(), filterNode, doc);
         TestUtil.assertXMLEquals(expected.getDocumentElement(), element);
     }

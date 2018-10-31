@@ -48,6 +48,11 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNode
 
 public class ModelNodeWithAttributesTest {
 
+    public static final String LEAF_1 = "leaf1";
+    public static final String LEAF_2 = "leaf2";
+    public static final String KEY_1 = "key1";
+    public static final String KEY_2 = "key2";
+    public static final String LEAF_3 = "leaf3";
     private ModelNodeWithAttributes m_modelNodeWithAttributes;
 
     private SchemaPath m_schemaPath;
@@ -137,68 +142,65 @@ public class ModelNodeWithAttributesTest {
         DataSchemaNode listSchemaNode = mock(ListSchemaNode.class);
         when(m_schemaRegistry.getDataSchemaNode(m_schemaPath)).thenReturn(listSchemaNode);
 
-        QName key1QName = QName.create(TestConstants.ANV_NAMESPACE, "key1");
-        QName key2QName = QName.create(TestConstants.ANV_NAMESPACE, "key2");
-        QName leaf1QName = QName.create(TestConstants.ANV_NAMESPACE, "leaf1");
-        QName leaf2QName = QName.create(TestConstants.ANV_NAMESPACE, "leaf2");
+        QName key1QName = QName.create(TestConstants.ANV_NAMESPACE, KEY_1);
+        QName key2QName = QName.create(TestConstants.ANV_NAMESPACE, KEY_2);
+        QName leaf1QName = QName.create(TestConstants.ANV_NAMESPACE, LEAF_1);
+        QName leaf2QName = QName.create(TestConstants.ANV_NAMESPACE, LEAF_2);
         List<QName> keyDefinition = new LinkedList<>();
         keyDefinition.add(key1QName);
         keyDefinition.add(key2QName);
-        when(((ListSchemaNode) listSchemaNode).getKeyDefinition()).thenReturn(keyDefinition);
+        when(((ListSchemaNode)listSchemaNode).getKeyDefinition()).thenReturn(keyDefinition);
 
-        ModelNodeWithAttributes modelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath, modelNodeId,
-                m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
+        ModelNodeWithAttributes modelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath,modelNodeId,
+            m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
 
         Map<QName, ConfigLeafAttribute> unorderedAttributes = new HashMap<>();
-        unorderedAttributes.put(leaf1QName, new GenericConfigAttribute("leaf1-value"));
-        unorderedAttributes.put(leaf2QName, new GenericConfigAttribute("leaf2-value"));
-        unorderedAttributes.put(key1QName, new GenericConfigAttribute("key1-value"));
-        unorderedAttributes.put(key2QName, new GenericConfigAttribute("key2-value"));
+        unorderedAttributes.put(leaf1QName, new GenericConfigAttribute(LEAF_1, TestConstants.ANV_NAMESPACE, "leaf1-value"));
+        unorderedAttributes.put(leaf2QName, new GenericConfigAttribute(LEAF_2, TestConstants.ANV_NAMESPACE, "leaf2-value"));
+        unorderedAttributes.put(key1QName, new GenericConfigAttribute(KEY_1, TestConstants.ANV_NAMESPACE, "key1-value"));
+        unorderedAttributes.put(key2QName, new GenericConfigAttribute(KEY_2, TestConstants.ANV_NAMESPACE, "key2-value"));
         modelNodeWithAttributes.setAttributes(unorderedAttributes);
 
         Map<QName, ConfigLeafAttribute> orderedAttributes = new LinkedHashMap<>();
-        orderedAttributes.put(key1QName, new GenericConfigAttribute("key1-value"));
-        orderedAttributes.put(key2QName, new GenericConfigAttribute("key2-value"));
-        orderedAttributes.put(leaf1QName, new GenericConfigAttribute("leaf1-value"));
-        orderedAttributes.put(leaf2QName, new GenericConfigAttribute("leaf2-value"));
+        orderedAttributes.put(key1QName, new GenericConfigAttribute(KEY_1, TestConstants.ANV_NAMESPACE, "key1-value"));
+        orderedAttributes.put(key2QName, new GenericConfigAttribute(KEY_2, TestConstants.ANV_NAMESPACE, "key2-value"));
+        orderedAttributes.put(leaf1QName, new GenericConfigAttribute(LEAF_1, TestConstants.ANV_NAMESPACE, "leaf1-value"));
+        orderedAttributes.put(leaf2QName, new GenericConfigAttribute(LEAF_2, TestConstants.ANV_NAMESPACE, "leaf2-value"));
 
-        assertArrayEquals(orderedAttributes.keySet().toArray(), modelNodeWithAttributes.getAttributes().keySet()
-                .toArray());
+        assertArrayEquals(orderedAttributes.keySet().toArray(), modelNodeWithAttributes.getAttributes().keySet().toArray());
 
         // Case 2 : While updating the attributes in case of a list
         Map<QName, ConfigLeafAttribute> attributesToBeUpdated = new LinkedHashMap<>();
         attributesToBeUpdated.put(leaf1QName, null);
-        QName leaf3QName = QName.create(TestConstants.ANV_NAMESPACE, "leaf3");
-        attributesToBeUpdated.put(leaf3QName, new GenericConfigAttribute("leaf3-value"));
+        QName leaf3QName = QName.create(TestConstants.ANV_NAMESPACE, LEAF_3);
+        attributesToBeUpdated.put(leaf3QName, new GenericConfigAttribute(LEAF_3, TestConstants.ANV_NAMESPACE, "leaf3-value"));
         modelNodeWithAttributes.updateConfigAttributes(attributesToBeUpdated);
 
         Map<QName, ConfigLeafAttribute> updatedAttributes = new LinkedHashMap<>();
-        updatedAttributes.put(key1QName, new GenericConfigAttribute("key1-value"));
-        updatedAttributes.put(key2QName, new GenericConfigAttribute("key2-value"));
-        updatedAttributes.put(leaf2QName, new GenericConfigAttribute("leaf2-value"));
-        updatedAttributes.put(leaf3QName, new GenericConfigAttribute("leaf3-value"));
+        updatedAttributes.put(key1QName, new GenericConfigAttribute(KEY_1, TestConstants.ANV_NAMESPACE, "key1-value"));
+        updatedAttributes.put(key2QName, new GenericConfigAttribute(KEY_2, TestConstants.ANV_NAMESPACE, "key2-value"));
+        updatedAttributes.put(leaf2QName, new GenericConfigAttribute(LEAF_2, TestConstants.ANV_NAMESPACE, "leaf2-value"));
+        updatedAttributes.put(leaf3QName, new GenericConfigAttribute(LEAF_3, TestConstants.ANV_NAMESPACE, "leaf3-value"));
 
-        assertArrayEquals(updatedAttributes.keySet().toArray(), modelNodeWithAttributes.getAttributes().keySet()
-                .toArray());
+        assertArrayEquals(updatedAttributes.keySet().toArray(), modelNodeWithAttributes.getAttributes().keySet().toArray());
 
         // Case 1 : While setting the attributes in case of a container
         DataSchemaNode containerSchemaNode = mock(ContainerSchemaNode.class);
         SchemaPath containerSchemaPath = mock(SchemaPath.class);
         when(m_schemaRegistry.getDataSchemaNode(containerSchemaPath)).thenReturn(containerSchemaNode);
-        modelNodeWithAttributes = new ModelNodeWithAttributes(containerSchemaPath, modelNodeId,
-                m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
+        modelNodeWithAttributes = new ModelNodeWithAttributes(containerSchemaPath,modelNodeId,
+            m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
         modelNodeWithAttributes.setAttributes(unorderedAttributes);
-        assertArrayEquals(unorderedAttributes.keySet().toArray(), modelNodeWithAttributes.getAttributes().keySet()
-                .toArray());
+        assertArrayEquals(unorderedAttributes.keySet().toArray(), modelNodeWithAttributes.getAttributes().keySet().toArray());
 
         // Case 2 : While updating the attributes in case of a container
         modelNodeWithAttributes.updateConfigAttributes(attributesToBeUpdated);
 
         updatedAttributes = new LinkedHashMap<>();
-        updatedAttributes.put(leaf2QName, new GenericConfigAttribute("leaf2-value"));
-        updatedAttributes.put(key1QName, new GenericConfigAttribute("key1-value"));
-        updatedAttributes.put(key2QName, new GenericConfigAttribute("key2-value"));
-        updatedAttributes.put(leaf3QName, new GenericConfigAttribute("leaf3-value"));
+        updatedAttributes.put(leaf2QName, new GenericConfigAttribute(LEAF_2, TestConstants.ANV_NAMESPACE, "leaf2-value"));
+        updatedAttributes.put(key1QName, new GenericConfigAttribute(KEY_1, TestConstants.ANV_NAMESPACE, "key1-value"));
+        updatedAttributes.put(key2QName, new GenericConfigAttribute(KEY_2, TestConstants.ANV_NAMESPACE, "key2-value"));
+        updatedAttributes.put(leaf3QName, new GenericConfigAttribute(LEAF_3, TestConstants.ANV_NAMESPACE, "leaf3-value"));
 
         assertEquals(updatedAttributes.keySet(), modelNodeWithAttributes.getAttributes().keySet());
     }

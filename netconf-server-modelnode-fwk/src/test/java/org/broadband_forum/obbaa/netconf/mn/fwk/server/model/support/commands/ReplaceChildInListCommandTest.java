@@ -17,6 +17,9 @@
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.commands;
 
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_SCHEMA_PATH;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LOCATION;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
@@ -100,13 +103,10 @@ public class ReplaceChildInListCommandTest {
     public void testReplaceChildInListCommand() throws ModelNodeCreateException, SchemaPathBuilderException {
         QName qName = QName.create(NAMESPACE, "2014-07-03", "song");
         EditContainmentNode editNode = new EditContainmentNode(qName, EditConfigOperations.REPLACE);
-        editNode.addMatchNode(QName.create(NAMESPACE, "2014-07-03", "name"), new GenericConfigAttribute("Circus"));
-        editNode.addChangeNode(QName.create(NAMESPACE, "2014-07-03", "location"), new GenericConfigAttribute
-                ("desktop/somelocation"));
-        editNode.addChangeNode(QName.create(NAMESPACE, "2014-07-03", "singer"), new GenericConfigAttribute
-                ("NewSinger"));
-        editNode.addChangeNode(QName.create(NAMESPACE, "2014-07-03", "singer"), new GenericConfigAttribute
-                ("NewSinger2"));
+        editNode.addMatchNode(QName.create(NAMESPACE,"2014-07-03",NAME), new GenericConfigAttribute(NAME, NAMESPACE, "Circus"));
+        editNode.addChangeNode(QName.create(NAMESPACE,"2014-07-03",LOCATION), new GenericConfigAttribute(LOCATION, NAMESPACE, "desktop/somelocation"));
+        editNode.addChangeNode(QName.create(NAMESPACE,"2014-07-03",SINGER_LOCAL_NAME), new GenericConfigAttribute(SINGER_LOCAL_NAME, NAMESPACE, "NewSinger"));
+        editNode.addChangeNode(QName.create(NAMESPACE, "2014-07-03",SINGER_LOCAL_NAME), new GenericConfigAttribute(SINGER_LOCAL_NAME, NAMESPACE, "NewSinger2"));
 
         ModelNodeId modelNodeId = new ModelNodeId("/container=jukebox/container=library/container=artist/name=Lenny",
                 NAMESPACE);
@@ -126,11 +126,8 @@ public class ReplaceChildInListCommandTest {
 
         ModelNodeWithAttributes cmd = (ModelNodeWithAttributes) command.createChild();
         Assert.assertEquals(2, cmd.getAttributes().size());
-        Assert.assertEquals(new GenericConfigAttribute("Circus"), cmd.getAttribute(QName.create(NAMESPACE,
-                "2014-07-03", "name")));
-        Assert.assertEquals(new GenericConfigAttribute("desktop/somelocation"), cmd.getAttribute(QName.create
-                (NAMESPACE, "2014-07-03", "location")));
-        Assert.assertNotEquals(new GenericConfigAttribute("NewSinger2"), cmd.getAttribute(QName.create(NAMESPACE,
-                "2014-07-03", "singer")));
+        Assert.assertEquals(new GenericConfigAttribute(NAME, NAMESPACE, "Circus"), cmd.getAttribute(QName.create(NAMESPACE, "2014-07-03", NAME)));
+        Assert.assertEquals(new GenericConfigAttribute(LOCATION, NAMESPACE, "desktop/somelocation"), cmd.getAttribute(QName.create(NAMESPACE, "2014-07-03", LOCATION)));
+        Assert.assertNotEquals(new GenericConfigAttribute(SINGER_LOCAL_NAME, NAMESPACE, "NewSinger2"), cmd.getAttribute(QName.create(NAMESPACE, "2014-07-03", SINGER_LOCAL_NAME)));
     }
 }

@@ -458,6 +458,8 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
                                 nodeSchemaPath.getLastComponent());
                         if (childSet.contains(entity)) {
                             childSet.remove(entity);
+                        } else {
+                            deleteEntity(entity);
                         }
                     } else if (schemaNode instanceof ContainerSchemaNode) {
                         Map<QName, Method> yangChildSetters = m_entityRegistry.getYangChildSetters(parentKlass);

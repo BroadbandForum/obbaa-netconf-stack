@@ -19,6 +19,11 @@ package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterMatchNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterUtil;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ConstraintDefinition;
@@ -28,12 +33,6 @@ import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.Status;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterMatchNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterNode;
 
 
 public class SubtreeFilterUtil {
@@ -57,8 +56,8 @@ public class SubtreeFilterUtil {
         }
     }
 
-    private boolean doFilter(Document doc, FilterNode filterNode, DataSchemaNode schemaNode, Element inputNode,
-                             Element outputNode) {
+    public boolean doFilter(Document doc, FilterNode filterNode, DataSchemaNode schemaNode, Element inputNode,
+                            Element outputNode) {
         if (doMatchConditionsPass(filterNode, inputNode)) {
             if (filterNode.getSelectNodes().isEmpty() && filterNode.getChildNodes().isEmpty()) {
                 copyEverything(doc, inputNode, outputNode);

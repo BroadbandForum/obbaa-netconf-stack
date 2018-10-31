@@ -17,14 +17,19 @@
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.jxpath.JXPathContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.type.builtin
         .IdentityRefTypeConstraintParser;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.IdentityRefUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
+import org.broadband_forum.obbaa.netconf.server.rpc.RpcValidationException;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
@@ -36,6 +41,7 @@ import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.InstanceIdentifierTypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -70,11 +76,11 @@ public class ConfigAttributeFactory {
                                                              String value) {
         ConfigLeafAttribute configLeafAttribute;
         TypeDefinition<?> typeDefinition = child.getType();
+        QName childQName = child.getQName();
         if (typeDefinition instanceof IdentityrefTypeDefinition) {
             IdentityrefTypeDefinition identityRefType = (IdentityrefTypeDefinition) child.getType();
             IdentitySchemaNode identity = identityRefType.getIdentities().iterator().next();
             QName identityRefQName = identity.getQName();
-            QName childQName = child.getQName();
             String attributeNamespace = childQName.getNamespace().toString();
             String identityRefPrefix = null;
             String identityRefNs = identityRefQName.getNamespace().toString();
@@ -88,14 +94,14 @@ public class ConfigAttributeFactory {
             configLeafAttribute = new IdentityRefConfigAttribute(identityRefNs,
                     identityRefPrefix, attributeLocalName, value, attributeNamespace);
         } else if (typeDefinition instanceof InstanceIdentifierTypeDefinition) {
-            QName childQName = child.getQName();
             String attributeNamespace = childQName.getNamespace().toString();
-            String attributeLocalName = childQName.getLocalName().toString();
-            Map<String, String> nsPrefixMap = resolveInstanceIdentifierNSPrefix(schemaRegistry, child);
-            configLeafAttribute = new InstanceIdentifierConfigAttribute(nsPrefixMap, attributeNamespace,
-                    attributeLocalName, value);
+            String attributeLocalName = childQName.getLocalName();
+            Map<String, String> nsPrefixMap = resolveInstanceIdentifierNSPrefix(schemaRegistry , child);
+            configLeafAttribute = new InstanceIdentifierConfigAttribute(nsPrefixMap, attributeNamespace, attributeLocalName, value);
         } else {
-            configLeafAttribute = new GenericConfigAttribute(value);
+            String namespace = childQName.getNamespace().toString();
+            String localName = EditTreeTransformer.resolveLocalName(schemaRegistry, namespace, childQName.getLocalName());
+            configLeafAttribute = new GenericConfigAttribute(localName, namespace, value);
         }
         return configLeafAttribute;
     }
@@ -112,36 +118,117 @@ public class ConfigAttributeFactory {
         return configLeafAttribute;
     }
 
-    private static ConfigLeafAttribute getConfigAttribute(SchemaRegistry schemaRegistry, SchemaNode schemaNode, Node
-            node) throws InvalidIdentityRefException {
+    private static ConfigLeafAttribute getConfigAttribute(SchemaRegistry schemaRegistry, SchemaNode schemaNode, Node node) throws InvalidIdentityRefException {
         ConfigLeafAttribute configLeafAttribute;
         TypeDefinition<?> typeDefinition = getTypeDefinition(schemaNode);
-        if (typeDefinition instanceof IdentityrefTypeDefinition) {
-            String identityRefNs = resolveIdentityRefNamespace(schemaNode, node);
-            String identityRefPrefix = schemaRegistry.getPrefix(identityRefNs);
-            if (identityRefPrefix == null) {
-                LOGGER.error("Cannot get prefix for namespace {}", identityRefNs);
-                NetconfRpcError error = NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.INVALID_VALUE,
-                        "Cannot get prefix for namespace " + identityRefNs
-                                + ". Value \"" + node.getTextContent() + "\" is not a valid identityref value.");
-                throw new InvalidIdentityRefException(error);
+        if(typeDefinition instanceof UnionTypeDefinition){
+            List<TypeDefinition<?>> typeDefinitions = ((UnionTypeDefinition)typeDefinition).getTypes();
+            TypeDefinition<?> childTypeDefinition = findUnionType(typeDefinitions, node);
+            if(childTypeDefinition == null) {
+                throw new RpcValidationException(NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.INVALID_VALUE,
+                    "Invalid value " + node.getTextContent() + " for " +node.getLocalName()));
             }
-            setRightPrefixInValue(identityRefPrefix, node);
-            String localName = EditTreeTransformer.resolveLocalName(schemaRegistry, node.getNamespaceURI(), node
-                    .getLocalName());
-            configLeafAttribute = new IdentityRefConfigAttribute(identityRefNs, identityRefPrefix, localName, node
-                    .getTextContent(), node
-                    .getNamespaceURI());
-        } else if (typeDefinition instanceof InstanceIdentifierTypeDefinition) {
-            Map<String, String> NsPrefixMap = resolveInstanceIdentifierNSPrefix(schemaRegistry, node);
-            String localName = EditTreeTransformer.resolveLocalName(schemaRegistry, node.getNamespaceURI(), node
-                    .getLocalName());
-            configLeafAttribute = new InstanceIdentifierConfigAttribute(NsPrefixMap, node.getNamespaceURI(),
-                    localName, node.getTextContent());
-        } else {
-            configLeafAttribute = new GenericConfigAttribute(node.getTextContent());
+            configLeafAttribute = createConfigAttributeInstance(schemaRegistry, schemaNode, node, childTypeDefinition);
         }
+        else {
+            configLeafAttribute = createConfigAttributeInstance(schemaRegistry, schemaNode, node, typeDefinition);
+        }
+        return configLeafAttribute;
+    }
 
+    private static ConfigLeafAttribute createConfigAttributeInstance(SchemaRegistry schemaRegistry, SchemaNode schemaNode, Node node, TypeDefinition<?> typeDefinition) throws InvalidIdentityRefException {
+        ConfigLeafAttribute configLeafAttribute;
+        if(typeDefinition instanceof IdentityrefTypeDefinition){
+            configLeafAttribute = createIdentityRefConfigAttr(schemaRegistry, schemaNode, node);
+        }else if(typeDefinition instanceof InstanceIdentifierTypeDefinition){
+            configLeafAttribute = createInstanceIdentifierConfigAttr(schemaRegistry, node);
+        }else{
+            String nodeNamespace = node.getNamespaceURI();
+            String localName = EditTreeTransformer.resolveLocalName(schemaRegistry, nodeNamespace, node.getLocalName());
+            configLeafAttribute = new GenericConfigAttribute(localName, nodeNamespace, node.getTextContent());
+        }
+        return configLeafAttribute;
+    }
+
+    private static TypeDefinition<?> findUnionType(List<TypeDefinition<?>> typeDefinitions, Node node) {
+        for(TypeDefinition td : typeDefinitions){
+            if(td instanceof IdentityrefTypeDefinition){
+                String stringValue = node.getTextContent();
+                String namespace;
+                String identityValue;
+
+                try{
+                    namespace = IdentityRefUtil.getNamespace(node, stringValue);
+                    identityValue = IdentityRefUtil.getIdentityValue(stringValue);
+                } catch (Exception ex) {
+                    continue;
+                }
+                boolean isValid;
+                for (IdentitySchemaNode identitySchemaNode : obtainDerivedIdentities(td)) {
+                    isValid = IdentityRefUtil.identityMatches(identitySchemaNode, namespace, identityValue);
+                    if(!isValid){
+                        isValid = IdentityRefUtil.checkDerivedIdentities(identitySchemaNode, namespace, identityValue);
+                    }
+                    if(isValid){
+                        return td;
+                    }
+                }
+            } else if(td instanceof InstanceIdentifierTypeDefinition) {
+                if(checkIfInstanceIdentifier(node.getTextContent())) {
+                    return td;
+                }
+            }
+            else {
+                return td;
+            }
+        }
+        return null;
+    }
+
+    private static boolean checkIfInstanceIdentifier(String xpath) {
+        try{
+            JXPathContext.compile(xpath);
+            return true;
+        } catch (Exception ex) {
+            LOGGER.info("The instance identifier is not a valid Xpath");
+            return false;
+        }
+    }
+
+    private static Set<IdentitySchemaNode> obtainDerivedIdentities(TypeDefinition type) {
+        IdentityrefTypeDefinition baseType;
+        Set<IdentitySchemaNode> derivedIdentities = new HashSet<>();
+        baseType = (IdentityrefTypeDefinition)type;
+        Set<IdentitySchemaNode> identitySchemaNodes = baseType.getIdentities();
+        for(IdentitySchemaNode identitySchemaNode : identitySchemaNodes){
+            derivedIdentities.addAll(identitySchemaNode.getDerivedIdentities());
+        }
+        return derivedIdentities;
+    }
+
+
+    private static ConfigLeafAttribute createInstanceIdentifierConfigAttr(SchemaRegistry schemaRegistry, Node node) {
+        ConfigLeafAttribute configLeafAttribute;Map<String, String> NsPrefixMap = resolveInstanceIdentifierNSPrefix(schemaRegistry,node);
+        String localName = EditTreeTransformer.resolveLocalName(schemaRegistry,node.getNamespaceURI(),node.getLocalName());
+        configLeafAttribute = new InstanceIdentifierConfigAttribute(NsPrefixMap,node.getNamespaceURI(),localName,node.getTextContent());
+        return configLeafAttribute;
+    }
+
+    private static ConfigLeafAttribute createIdentityRefConfigAttr(SchemaRegistry schemaRegistry, SchemaNode schemaNode, Node node) throws InvalidIdentityRefException {
+        ConfigLeafAttribute configLeafAttribute;
+        String identityRefNs = resolveIdentityRefNamespace(schemaNode, node);
+        String identityRefPrefix = schemaRegistry.getPrefix(identityRefNs);
+        if(identityRefPrefix==null){
+            LOGGER.error("Cannot get prefix for namespace {}", identityRefNs);
+            NetconfRpcError error = NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.INVALID_VALUE,
+                "Cannot get prefix for namespace " + identityRefNs
+                    + ". Value \"" + node.getTextContent() + "\" is not a valid identityref value.");
+            throw new InvalidIdentityRefException(error);
+        }
+        setRightPrefixInValue(identityRefPrefix,node);
+        String localName = EditTreeTransformer.resolveLocalName(schemaRegistry,node.getNamespaceURI(),node.getLocalName());
+        configLeafAttribute = new IdentityRefConfigAttribute(identityRefNs,identityRefPrefix,localName, node.getTextContent(),node
+            .getNamespaceURI());
         return configLeafAttribute;
     }
 
@@ -287,30 +374,26 @@ public class ConfigAttributeFactory {
         }
     }
 
-    public static ConfigLeafAttribute getConfigAttributeFromEntity(SchemaRegistry schemaRegistry, SchemaPath
-            parentSchemaPath,
-                                                                   String attributeNs, QName childQName, String
-                                                                           attributeValue) {
+    public static ConfigLeafAttribute getConfigAttributeFromEntity(SchemaRegistry schemaRegistry, SchemaPath parentSchemaPath,
+                                                                   String attributeNs,QName childQName, String attributeValue) {
 
-        SchemaPath childSchemaPath = schemaRegistry.getDescendantSchemaPath(parentSchemaPath, childQName);
+        SchemaPath childSchemaPath = schemaRegistry.getDescendantSchemaPath(parentSchemaPath,childQName);
         SchemaNode childSchemaNode = schemaRegistry.getDataSchemaNode(childSchemaPath);
 
         ConfigLeafAttribute configLeafAttribute = null;
         TypeDefinition<?> typeDefinition = getTypeDefinition(childSchemaNode);
         String attributeNamespace = childQName.getNamespace().toString();
         String attributeLocalName = childQName.getLocalName();
-        if (typeDefinition instanceof IdentityrefTypeDefinition) {
+        if(typeDefinition instanceof IdentityrefTypeDefinition){
             String identityRefPrefix = schemaRegistry.getPrefix(attributeNs);
-            configLeafAttribute = new IdentityRefConfigAttribute(attributeNs, identityRefPrefix, attributeLocalName,
-                    attributeValue,
-                    attributeNamespace);
-        } else if (typeDefinition instanceof InstanceIdentifierTypeDefinition) {
-            Map<String, String> NsPrefixMap = formNsPrefixMap(attributeNs); //prefix stored in DB would be same as in
-            // schema registry
-            configLeafAttribute = new InstanceIdentifierConfigAttribute(NsPrefixMap, attributeNamespace,
-                    attributeLocalName, attributeValue);
-        } else {
-            configLeafAttribute = new GenericConfigAttribute(attributeValue);
+            configLeafAttribute = new IdentityRefConfigAttribute(attributeNs,identityRefPrefix, attributeLocalName,attributeValue,
+                attributeNamespace);
+        }else if(typeDefinition instanceof InstanceIdentifierTypeDefinition){
+            Map<String, String> nsPrefixMap = formNsPrefixMap(attributeNs); //prefix stored in DB would be same as in schema registry
+            configLeafAttribute = new InstanceIdentifierConfigAttribute(nsPrefixMap, attributeNamespace, attributeLocalName,attributeValue);
+        }else{
+            String localName = EditTreeTransformer.resolveLocalName(schemaRegistry, attributeNamespace, attributeLocalName);
+            configLeafAttribute = new GenericConfigAttribute(localName, attributeNamespace, attributeValue);
         }
 
         return configLeafAttribute;

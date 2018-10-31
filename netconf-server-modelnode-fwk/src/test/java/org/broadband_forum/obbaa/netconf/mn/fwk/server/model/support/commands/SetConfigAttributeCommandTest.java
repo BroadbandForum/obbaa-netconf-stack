@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -88,10 +87,10 @@ public class SetConfigAttributeCommandTest {
         m_testEditChangeNode2 = mock(EditChangeNode.class);
         m_testEditChangeNode3 = mock(EditChangeNode.class);
 
-        m_testValue = new GenericConfigAttribute("testValue");
-        m_testNodeValue1 = new GenericConfigAttribute(TEST_NODE_VALUE1);
-        m_testNodeValue2 = new GenericConfigAttribute(TEST_NODE_VALUE2);
-        m_testNodeValue3 = new GenericConfigAttribute(TEST_NODE_VALUE3);
+        m_testValue = new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, "testValue");
+        m_testNodeValue1 = new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE1);
+        m_testNodeValue2 = new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE2);
+        m_testNodeValue3 = new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE3);
 
         m_testEditcontext = mock(EditContext.class);
         m_testEditContainmentNode = mock(EditContainmentNode.class);
@@ -124,7 +123,7 @@ public class SetConfigAttributeCommandTest {
         when(dataSchemaNode.getQName()).thenReturn(m_qName);
         when(m_configAttributeHelper.getValue(m_testInstance)).thenReturn(m_testValue);
         Collection<ConfigLeafAttribute> listObjects = new ArrayList<>();
-        listObjects.add(new GenericConfigAttribute(TEST_NODE_VALUE1));
+        listObjects.add(new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE1));
         when(m_childLeafListHelper.getValue(m_testInstance)).thenReturn(listObjects);
         when(m_testEditChangeNode1.getOperation()).thenReturn(EditConfigOperations.MERGE);
         m_setConfigAttributeCommand.addSetInfo(m_testSchemaRegistry, m_testConfigAttributeHelpers,
@@ -152,7 +151,7 @@ public class SetConfigAttributeCommandTest {
         when(dataSchemaNode.getQName()).thenReturn(m_qName);
         when(m_configAttributeHelper.getValue(m_testInstance)).thenReturn(m_testValue);
         Collection<ConfigLeafAttribute> listObjects = new ArrayList<>();
-        listObjects.add(new GenericConfigAttribute(TEST_NODE_VALUE1));
+        listObjects.add(new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE1));
         when(m_childLeafListHelper.getValue(m_testInstance)).thenReturn(listObjects);
         when(m_testEditChangeNode2.getOperation()).thenReturn(EditConfigOperations.CREATE);
         when(m_testEditChangeNode3.getOperation()).thenReturn(EditConfigOperations.CREATE);
@@ -206,7 +205,7 @@ public class SetConfigAttributeCommandTest {
         initializerForSetConfigAttributeCommandExecute();
         when(m_testEditChangeNode1.getOperation()).thenReturn(EditConfigOperations.MERGE);
         Collection<ConfigLeafAttribute> listObjects = new ArrayList<>();
-        listObjects.add(new GenericConfigAttribute(TEST_NODE_VALUE1));
+        listObjects.add(new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE1));
         when(m_childLeafListHelper.getValue(m_testInstance)).thenReturn(listObjects);
         SchemaPath schemaPath = mock(SchemaPath.class);
         when(m_testInstance.getModelNodeSchemaPath()).thenReturn(schemaPath);

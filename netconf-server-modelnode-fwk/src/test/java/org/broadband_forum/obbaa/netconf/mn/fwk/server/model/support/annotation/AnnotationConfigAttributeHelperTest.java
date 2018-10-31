@@ -59,7 +59,7 @@ public class AnnotationConfigAttributeHelperTest {
     @Test(expected = SetAttributeException.class)
     public void testSetAttrException() throws Exception {
         AnnotationConfigAttributeHelper helper = new AnnotationConfigAttributeHelper(m_method);
-        helper.setValue(m_node, new GenericConfigAttribute("value"));
+        helper.setValue(m_node,new GenericConfigAttribute(m_qName.getLocalName(), m_qName.getNamespace().toString(), "value"));
     }
 
     @Test(expected = SetAttributeException.class)
@@ -67,7 +67,7 @@ public class AnnotationConfigAttributeHelperTest {
         Method getterMethod = Class.forName(ModelNode.class.getName()).getMethod("getValue");
         Method setterMethod = Class.forName(ModelNode.class.getName()).getMethod("setValue", Object.class);
         AnnotationConfigAttributeHelper helper = new AnnotationConfigAttributeHelper(getterMethod, setterMethod);
-        helper.setValue(m_node, new GenericConfigAttribute("value"));
+        helper.setValue(m_node,new GenericConfigAttribute(m_qName.getLocalName(), m_qName.getNamespace().toString(), "value"));
     }
 
     @Test

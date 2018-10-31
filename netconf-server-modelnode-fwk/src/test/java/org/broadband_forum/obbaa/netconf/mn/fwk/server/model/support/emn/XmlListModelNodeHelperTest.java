@@ -31,6 +31,9 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SONG_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SONG_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SONG_SCHEMA_PATH;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.FORMAT;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LOCATION;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -138,26 +141,24 @@ public class XmlListModelNodeHelperTest {
     @Test
     public void testAddChildFindsUpdatedParentNode() throws ModelNodeCreateException, DataStoreException {
         XmlModelNodeImpl albumNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH,
-                Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute("1st Album")), Collections
-                .<Element>emptyList(), null,
-                m_artistId,
-                null, m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
+            Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "1st Album")),Collections.<Element>emptyList(), null,
+            m_artistId,
+            null,m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
 
         XmlModelNodeImpl freshAlbumNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH,
-                Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute("1st Album")), Collections
-                .<Element>emptyList(), null,
-                m_artistId,
-                null, m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
+            Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "1st Album")),Collections.<Element> emptyList(), null,
+            m_artistId,
+            null,m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
         freshAlbumNode.setModelNodeId(m_albumNodeId);
 
         when(m_datastoreManager.findNode(any(SchemaPath.class), any(ModelNodeKey.class), any(ModelNodeId.class))).
                 thenReturn(freshAlbumNode);
         when(m_listSchemaNode.getPath()).thenReturn(SONG_SCHEMA_PATH);
         Map<QName, ConfigLeafAttribute> attributes = new HashMap<>();
-        attributes.put(FORMAT_QNAME, new GenericConfigAttribute("mp3"));
-        attributes.put(LOCATION_QNAME, new GenericConfigAttribute("mymusic"));
+        attributes.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
+        attributes.put(LOCATION_QNAME, new GenericConfigAttribute(LOCATION, JB_NS, "mymusic"));
         ModelNode newSongNode = m_xmlListModelNodeHelper.addChild(albumNode, SONG_LOCAL_NAME,
-                Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute("song2")), attributes);
+            Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "song2")), attributes);
         verify(m_datastoreManager).findNode(eq(ALBUM_SCHEMA_PATH), any(ModelNodeKey.class), any(ModelNodeId.class));
         assertTrue(newSongNode instanceof XmlModelNodeImpl);
         assertEquals(SONG_QNAME, newSongNode.getQName());
@@ -171,16 +172,14 @@ public class XmlListModelNodeHelperTest {
     @Test
     public void testAddChildByUserOrderFindsUpdatedParentNode() throws ModelNodeCreateException, DataStoreException {
         XmlModelNodeImpl albumNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH,
-                Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute("1st Album")), Collections
-                .<Element>emptyList(), null,
-                m_artistId,
-                null, m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
+            Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "1st Album")),Collections.<Element>emptyList(), null,
+            m_artistId,
+            null,m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
 
         XmlModelNodeImpl freshAlbumNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH,
-                Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute("1st Album")), Collections
-                .<Element>emptyList(), null,
-                m_artistId,
-                null, m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
+            Collections.singletonMap(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "1st Album")),Collections.<Element> emptyList(), null,
+            m_artistId,
+            null,m_modelNodeHelperRegistry, m_schemaRegistry, null, m_datastoreManager);
         freshAlbumNode.setModelNodeId(m_albumNodeId);
 
         when(m_datastoreManager.findNode(any(SchemaPath.class), any(ModelNodeKey.class), any(ModelNodeId.class))).
@@ -190,12 +189,11 @@ public class XmlListModelNodeHelperTest {
 
         InsertOperation insertOper = new InsertOperation(InsertOperation.LAST, null);
         Map<QName, ConfigLeafAttribute> attributes = new HashMap<>();
-        attributes.put(FORMAT_QNAME, new GenericConfigAttribute("mp3"));
-        attributes.put(LOCATION_QNAME, new GenericConfigAttribute("mymusic"));
-        ModelNode newSongNode = m_xmlListModelNodeHelper.addChildByUserOrder(albumNode, Collections.singletonMap
-                        (NAME_QNAME, new
-                        GenericConfigAttribute("song2")),
-                attributes, insertOper, null);
+        attributes.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
+        attributes.put(LOCATION_QNAME, new GenericConfigAttribute(LOCATION, JB_NS, "mymusic"));
+        ModelNode newSongNode = m_xmlListModelNodeHelper.addChildByUserOrder(albumNode, Collections.singletonMap(NAME_QNAME, new
+                GenericConfigAttribute(NAME, JB_NS, "song2")),
+            attributes, insertOper, null);
         verify(m_datastoreManager).findNode(eq(ALBUM_SCHEMA_PATH), any(ModelNodeKey.class), any(ModelNodeId.class));
         assertTrue(newSongNode instanceof XmlModelNodeImpl);
         assertEquals(SONG_QNAME, newSongNode.getQName());
@@ -254,7 +252,7 @@ public class XmlListModelNodeHelperTest {
                                      String operation, InsertOperation insertOperation, ModelNode indexSong) throws
             ModelNodeCreateException {
         Map<QName, ConfigLeafAttribute> keyAttrs = new HashMap<>();
-        keyAttrs.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(songName));
+        keyAttrs.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, songName));
 
         ModelNode song = m_xmlListModelNodeHelper.addChildByUserOrder(albumNode, keyAttrs, Collections.<QName,
                         ConfigLeafAttribute>emptyMap(),
@@ -271,7 +269,7 @@ public class XmlListModelNodeHelperTest {
     private ModelNode addChild(XmlModelNodeImpl albumNode, List<ModelNode> modelNodeList, String songName, String
             operation) throws ModelNodeCreateException {
         Map<QName, ConfigLeafAttribute> keyAttrs = new HashMap<>();
-        keyAttrs.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(songName));
+        keyAttrs.put(JukeboxConstants.NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, songName));
 
         ModelNode song = m_xmlListModelNodeHelper.addChild(albumNode, SONG_LOCAL_NAME, keyAttrs, Collections.<QName,
                 ConfigLeafAttribute>emptyMap());

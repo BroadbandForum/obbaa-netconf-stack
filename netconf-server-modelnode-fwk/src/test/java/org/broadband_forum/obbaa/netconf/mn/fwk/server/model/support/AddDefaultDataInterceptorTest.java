@@ -171,7 +171,7 @@ public class AddDefaultDataInterceptorTest {
     public void testProcessMissingDataWhenCreate() {
         EditContainmentNode editContainmentNode = new EditContainmentNode(qname(DOWN_STREAM_PROFILE),
                 EditConfigOperations.CREATE);
-        editContainmentNode.addMatchNode(qname(NAME), new GenericConfigAttribute("ds_profile1"));
+        editContainmentNode.addMatchNode(qname(NAME), new GenericConfigAttribute(NAME, BBF_FAST_NAMESPACE, "ds_profile1"));
         //set default value in schema
         when(m_dataRateLeafNode.getDefault()).thenReturn("0xFFFFFFFF");
         when(m_dataRateLeafNode.getType()).thenReturn((TypeDefinition) BaseTypes.int64Type());
@@ -188,7 +188,7 @@ public class AddDefaultDataInterceptorTest {
     public void testProcessMissingData_DisabledNodes() {
         EditContainmentNode editContainmentNode = new EditContainmentNode(qname(DOWN_STREAM_PROFILE),
                 EditConfigOperations.CREATE);
-        editContainmentNode.addMatchNode(qname(NAME), new GenericConfigAttribute("ds_profile1"));
+        editContainmentNode.addMatchNode(qname(NAME), new GenericConfigAttribute(NAME, BBF_FAST_NAMESPACE, "ds_profile1"));
         editContainmentNode.addDisabledDefaultCreationNode(qname(DATA_RATE));
         //set default value in schema
         when(m_dataRateLeafNode.getDefault()).thenReturn("0xFFFFFFFF");
@@ -207,7 +207,7 @@ public class AddDefaultDataInterceptorTest {
     public void testProcessMissingDataWhenTypeDefIsIdentityRef() {
         EditContainmentNode editContainmentNode = new EditContainmentNode(qname(DOWN_STREAM_PROFILE),
                 EditConfigOperations.CREATE);
-        editContainmentNode.addMatchNode(qname(NAME), new GenericConfigAttribute("ds_profile1"));
+        editContainmentNode.addMatchNode(qname(NAME), new GenericConfigAttribute(NAME, BBF_FAST_NAMESPACE, "ds_profile1"));
         //set default value in schema
         IdentityrefTypeDefinition identityrefTypeDefinition1 = mock(IdentityrefTypeDefinition.class);
         IdentitySchemaNode identitySchemaNode = mock(IdentitySchemaNode.class);

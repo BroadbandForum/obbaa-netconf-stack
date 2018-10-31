@@ -57,9 +57,8 @@ public class NbiNotificationHelperImplTest {
         ModelNodeId nodeId = new ModelNodeId("/container=container1", "namespace1");
         ModelNode changedNode = mock(ModelNode.class);
         EditContainmentNode changeData = new EditContainmentNode(QName.create("namespace2", "container2"), "delete");
-        EditMatchNode matchNode = new EditMatchNode(QName.create("namespace2", "2015-07-14", "name"), new
-                GenericConfigAttribute
-                ("nameValue"));
+        EditMatchNode matchNode = new EditMatchNode(QName.create("namespace2", "2015-07-14", "name"), new GenericConfigAttribute
+            ("name", "namespace2", "nameValue"));
         changeData.addMatchNode(matchNode);
         ModelNodeChange change = new ModelNodeChange(ModelNodeChangeType.delete, changeData);
         ChangeNotification changeNtf = new EditConfigChangeNotification(nodeId, change, StandardDataStores.RUNNING,
@@ -132,11 +131,9 @@ public class NbiNotificationHelperImplTest {
         ModelNodeId nodeId = new ModelNodeId("/container=container1/container=container2/name='value1'", "namespace1");
         ModelNode changedNode = mock(ModelNode.class);
         EditContainmentNode changeData = new EditContainmentNode(QName.create("namespace1", "container2"), "merge");
-        EditMatchNode matchNode = new EditMatchNode(QName.create("namespace1", "2015-07-14", "name"), new
-                GenericConfigAttribute("value1"));
+        EditMatchNode matchNode = new EditMatchNode(QName.create("namespace1", "2015-07-14", "name"), new GenericConfigAttribute("name", "namespace1", "value1"));
         changeData.addMatchNode(matchNode);
-        EditChangeNode editChangeNode = new EditChangeNode(QName.create("namespace1", "leaf1"), new
-                GenericConfigAttribute("changedValue"));
+        EditChangeNode editChangeNode = new EditChangeNode(QName.create("namespace1", "leaf1"), new GenericConfigAttribute("leaf1", "namespace1", "changedValue"));
         editChangeNode.setOperation("create");
         changeData.addChangeNode(editChangeNode);
         ModelNodeChange change = new ModelNodeChange(ModelNodeChangeType.merge, changeData);

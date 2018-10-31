@@ -316,9 +316,8 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             attributesTobeStoredInXml.removeAll(attributeGettersKeyset);
         }
 
-        for (QName attributeQName : attributesTobeStoredInXml) {
-            appendConfigAttributeToParentElement(xmlModelNode.getAttribute(attributeQName), element, attributeQName,
-                    xmlModelNode.getModelNodeSchemaPath());
+        for(QName attributeQName : attributesTobeStoredInXml){
+            appendConfigAttributeToParentElement(xmlModelNode.getAttribute(attributeQName), element);
         }
 
         //copy leaf Lists
@@ -330,10 +329,9 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             leafListsTobeStoredInXml.removeAll(leafListGettersKeyset);
         }
 
-        for (QName leafListQName : leafListsTobeStoredInXml) {
-            for (ConfigLeafAttribute value : xmlModelNode.getLeafList(leafListQName)) {
-                appendConfigAttributeToParentElement(value, element, leafListQName, xmlModelNode
-                        .getModelNodeSchemaPath());
+        for(QName leafListQName : leafListsTobeStoredInXml) {
+            for(ConfigLeafAttribute value : xmlModelNode.getLeafList(leafListQName)){
+                appendConfigAttributeToParentElement(value, element);
             }
         }
 
@@ -363,19 +361,8 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
         return xmlModelNode;
     }
 
-    private void appendConfigAttributeToParentElement(ConfigLeafAttribute attribute, Element parentElement, QName
-            attributeQName, SchemaPath
-            modelNodeSchemaPath) {
-        SchemaPath leafPath = m_schemaRegistry.getDescendantSchemaPath(modelNodeSchemaPath, attributeQName);
-        Class<?> attributeType = YangTypeToClassConverter.getClassTypeBySchemaPath(m_schemaRegistry, leafPath);
-        if (InstanceIdentifierTypeDefinition.class.equals(attributeType) || QName.class.equals(attributeType)) {
-            parentElement.appendChild(getDocument().importNode(attribute.getDOMValue(), true));
-        } else {
-            Element childElement = getDocument().createElementNS(attributeQName.getNamespace().toString(),
-                    attributeQName.getLocalName());
-            childElement.setTextContent(attribute.getStringValue());
-            parentElement.appendChild(childElement);
-        }
+    private void appendConfigAttributeToParentElement(ConfigLeafAttribute attribute, Element parentElement) {
+        parentElement.appendChild(getDocument().importNode(attribute.getDOMValue(),true));
     }
 
     static Map<QName, ConfigLeafAttribute> getConfigAttributesFromEntity(SchemaRegistry schemaRegistry, SchemaPath

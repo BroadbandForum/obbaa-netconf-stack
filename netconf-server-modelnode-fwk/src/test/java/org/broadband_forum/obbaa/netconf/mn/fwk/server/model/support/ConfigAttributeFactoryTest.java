@@ -25,6 +25,7 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
+import org.broadband_forum.obbaa.netconf.server.rpc.RpcValidationException;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
@@ -49,9 +50,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -66,9 +66,10 @@ public class ConfigAttributeFactoryTest {
     @Before
     public void setup() throws SchemaBuildException {
         m_schemaRegistry = spy(new SchemaRegistryImpl(TestUtil.getByteSources(
-                Arrays.asList("/configattributefactory/children@2014-07-03.yang",
-                        "/configattributefactory/occupation@2014-07-03.yang",
-                        "/configattributefactory/parents@2014-07-03.yang")), new NoLockService()));
+            Arrays.asList("/configattributefactory/children@2014-07-03.yang",
+                "/configattributefactory/occupation@2014-07-03.yang" ,
+                "/configattributefactory/parents@2014-07-03.yang",
+                "/configattributefactory/unionexample.yang")), new NoLockService()));
         m_parentSchemaPath = mock(SchemaPath.class);
         m_childSchemaPath = mock(SchemaPath.class);
     }
@@ -511,6 +512,141 @@ public class ConfigAttributeFactoryTest {
                 .getAttributeValue());
         assertEquals(attribute.getStringValue(), leafAttribute.getStringValue());
 
+    }
+
+    @Test
+    public void testUnionTypeDefinition() throws ParserConfigurationException, SAXException, IOException, InvalidIdentityRefException {
+        SchemaPath schemaPath = SchemaPathBuilder.fromString("(unit:test:union:example?revision=2017-06-07)test-container");
+        QName childQname =QName.create("unit:test:union:example","2017-06-07","test-leaf");
+
+        //IdentityRef
+        Element parentElement = DocumentUtils.getDocumentElement("<test-container xmlns=\"unit:test:union:example\">" +
+            "<test-leaf>test-type1</test-leaf>" +
+            "</test-container>");
+        Element childElement = (Element) parentElement.getFirstChild();
+
+        ConfigLeafAttribute leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof IdentityRefConfigAttribute);
+
+        //Enumeration
+        parentElement = DocumentUtils.getDocumentElement("<test-container xmlns=\"unit:test:union:example\">" +
+            "<test-leaf>all</test-leaf>" +
+            "</test-container>");
+        childElement = (Element) parentElement.getFirstChild();
+
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof GenericConfigAttribute);
+
+        //String
+        parentElement = DocumentUtils.getDocumentElement("<test-container xmlns=\"unit:test:union:example\">" +
+            "<test-leaf>testString</test-leaf>" +
+            "</test-container>");
+        childElement = (Element) parentElement.getFirstChild();
+
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof GenericConfigAttribute);
+
+        //Integer
+        parentElement = DocumentUtils.getDocumentElement("<test-container xmlns=\"unit:test:union:example\">" +
+            "<test-leaf>12345</test-leaf>" +
+            "</test-container>");
+        childElement = (Element) parentElement.getFirstChild();
+
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof GenericConfigAttribute);
+
+        //IdentityRefWithPrefix and Id-ref defined in another yang
+        schemaPath = SchemaPathBuilder.fromString("(unit:test:union:example?revision=2017-06-07)test-container2");
+        childQname =QName.create("unit:test:union:example","2017-06-07","test-leaf2");
+        parentElement = DocumentUtils.getDocumentElement("<test-container2 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf1 xmlns:dactp1=\"unit:test:caft:parents\">dactp1:female</test-leaf1>" +
+            "</test-container2>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof IdentityRefConfigAttribute);
+
+        //InstanceIdentifier for a container/leaf
+        schemaPath = SchemaPathBuilder.fromString("(unit:test:union:example?revision=2017-06-07)test-container3");
+        childQname =QName.create("unit:test:union:example","2017-06-07","test-leaf3");
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:ex=\"unit:test:union:example\" xmlns:ex1=\"unit:test:union:example\">/ex1:system/ex:services/ex:ssh</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof InstanceIdentifierConfigAttribute);
+
+        //InstanceIdentifier for a list
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:ex=\"unit:test:union:example\">/ex:system/ex:user[ex:name='fred']</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof InstanceIdentifierConfigAttribute);
+
+        //InstanceIdentifier for a leaf in list entry
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:ex=\"unit:test:union:example\">/ex:system/ex:user[ex:name='fred']/ex:type</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof InstanceIdentifierConfigAttribute);
+
+        //InstanceIdentifier for a list entry with two keys
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:ex=\"unit:test:union:example\">/ex:system/ex:server[ex:ip='192.0.2.1'][ex:port='80']</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof InstanceIdentifierConfigAttribute);
+
+        //InstanceIdentifier for a leaf-list entry
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:ex=\"unit:test:union:example\">/ex:system/ex:services/ex:ssh/ex:cipher[.='blowfish-cbc']</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof InstanceIdentifierConfigAttribute);
+
+        //InstanceIdentifier for a list entry without keys
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:ex=\"unit:test:union:example\">/ex:stats/ex:port[3]</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof InstanceIdentifierConfigAttribute);
+
+        //InstanceIdentifier is a relative path
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3>../abc</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof InstanceIdentifierConfigAttribute);
+
+        //IdentifyRef Value when InstanceIdentifier is also present
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:dactp1=\"unit:test:caft:parents\">dactp1:female</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        leafAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+        assertTrue(leafAttribute instanceof IdentityRefConfigAttribute);
+
+        //Invalid InstanceIdentifier value
+        parentElement = DocumentUtils.getDocumentElement("<test-container3 xmlns=\"unit:test:union:example\">" +
+            "<test-leaf3 xmlns:dactp1=\"unit:test:caft:parents\">..abc</test-leaf3>" +
+            "</test-container3>");
+        childElement = (Element) parentElement.getFirstChild();
+        try {
+            ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, schemaPath, childQname, childElement);
+            fail("Should have failed with exception");
+        } catch (RpcValidationException ex) {
+            NetconfRpcError rpcError = NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.INVALID_VALUE,
+                "Invalid value ..abc for test-leaf3");
+            assertEquals(rpcError.getErrorTag(), ex.getRpcError().getErrorTag());
+            assertEquals(rpcError.getErrorAppTag(), ex.getRpcError().getErrorAppTag());
+            assertEquals(rpcError.getErrorMessage(), ex.getRpcError().getErrorMessage());
+            assertEquals(rpcError.getErrorSeverity(), ex.getRpcError().getErrorSeverity());
+        }
     }
 
 }

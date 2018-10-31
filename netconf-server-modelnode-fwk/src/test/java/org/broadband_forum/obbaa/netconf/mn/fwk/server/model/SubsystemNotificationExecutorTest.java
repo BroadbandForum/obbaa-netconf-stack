@@ -47,6 +47,11 @@ import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
 public class SubsystemNotificationExecutorTest {
     private static final String JUKBOX_NS = "http://example.com/ns/example-jukebox";
     private static final String PMA_NS = "urn:org:bbf:pma";
+    public static final String NAME = "name";
+    public static final String MAX_NUM_DEVICES = "max-num-devices";
+    public static final String TIME_INTERVAL = "time-interval";
+    public static final String PLANNED_SW_VERSION_URL = "planned-sw-version-url";
+    public static final String DOWNLOAD_SW_VERSION_URL = "download-sw-version-url";
     SubsystemNotificationExecutor m_notificationExecutor = new SubsystemNotificationExecutor();
     private ModelNodeId m_jukeboxNodeId;
     private ModelNodeId m_libraryNodeId;
@@ -144,8 +149,8 @@ public class SubsystemNotificationExecutorTest {
         when(m_jukeBoxNode.getSubSystem()).thenReturn(subssytemX);
         when(m_libraryNode.getSubSystem()).thenReturn(subssytemX);
 
-        EditMatchNode artistMatchNode = new EditMatchNode(QName.create(JUKBOX_NS, "name"), new GenericConfigAttribute
-                ("Lenny"));
+        EditMatchNode artistMatchNode = new EditMatchNode(QName.create(JUKBOX_NS, NAME),
+            new GenericConfigAttribute(NAME, JUKBOX_NS, "Lenny"));
         EditContainmentNode replaceArtist = new EditContainmentNode(QName.create(JUKBOX_NS, "artist"), "replace")
                 .addMatchNode(artistMatchNode);
         EditContainmentNode replaceLib = new EditContainmentNode(QName.create(JUKBOX_NS, "library"), "replace")
@@ -213,8 +218,8 @@ public class SubsystemNotificationExecutorTest {
         TestSubsystem subssytemY = new TestSubsystem();
         when(m_libraryNode.getSubSystem()).thenReturn(subssytemY);
 
-        EditMatchNode artistMatchNode = new EditMatchNode(QName.create(JUKBOX_NS, "name"), new GenericConfigAttribute
-                ("Lenny"));
+        EditMatchNode artistMatchNode = new EditMatchNode(QName.create(JUKBOX_NS, NAME),
+            new GenericConfigAttribute(NAME, JUKBOX_NS, "Lenny"));
         EditContainmentNode replaceArtist = new EditContainmentNode(QName.create(JUKBOX_NS, "artist"), "replace")
                 .addMatchNode(artistMatchNode);
         EditContainmentNode replaceLib = new EditContainmentNode(QName.create(JUKBOX_NS, "library"), "replace")
@@ -296,19 +301,18 @@ public class SubsystemNotificationExecutorTest {
         TestSubsystem subssytemX = new TestSubsystem();
         when(m_artistNode.getSubSystem()).thenReturn(subssytemX);
 
-        EditMatchNode album1MatchNode = new EditMatchNode(QName.create(JUKBOX_NS, "name"), new GenericConfigAttribute
-                ("Strut"));
-        EditContainmentNode createAlbum1 = new EditContainmentNode(QName.create(JUKBOX_NS, "album"), "create")
-                .addMatchNode(album1MatchNode);
+        EditMatchNode album1MatchNode = new EditMatchNode(QName.create(JUKBOX_NS, NAME),
+            new GenericConfigAttribute(NAME, JUKBOX_NS, "Strut"));
+        EditContainmentNode createAlbum1 = new EditContainmentNode(QName.create(JUKBOX_NS,
+            "album"), "create").addMatchNode(album1MatchNode);
 
-
-        EditMatchNode songMatchNode = new EditMatchNode(QName.create(JUKBOX_NS, "name"), new GenericConfigAttribute
-                ("Are you gonne go my " +
-                "way"));
-        EditContainmentNode createSong = new EditContainmentNode(QName.create(JUKBOX_NS, "song"), "create")
-                .addMatchNode(songMatchNode);
-        EditMatchNode album2MatchNode = new EditMatchNode(QName.create(JUKBOX_NS, "name"), new GenericConfigAttribute
-                ("Greatest Hits"));
+        EditMatchNode songMatchNode = new EditMatchNode(QName.create(JUKBOX_NS, NAME),
+            new GenericConfigAttribute(NAME, JUKBOX_NS, "Are you gonne go my " +
+            "way"));
+        EditContainmentNode createSong = new EditContainmentNode(QName.create(JUKBOX_NS,
+            "song"), "create").addMatchNode(songMatchNode);
+        EditMatchNode album2MatchNode = new EditMatchNode(QName.create(JUKBOX_NS, NAME),
+            new GenericConfigAttribute(NAME, JUKBOX_NS, "Greatest Hits"));
         EditContainmentNode createAlbum2 = new EditContainmentNode(QName.create(JUKBOX_NS, "album"), "create")
                 .addMatchNode(album2MatchNode).addChild(createSong);
 
@@ -414,28 +418,27 @@ public class SubsystemNotificationExecutorTest {
         when(m_swmgmtNode.getSubSystem()).thenReturn(subssytemX);
         when(m_swverOverrideNode.getSubSystem()).thenReturn(subssytemX);
 
-        EditChangeNode changeNode1 = new EditChangeNode(QName.create(PMA_NS, "max-num-devices"), new
-                GenericConfigAttribute("10"));
-        EditChangeNode changeNode2 = new EditChangeNode(QName.create(PMA_NS, "time-interval"), new
-                GenericConfigAttribute("2"));
+        EditChangeNode changeNode1 = new EditChangeNode(QName.create(PMA_NS, MAX_NUM_DEVICES),
+            new GenericConfigAttribute(MAX_NUM_DEVICES, PMA_NS, "10"));
+        EditChangeNode changeNode2 = new EditChangeNode(QName.create(PMA_NS, TIME_INTERVAL),
+            new GenericConfigAttribute(TIME_INTERVAL, PMA_NS, "2"));
 
         EditContainmentNode replaceDpuSwControl = new EditContainmentNode(QName.create("urn:org:bbf:pma",
                 "pma-dpu-sw-control"), "replace");
         replaceDpuSwControl.addChangeNode(changeNode1);
         replaceDpuSwControl.addChangeNode(changeNode2);
 
-        EditChangeNode changeNodeOverride1 = new EditChangeNode(QName.create(PMA_NS, "planned-sw-version-url"),
-                new GenericConfigAttribute("ftp://swversionurl/demo2/SW002"));
-        EditChangeNode changeNodeOverride2 = new EditChangeNode(QName.create(PMA_NS, "download-sw-version-url"),
-                new GenericConfigAttribute("ftp://swversionurl/demo2/SW002"));
+        EditChangeNode changeNodeOverride1 = new EditChangeNode(QName.create(PMA_NS, PLANNED_SW_VERSION_URL),
+            new GenericConfigAttribute(PLANNED_SW_VERSION_URL, PMA_NS, "ftp://swversionurl/demo2/SW002"));
+        EditChangeNode changeNodeOverride2 = new EditChangeNode(QName.create(PMA_NS, DOWNLOAD_SW_VERSION_URL),
+            new GenericConfigAttribute(DOWNLOAD_SW_VERSION_URL, PMA_NS, "ftp://swversionurl/demo2/SW002"));
 
         EditContainmentNode replaceSwOverrideControl = new EditContainmentNode(QName.create(PMA_NS,
                 "pma-dpu-sw-control"), "replace");
         replaceSwOverrideControl.addChangeNode(changeNodeOverride1);
         replaceSwOverrideControl.addChangeNode(changeNodeOverride2);
-        replaceSwOverrideControl.addMatchNode(new EditMatchNode(QName.create(PMA_NS, "dpu-id"), new
-                GenericConfigAttribute("OLT-1.R1.S1" +
-                ".LT1.P1.ONT4")));
+        replaceSwOverrideControl.addMatchNode(new EditMatchNode(QName.create(PMA_NS, "dpu-id"),new GenericConfigAttribute("dpu-id", PMA_NS, "OLT-1.R1.S1" +
+            ".LT1.P1.ONT4")));
 
 
         ModelNodeChange swmgmtNodeChange = new ModelNodeChange(ModelNodeChangeType.replace, replaceDpuSwControl);

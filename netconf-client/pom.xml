@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.bbf.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.bbf.obbaa.netconf</groupId>
@@ -45,7 +45,7 @@
         <!-- External -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
+            <artifactId>bcprov-jdk15on</artifactId>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>

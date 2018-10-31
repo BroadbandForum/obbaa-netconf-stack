@@ -24,9 +24,10 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LIBRARY_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
+
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -107,20 +108,20 @@ public class DsmChildLeafListHelperTest {
         when(m_modelNodeDSM.findNode(any(SchemaPath.class), any(ModelNodeKey.class), any(ModelNodeId.class))).
                 thenReturn(albumModelNode).thenReturn(albumModelNode1);
 
-        childLeafListHelper.addChild(albumModelNode, new GenericConfigAttribute("singer3"));
+        childLeafListHelper.addChild(albumModelNode, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer3"));
         verify(childLeafListHelper).getValue(albumModelNode);
 
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>();
-        values.add(new GenericConfigAttribute("singer1"));
-        values.add(new GenericConfigAttribute("singer2"));
-        values.add(new GenericConfigAttribute("singer3"));
+        values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer1"));
+        values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer2"));
+        values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer3"));
 
         verify(m_modelNodeDSM, times(1)).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap
                 (SINGER_QNAME, values), false);
 
-        childLeafListHelper.addChild(albumModelNode, new GenericConfigAttribute("singer4"));
+        childLeafListHelper.addChild(albumModelNode, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer4"));
         verify(childLeafListHelper, times(2)).getValue(albumModelNode1);
-        values.add(new GenericConfigAttribute("singer4"));
+        values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer4"));
 
         verify(m_modelNodeDSM, times(1)).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap
                 (SINGER_QNAME, values), false);
@@ -128,13 +129,13 @@ public class DsmChildLeafListHelperTest {
 
     private void populateValuesInModelNode(ModelNodeWithAttributes modelNode) {
         Map<QName, ConfigLeafAttribute> attributes = new HashMap<>();
-        attributes.put(NAME_QNAME, new GenericConfigAttribute("album"));
+        attributes.put(NAME_QNAME, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "album"));
         modelNode.setAttributes(attributes);
 
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs = new HashMap<>();
         LinkedHashSet<ConfigLeafAttribute> singerLeafList = new LinkedHashSet<>();
-        singerLeafList.add(new GenericConfigAttribute("singer1"));
-        singerLeafList.add(new GenericConfigAttribute("singer2"));
+        singerLeafList.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer1"));
+        singerLeafList.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer2"));
         leafListAttrs.put(SINGER_QNAME, singerLeafList);
         modelNode.setLeafLists(leafListAttrs);
         modelNode.setModelNodeId(new ModelNodeId(m_albumNodeId));
@@ -145,7 +146,7 @@ public class DsmChildLeafListHelperTest {
         LinkedHashSet<ConfigLeafAttribute> singerLeafList = (LinkedHashSet<ConfigLeafAttribute>)
                 modelNode.getLeafList(SINGER_QNAME);
 
-        singerLeafList.add(new GenericConfigAttribute("singer3"));
+        singerLeafList.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer3"));
         leafListAttrs.put(SINGER_QNAME, singerLeafList);
         modelNode.setLeafLists(leafListAttrs);
     }

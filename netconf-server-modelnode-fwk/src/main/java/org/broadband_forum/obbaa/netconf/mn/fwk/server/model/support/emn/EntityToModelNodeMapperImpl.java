@@ -148,8 +148,9 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
                                         .getConfigAttributeFromEntity(m_schemaRegistry,
                                         parentSchemaPath, leafListStringNsValue, leafListQName, leafListStringValue);
                                 leafList.add(configLeafAttribute);
-                            } else {
-                                leafList.add(new GenericConfigAttribute(leafListStringValue));
+                            }else{
+                                leafList.add(ConfigAttributeFactory.getConfigAttributeFromEntity(m_schemaRegistry,
+                                    parentSchemaPath,leafListQName.getLocalName(), leafListQName, leafListStringValue));
                             }
                         }
                     }

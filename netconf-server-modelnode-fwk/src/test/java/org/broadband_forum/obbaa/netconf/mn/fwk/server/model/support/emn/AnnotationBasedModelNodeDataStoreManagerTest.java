@@ -151,7 +151,7 @@ public class AnnotationBasedModelNodeDataStoreManagerTest {
                 .getModelNodeId(),
                 m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_dataStoreManager);
         Map<QName, ConfigLeafAttribute> songAttrValues = new HashMap<>();
-        songAttrValues.put(songQname, new GenericConfigAttribute("The man who sold the world"));
+        songAttrValues.put(songQname, new GenericConfigAttribute("name", BillboardConstants.BB_NS, "The man who sold the world"));
         songModelNode.setAttributes(songAttrValues);
 
         ModelNodeId billboardParentId = billboardModelNode.getModelNodeId();

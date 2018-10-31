@@ -40,7 +40,8 @@ public class XmlChildLeafListHelperTest {
     XmlChildLeafListHelper m_helper;
     @Mock
     private LeafListSchemaNode m_schemaNode;
-    private static final QName QNAME = QName.create("namespace", "leaf-list");
+    public static final String LEAF_LIST = "leaf-list";
+    private static final QName QNAME = QName.create("namespace", LEAF_LIST);
     @Mock
     private ModelNodeDataStoreManager m_dsm;
     @Mock
@@ -66,15 +67,14 @@ public class XmlChildLeafListHelperTest {
 
     @Test
     public void testAddChildByUserOrder() throws Exception {
-        m_helper.addChildByUserOrder(m_modelNode, new GenericConfigAttribute("value"), "", new InsertOperation
-                (InsertOperation.FIRST,
-                null));
+        m_helper.addChildByUserOrder(m_modelNode, new GenericConfigAttribute(LEAF_LIST, "namespace", "value"), "", new InsertOperation(InsertOperation.FIRST,
+            null));
         verify(m_dsm).findNode(eq(m_schemaPath), (ModelNodeKey) anyObject(), eq(m_parentNodeId));
     }
 
     @Test
     public void testRemoveChild() throws Exception {
-        m_helper.removeChild(m_modelNode, new GenericConfigAttribute("value"));
+        m_helper.removeChild(m_modelNode, new GenericConfigAttribute(LEAF_LIST, "namespace", "value"));
         verify(m_dsm).findNode(eq(m_schemaPath), (ModelNodeKey) anyObject(), eq(m_parentNodeId));
     }
 

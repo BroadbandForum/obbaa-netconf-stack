@@ -51,8 +51,8 @@ public class EditContainmentNodeTest {
         m_qName = QName.create(TEST_NAMESPACE, TEST_LOCAL_NAME);
         m_editContainmentNode = new EditContainmentNode(m_qName, TEST_OPERATION);
         m_testChildNode = new EditContainmentNode(QName.create(TEST_NAMESPACE2, TEST_LOCAL_NAME2), TEST_OPERATION2);
-        m_editMatchNode = new EditMatchNode(m_qName, new GenericConfigAttribute(TEST_NODE_VALUE));
-        m_editChangeNode = new EditChangeNode(m_qName, new GenericConfigAttribute(TEST_NODE_VALUE));
+        m_editMatchNode = new EditMatchNode(m_qName,new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
+        m_editChangeNode = new EditChangeNode(m_qName,new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
     }
 
     @Test
@@ -228,8 +228,8 @@ public class EditContainmentNodeTest {
 
     @Test
     public void testAddChangeNode() {
-        assertEquals(m_editContainmentNode, m_editContainmentNode.addChangeNode(m_qName, new
-                GenericConfigAttribute(TEST_NODE_VALUE)));
+        assertEquals(m_editContainmentNode, m_editContainmentNode.addChangeNode(m_qName,new
+            GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE)));
     }
 
     @Test
@@ -241,7 +241,7 @@ public class EditContainmentNodeTest {
     public void testGetChangeNodeWhenChangeNodeQNameIsDifferent() {
         m_editContainmentNode.addChangeNode(m_editChangeNode);
         QName qName2 = QName.create(TEST_NAMESPACE3, TEST_LOCAL_NAME3);
-        EditChangeNode changeNode = new EditChangeNode(qName2, new GenericConfigAttribute(TEST_NODE_VALUE));
+        EditChangeNode changeNode = new EditChangeNode(qName2, new GenericConfigAttribute(TEST_LOCAL_NAME3, TEST_NAMESPACE3, TEST_NODE_VALUE));
         m_editContainmentNode.addChangeNode(changeNode);
         assertEquals(changeNode, m_editContainmentNode.getChangeNode(qName2));
     }

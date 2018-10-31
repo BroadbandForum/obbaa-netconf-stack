@@ -47,6 +47,8 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
         .V3_PMA_CERT_CONTAINER_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.V3_PMA_CERT_NS;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
@@ -105,6 +107,7 @@ import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Song
  */
 public class EntityToModelNodeMapperTest {
 
+    public static final String TEST_CERTIFICATES = "test:certificates";
     private EntityRegistry m_entityRegistry = new EntityRegistryImpl();
     private ModelNodeId m_jukeboxNodeId = new ModelNodeId().addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, JB_NS,
             JUKEBOX_LOCAL_NAME));
@@ -252,7 +255,8 @@ public class EntityToModelNodeMapperTest {
         assertEquals(certsQname, modelNode.getQName());
         assertEquals("cert1-binary", modelNode.getAttribute(V3_CERT_BINARY_QNAME).getStringValue());
         assertEquals("pma-cert1", modelNode.getAttribute(V3_CERT_ID_QNAME).getStringValue());
-        when(m_mockIdHelper.getValue((ModelNode) anyObject())).thenReturn(new GenericConfigAttribute("pma-cert1"));
+        when(m_mockIdHelper.getValue((ModelNode) anyObject())).thenReturn(new GenericConfigAttribute(V3_CERT_ID_QNAME.getLocalName(),
+            V3_CERT_ID_QNAME.getNamespace().toString(), "pma-cert1"));
         ModelNodeId actualNodeId = modelNode.getModelNodeId();
         assertEquals(m_cert1NodeId, actualNodeId);
         //verify parent namespace
@@ -266,7 +270,8 @@ public class EntityToModelNodeMapperTest {
         assertEquals(certsQname, modelNode.getQName());
         assertEquals("cert2-binary", modelNode.getAttribute(V3_CERT_BINARY_QNAME).getStringValue());
         assertEquals("pma-cert2", modelNode.getAttribute(V3_CERT_ID_QNAME).getStringValue());
-        when(m_mockIdHelper.getValue((ModelNode) anyObject())).thenReturn(new GenericConfigAttribute("pma-cert2"));
+        when(m_mockIdHelper.getValue((ModelNode) anyObject())).thenReturn(new GenericConfigAttribute(V3_CERT_ID_QNAME.getLocalName(),
+            V3_CERT_ID_QNAME.getNamespace().toString(), "pma-cert2"));
         assertEquals(m_cert2NodeId, modelNode.getModelNodeId());
         //verify parent namespace
         assertEquals(V3_CERT_NS, actualNodeId.getRdns().get(0).getNamespace());
@@ -283,10 +288,8 @@ public class EntityToModelNodeMapperTest {
         ModelNodeWithAttributes certModelNode = new ModelNodeWithAttributes(PMA_CERT_CONTAINER_SCHEMA_PATH, null,
                 null, null, m_schemaRegistry, null);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(QName.create("test:certificates", "2015-12-08", "id"), new GenericConfigAttribute
-                ("pma-cert3"));
-        configAttributes.put(QName.create("test:certificates", "2015-12-08", "cert-binary"), new
-                GenericConfigAttribute("pma-cert3-binary"));
+        configAttributes.put(QName.create(TEST_CERTIFICATES, "2015-12-08", "id"), new GenericConfigAttribute("id", TEST_CERTIFICATES, "pma-cert3"));
+        configAttributes.put(QName.create(TEST_CERTIFICATES, "2015-12-08", "cert-binary"),new GenericConfigAttribute("cert-binary", TEST_CERTIFICATES, "pma-cert3-binary"));
         certModelNode.setAttributes(configAttributes);
 
         Object entity = m_entityToModelNodeMapper.getEntity(PMA_CERT_SCHEMA_PATH, certModelNode, Certificate.class,
@@ -379,15 +382,15 @@ public class EntityToModelNodeMapperTest {
         ModelNodeWithAttributes songModelNode = new ModelNodeWithAttributes(SONG_SCHEMA_PATH, m_artistId, null, null,
                 m_schemaRegistry, null);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("Entity Refactor"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Entity Refactor"));
         songModelNode.setAttributes(configAttributes);
         songModelNode.setModelNodeId(m_songId);
 
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
         LinkedHashSet<ConfigLeafAttribute> singers = new LinkedHashSet<>();
-        singers.add(new GenericConfigAttribute("singer1"));
-        singers.add(new GenericConfigAttribute("singer2"));
-        leafLists.put(QName.create(JB_NS, JB_REVISION, "singer"), singers);
+        singers.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer1"));
+        singers.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer2"));
+        leafLists.put(QName.create(JB_NS,JB_REVISION, SINGER_LOCAL_NAME), singers);
 
         songModelNode.setLeafLists(leafLists);
 
@@ -401,7 +404,7 @@ public class EntityToModelNodeMapperTest {
         ModelNodeWithAttributes songModelNode = new ModelNodeWithAttributes(SONG_SCHEMA_PATH, m_artistId, null, null,
                 m_schemaRegistry, null);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute("Entity Refactor"));
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Entity Refactor"));
         songModelNode.setAttributes(configAttributes);
 
         Set<Singer> singers = new HashSet<>();

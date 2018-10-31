@@ -35,7 +35,9 @@ public class YangModelFactory {
     private static final String[] IETF_YANG_PATH = {"/yangs/ietf/ietf-restconf.yang",
             "/yangs/ietf/ietf-inet-types.yang",
                                                      /*"/yangs/ietf/ietf-interfaces.yang",*/
-            "/yangs/ietf/ietf-yang-types.yang"};
+            "/yangs/ietf/ietf-yang-types.yang",
+            "/yangs/ietf/ietf-yang-schema-mount.yang",
+            "/yangs/ietf/ietf-yang-library@2016-06-21.yang"};
 
 
     private List<URL> m_ietfYangModels = new ArrayList<URL>();

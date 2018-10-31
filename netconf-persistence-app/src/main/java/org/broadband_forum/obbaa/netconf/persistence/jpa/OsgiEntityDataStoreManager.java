@@ -16,11 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.persistence.jpa;
 
-import java.util.List;
-
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
 import javax.persistence.metamodel.Metamodel;
 import javax.transaction.Transactional;
 
@@ -36,7 +33,7 @@ public class OsgiEntityDataStoreManager extends AbstractEntityDataStoreManager {
 
     private static final Logger LOGGER = Logger.getLogger(OsgiEntityDataStoreManager.class);
 
-    @PersistenceContext(unitName = "base-platform")
+    @PersistenceContext(unitName = "baa")
     private EntityManager m_entityManager;
 
 
@@ -82,7 +79,7 @@ public class OsgiEntityDataStoreManager extends AbstractEntityDataStoreManager {
     /**
      * Works only against MaraiDB - Used only for LOGGING purpose
      */
-    @Override
+  /*  @Override
     public void dumpModifiedSessionVariables() {
         Query query = getEntityManager().createNativeQuery("select @@tx_isolation");
         List objects = query.getResultList();
@@ -100,6 +97,6 @@ public class OsgiEntityDataStoreManager extends AbstractEntityDataStoreManager {
             LOGGER.info("Could not retrieve lock wait timeout from DB");
         }
 
-    }
+    }*/
 
 }

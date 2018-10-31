@@ -108,7 +108,7 @@ public class DeleteLeafCommand implements Command {
         if (node instanceof LeafSchemaNode) {
             String defaultValue = ((LeafSchemaNode) node).getDefault();
             if (defaultValue != null) {
-                m_configAttributeHelper.setValue(m_instance, new GenericConfigAttribute(defaultValue));
+                m_configAttributeHelper.setValue(m_instance, new GenericConfigAttribute(node.getQName().getLocalName(), node.getQName().getNamespace().toString(), defaultValue));
             }
         }
     }

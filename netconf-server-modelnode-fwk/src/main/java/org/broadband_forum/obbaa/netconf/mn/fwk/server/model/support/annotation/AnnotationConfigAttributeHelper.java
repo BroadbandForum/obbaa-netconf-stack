@@ -18,6 +18,7 @@ package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.annotation
 
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetAttributeException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigAttributeHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
@@ -58,12 +59,15 @@ public class AnnotationConfigAttributeHelper extends AnnotationConstraintHelper 
     public ConfigLeafAttribute getValue(ModelNode modelNode) throws GetAttributeException {
         try {
             Object value = m_getterMethod.invoke(modelNode);
-            if (value != null) {
-                return new GenericConfigAttribute(value.toString());
+            if(value!=null){
+                ConfigAttribute annotation = m_getterMethod.getAnnotation(ConfigAttribute.class);
+                String localName = annotation.name();
+                String namespace = annotation.namespace();
+                return new GenericConfigAttribute(localName, namespace , value.toString());
             }
             return null;
         } catch (IllegalAccessException | IllegalArgumentException
-                | InvocationTargetException e) {
+            | InvocationTargetException e) {
             throw new GetAttributeException("could get value from ModelNode: " + modelNode, e);
         }
     }

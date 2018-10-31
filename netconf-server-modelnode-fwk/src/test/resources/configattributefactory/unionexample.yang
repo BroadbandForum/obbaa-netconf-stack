@@ -1,0 +1,82 @@
+module union-test {
+	yang-version 1.1;
+	namespace "unit:test:union:example";
+	prefix un;
+
+	 import parents {
+        prefix dactp;
+      }
+
+    revision 2017-06-07 {
+        description
+        "Initial Revision";
+    }
+
+    identity id-ref-type {
+        description
+        "This identity is used as a base for this example.";
+    }
+    identity test-type1 {
+        base id-ref-type;
+        description
+        "example test-type1.";
+    }
+    identity test-type2 {
+        base id-ref-type;
+        description
+        "example test-type2.";
+    }
+    identity test-type3 {
+        base id-ref-type;
+        description
+        "example test-type3.";
+    }
+
+    container test-container {
+        description
+        "This container describes the syslog filter parameters.";
+            leaf test-leaf {
+                type union {
+                    type identityref {
+                        base id-ref-type;
+                    }
+                    type enumeration {
+                        enum all;
+                    }
+                    type int32;
+                    type string;
+                }
+            }//leaf test-leaf
+    } //container test-container
+
+    container test-container2 {
+            description
+            "This container describes the syslog filter parameters.";
+                leaf test-leaf2 {
+                    type union {
+                        type identityref {
+                            base dactp:gender;
+                        }
+                        type enumeration {
+                            enum all;
+                        }
+                        type int32;
+                        type string;
+                    }
+                }//leaf test-leaf2
+        } //container test-container2
+
+    container test-container3 {
+            description
+            "This container describes the syslog filter parameters.";
+                leaf test-leaf3 {
+                    type union {
+                        type identityref {
+                            base dactp:gender;
+                        }
+                        type instance-identifier;
+
+                    }
+                }//leaf test-leaf3
+        } //container test-container3
+}//module union-test

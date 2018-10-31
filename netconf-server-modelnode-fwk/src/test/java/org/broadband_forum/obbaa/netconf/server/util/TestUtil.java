@@ -562,7 +562,7 @@ public class TestUtil {
         for (Element element : childElementList) {
             parentElement.removeChild(element);
         }
-        //remote empty text nodes
+        //remove empty text nodes
         for (Node textNode : childEmptyTextList) {
             parentElement.removeChild(textNode);
         }
@@ -571,8 +571,8 @@ public class TestUtil {
             Collections.sort(childElementList, new Comparator<Element>() {
                 @Override
                 public int compare(Element element1, Element element2) {
-                    String name1 = element1.getNodeName();
-                    String name2 = element2.getNodeName();
+                    String name1 = element1.getLocalName();
+                    String name2 = element2.getLocalName();
                     int diff = name1.compareTo(name2);
                     if (diff != 0) {
                         return diff;
@@ -630,7 +630,7 @@ public class TestUtil {
     }
 
     public static void verifyGetConfigWithOrder(NetconfServer server, String source, String filterInput, String
-            expectedOutput, String messageId) throws SAXException, IOException {
+            expectedOutput, String messageId) throws SAXException, IOException, NetconfMessageBuilderException{
         NetconfClientInfo client = new NetconfClientInfo("test", 1);
         GetConfigRequest request = new GetConfigRequest();
         request.setMessageId(messageId);
@@ -644,7 +644,7 @@ public class TestUtil {
         NetConfResponse response = new NetConfResponse();
         response.setMessageId(messageId);
         server.onGetConfig(client, request, response);
-        assertXMLEqualsWithOrder(loadAsXml(expectedOutput), responseToElement(response));
+        assertTrue(createXMLDiffWithOrder(DocumentUtils.documentToPrettyString(loadAsXml(expectedOutput)), response.responseToString()).identical());
     }
 
     public static void registerClasses(ModelNodeHelperRegistry modelNodeHelperRegistry) {
