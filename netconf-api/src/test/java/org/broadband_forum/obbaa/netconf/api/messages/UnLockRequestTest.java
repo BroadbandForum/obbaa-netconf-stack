@@ -19,13 +19,12 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.assertXMLEquals;
-
+import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import java.io.IOException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.TestXML;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class UnLockRequestTest {
 
@@ -40,7 +39,7 @@ public class UnLockRequestTest {
         m_unLockRequest.setMessageId(m_messageId);
         m_unLockRequest.setTarget(m_target);
         assertNotNull(m_unLockRequest.getRequestDocument());
-        TestXML.assertXMLEquals(TestXML.loadAsXml("unLock.xml"), m_unLockRequest.getRequestDocument().getDocumentElement());
+        assertXMLEquals(loadAsXml("unLock.xml"), m_unLockRequest.getRequestDocument().getDocumentElement());
     }
 
     @Test

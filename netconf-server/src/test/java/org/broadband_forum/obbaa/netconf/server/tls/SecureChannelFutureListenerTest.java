@@ -36,30 +36,30 @@ import io.netty.channel.ChannelFuture;
 public class SecureChannelFutureListenerTest {
 
     private SecureChannelFutureListener m_initializer;
-
+    
     private NetConfResponse m_response = new NetConfResponse();
     private NetconfClientInfo m_clientInfo = new NetconfClientInfo("adminuser", 1);
-
+    
     @Mock
     private ChannelFuture m_channelFuture;
 
     @Before
-    public void setUp() throws Exception {
+    public  void setUp() throws Exception{
         MockitoAnnotations.initMocks(this);
         m_initializer = new SecureChannelFutureListener(m_response, m_clientInfo);
     }
-
+    
     @Test
     public void testOperationComplete() throws Exception {
-        when(m_channelFuture.isSuccess()).thenReturn(true);
+        when (m_channelFuture.isSuccess()).thenReturn(true);
         m_initializer.operationComplete(m_channelFuture);
         assertEquals("Response Sent", m_response.getMessageSentFuture().get());
     }
-
+    
     @Test
     public void testOperationComplete_exception() throws Exception {
-        when(m_channelFuture.cause()).thenReturn(new IOException("closed"));
-        when(m_channelFuture.isSuccess()).thenReturn(false);
+        when (m_channelFuture.cause()).thenReturn(new IOException("closed"));
+        when (m_channelFuture.isSuccess()).thenReturn(false);
         m_initializer.operationComplete(m_channelFuture);
         try {
             m_response.getMessageSentFuture().get();

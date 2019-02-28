@@ -25,16 +25,16 @@ import java.security.PublicKey;
 
 /**
  * This class provides the method for the validation of key.
+ * 
  *
- * @author Venkat
+ * 
  */
 public class SshFileKeyValidataion implements SshKeyValidataion {
 
     private static final Logger LOGGER = Logger.getLogger(SshFileKeyValidataion.class);
 
     /**
-     * This method will compare the input public key with the public keys in the authorized key file and if it is
-     * present it will return
+     * This method will compare the input public key with the public keys in the authorized key file and if it is present it will return
      * true else false.
      */
     @Override

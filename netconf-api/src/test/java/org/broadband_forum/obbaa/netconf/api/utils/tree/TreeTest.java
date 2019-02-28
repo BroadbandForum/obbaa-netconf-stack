@@ -147,9 +147,8 @@ public class TreeTest {
         assertEquals(6, cloneTree.getSize());
     }
 
-    private void verifyTree(TreeNode<String> node1, TreeNode<String> node2, TreeNode<String> node3, TreeNode<String>
-            node4,
-                            TreeNode<String> node5, TreeNode<String> node6, Tree<String> tree) {
+    private void verifyTree(TreeNode<String> node1, TreeNode<String> node2, TreeNode<String> node3, TreeNode<String> node4,
+            TreeNode<String> node5, TreeNode<String> node6, Tree<String> tree) {
         // findNode(T nodeData) method
         assertEquals(node1, tree.getRootNode());
         assertEquals(node1, tree.findNode("Node 1"));

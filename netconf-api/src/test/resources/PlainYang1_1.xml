@@ -1,0 +1,48 @@
+<!--
+  ~ Copyright 2018 Broadband Forum
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<data>
+    <yanglib:modules-state xmlns:yanglib="urn:ietf:params:xml:ns:yang:ietf-yang-library">
+        <yanglib:module-set-id>bf3aaa952a123ba750ef9c3cd5d6bf5503b42223ee48b6eb04d40c63d075fe8c</yanglib:module-set-id>
+        <yanglib:module>
+            <yanglib:name>ietf-inet-types</yanglib:name>
+            <yanglib:revision>2013-07-15</yanglib:revision>
+            <yanglib:namespace>urn:ietf:params:xml:ns:yang:ietf-inet-types</yanglib:namespace>
+            <yanglib:conformance-type>implement</yanglib:conformance-type>
+        </yanglib:module>
+        <yanglib:module>
+            <yanglib:name>ietf-yang-library</yanglib:name>
+            <yanglib:revision>2016-06-21</yanglib:revision>
+            <yanglib:namespace>urn:ietf:params:xml:ns:yang:ietf-yang-library</yanglib:namespace>
+            <yanglib:conformance-type>implement</yanglib:conformance-type>
+            <yanglib:submodules>        <yanglib:submodule>         <yanglib:name>ietf-yang-library-submodule</yanglib:name>        <yanglib:revision>2016-06-21</yanglib:revision>        </yanglib:submodule>      </yanglib:submodules>      </yanglib:module>
+        <yanglib:module>
+            <yanglib:name>bbf-sub-interfaces</yanglib:name>
+            <yanglib:revision>2016-05-30</yanglib:revision>
+            <yanglib:namespace>urn:broadband-forum-org:yang:bbf-sub-interfaces</yanglib:namespace>
+            <yanglib:conformance-type>implement</yanglib:conformance-type>
+            <yanglib:feature>tag-rewrites</yanglib:feature>
+        </yanglib:module>
+        <yanglib:module>
+            <yanglib:name>ietf-entity</yanglib:name>
+            <yanglib:revision>2015-10-19</yanglib:revision>
+            <yanglib:namespace>urn:ietf:params:xml:ns:yang:ietf-entity</yanglib:namespace>
+            <yanglib:conformance-type>implement</yanglib:conformance-type>
+            <yanglib:feature>entity-sensor</yanglib:feature>
+            <yanglib:feature>entity-mib</yanglib:feature>
+        </yanglib:module>
+    </yanglib:modules-state>
+</data>

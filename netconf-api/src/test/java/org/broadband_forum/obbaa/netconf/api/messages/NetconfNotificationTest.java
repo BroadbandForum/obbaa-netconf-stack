@@ -22,9 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
@@ -34,6 +31,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class NetconfNotificationTest {
 
@@ -65,43 +66,39 @@ public class NetconfNotificationTest {
     }
 
     @Test
-    public void testSetEventTimeWithMillis() throws NetconfMessageBuilderException {
+    public void testSetEventTimeWithMillis() throws NetconfMessageBuilderException{
         String dateTimeMillis = "2016-09-06T16:55:19.508724+04:00";
         m_netconfNotification.setEventTime(dateTimeMillis);
         DateTime expectedDateTimeMillis = new DateTime(DateTime.parse(dateTimeMillis).getMillis());
-        assertEquals(expectedDateTimeMillis.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS),
-                m_netconfNotification.getEventTime());
+        assertEquals(expectedDateTimeMillis.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS), m_netconfNotification.getEventTime());
     }
 
     @Test
-    public void testSetEventTimeWithoutMillis() throws NetconfMessageBuilderException {
+    public void testSetEventTimeWithoutMillis() throws NetconfMessageBuilderException{
         String dateTime = "2016-09-06T16:55:19+04:00";
         m_netconfNotification.setEventTime(dateTime);
         DateTime expectedDateTime = new DateTime(DateTime.parse(dateTime).getMillis());
-        assertEquals(expectedDateTime.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS), m_netconfNotification
-                .getEventTime());
+        assertEquals(expectedDateTime.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS), m_netconfNotification.getEventTime());
     }
 
     @Test
-    public void testSetEventTimeWithMillisInUTC() throws NetconfMessageBuilderException {
+    public void testSetEventTimeWithMillisInUTC() throws NetconfMessageBuilderException{
         String dateTimeMillis = "2016-09-06T16:55:19.508724Z";
         m_netconfNotification.setEventTime(dateTimeMillis);
         DateTime expectedDateTimeMillis = new DateTime(DateTime.parse(dateTimeMillis).getMillis());
-        assertEquals(expectedDateTimeMillis.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS),
-                m_netconfNotification.getEventTime());
+        assertEquals(expectedDateTimeMillis.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS), m_netconfNotification.getEventTime());
     }
 
     @Test
-    public void testSetEventTimeWithoutMillisInUTC() throws NetconfMessageBuilderException {
+    public void testSetEventTimeWithoutMillisInUTC() throws NetconfMessageBuilderException{
         String dateTime = "2016-09-06T16:55:19Z";
         m_netconfNotification.setEventTime(dateTime);
         DateTime expectedDateTime = new DateTime(DateTime.parse(dateTime).getMillis());
-        assertEquals(expectedDateTime.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS), m_netconfNotification
-                .getEventTime());
+        assertEquals(expectedDateTime.toString(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS), m_netconfNotification.getEventTime());
     }
 
     @Test(expected = NetconfMessageBuilderException.class)
-    public void testSetEventTimeWithInvalidDateTime() throws NetconfMessageBuilderException {
+    public void testSetEventTimeWithInvalidDateTime() throws NetconfMessageBuilderException{
         String dateTime = "2016-09-06T16:55:19";
         m_netconfNotification.setEventTime(dateTime);
     }
@@ -140,8 +137,7 @@ public class NetconfNotificationTest {
     public void testNotificationToString() throws NetconfMessageBuilderException {
         Document doc = DocumentUtils.stringToDocument("<notification/>");
         NetconfNotification testObj = new NetconfNotification(doc);
-        String expectedNotificationString = "<notification " +
-                "xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">" + "<eventTime>"
+        String expectedNotificationString = "<notification xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">" + "<eventTime>"
                 + testObj.getEventTime() + "</eventTime></notification>";
         assertEquals(expectedNotificationString, testObj.notificationToString());
     }
@@ -150,8 +146,7 @@ public class NetconfNotificationTest {
     public void testNotificationToPrettyString() throws NetconfMessageBuilderException {
         Document doc = DocumentUtils.stringToDocument("<notification/>");
         NetconfNotification testObj = new NetconfNotification(doc);
-        String expectedNotificationString = "<notification " +
-                "xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">" + "\n<eventTime>"
+        String expectedNotificationString = "<notification xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">" + "\n<eventTime>"
                 + testObj.getEventTime() + "</eventTime>\n</notification>\n";
         assertEquals(expectedNotificationString, testObj.notificationToPrettyString());
     }

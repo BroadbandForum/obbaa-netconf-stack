@@ -17,7 +17,7 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 
-public class ChangedByParams {
+public class ChangedByParams{
 
     private SessionInfo m_sessionInfo;
 

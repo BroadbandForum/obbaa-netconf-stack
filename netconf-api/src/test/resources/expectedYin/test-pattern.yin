@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?><module xmlns="urn:ietf:params:xml:ns:yang:yin:1" xmlns:test-pattern="urn:opendaylight:test-pattern" name="test-pattern">
+    <yang-version value="1.1"/>
+    <namespace uri="urn:opendaylight:test-pattern"/>
+    <prefix value="test-pattern"/>
+    <revision date="2018-02-06"/>
+    <container name="test-pattern-container">
+        <leaf name="test-pattern-leaf">
+            <type name="string">
+                <length value="0..2147483647"/>
+                <pattern value="(\S+)"/>
+            </type>
+        </leaf>
+    </container>
+</module>

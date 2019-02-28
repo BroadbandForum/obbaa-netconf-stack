@@ -1,31 +1,22 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
-import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.common.QName;
@@ -34,18 +25,13 @@ import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 
 /**
  * Created by keshava on 4/28/16.
@@ -60,16 +46,16 @@ public class MNKeyUtilTest {
     public static final String ARTIST = "artist";
     public static final String ALBUM = "album";
     public static final SchemaPath ALBUM_SCHEMA_PATH = SchemaPathUtil.fromString(NAMESPACE + DELIMITER + REVISION + DELIMITER+"jukebox" +
-        DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ LIBRARY +
-        DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ARTIST +
-        DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ALBUM);
+               DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ LIBRARY +
+               DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ARTIST +
+               DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ALBUM);
     public static final SchemaPath JUKEBOX_SCHEMA_PATH = SchemaPathUtil.fromString(NAMESPACE +DELIMITER+ REVISION + DELIMITER+"jukebox");
     public static final String SONG = "song";
     private static final SchemaPath SONG_SCHEMA_PATH = SchemaPathUtil.fromString(NAMESPACE + DELIMITER + REVISION + DELIMITER+"jukebox" +
-        DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ LIBRARY +
-        DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ARTIST +
-        DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ALBUM +
-        DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ SONG);
+            DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ LIBRARY +
+            DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ARTIST +
+            DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ ALBUM +
+            DELIMITER+ NAMESPACE +DELIMITER+ REVISION + DELIMITER+ SONG);
     public static final String NAME = "name";
     public static final QName NAME_QNAME = QName.create(NAMESPACE, REVISION, NAME);
     public static final String YEAR = "year";
@@ -80,11 +66,11 @@ public class MNKeyUtilTest {
     public void setUp() throws Exception {
         List<YangTextSchemaSource> yangFiles = TestUtil.getJukeBoxDeps();
         yangFiles.add(TestUtil.getByteSource("/yangs/example-jukebox-with-leaf-list.yang"));
-        m_schemaRegistry = new SchemaRegistryImpl(yangFiles, new NoLockService());
+        m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), new NoLockService());
     }
 
     @Test
-    public void testContainsAllKeys() {
+    public void testContainsAllKeys(){
         Map<QName, ConfigLeafAttribute> matchCriteria = new HashMap<>();
         matchCriteria.put(NAME_QNAME, new GenericConfigAttribute(NAME, NAMESPACE, "album1"));
         assertTrue(MNKeyUtil.containsAllKeys(ALBUM_SCHEMA_PATH, matchCriteria, m_schemaRegistry));
@@ -102,7 +88,7 @@ public class MNKeyUtilTest {
     }
 
     @Test
-    public void testGetKeyFromCriteria() {
+    public void testGetKeyFromCriteria(){
         Map<QName, ConfigLeafAttribute> matchCriteria = new HashMap<>();
         matchCriteria.put(NAME_QNAME, new GenericConfigAttribute(NAME, NAMESPACE, "album1"));
         matchCriteria.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, NAMESPACE, "1988"));
@@ -120,13 +106,12 @@ public class MNKeyUtilTest {
     }
 
     @Test
-    public void testIsMatchLeafAttributes() {
+    public void testIsMatchLeafAttributes(){
         //both matchCriteria and attributes not null
         Map<QName, ConfigLeafAttribute> matchCriteria = new HashMap<>();
         matchCriteria.put(NAME_QNAME, new GenericConfigAttribute(NAME, NAMESPACE, "album1"));
         matchCriteria.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, NAMESPACE, "1988"));
-        ModelNodeWithAttributes albumNode = new ModelNodeWithAttributes(ALBUM_SCHEMA_PATH, null, null, null,
-                m_schemaRegistry, null);
+        ModelNodeWithAttributes albumNode = new ModelNodeWithAttributes(ALBUM_SCHEMA_PATH, null, null, null, m_schemaRegistry, null);
         Map<QName, ConfigLeafAttribute> attributeValues = new HashMap<>();
         attributeValues.put(NAME_QNAME, new GenericConfigAttribute(NAME, NAMESPACE, "album1"));
         attributeValues.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, NAMESPACE, "1988"));
@@ -163,12 +148,11 @@ public class MNKeyUtilTest {
     }
 
     @Test
-    public void testIsMatchLeafListAttributes() {
+    public void testIsMatchLeafListAttributes(){
         Map<QName, ConfigLeafAttribute> matchCriteria = new HashMap<>();
         matchCriteria.put(NAME_QNAME, new GenericConfigAttribute(NAME, NAMESPACE, "song1"));
         matchCriteria.put(SINGER_QNAME, new GenericConfigAttribute(SINGER, NAMESPACE, "singer1"));
-        ModelNodeWithAttributes songNode = new ModelNodeWithAttributes(SONG_SCHEMA_PATH, null, null, null,
-                m_schemaRegistry, null);
+        ModelNodeWithAttributes songNode = new ModelNodeWithAttributes(SONG_SCHEMA_PATH, null, null, null, m_schemaRegistry, null);
         Map<QName, ConfigLeafAttribute> attributeValues = new HashMap<>();
         attributeValues.put(NAME_QNAME, new GenericConfigAttribute(NAME, NAMESPACE, "song1"));
         songNode.setAttributes(attributeValues);
@@ -201,7 +185,7 @@ public class MNKeyUtilTest {
     }
 
     @Test
-    public void testGetModelNodeKey_WithTwoKeys() {
+    public void testGetModelNodeKey_WithTwoKeys(){
         SchemaRegistry schemaRegistry = mock(SchemaRegistry.class);
         ModelNodeWithAttributes modelNode = mock(ModelNodeWithAttributes.class);
 
@@ -215,7 +199,7 @@ public class MNKeyUtilTest {
         keyDefinitions.add(key1);
         QName key2 = QName.create("testNS", "key2");
         keyDefinitions.add(key2);
-        when(((ListSchemaNode) schemaNode).getKeyDefinition()).thenReturn(keyDefinitions);
+        when(((ListSchemaNode)schemaNode).getKeyDefinition()).thenReturn(keyDefinitions);
 
         Map<QName, ConfigLeafAttribute> attributes = new HashMap<>();
         attributes.put(key1, new GenericConfigAttribute("key1", "testNS", "Value1"));
@@ -223,7 +207,7 @@ public class MNKeyUtilTest {
         when(modelNode.getAttributes()).thenReturn(attributes);
 
 
-        ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(modelNode, schemaRegistry);
+        ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(modelNode,schemaRegistry);
         Map<QName, String> keys = modelNodeKey.getKeys();
         assertEquals(2, keys.size());
         Iterator<QName> iterator = keys.keySet().iterator();

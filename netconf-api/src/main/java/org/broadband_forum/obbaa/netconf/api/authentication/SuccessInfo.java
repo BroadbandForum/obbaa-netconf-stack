@@ -23,7 +23,7 @@ public class SuccessInfo {
     private String m_ip;
 
     private int m_port;
-
+    
     private X509Certificate m_peerCertificate;
 
     public String getIp() {
@@ -85,10 +85,5 @@ public class SuccessInfo {
         if (m_port != other.m_port)
             return false;
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "SuccessInfo [m_ip=" + m_ip + ", m_port=" + m_port + "]";
     }
 }

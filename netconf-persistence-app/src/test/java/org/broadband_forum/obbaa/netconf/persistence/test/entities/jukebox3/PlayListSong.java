@@ -34,7 +34,7 @@ import javax.persistence.Table;
 @Entity(name = "playlist_song")
 @Table(name = "playlist_song")
 @IdClass(PlayListSongPK.class)
-@YangList(name = "song", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
+@YangList(name="song", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
 public class PlayListSong {
     @Id
     @Column
@@ -45,7 +45,7 @@ public class PlayListSong {
     @YangParentId
     String parentId;
 
-    @YangAttribute(name = "id")
+    @YangAttribute(name="id")
     String id;
 
     @YangSchemaPath

@@ -27,13 +27,12 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity(name = "library")
 @Table(name = "library")
-@YangContainer(name = "library", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
+@YangContainer(name="library", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
 public class Library {
     @Id
     @YangParentId
@@ -62,9 +61,9 @@ public class Library {
     @YangChild
     private List<Artist> artists = new ArrayList<Artist>();
 
-    public List<Artist> getArtists() {
-        return artists;
-    }
+	public List<Artist> getArtists() {
+		return artists;
+	}
 
     public void setArtists(List<Artist> artists) {
         this.artists = artists;

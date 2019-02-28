@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?><module xmlns="urn:ietf:params:xml:ns:yang:yin:1" xmlns:test-deviation-module="urn:opendaylight:test-deviation-module" name="test-deviation-module">
+    <yang-version value="1"/>
+    <namespace uri="urn:opendaylight:test-deviation-module"/>
+    <prefix value="test-deviation-module"/>
+    <revision date="2017-10-11"/>
+    <container name="top-test-container">
+        <leaf name="test-leaf-for-add">
+            <type name="string"/>
+        </leaf>
+        <leaf-list name="test-leaflist-for-add">
+            <type name="int32"/>
+        </leaf-list>
+        <leaf name="test-leaf-for-replace">
+            <mandatory value="true"/>
+            <type name="int32"/>
+        </leaf>
+        <leaf name="test-leaf-for-delete">
+            <type name="string"/>
+            <default value="1"/>
+        </leaf>
+        <leaf name="test-leaf-for-not-supported">
+            <type name="uint32"/>
+        </leaf>
+    </container>
+</module>

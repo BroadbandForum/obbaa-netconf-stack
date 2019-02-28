@@ -1,0 +1,22 @@
+// Contents of "commonrootchildone"
+module commonrootchildone {
+    namespace "urn:opendaylight:commonrootchildone";
+    prefix "commonrootchildone";
+    
+    import commonroot{
+    	prefix "commonroot";
+    }
+
+    revision 2018-05-17 {
+        description "Initial revision";
+    }
+
+    augment "/commonroot:root-container"{
+    	container subroot {
+    		leaf test{
+    			type string;
+    		}
+    	}
+    }
+
+}

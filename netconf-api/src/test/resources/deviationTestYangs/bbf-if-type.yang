@@ -23,7 +23,14 @@ module bbf-if-type {
     reference
       "RFC 7223: ietf-interfaces; iana-if-type";
   }
-  
+
+  typedef data-rate {
+    type uint32;
+    units "1000 bit/second";
+    description
+      "Data rate in kbps.";
+  }
+
   identity bbf-interface-type {
     base if:interface-type;
     description

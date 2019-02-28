@@ -25,20 +25,17 @@ import org.broadband_forum.obbaa.netconf.api.transport.security.X509KeyManagerFa
 import org.broadband_forum.obbaa.netconf.api.transport.security.X509KeyManagerFactorySpi;
 import org.broadband_forum.obbaa.netconf.api.transport.security.X509TrustManagerFactory;
 import org.broadband_forum.obbaa.netconf.api.transport.security.X509TrustManagerFactorySpi;
-
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-
 import org.apache.log4j.Logger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
-
 import java.security.cert.CertificateException;
 
 /**
@@ -47,8 +44,7 @@ import java.security.cert.CertificateException;
 public class SSLContextUtil {
     private static final Logger LOGGER = Logger.getLogger(SSLContextUtil.class);
 
-    public static SslContext getServerSSLContext(NetconfServerConfiguration config) throws
-            NetconfServerDispatcherException {
+    public static SslContext getServerSSLContext(NetconfServerConfiguration config) throws NetconfServerDispatcherException {
         AbstractTLSNetconfTransport transport = (AbstractTLSNetconfTransport) config.getNetconfTransport();
         SslContextBuilder builder;
         try {
@@ -56,30 +52,26 @@ public class SSLContextUtil {
                 SelfSignedCertificate ssc;
                 ssc = new SelfSignedCertificate();
                 builder = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey());
-                LOGGER.info("Starting the " + transport.getTranportProtocol() + " server with Self Signed Certificate" +
-                        " with transport " +
-                        transport);
+                LOGGER.info("Starting the "+ transport.getTranportProtocol() +" server with Self Signed Certificate");
             } else {
                 KeyManagerFactory keyFactory = null;
-                if (transport.getKeyManager() != null && SslProvider.JDK.equals(transport.getSslProvider())) {
+                if (transport.getKeyManager() != null && SslProvider.JDK.equals(transport.getSslProvider())){
                     keyFactory = new X509KeyManagerFactory(new X509KeyManagerFactorySpi(transport.getKeyManager()));
                     builder = SslContextBuilder.forServer(keyFactory);
-                } else {
+                } else{
                     //file way
                     builder = SslContextBuilder.forServer(transport.getCertificateChain(), transport.getPrivateKey(),
                             transport.getPrivateKeyPassword());
                 }
-                if (transport.getTrustManager() != null) {
+                if(transport.getTrustManager() != null){
                     TrustManagerFactory trustFactory = null;
-                    trustFactory = new X509TrustManagerFactory(new X509TrustManagerFactorySpi(transport
-                            .getTrustManager()));
+                    trustFactory = new X509TrustManagerFactory(new X509TrustManagerFactorySpi(transport.getTrustManager()));
                     builder.trustManager(trustFactory);
-                } else {
+                }else{
                     //file way
                     builder.trustManager(transport.getTrustChain());
                 }
-                LOGGER.info("Starting the " + transport.getTranportProtocol() + " server with CA Signed Certificate  " +
-                        "with transport" + transport);
+                LOGGER.info("Starting the "+ transport.getTranportProtocol() +" server with CA Signed Certificate");
             }
             builder.sslProvider(transport.getSslProvider())
                     .ciphers(null, SupportedCipherSuiteFilter.INSTANCE);
@@ -91,38 +83,33 @@ public class SSLContextUtil {
         }
     }
 
-    public static SslContext getClientSSLContext(NetconfClientConfiguration config) throws
-            NetconfClientDispatcherException {
+    public static SslContext getClientSSLContext(NetconfClientConfiguration config) throws NetconfClientDispatcherException {
         AbstractTLSNetconfTransport transport = (AbstractTLSNetconfTransport) config.getTransport();
         SslContextBuilder builder = null;
         try {
             builder = SslContextBuilder.forClient();
             if (transport.isSelfSigned()) {
                 builder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-                LOGGER.info("Starting the " + transport.getTranportProtocol() + " client with Self Signed Certificate" +
-                        " with transport " + transport);
+                LOGGER.info("Starting the " + transport.getTranportProtocol() + " client with Self Signed Certificate");
             } else {
                 KeyManagerFactory keyFactory = null;
                 if (transport.getKeyManager() != null && SslProvider.JDK.equals(transport.getSslProvider())) {
                     keyFactory = new X509KeyManagerFactory(new X509KeyManagerFactorySpi(transport.getKeyManager()));
                     builder.keyManager(keyFactory);
-                } else {
+                }else{
                     //file way
-                    builder.keyManager(transport.getCertificateChain(), transport.getPrivateKey(), transport
-                            .getPrivateKeyPassword());
+                    builder.keyManager(transport.getCertificateChain(), transport.getPrivateKey(),transport.getPrivateKeyPassword());
                 }
 
-                if (transport.getTrustManager() != null) {
+                if(transport.getTrustManager() != null){
                     TrustManagerFactory trustFactory = null;
-                    trustFactory = new X509TrustManagerFactory(new X509TrustManagerFactorySpi(transport
-                            .getTrustManager()));
+                    trustFactory = new X509TrustManagerFactory(new X509TrustManagerFactorySpi(transport.getTrustManager()));
                     builder.trustManager(trustFactory);
-                } else {
+                }else{
                     //file way
                     builder.trustManager(transport.getTrustChain());
                 }
-                LOGGER.info("Starting the " + transport.getTranportProtocol() + " client with CA Signed Certificate " +
-                        "with transport " + transport);
+                LOGGER.info("Starting the "+ transport.getTranportProtocol() +" client with CA Signed Certificate");
             }
             builder.sslProvider(transport.getSslProvider())
                     .ciphers(null, SupportedCipherSuiteFilter.INSTANCE);

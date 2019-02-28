@@ -1,0 +1,224 @@
+module shcema-mount-test {
+	
+	yang-version 1;
+    
+	namespace "schema-mount-test";
+	
+	prefix "smt";
+	
+	import test-interfaces {
+	    prefix if;
+	}
+	
+	import bbf-interface-usage {
+	    prefix bbf-if-usg;
+	}
+	  
+	revision "2018-01-03" {
+	      description "Initial version.";
+	}
+	  
+	typedef interface-ref {
+		type leafref {
+		    path "/smt:schemaMount/smt:container1/smt:list1/smt:key";
+		}
+	}	
+	
+	typedef profile-ref {
+        type leafref {
+            path "/smt:schemaMount1/smt:profile/smt:name";
+        }
+    }
+	  
+	list testStateList {
+        config false;
+            key "name";
+
+            leaf name {
+                type string;
+            }
+
+            leaf dummy-leaf1 {
+                type string;
+        }
+
+    }
+
+	container stateContainer {
+		config false;
+		list stateList {
+			key keyLeaf;
+			leaf keyLeaf {
+				type string;
+			}
+			leaf otherLeaf {
+				type string;
+			}
+		}
+	}
+	
+	    container schemaMount {
+    	
+    	leaf leaf1 {
+    		type string;
+    	}
+    	
+    	leaf leaf2 {
+    	    type boolean;
+    	}
+    	
+    	container enableContainer {
+    	    when '../leaf2 = "true"';
+    	}
+    	container container1 {
+    		list list1 {
+    			key key;
+    			leaf key {
+    				type string;
+    			}
+    			
+    			leaf leaf1 {
+    				when "../../list1[current()]/leaf2 > 10";
+    				type string;
+    			}
+    			
+    			leaf leaf2 {
+    				type int8;
+    				must "current() > 0";
+    			}
+    			
+    			leaf leaf3 {
+    				type string;
+    			}
+    			
+    			leaf leaf4 {
+    				type leafref {
+    					path "/schemaMount/container1/list1/leaf3";
+    				}
+    			}
+    			leaf-list leafListMinElements {
+					min-elements 1;
+					type int8;
+				}
+    			
+    		    leaf type {
+    		        type string;
+    		    }
+    		}
+    		leaf test-auth-fail{
+                type string;
+        	}
+    	}
+        container stateContainer1 {
+            config false;
+            list stateList1 {
+                    key keyLeaf;
+                    leaf keyLeaf {
+                            type string;
+                    }
+                    leaf leaf1 {
+                            type string;
+                    }
+            }
+   		}
+       
+        container channelpair {
+            leaf channelgroup-ref {
+                type smt:interface-ref;
+                must "/smt:schemaMount/smt:container1/smt:list1[smt:key=current()]
+                      /smt:type='test'"{
+                   error-message "must reference a channelgroup";
+                }
+             }
+        }
+    }
+    
+    container schemaMount1 {
+        leaf channelgroup-ref1 {
+            type smt:interface-ref;
+            must "/smt:schemaMount/smt:container1/smt:list1[smt:key=current()]
+                  /smt:type='test'"{
+               error-message "must reference a channelgroup";
+            }
+         }
+        container innerSchemaMount1 {
+        	leaf innerSchemaMountLeaf {
+        		type string;
+        	}
+        }
+        
+        container profile {
+			leaf name {
+				type string;
+			}
+		}
+    }
+    
+    augment "/schemaMount"{
+    	when "leaf1='test'";
+        container outer {
+        	leaf a {
+        		type string;
+        		mandatory true;
+        	}
+      
+        	leaf b {
+        		type string;
+        	}	
+        }
+    }
+
+    augment "/schemaMount/container1" {
+        leaf profile {
+          type profile-ref;
+        }
+      }
+    
+    augment "/schemaMount/container1" {
+        container trap {
+                leaf auth-fail{
+                        when "../../test-auth-fail='apple'";
+                        type string;
+                        default "test";
+                }
+        }
+    }
+    
+    augment "/schemaMount" {
+       container forwarding {
+           list forwarder {
+               key name;
+               
+               leaf name {
+                   type string;
+               }
+               container ports {
+                 must "count(smt:port[smt:sub-interface = "
+                            + "/if:interfaces/if:interface[bbf-if-usg:interface-usage/bbf-if-usg:interface-usage = 'network-port']/if:name]) = 1" {
+               error-message
+                 "A forwarder must have 1 port with usage network-port.";
+               }
+               list port {
+                 key name;
+                 
+                 leaf name {
+                    type string;
+                 }
+                
+                 leaf sub-interface {
+                    must
+                        "count(/smt:schemaMount/smt:forwarding/smt:forwarder
+                         /smt:ports/smt:port
+                         [smt:sub-interface = current()])< 2" {
+                        description
+                          "No two forwarder ports can refer to the same 
+                           sub-interface.";
+                      }
+                    type if:intf-ref;
+                 }
+              }
+           }
+         }
+       }
+    }
+}

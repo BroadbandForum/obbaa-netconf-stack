@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2;
 
 import java.util.HashMap;
@@ -36,45 +20,44 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.S
 
 public class LibrarySystem extends AbstractSubSystem {
 
-    private static final String SONG_COUNT = "song-count";
-    private static final String ALBUM_COUNT = "album-count";
-    private static final String ARTIST_COUNT = "artist-count";
+	private static final String SONG_COUNT = "song-count";
+	private static final String ALBUM_COUNT = "album-count";
+	private static final String ARTIST_COUNT = "artist-count";
 
-    private ModelNode m_rootModelNode;
+	private ModelNode m_rootModelNode;
+	
+	public void setRootModelNode(ModelNode rootNode) {
+		this.m_rootModelNode = rootNode;
+	}
+	
+	public ModelNode getLibraryNode() {
+		return ((Jukebox)m_rootModelNode).getLibrary();
+	}
+	
+	@Override
+	public Map<ModelNodeId, List<Element>> retrieveStateAttributes(Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>> attributes) throws GetAttributeException {
+		Map<ModelNodeId, List<Element>> stateInfo = new HashMap<>();
+		Document doc = DocumentUtils.createDocument();
+		for (Entry<ModelNodeId, Pair<List<QName>, List<FilterNode>>> entry : attributes.entrySet()) {
+			List<QName> stateQNames = entry.getValue().getFirst();
+			Map<QName, Object> stateAttributes = new HashMap<>();
+			
+			Library library = (Library) getLibraryNode();
+			for (QName attr : stateQNames) {
+				if (attr.getLocalName().equals(ARTIST_COUNT)) {
+					stateAttributes.put(attr, library.getArtistCount());
+				}
+				if (attr.getLocalName().equals(ALBUM_COUNT)) {
+					stateAttributes.put(attr, library.getAlbumCount());
+				}
+				if (attr.getLocalName().equals(SONG_COUNT)) {
+					stateAttributes.put(attr, library.getSongCount());
+				}
+			}
+			List<Element> stateElements = StateAttributeUtil.convertToStateElements(stateAttributes, "jbox", doc);
+			stateInfo.put(entry.getKey(), stateElements);
+		}
 
-    public void setRootModelNode(ModelNode rootNode) {
-        this.m_rootModelNode = rootNode;
-    }
-
-    public ModelNode getLibraryNode() {
-        return ((Jukebox) m_rootModelNode).getLibrary();
-    }
-
-    @Override
-    public Map<ModelNodeId, List<Element>> retrieveStateAttributes(Map<ModelNodeId, Pair<List<QName>,
-            List<FilterNode>>> attributes) throws GetAttributeException {
-        Map<ModelNodeId, List<Element>> stateInfo = new HashMap<>();
-        Document doc = DocumentUtils.createDocument();
-        for (Entry<ModelNodeId, Pair<List<QName>, List<FilterNode>>> entry : attributes.entrySet()) {
-            List<QName> stateQNames = entry.getValue().getFirst();
-            Map<QName, Object> stateAttributes = new HashMap<>();
-
-            Library library = (Library) getLibraryNode();
-            for (QName attr : stateQNames) {
-                if (attr.getLocalName().equals(ARTIST_COUNT)) {
-                    stateAttributes.put(attr, library.getArtistCount());
-                }
-                if (attr.getLocalName().equals(ALBUM_COUNT)) {
-                    stateAttributes.put(attr, library.getAlbumCount());
-                }
-                if (attr.getLocalName().equals(SONG_COUNT)) {
-                    stateAttributes.put(attr, library.getSongCount());
-                }
-            }
-            List<Element> stateElements = StateAttributeUtil.convertToStateElements(stateAttributes, "jbox", doc);
-            stateInfo.put(entry.getKey(), stateElements);
-        }
-
-        return stateInfo;
-    }
+		return stateInfo;
+	}
 }

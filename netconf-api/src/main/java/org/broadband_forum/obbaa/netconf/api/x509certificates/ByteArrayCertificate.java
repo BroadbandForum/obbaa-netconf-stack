@@ -20,7 +20,7 @@ package org.broadband_forum.obbaa.netconf.api.x509certificates;
  * <pre>
  *     A POJO class for storing bytes of a Certificate.
  * </pre>
- * <p>
+ * 
  * Created by keshava on 4/28/15.
  */
 public class ByteArrayCertificate {

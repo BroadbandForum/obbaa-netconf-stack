@@ -28,7 +28,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.ParserConfigurationException;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,15 +36,16 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Response of a Netconf request.
+ * 
  *
- * @author keshava
+ * 
  */
 public class NetConfResponse implements CompletableMessage {
 
     private String m_messageId;
 
     private boolean m_ok = false;
-
+    
     private CompletableFuture<String> m_messageSentFuture = new CompletableFuture<String>();
 
     private List<NetconfRpcError> m_errors = new ArrayList<NetconfRpcError>();
@@ -57,18 +57,19 @@ public class NetConfResponse implements CompletableMessage {
     private Document m_doc;
 
     private static final Logger LOGGER = Logger.getLogger(NetConfResponse.class);
+    
+	private boolean m_instanceReplaced = false;
 
-    private boolean m_instanceReplaced = false;
+	private boolean closeSession = false;
 
-
-    /**
+	/**
      * This is unique message-id per NetconfRequest per {@link NetconfClientSession}. This is mapped to
      * {@code messaged-id tag in a <rpc> and <rpc-reply> }.
-     * <p>
+     * 
      * <pre>
      * It is the responsibility of the {@link NetconfClientSession} to set this value.
      * </pre>
-     *
+     * 
      * @return the value of message-id.
      */
     public String getMessageId() {
@@ -83,7 +84,7 @@ public class NetConfResponse implements CompletableMessage {
     public boolean isOk() {
         return m_ok;
     }
-
+    
     public CompletableFuture<String> getMessageSentFuture() {
         return m_messageSentFuture;
     }
@@ -113,7 +114,7 @@ public class NetConfResponse implements CompletableMessage {
 
     /**
      * Provides the child element list of data elemnt of get/getconfig netconf response.
-     *
+     * 
      * @return
      */
     public List<Element> getDataContent() {
@@ -132,7 +133,7 @@ public class NetConfResponse implements CompletableMessage {
 
     /**
      * Add the top element contents of a netconf response.
-     * <p>
+     * 
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -157,8 +158,7 @@ public class NetConfResponse implements CompletableMessage {
      * Corresponding NetConfResponse
      * --------------------------------
      *  NetConfResponse response = new NetConfResponse()
-     *                             .addDataContent(dataContent); // dataContent contains data starting from <top>
-     *                                 element
+     *                             .addDataContent(dataContent); // dataContent contains data starting from <top> element
      *  @param dataContent
      * @return the modified response
      */
@@ -180,7 +180,7 @@ public class NetConfResponse implements CompletableMessage {
 
     /**
      * Set the list of top element contents of a netconf response.
-     * <p>
+     * 
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -211,8 +211,7 @@ public class NetConfResponse implements CompletableMessage {
      * Corresponding NetConfResponse
      * --------------------------------
      *  NetConfResponse response = new NetConfResponse()
-     *                             .setDataContent(dataContent);// dataContent contains data starting from <top>
-     *                                 elements
+     *                             .setDataContent(dataContent);// dataContent contains data starting from <top> elements
      *  @param dataContent
      * @return the modified response
      */
@@ -256,15 +255,13 @@ public class NetConfResponse implements CompletableMessage {
 
     @Override
     public String toString() {
-        return "NetConfResponse [messageId=" + m_messageId + ", ok=" + m_ok + ", error=" + m_errors + ", data=" +
-                m_data + "]";
+        return "NetConfResponse [messageId=" + m_messageId + ", ok=" + m_ok + ", error=" + m_errors + ", data=" + m_data + "]";
     }
 
     public Document getResponseDocument() throws NetconfMessageBuilderException {
-        synchronized (this) {
+        synchronized (this){
             PojoToDocumentTransformer responseBuilder = new PojoToDocumentTransformer()
-                    .newNetconfRpcReplyDocument(getMessageId(), m_otherRpcAttributes).addRpcErrors(getErrors())
-                    .addData(getData());
+                    .newNetconfRpcReplyDocument(getMessageId(), m_otherRpcAttributes).addRpcErrors(getErrors()).addData(getData());
             if (m_ok) {
                 responseBuilder.addOk();
             }
@@ -280,12 +277,20 @@ public class NetConfResponse implements CompletableMessage {
         this.m_data = dataFromRpcReply;
         return this;
     }
-
+    
     public void setInstanceReplaced(boolean instanceReplaced) {
-        m_instanceReplaced = instanceReplaced;
+    	m_instanceReplaced = instanceReplaced;
+    }
+    
+    public boolean getInstanceReplaced() {
+    	return m_instanceReplaced;
     }
 
-    public boolean getInstanceReplaced() {
-        return m_instanceReplaced;
-    }
+    public boolean isCloseSession() {
+		return closeSession;
+	}
+
+	public void setCloseSession(boolean closeSession) {
+		this.closeSession = closeSession;
+	}
 }

@@ -22,8 +22,9 @@ import org.w3c.dom.Element;
 
 /**
  * Netconf request to perform {@code <copy-config> } operation.
+ * 
  *
- * @author keshava
+ * 
  */
 public class CopyConfigRequest extends AbstractNetconfRequest {
 
@@ -35,8 +36,7 @@ public class CopyConfigRequest extends AbstractNetconfRequest {
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        PojoToDocumentTransformer builder = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId)
-                .addCopyConfigElement(
+        PojoToDocumentTransformer builder = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addCopyConfigElement(
                 m_source, m_sourceIsUrl, m_target, m_targetIsUrl, m_sourceConfigElement);
         return builder.build();
     }
@@ -75,8 +75,7 @@ public class CopyConfigRequest extends AbstractNetconfRequest {
 
     @Override
     public String toString() {
-        return "CopyConfigRequest [source=" + m_source + ", sourceIsUrl=" + m_sourceIsUrl + ", target=" + m_target +
-                ", targetIsUrl="
+        return "CopyConfigRequest [source=" + m_source + ", sourceIsUrl=" + m_sourceIsUrl + ", target=" + m_target + ", targetIsUrl="
                 + m_targetIsUrl + ", sourceConfigElement=" + m_sourceConfigElement + "]";
     }
 

@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
@@ -91,25 +75,21 @@ public class EditConfigRemoveLeafTest extends AbstractEditConfigTestSetup {
         String yangFilePath = getClass().getResource(yangFile).getPath();
         String xmlFilePath = EditConfigDeleteLeafTest.class.getResource(xmlFile).getPath();
 
-        m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), new NoLockService());
-        m_schemaRegistry.loadSchemaContext("restaurant", Arrays.asList(TestUtil.getByteSource
-                ("/leaftest/example-restaurant.yang")), Collections.emptySet(), Collections.emptyMap());
+        m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        m_schemaRegistry.loadSchemaContext("restaurant", Arrays.asList(TestUtil.getByteSource("/leaftest/example-restaurant.yang")), Collections.emptySet(), Collections.emptyMap());
         m_modelNodeDsm = new InMemoryDSM(m_schemaRegistry);
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
                 mock(ModelNodeDataStoreManager.class), m_subSystemRegistry);
         m_server = new NetConfServerImpl(m_schemaRegistry);
-        m_integrityService = new DataStoreIntegrityServiceImpl(m_modelNodeHelperRegistry, m_schemaRegistry, m_server);
-        m_datastoreValidator = new DataStoreValidatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
-                m_modelNodeDsm, m_integrityService, m_expValidator);
+        m_integrityService = new DataStoreIntegrityServiceImpl(m_server);
+        m_datastoreValidator = new DataStoreValidatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_modelNodeDsm, m_integrityService,m_expValidator);
 
         YangUtils.deployInMemoryHelpers(yangFilePath, new LocalSubSystem(), m_modelNodeHelperRegistry,
                 m_subSystemRegistry, m_schemaRegistry, m_modelNodeDsm);
-        ContainerSchemaNode schemaNode = (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(RestaurantConstants
-                .RESTAURANT_SCHEMA_PATH);
+        ContainerSchemaNode schemaNode = (ContainerSchemaNode)m_schemaRegistry.getDataSchemaNode(RestaurantConstants.RESTAURANT_SCHEMA_PATH);
         ChildContainerHelper containerHelper = new RootEntityContainerModelNodeHelper(schemaNode,
                 m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_modelNodeDsm);
-        m_rootModelNodeAggregator.addModelServiceRootHelper(RestaurantConstants.RESTAURANT_SCHEMA_PATH,
-                containerHelper);
+        m_rootModelNodeAggregator.addModelServiceRootHelper(RestaurantConstants.RESTAURANT_SCHEMA_PATH, containerHelper);
         m_dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry);
         m_dataStore.setValidator(m_datastoreValidator);
         m_nbiNotificationHelper = mock(NbiNotificationHelper.class);
@@ -119,7 +99,7 @@ public class EditConfigRemoveLeafTest extends AbstractEditConfigTestSetup {
     }
 
     /*
-     * Delete the leaf which does not exist
+	 * Delete the leaf which does not exist
 	 */
     @Test
     public void testDeleteNonExistingLeaf() throws SAXException, IOException {
@@ -131,8 +111,7 @@ public class EditConfigRemoveLeafTest extends AbstractEditConfigTestSetup {
         assertEquals(NetconfRpcErrorTag.DATA_MISSING, netconfRpcError.getErrorTag());
         assertEquals("/restaurant:restaurant", netconfRpcError.getErrorPath());
         assertEquals(NetconfRpcErrorSeverity.Error, netconfRpcError.getErrorSeverity());
-        assertEquals("Could not find the value: 11:10-00:00 of node Change [delete,opening-time,11:10-00:00," +
-                "http://example" +
+        assertEquals("Could not find the value: 11:10-00:00 of node Change [delete,opening-time,11:10-00:00,http://example" +
                 ".com/ns/example-restaurant]", netconfRpcError.getErrorMessage());
     }
 

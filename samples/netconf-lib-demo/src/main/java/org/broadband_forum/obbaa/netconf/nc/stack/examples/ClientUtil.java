@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.nc.stack.examples;
 
+import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
@@ -40,7 +41,7 @@ public class ClientUtil {
             while (clientSession != null && clientSession.isOpen()) {
                 Thread.sleep(1000);
                 NetConfResponse response = clientSession.get(new GetRequest()).get();
-                if (response != null) {
+                if(response != null){
                     LOGGER.info("Got response from server response: " + response.responseToString());
                     Thread.sleep(1000);
                 }
@@ -61,6 +62,20 @@ public class ClientUtil {
             LOGGER.error("Error occured while sending response", e);
         } catch (ExecutionException e) {
             LOGGER.error("Error occured during execution ", e);
+        }
+    }
+
+    public static void toggleTCPKA(NetconfClientSession session) {
+        Scanner scanner = new Scanner(System.in);
+        while(true){
+            LOGGER.info("Set TCP KA Option ON/OFF: ");
+            String option = scanner.nextLine().trim();
+            if("ON".equals(option)){
+                session.setTcpKeepAlive(true);
+            }else {
+                session.setTcpKeepAlive(false);
+            }
+
         }
     }
 }

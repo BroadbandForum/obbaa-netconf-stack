@@ -16,24 +16,42 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh.auth;
 
-import org.broadband_forum.obbaa.netconf.api.server.auth.ClientAuthenticationInfo;
-import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
-
 import java.io.Serializable;
 import java.security.PublicKey;
+
+import org.broadband_forum.obbaa.netconf.api.server.auth.AuthenticationResult;
+import org.broadband_forum.obbaa.netconf.api.server.auth.ClientAuthenticationInfo;
+import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
+import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerSessionListener;
 
 public abstract class PasswordAuthHandler implements NetconfServerAuthenticationHandler {
 
     @Override
-    public abstract boolean authenticate(ClientAuthenticationInfo clientAuthInfo);
+    public abstract AuthenticationResult authenticate(ClientAuthenticationInfo clientAuthInfo);
 
     @Override
-    public boolean authenticate(PublicKey pubKey) {
-        return false;
+    public AuthenticationResult authenticate(PublicKey pubKey) {
+        return AuthenticationResult.failedAuthResult();
     }
 
     @Override
-    public void logout(Serializable sshSessionId) {
-
+    public void logout(Serializable sessionId) {
+    	
     }
+
+    @Override
+    public void registerServerSessionListener(Serializable sessionId, NetconfServerSessionListener sessionListener) {
+        
+    }
+
+    @Override
+    public void unregisterServerSessionListener(Serializable sessionId) {
+        
+    }
+
+    @Override
+    public NetconfServerSessionListener getServerSessionListener(Serializable sessionId) {
+        return null;
+    }
+    
 }

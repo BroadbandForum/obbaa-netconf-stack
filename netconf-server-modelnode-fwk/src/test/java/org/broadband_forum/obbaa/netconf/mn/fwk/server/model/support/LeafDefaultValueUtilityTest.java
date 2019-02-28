@@ -1,231 +1,285 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.BitsTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.EmptyTypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.EnumTypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.EnumTypeDefinition.EnumPair;
+import org.opendaylight.yangtools.yang.model.api.type.Int16TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.Int32TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.Int64TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.Int8TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.Uint16TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.Uint32TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.Uint64TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.Uint8TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
 import org.opendaylight.yangtools.yang.model.util.type.BaseTypes;
+
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogCallEntry;
+
 
 
 public class LeafDefaultValueUtilityTest {
 
     private LeafDefaultValueUtility m_leafDefaultValueUtility;
-
+    private AdvancedLogger m_logger;
+    private List<LogCallEntry> m_logCallBuffer;
+    
     @Before
     public void setUp() throws Exception {
         m_leafDefaultValueUtility = new LeafDefaultValueUtility();
+        m_logger = LeafDefaultValueUtility.getLoggerForTest();
+        m_logCallBuffer = new ArrayList<>();
+        m_logger.setLogCallBuffer(m_logCallBuffer);
     }
 
     @After
     public void tearDown() throws Exception {
         m_leafDefaultValueUtility = null;
+        m_logger.removeLogCallBuffer();
     }
-
+    
     @Test
     public void testGetDefaultValueWhenInt8Type() throws TransformerException {
-
+        
+        TypeDefinition type = mock(Int8TypeDefinition.class);
+        
         //test octal value
-        assertGetDefaultValue(BaseTypes.int8Type(), "57", "071");
+        assertGetDefaultValue(type, "57", "071");
 
         //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.int8Type(), "0", "0");
-
+        assertGetDefaultValue(type, "0", "0");
+        
         //test decimal value
-        assertGetDefaultValue(BaseTypes.int8Type(), "127", "127");
-
+        assertGetDefaultValue(type, "127", "127");
+        
         //test hex value
-        assertGetDefaultValue(BaseTypes.int8Type(), "104", "0x68");
-
+        assertGetDefaultValue(type, "104", "0x68");
+        
         //test negative octal value
-        assertGetDefaultValue(BaseTypes.int8Type(), "-80", "-0120");
-
+        assertGetDefaultValue(type, "-80", "-0120");
+        
         //test negative decimal value
-        assertGetDefaultValue(BaseTypes.int8Type(), "-126", "-126");
-
+        assertGetDefaultValue(type, "-126", "-126");
+        
         //test negative hex value
-        assertGetDefaultValue(BaseTypes.int8Type(), "-105", "-0X69");
+        assertGetDefaultValue(type, "-105", "-0X69");
     }
 
 
     @Test
     public void testGetDefaultValueWhenInt16Type() throws TransformerException {
-
+        
+        TypeDefinition type = mock(Int16TypeDefinition.class);
+        
         //test octal value
-        assertGetDefaultValue(BaseTypes.int16Type(), "3648", "07100");
-
+        assertGetDefaultValue(type, "3648", "07100");
+        
         //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.int16Type(), "0", "0");
+        assertGetDefaultValue(type, "0", "0");
 
         //test decimal value
-        assertGetDefaultValue(BaseTypes.int16Type(), "12800", "12800");
-
+        assertGetDefaultValue(type, "12800", "12800");
+        
         //test hex value
-        assertGetDefaultValue(BaseTypes.int16Type(), "26624", "0x6800");
-
+        assertGetDefaultValue(type, "26624", "0x6800");
+        
         //test negative octal value
-        assertGetDefaultValue(BaseTypes.int16Type(), "-5120", "-012000");
-
+        assertGetDefaultValue(type, "-5120", "-012000");
+        
         //test negative decimal value
-        assertGetDefaultValue(BaseTypes.int16Type(), "-12600", "-12600");
-
+        assertGetDefaultValue(type, "-12600", "-12600");
+        
         //test negative hex value
-        assertGetDefaultValue(BaseTypes.int16Type(), "-26880", "-0X6900");
+        assertGetDefaultValue(type, "-26880", "-0X6900");
     }
-
+    
     @Test
     public void testGetDefaultValueWhenInt32Type() throws TransformerException {
-
+        
+        TypeDefinition type = mock(Int32TypeDefinition.class);
+        
         //test octal value
-        assertGetDefaultValue(BaseTypes.int32Type(), "233472", "0710000");
-
+        assertGetDefaultValue(type, "233472", "0710000");
+        
         //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.int32Type(), "0", "0");
+        assertGetDefaultValue(type, "0", "0");
 
         //test decimal value
-        assertGetDefaultValue(BaseTypes.int32Type(), "1280000", "1280000");
-
+        assertGetDefaultValue(type, "1280000", "1280000");
+        
         //test hex value
-        assertGetDefaultValue(BaseTypes.int32Type(), "6815744", "0x680000");
-
+        assertGetDefaultValue(type, "6815744", "0x680000");
+        
         //test negative octal value
-        assertGetDefaultValue(BaseTypes.int32Type(), "-327680", "-01200000");
-
+        assertGetDefaultValue(type, "-327680", "-01200000");
+        
         //test negative decimal value
-        assertGetDefaultValue(BaseTypes.int32Type(), "-1260000", "-1260000");
-
+        assertGetDefaultValue(type, "-1260000", "-1260000");
+        
         //test negative hex value
-        assertGetDefaultValue(BaseTypes.int32Type(), "-6881280", "-0X690000");
+        assertGetDefaultValue(type, "-6881280", "-0X690000");
     }
-
+    
     @Test
     public void testGetDefaultValueWhenInt64Type() throws TransformerException {
-
+        
+        TypeDefinition type = mock(Int64TypeDefinition.class);
+        
         //test octal value
-        assertGetDefaultValue(BaseTypes.int64Type(), "956301312", "07100000000");
-
+        assertGetDefaultValue(type, "956301312", "07100000000");
+        
         //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.int64Type(), "0", "0");
+        assertGetDefaultValue(type, "0", "0");
 
         //test decimal value
-        assertGetDefaultValue(BaseTypes.int64Type(), "12800000000", "12800000000");
-
+        assertGetDefaultValue(type, "12800000000", "12800000000");
+        
         //test hex value
-        assertGetDefaultValue(BaseTypes.int64Type(), "446676598784", "0x6800000000");
-
+        assertGetDefaultValue(type, "446676598784", "0x6800000000");
+        
         //test negative octal value
-        assertGetDefaultValue(BaseTypes.int64Type(), "-1342177280", "-012000000000");
-
+        assertGetDefaultValue(type, "-1342177280", "-012000000000");
+        
         //test negative decimal value
-        assertGetDefaultValue(BaseTypes.int64Type(), "-12600000000", "-12600000000");
-
+        assertGetDefaultValue(type, "-12600000000", "-12600000000");
+        
         //test negative hex value
-        assertGetDefaultValue(BaseTypes.int64Type(), "-450971566080", "-0X6900000000");
+        assertGetDefaultValue(type, "-450971566080", "-0X6900000000");
     }
-
+    
     @Test
     public void testGetDefaultValueWhenUint8Type() throws TransformerException {
-
+        
+        TypeDefinition type = mock(Uint8TypeDefinition.class);
+        
         //test octal value
-        assertGetDefaultValue(BaseTypes.uint8Type(), "72", "0110");
-
+        assertGetDefaultValue(type, "72", "0110");
+        
         //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.uint8Type(), "0", "0");
+        assertGetDefaultValue(type, "0", "0");
 
         //test decimal value
-        assertGetDefaultValue(BaseTypes.uint8Type(), "256", "256");
-
+        assertGetDefaultValue(type, "256", "256");
+        
         //test hex value
-        assertGetDefaultValue(BaseTypes.uint8Type(), "138", "0x8a");
+        assertGetDefaultValue(type, "138", "0x8a");
     }
 
     @Test
     public void testGetDefaultValueWhenUint16Type() throws TransformerException {
+        
+        TypeDefinition type = mock(Uint16TypeDefinition.class);
+        
+       //test octal value
+       assertGetDefaultValue(type, "29696", "072000");
+       
+       //test single digit decimal value
+       assertGetDefaultValue(type, "0", "0");
 
-        //test octal value
-        assertGetDefaultValue(BaseTypes.uint16Type(), "29696", "072000");
-
-        //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.uint16Type(), "0", "0");
-
-        //test decimal value
-        assertGetDefaultValue(BaseTypes.uint16Type(), "25600", "25600");
-
-        //test hex value
-        assertGetDefaultValue(BaseTypes.uint16Type(), "34984", "0x88a8");
+       //test decimal value
+       assertGetDefaultValue(type, "25600", "25600");
+       
+       //test hex value
+       assertGetDefaultValue(type, "34984", "0x88a8");
     }
-
+    
     @Test
     public void testGetDefaultValueWhenUint32Type() throws TransformerException {
+        
+        TypeDefinition type = mock(Uint32TypeDefinition.class);
+        
+       //test octal value
+       assertGetDefaultValue(type, "1900544", "07200000");
+       
+       //test single digit decimal value
+       assertGetDefaultValue(type, "0", "0");
 
-        //test octal value
-        assertGetDefaultValue(BaseTypes.uint32Type(), "1900544", "07200000");
-
-        //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.uint32Type(), "0", "0");
-
-        //test decimal value
-        assertGetDefaultValue(BaseTypes.uint32Type(), "256000000", "256000000");
-
-        //test hex value
-        assertGetDefaultValue(BaseTypes.uint32Type(), "2292711424", "0x88a80000");
+       //test decimal value
+       assertGetDefaultValue(type, "256000000", "256000000");
+       
+       //test hex value
+       assertGetDefaultValue(type, "2292711424", "0x88a80000");
     }
-
+    
     @Test
     public void testGetDefaultValueWhenUint64Type() throws TransformerException {
+        
+        TypeDefinition type = mock(Uint64TypeDefinition.class);
+        
+       //test octal value
+       assertGetDefaultValue(type, "498216206336", "07200000000000");
+       
+       //test single digit decimal value
+       assertGetDefaultValue(type, "0", "0");
 
-        //test octal value
-        assertGetDefaultValue(BaseTypes.uint64Type(), "498216206336", "07200000000000");
-
-        //test single digit decimal value
-        assertGetDefaultValue(BaseTypes.uint64Type(), "0", "0");
-
-        //test decimal value
-        assertGetDefaultValue(BaseTypes.uint64Type(), "2560000000000", "2560000000000");
-
-        //test hex value
-        assertGetDefaultValue(BaseTypes.uint64Type(), "150255135883264", "0x88a800000000");
+       //test decimal value
+       assertGetDefaultValue(type, "2560000000000", "2560000000000");
+       
+       //test hex value
+       assertGetDefaultValue(type, "150255135883264", "0x88a800000000");
     }
 
     @Test
     public void testGetDefaultValueEmpty() throws TransformerException {
         EmptyTypeDefinition type = mock(EmptyTypeDefinition.class);
-        assertGetDefaultValue(type, "", null);
+        assertGetDefaultValue(type,"",null);
     }
-
+    
     @Test
-    public void testUnsupportedType() throws Exception {
-        assertGetDefaultValue(BaseTypes.bitsTypeBuilder(SchemaPath.ROOT).build(), "LineProfile1", "LineProfile1");
+    public void testUnsupportedType() throws Exception{
+        BitsTypeDefinition type = mock(BitsTypeDefinition.class);
+    	assertGetDefaultValue(type, "LineProfile1", "LineProfile1");
     }
-
-    private void assertGetDefaultValue(TypeDefinition type, String expectedValue, String testValue) throws
-            TransformerException {
-        LeafSchemaNode leafSchemaNode = mock(LeafSchemaNode.class);
+    
+    @Test
+    public void testUnionType() throws Exception {
+        UnionTypeDefinition unionType = mock(UnionTypeDefinition.class);
+        List<TypeDefinition<?>> memberTypes = new ArrayList<TypeDefinition<?>>();
+        memberTypes.add(BaseTypes.uint32Type());
+        
+        EnumTypeDefinition enumType = mock(EnumTypeDefinition.class);
+        List<EnumPair> enums = new ArrayList<>();
+        EnumPair enumValue = mock(EnumPair.class);
+        when(enumValue.getName()).thenReturn("unbounded");
+        enums.add(enumValue);
+        when(enumType.getValues()).thenReturn(enums);
+        memberTypes.add(enumType);
+        
+        when(unionType.getTypes()).thenReturn(memberTypes);
+        
+        assertGetDefaultValue(unionType, "unbounded", "unbounded");
+        // only debug messages should be present, no warnings
+        for (LogCallEntry logCallEntry: m_logCallBuffer) {
+            assertEquals("debug", logCallEntry.getMethod().getName());
+        }
+        
+        assertGetDefaultValue(unionType, "0", "0");
+        // only debug messages should be present, no warnings
+        for (LogCallEntry logCallEntry: m_logCallBuffer) {
+            assertEquals("debug", logCallEntry.getMethod().getName());
+        }
+    }
+    
+    private void assertGetDefaultValue(TypeDefinition type, String expectedValue, String testValue) throws TransformerException {
+        LeafSchemaNode leafSchemaNode =  mock(LeafSchemaNode.class);
+        when(type.getDefaultValue()).thenReturn(testValue == null ? Optional.empty() : Optional.of(testValue));
         when(leafSchemaNode.getType()).thenReturn(type);
-        when(leafSchemaNode.getDefault()).thenReturn(testValue);
-        String defaultValue = m_leafDefaultValueUtility.getDefaultValue(leafSchemaNode);
+        String defaultValue = m_leafDefaultValueUtility.getDefaultValue(leafSchemaNode);        
         assertEquals(expectedValue, defaultValue);
     }
 }

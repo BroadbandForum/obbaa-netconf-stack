@@ -17,7 +17,7 @@
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
 /**
- * A POJO class for storing bytes of a PrivateKey.
+ * A POJO class for storing bytes of a PrivateKey. 
  * Created by keshava on 4/30/15.
  */
 public class ByteArrayPrivateKey {

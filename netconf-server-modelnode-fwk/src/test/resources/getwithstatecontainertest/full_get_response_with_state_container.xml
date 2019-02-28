@@ -28,6 +28,16 @@
                 <catalogue-number>catalogue 4</catalogue-number>
               </admin>
             </admins>
+            <sponsors xmlns="http://example.com/ns/example-jukebox">
+              <sponsor>
+                <name>JD</name>
+                <type>entertainment</type>
+              </sponsor>
+              <sponsor>
+                <name>BlackDog</name>
+                <type>general</type>
+              </sponsor>
+            </sponsors>
           </jbox:album>
           <jbox:album>
             <jbox:name>Circus</jbox:name>

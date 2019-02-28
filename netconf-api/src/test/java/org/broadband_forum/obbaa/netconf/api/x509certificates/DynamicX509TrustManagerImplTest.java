@@ -16,18 +16,18 @@
 
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
-import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedTrustManager;
-
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.X509ExtendedTrustManager;
+
+import org.apache.log4j.Logger;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -75,8 +75,7 @@ public class DynamicX509TrustManagerImplTest {
             + "Hc/vUGXCpewjHnwBnYaeCD0Z2T48RuoIoAzFXVvuLuTbCSZ5jLEqbuMQ2/+nNKxK\n"
             + "P871gY70dM58EOASVjHDLxaV0pXTMfuBns/1AqcbVo7enu1Yi3yph7GFa9UKRvx/\n"
             + "bS8PLo3LfHPrbVFDtpagwWCTqdgsPWFl3gJEGGdgi09KZXuFvofZwTVX3hjzfWDL\n"
-            + "n03mx9Sc0/sxCZRkor21A1S4TVTC8wWZ6xW9zeUaXThzBMJOWYSM6MJO2WQcsURy\n" +
-            "12KuCNeU3QQMVGU8gjH7/1NaPEBh4+SrLHx9\n";
+            + "n03mx9Sc0/sxCZRkor21A1S4TVTC8wWZ6xW9zeUaXThzBMJOWYSM6MJO2WQcsURy\n" + "12KuCNeU3QQMVGU8gjH7/1NaPEBh4+SrLHx9\n";
 
     private static final String CA1_SIGNED_CERT1 = "MIIDSDCCAjACCQCjaKR7Ng7jbDANBgkqhkiG9w0BAQUFADBZMQswCQYDVQQGEwJJ\n"
             + "TjELMAkGA1UECAwCS0ExDDAKBgNVBAcMA0JMUjEMMAoGA1UECgwDQUxVMQ0wCwYD\n"
@@ -94,8 +93,7 @@ public class DynamicX509TrustManagerImplTest {
             + "80dEQdkNyyphDGAIe0JUW4TepDZTK5k93w2GSrWzDaoQPIzBPZR/UsoiMYrEHNji\n"
             + "k9HKKiLWKLAUNK5UgnoV/eqiKnWY869UGtkBaNgUOu7Y3MrUYhmv6u3aWtkPOVve\n"
             + "KgnIgq74hq8jP0cfoz+sUg3DE5I5JRPGGRWPTt5yLP8jEMoDmtuRmzTdxfa3JGtJ\n"
-            + "ae4lrN6OZIue7gCj/rsuA6S2DZKqNVVCKcYPP8IXbQIr3hKLi+jb85grAKfRytck\n" +
-            "OeSbLcxoFVlWa07EcvFrs2PgVVk29cjwrbrIqQ==\n";
+            + "ae4lrN6OZIue7gCj/rsuA6S2DZKqNVVCKcYPP8IXbQIr3hKLi+jb85grAKfRytck\n" + "OeSbLcxoFVlWa07EcvFrs2PgVVk29cjwrbrIqQ==\n";
     private static final String CA1_SIGNED_CERT2 = "MIIDQTCCAikCCQCRCpujd22pwTANBgkqhkiG9w0BAQUFADBZMQswCQYDVQQGEwJJ\n"
             + "TjELMAkGA1UECAwCS0ExDDAKBgNVBAcMA0JMUjEMMAoGA1UECgwDQUxVMQ0wCwYD\n"
             + "VQQLDARGTkJMMRIwEAYDVQQDDAkxMjcuMC4wLjEwIBcNMTUwNDI5MDYwMjI5WhgP\n"
@@ -167,8 +165,7 @@ public class DynamicX509TrustManagerImplTest {
             + "L7As3nK8axT+brTTLsr2voIZnGpCIVdb9ak/sORsjyObY1rGJJ7ygXXbT+6giTbx\n"
             + "Cm7wzZBaeU3Yxoz9ictfuOYHdC00gOk4LxiiH3lPqV8MdcPyIK3hHGLxU/y6X8IM\n"
             + "uXENR2p4b6xW7d1TO5Iw29jjhhkUL71/ptzTmESFIuNB78DOs4cFBykVzB3Pdnbw\n"
-            + "D6D6NPqoqWO/PtyK7gJY/y6pN9ymUJRmlf2rlOlGg4vhFZxBblePHkGtfHNZfrKp\n" +
-            "9Nexb2+WZQWL8q1e7+CiMP3yWNEXLCdhd6YQMWZur8Tn\n";
+            + "D6D6NPqoqWO/PtyK7gJY/y6pN9ymUJRmlf2rlOlGg4vhFZxBblePHkGtfHNZfrKp\n" + "9Nexb2+WZQWL8q1e7+CiMP3yWNEXLCdhd6YQMWZur8Tn\n";
     private static final String CA3_SIGNED_CERT2 = "MIIDXDCCAkQCCQCjaKR7Ng7jbjANBgkqhkiG9w0BAQUFADBtMQswCQYDVQQGEwJJ\n"
             + "TjELMAkGA1UECAwCS0ExDDAKBgNVBAcMA0NBMzEMMAoGA1UECgwDQUxVMQwwCgYD\n"
             + "VQQLDANDQTMxDDAKBgNVBAMMA0NBMzEZMBcGCSqGSIb3DQEJARYKQ0EzQGNhLm9y\n"
@@ -189,6 +186,69 @@ public class DynamicX509TrustManagerImplTest {
             + "OlqWfNKYqOvmH6ND2gpldircTdtOOylgJMw1qyQ2TgK/mHRKam1xUyoButfSxkuU\n";
     private static final String LEVEL2_CA1_SIGNED_CERT1 = "";
 
+    private static final String CA_CERTIFICATE_WITH_EXTENSION = "MIIFvDCCA6SgAwIBAgICB/IwDQYJKoZIhvcNAQELBQAwPTEOMAwGA1UECgwFTm9r\n" +
+            "aWExKzApBgNVBAMMIlFBIEZhY3RvcnkgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkw\n" +
+            "IhgPMjAxNDA1MTQwOTE0MDBaGA8yMDY0MDUxMzA5MTQwMFowPTEOMAwGA1UECgwF\n" +
+            "Tm9raWExKzApBgNVBAMMIlFBIEZhY3RvcnkgQ2VydGlmaWNhdGlvbiBBdXRob3Jp\n" +
+            "dHkwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQC8Y4kFpjdL1Zu5Pf4b\n" +
+            "4sB+h3mJ/oCOSoIxhFIzQpOW+CQgri8pIV1rx7N/hu6cf4xYPk+l1v1f69/E2Tcz\n" +
+            "etaXP/7dhyMaKhthjR0CZXAf33ub6inN2fMYscSNER43yjTV1/TFJEEqcyb0C2KN\n" +
+            "dH/LvB6vZ5K0jjTgvgsIryd3t+qgrBcscrYmWqdQUho8Zx2PmJuzdR70/vdnJuHf\n" +
+            "SpLCyZiRaZzQRrZG2DpRouCcrSC1aWFn83inenvwanRQNtC6lBRTa9O86VKGKn6J\n" +
+            "NdQZkvqPhQRvna+vW5raefNH26E/4VN8VkF0fX9MSOCO1HvpcS02RPcr0ehTToQw\n" +
+            "baIlIGRzc4JuOvbaL5b+DULLskBiRFxBR4b4D6soYzG1w//aavbSMv2cmmbfrN5V\n" +
+            "bBfiW+FFblKglJqyHDPWhXNeqN9ViFXMOSFL/b3XluSZN0Jfsa/S70rzHqkG4iI1\n" +
+            "GUAyeHWaStLZisZbvCB2l0ST3+zkGYmiFKNziFNFnYcfpmNbiM139e+xZPzh5K/4\n" +
+            "I6pGMoenGVQpMyxP1RPBxYGv+5jylNmFkx+lLOMUZKW5rYyNcSCD37UkvdRvT/Yx\n" +
+            "+372kJ+unpWPfnBUUjKNTz61jse8B1a76LXaJLR1zzEPU+ef1ZEGMNLoxOqNPtDn\n" +
+            "uc/o7N5K+bt6386SPKQeqDB/kQIDAQABo4HBMIG+MGYGA1UdIwRfMF2AFPH0ja5y\n" +
+            "lBuUOidmsRbmKB99nBOpoUGkPzA9MQ4wDAYDVQQKDAVOb2tpYTErMCkGA1UEAwwi\n" +
+            "UUEgRmFjdG9yeSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eYICB/IwHQYDVR0OBBYE\n" +
+            "FPH0ja5ylBuUOidmsRbmKB99nBOpMA4GA1UdDwEB/wQEAwIBxjARBgNVHSAECjAI\n" +
+            "MAYGBFUdIAAwEgYDVR0TAQH/BAgwBgEB/wIBBDANBgkqhkiG9w0BAQsFAAOCAgEA\n" +
+            "iZ4SEA3PdykUiYO15JwWAjJPW5suUkcJ5j+VS7Owe5OQ36kKv0ot4X5XpE71LVrV\n" +
+            "/y+76IExpuDXNTnHKidZYKY0ttEBQeQm2zIjSRUIjQ4OYwvXw8Z9FzSUzwT23xf/\n" +
+            "UycmM2ABrxYXekVcq4SRxlpnkjWqtCqOi0DdrmhvHxKUrnP4Jk3bUcGVKPVixJyR\n" +
+            "8rPHV6ZiUCC7O9j9yrrMolzBinemZXtBAHdBKj42tWZnVo0nSSVad4j36dADdDa1\n" +
+            "zTrr5ZSOEtqVrmw0Pg/Qno+LnhzqIT+sCg/9jWr2XGOSoNOmLjEMw+DAJJ9Fv3FX\n" +
+            "OQYj4Gu/dJ+ca5CQGzh6Mc3IEeJ72Qc62U4ran9gzAKUpv/JsRe0hsbziJ9lTIr3\n" +
+            "5sx7Mh6powTRO5ith0Ql8y+DyHOTiib2ckRyNxl6YJmoMMq3cypEu6126ap9RqGK\n" +
+            "8AqrvERdS5/pfXVmP9d8E2dIjfh2fqS8jPTA189iQHOUe4aPLwG/3wnDv4nKyTdK\n" +
+            "mYhm5udJMJWTCbFuxKCwiJHL/yUYNlxFucK0p7gtMxxWV1NjNS3KAV+SiHoiKy9P\n" +
+            "i2y1fcEPfttO0+dSveak1TaPJWrMCIDfj9DW/XkDwOmNzEfCBLTYWfiR1akuahyt\n" +
+            "8aacB5o8weLCDOs18ryM0CwMpixgWiF/6FKIl+Uerqk=\n";
+
+    private static final String CERT_SIGNED_WITH_EXTENSION = "MIIFeTCCA2GgAwIBAgIDAjphMA0GCSqGSIb3DQEBCwUAMD0xDjAMBgNVBAoMBU5v\n" +
+            "a2lhMSswKQYDVQQDDCJRQSBGYWN0b3J5IENlcnRpZmljYXRpb24gQXV0aG9yaXR5\n" +
+            "MB4XDTE4MDIwMTEwMjQ0MVoXDTM4MDEyNzEwNTQ0MVowTTEOMAwGA1UECgwFTm9r\n" +
+            "aWExDDAKBgNVBAsMA0JCQTEYMBYGA1UEAwwPMzcyOS0zNjU3NDMzMTAwMRMwEQYD\n" +
+            "VQQFEwozNjU3NDMzMTAwMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA\n" +
+            "t5WMIR4aVZ9Kpcq3QJmmcC2FjfTi1KXnZvpnJg52dkoqdB4bk5wO6xvcGBmGOcFq\n" +
+            "Jlq4KGG+TDa5XARFlSuqG58PLvJUlezIX72pI0sHaiOqUhwECbcjlcIklDsA5Ts5\n" +
+            "ZZLvt2a56b53SwIQ0yiX21U2VnXM9mr55K/ZQoRSkbam9U9Om8AcNPN5K2Py5DWd\n" +
+            "chN+yS4NkEXRQ4T7x74tKDFdz+jh56j7hEk3vyHFA1PJnMH9MsIdNlrlNrnKG3gS\n" +
+            "74b10B0Vf5IKRaIi1Oko/wK17wPW9PvAh28GA/EWEjVO97LCwpC70GiK2sxgNQh5\n" +
+            "/zNszmBT+c0J5VaVHFs4zDwSSJMl3uYESN92Q7LK72gsM05IYkZNp2t/5pSqcdNo\n" +
+            "TT0TxBTAnjXEmkrQvw/D8BtPDOM1IOCVOercL6+BQdPxM3nTyZ4stKQ6we0SzCB1\n" +
+            "iQf+KWlTI7cg/sqEC8ZW9zMVMsOeHmG4/ljkP+3aAlRmNbNJamEvnLIPyqZmTC7S\n" +
+            "LyFabCmuSMZucp2M8AbJWAdU5vCHAKUDiM0ZM2nJiIDz9VOKiyWgGbDqXssOnv9M\n" +
+            "c/7FDwt4wk3vx9VoSA591ur53O8iMBDY/YK5VhVJQY388/+GPvHcW+VxlXC9MoxG\n" +
+            "SMp+GDWRIeUiset7SojqZNiypzN2AyEKypcYfd40hOkCAwEAAaNyMHAwHwYDVR0j\n" +
+            "BBgwFoAU8fSNrnKUG5Q6J2axFuYoH32cE6kwHQYDVR0OBBYEFPJ+A27Zgfu8YhhT\n" +
+            "OhPg7a6QK5kGMA4GA1UdDwEB/wQEAwIFoDAeBgNVHSABAf8EFDASMBAGDisGAQQB\n" +
+            "gd4qAQ8BAgcBMA0GCSqGSIb3DQEBCwUAA4ICAQCZaZ+jDEG9Tei7aTA3r3bLAnQI\n" +
+            "rZAIZRJZlzJ+PZLaDS7cCMjRXhlZy/haLjGDYZjAAcSUQk102xqhAoEq0Vfnv+BW\n" +
+            "n712+XlrsYwLmzFGS+/hEApF1LMs9OF9YWz0XB7EVt4ladj0rtTHbxEzndBj5sBT\n" +
+            "zPS4Li5JwPrhZZ1nLTWOBymvlcKQIveGReh3zpPsn3zAFO/3ZPERd/L//7zAFSRA\n" +
+            "A4EGDIouD/9NI0f60jDecrHYw+7vgTm5d2KNtvdDigWTYXEiLRq8R1iGO0hhqaWB\n" +
+            "cJxU0iNyyMR/e44vIuDDJC42JC4idQKKVsfnsTkhfKcudbr/aBE0xafDLPoghKlz\n" +
+            "+JFnx1OSIjvXC8FRbgFOXrAcFR5Li4LQEhWotA50KF9JpakZKNYrhflL+fsQ5hZs\n" +
+            "i+lO3Xa0v2weq/WhGK2qs2bqcoGFXVJp1uYnWUpQ6MNOt5xtEb/smFfRRYH+2Jc0\n" +
+            "KGLBOjlahrpDXOI3pLVP68Yve0jICXxypfBBwD8+OSPZKXjFY1c9wkHDZb1goedN\n" +
+            "CzmpI8L5N1z13+tTnUQ0eTUydhgHJU7WH9SzaI5W0Xyd6epL11mUcH2+Kcf4LnXD\n" +
+            "IOANzB5aO0jLXnuieBkha6jh7QHF9+xo7/WwF269ZUX1d5CYfAJy7rVSb2eLY4gO\n" +
+            "2qfYx1oegQW81KmfJQ==\n";
+
     DynamicX509TrustManagerImpl m_dynamicX509TrustManager;
 
     @Before
@@ -207,24 +267,19 @@ public class DynamicX509TrustManagerImplTest {
         DynamicX509TrustManagerImpl dynamicX509TrustManager = new DynamicX509TrustManagerImpl(caCertificatePath);
 
         try {
-            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT1)},
+            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT1) },
                     "RSA");
-            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT2)},
+            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT2) },
                     "RSA");
-            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT1)},
+            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT1) },
                     "RSA");
-            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT2)},
+            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             fail("checkServerTrusted should not have failed: " + e.getMessage());
         }
         try {
-            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA3_SIGNED_CERT2)},
+            dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA3_SIGNED_CERT2) },
                     "RSA");
             fail("authentication should not have passed");
         } catch (CertificateException e) {
@@ -241,28 +296,26 @@ public class DynamicX509TrustManagerImplTest {
 
         X509Certificate[] acceptedIssuers = dynamicX509TrustManager.getAcceptedIssuers();
         assertEquals(2, acceptedIssuers.length);
-
+        
         assertContainsCertificate("CN=CA2, OU=CA2, O=CA2, L=BLR, ST=KA, C=IN", acceptedIssuers);
         assertContainsCertificate("CN=127.0.0.1, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", acceptedIssuers);
     }
-
+    
     /**
      * assert that actual certificate array contains expected certificate DN.
-     * <p>
+     * 
      * Note:- javax.net.ssl.X509TrustManager implementation does not need to guarantee ordering.
-     *
      * @param expectedCertDN
      * @param actualCertificates
      */
     private void assertContainsCertificate(String expectedCertDN, X509Certificate[] actualCertificates) {
-        X509Certificate expectedCerficate = null;
-        for (X509Certificate certificate : actualCertificates) {
-            if (expectedCertDN.equals(certificate.getSubjectDN().getName())) {
+        for(X509Certificate certificate : actualCertificates) {
+            if(expectedCertDN.equals(certificate.getSubjectDN().getName())) {
                 //if expected certificate found, then return
                 return;
             }
         }
-        //exptected certifcate not found
+        //expected certificate not found
         fail("expected Certificate with CN:" + expectedCertDN + ", but not found");
     }
 
@@ -270,24 +323,19 @@ public class DynamicX509TrustManagerImplTest {
     public void testTrustManagerValidatesServerCertificates() throws CertificateException {
 
         try {
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT1) },
                     "RSA");
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT2) },
                     "RSA");
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT1) },
                     "RSA");
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             fail("checkServerTrusted should not have failed: " + e.getMessage());
         }
         try {
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA3_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA3_SIGNED_CERT2) },
                     "RSA");
             fail("authentication should not have passed");
         } catch (CertificateException e) {
@@ -300,24 +348,19 @@ public class DynamicX509TrustManagerImplTest {
     @Test
     public void testTrustManagerValidatesClientCertificates() {
         try {
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT1) },
                     "RSA");
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT2) },
                     "RSA");
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT1) },
                     "RSA");
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             fail("checkServerTrusted should not have failed: " + e.getMessage());
         }
         try {
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA3_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA3_SIGNED_CERT2) },
                     "RSA");
             fail("authentication should not have passed");
         } catch (CertificateException e) {
@@ -371,8 +414,7 @@ public class DynamicX509TrustManagerImplTest {
                 + "PWs9P07JonD9dIswCUmFY8vYAFnys/hSFXLh5sTLQMuI2Q==\n";
         try {
 
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (level2CASignedCert)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(level2CASignedCert) },
                     "RSA");
 
             fail("this certificate should not be trusted");
@@ -403,8 +445,7 @@ public class DynamicX509TrustManagerImplTest {
         m_dynamicX509TrustManager.initTrustManager(caCerts);
         try {
             LOGGER.info(m_dynamicX509TrustManager.getAcceptedIssuers());
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (level2CASignedCert)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(level2CASignedCert) },
                     "RSA");
 
         } catch (CertificateException e) {
@@ -422,43 +463,37 @@ public class DynamicX509TrustManagerImplTest {
 
         X509Certificate[] acceptedIssuers = m_dynamicX509TrustManager.getAcceptedIssuers();
         assertEquals(1, acceptedIssuers.length);
-        assertEquals("EMAILADDRESS=CA3@ca.org, CN=CA3, OU=CA3, O=ALU, L=CA3, ST=KA, C=IN", acceptedIssuers[0]
-                .getSubjectDN().getName());
+        assertEquals("EMAILADDRESS=CA3@ca.org, CN=CA3, OU=CA3, O=ALU, L=CA3, ST=KA, C=IN", acceptedIssuers[0].getSubjectDN().getName());
         try {
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT1) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT1) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA3_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkClientTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA3_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             fail("authentication should have passed");
@@ -474,43 +509,37 @@ public class DynamicX509TrustManagerImplTest {
 
         X509Certificate[] acceptedIssuers = m_dynamicX509TrustManager.getAcceptedIssuers();
         assertEquals(1, acceptedIssuers.length);
-        assertEquals("EMAILADDRESS=CA3@ca.org, CN=CA3, OU=CA3, O=ALU, L=CA3, ST=KA, C=IN", acceptedIssuers[0]
-                .getSubjectDN().getName());
+        assertEquals("EMAILADDRESS=CA3@ca.org, CN=CA3, OU=CA3, O=ALU, L=CA3, ST=KA, C=IN", acceptedIssuers[0].getSubjectDN().getName());
         try {
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT1) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA1_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA1_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT1)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT1) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA2_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA2_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             // we are ok
             LOGGER.info("Got an expected exception ");
         }
         try {
-            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[]{CertificateUtil.getX509Certificate
-                            (CA3_SIGNED_CERT2)},
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CA3_SIGNED_CERT2) },
                     "RSA");
         } catch (CertificateException e) {
             fail("authentication should have passed");
@@ -526,12 +555,12 @@ public class DynamicX509TrustManagerImplTest {
     }
 
     @Test
-    public void testDelegation() {
+    public void testDelegation(){
         X509ExtendedTrustManager mockTM = mock(X509ExtendedTrustManager.class);
         m_dynamicX509TrustManager.setInnerTrustManager(mockTM);
-        X509Certificate[] mockCerts = new X509Certificate[2];
+        X509Certificate [] mockCerts = new X509Certificate[2];
         mockCerts[0] = mock(X509Certificate.class);
-        mockCerts[1] = mock(X509Certificate.class);
+        mockCerts[1]= mock(X509Certificate.class);
         String authType = "authType";
 
         try {
@@ -540,7 +569,7 @@ public class DynamicX509TrustManagerImplTest {
             fail("expectedException here");
         } catch (CertificateException e) {
             assertTrue(e instanceof PeerCertificateException);
-            assertEquals(mockCerts, ((PeerCertificateException) e).getPeerCertificates());
+            assertEquals(mockCerts, ((PeerCertificateException)e).getPeerCertificates());
         }
         try {
             SSLEngine mockSslEngine = mock(SSLEngine.class);
@@ -549,7 +578,7 @@ public class DynamicX509TrustManagerImplTest {
             fail("expectedException here");
         } catch (CertificateException e) {
             assertTrue(e instanceof PeerCertificateException);
-            assertEquals(mockCerts, ((PeerCertificateException) e).getPeerCertificates());
+            assertEquals(mockCerts, ((PeerCertificateException)e).getPeerCertificates());
         }
         try {
             Socket mockSocket = mock(Socket.class);
@@ -558,7 +587,7 @@ public class DynamicX509TrustManagerImplTest {
             fail("expectedException here");
         } catch (CertificateException e) {
             assertTrue(e instanceof PeerCertificateException);
-            assertEquals(mockCerts, ((PeerCertificateException) e).getPeerCertificates());
+            assertEquals(mockCerts, ((PeerCertificateException)e).getPeerCertificates());
         }
 
         try {
@@ -567,7 +596,7 @@ public class DynamicX509TrustManagerImplTest {
             fail("expectedException here");
         } catch (CertificateException e) {
             assertTrue(e instanceof PeerCertificateException);
-            assertEquals(mockCerts, ((PeerCertificateException) e).getPeerCertificates());
+            assertEquals(mockCerts, ((PeerCertificateException)e).getPeerCertificates());
         }
         try {
             SSLEngine mockSslEngine = mock(SSLEngine.class);
@@ -576,7 +605,7 @@ public class DynamicX509TrustManagerImplTest {
             fail("expectedException here");
         } catch (CertificateException e) {
             assertTrue(e instanceof PeerCertificateException);
-            assertEquals(mockCerts, ((PeerCertificateException) e).getPeerCertificates());
+            assertEquals(mockCerts, ((PeerCertificateException)e).getPeerCertificates());
         }
         try {
             Socket mockSocket = mock(Socket.class);
@@ -585,8 +614,22 @@ public class DynamicX509TrustManagerImplTest {
             fail("expectedException here");
         } catch (CertificateException e) {
             assertTrue(e instanceof PeerCertificateException);
-            assertEquals(mockCerts, ((PeerCertificateException) e).getPeerCertificates());
+            assertEquals(mockCerts, ((PeerCertificateException)e).getPeerCertificates());
         }
+    }
+
+    @Test
+    public void testTrustManagerWorksWithExtensions() throws TrustManagerInitException {
+        List<String> caCerts = new ArrayList<>();
+        caCerts.add(CA_CERTIFICATE_WITH_EXTENSION);
+        m_dynamicX509TrustManager = new DynamicX509TrustManagerImpl(caCerts);
+        try {
+            m_dynamicX509TrustManager.checkServerTrusted(new X509Certificate[] { CertificateUtil.getX509Certificate(CERT_SIGNED_WITH_EXTENSION) },
+                    "RSA");
+        } catch (CertificateException e) {
+            fail("checkServerTrusted should not have failed: " + e.getMessage());
+        }
+
     }
 
 }

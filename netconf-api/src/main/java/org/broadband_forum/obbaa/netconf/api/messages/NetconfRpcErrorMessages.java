@@ -32,18 +32,16 @@ public class NetconfRpcErrorMessages {
 
     public static final String EXPECTED_ELEMENTS_IS_MISSING = "Expected element(s) %s is missing";
 
-    public static final String EXPECTED_KEYS_IS_MISPLACED = "Expected list key(s) %s is not placed in the proper " +
-            "location in the message";
+    public static final String EXPECTED_KEYS_IS_MISPLACED = "Expected list key(s) %s is not placed in the proper location in the message";
 
     public static final String EXPECTED_KEYS_IS_MISSING = "Expected list key(s) %s is missing";
 
-    public static final String RANGE_CONSTRAINT = "Value \"%s\" does not meet the range constraints. Expected range " +
-            "of value: %s to %s";
+    public static final String DUPLICATE_KEYS_IS_PRESENT = "Duplicate list key(s) %s is present";
 
-    public static final String LENGTH_CONSTRAINT = "Value \"%s\" does not meet the length constraints. Expected " +
-            "length is: %s to %s";
+    public static final String RANGE_CONSTRAINT = "Value \"%s\" does not meet the range constraints. Expected range of value: %s to %s";
 
-    public static final String USER_IS_NOT_AUTHORIZED_ERROR_MESSAGE = "user is not authorized to invoke the protocol " +
-            "operation";
+    public static final String LENGTH_CONSTRAINT = "Value \"%s\" does not meet the length constraints. Expected length is: %s to %s";
+
+    public static final String USER_IS_NOT_AUTHORIZED_ERROR_MESSAGE = "User is not authorized to invoke the protocol operation";
 
 }

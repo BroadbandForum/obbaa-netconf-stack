@@ -25,19 +25,19 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
 @Entity
-public class Employee implements Serializable {
+public class Employee implements Serializable{
 
     private static final long serialVersionUID = 1L;
 
     @Id
     @Column
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy= GenerationType.AUTO)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable=false,unique=true)
     private String empId;
-
-    @Column(nullable = false, unique = true)
+    
+    @Column(nullable=false,unique=true)
     private String name;
 
     public Long getId() {
@@ -105,6 +105,6 @@ public class Employee implements Serializable {
     public String toString() {
         return "Employee [id=" + id + ", empId=" + empId + ", name=" + name + "]";
     }
-
-
+    
+    
 }

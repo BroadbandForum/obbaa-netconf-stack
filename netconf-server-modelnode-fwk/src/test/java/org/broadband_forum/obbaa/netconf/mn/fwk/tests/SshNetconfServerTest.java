@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.tests;
 
 import static org.mockito.Mockito.mock;
@@ -28,13 +12,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2.Jukebox;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
@@ -65,6 +42,7 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfServerDispatcherExcep
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
+import org.broadband_forum.obbaa.netconf.api.server.auth.AuthenticationResult;
 import org.broadband_forum.obbaa.netconf.api.server.auth.ClientAuthenticationInfo;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
@@ -81,12 +59,19 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2.Artist;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2.Jukebox;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2.Library;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.server.ssh.auth.PasswordAuthHandler;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 
 public class SshNetconfServerTest {
     private ModelNodeHelperRegistry m_modelNodeHelperRegistry;
@@ -97,47 +82,38 @@ public class SshNetconfServerTest {
     @Before
     public void setUp() throws SchemaBuildException {
         m_subSystemRegistry = new SubSystemRegistryImpl();
-        m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), new NoLockService());
+        m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         m_modelNodeHelperRegistry = new ModelNodeHelperRegistryImpl(m_schemaRegistry);
     }
 
     @Test
-    public void testServerRuns() throws NetconfServerDispatcherException, InterruptedException,
-            NetconfConfigurationBuilderException,
+    public void testServerRuns() throws NetconfServerDispatcherException, InterruptedException, NetconfConfigurationBuilderException,
             ExecutionException, IOException, EditException, SchemaBuildException {
         TestUtil.registerClasses(m_modelNodeHelperRegistry);
         // the actual model
 
         NetConfServerImpl server = new NetConfServerImpl(m_schemaRegistry);
-        m_schemaRegistry = new SchemaRegistryImpl(TestUtil.getJukeBoxYangs(), new NoLockService());
+        m_schemaRegistry = new SchemaRegistryImpl(TestUtil.getJukeBoxYangs(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         ModelNode jukeBoxModel = createJukeBoxModel();
 
-        RootModelNodeAggregator rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry,
-                m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId,
-                jukeBoxModel);
-        server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, rootModelNodeAggregator,
-                m_subSystemRegistry));
+        RootModelNodeAggregator rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, jukeBoxModel);
+        server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, rootModelNodeAggregator, m_subSystemRegistry));
         testServer(server);
     }
 
     @Test
-    public void testServerRunsOnYang() throws NetconfServerDispatcherException, InterruptedException,
-            NetconfConfigurationBuilderException,
+    public void testServerRunsOnYang() throws NetconfServerDispatcherException, InterruptedException, NetconfConfigurationBuilderException,
             ExecutionException, IOException, EditException, ModelNodeInitException, SchemaBuildException {
         // the actual model
         NetConfServerImpl server = new NetConfServerImpl(m_schemaRegistry);
         String yangFilePath = SshNetconfServerTest.class.getResource("/yangs/example-jukebox.yang").getPath();
-        m_schemaRegistry.loadSchemaContext(m_componentId, TestUtil.getJukeBoxYangs(), null, Collections.emptyMap());
-        ModelNode jukeboxModelNode = YangUtils.createInMemoryModelNode(yangFilePath, new LocalSubSystem(),
-                m_modelNodeHelperRegistry,
+        m_schemaRegistry.loadSchemaContext(m_componentId, TestUtil.getJukeBoxYangs(), Collections.emptySet(), Collections.emptyMap());
+        ModelNode jukeboxModelNode = YangUtils.createInMemoryModelNode(yangFilePath, new LocalSubSystem(), m_modelNodeHelperRegistry,
                 m_subSystemRegistry, m_schemaRegistry, new InMemoryDSM(m_schemaRegistry));
-        RootModelNodeAggregator rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry,
-                m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId,
-                jukeboxModelNode);
-        server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, rootModelNodeAggregator,
-                m_subSystemRegistry));
+        RootModelNodeAggregator rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, jukeboxModelNode);
+        server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, rootModelNodeAggregator, m_subSystemRegistry));
         testServer(server);
     }
 
@@ -149,13 +125,10 @@ public class SshNetconfServerTest {
         HashSet<String> serverCaps = new HashSet<String>();
         serverCaps.add(NetconfResources.NETCONF_BASE_CAP_1_0);
         serverCaps.add(NetconfResources.NETCONF_WRITABLE_RUNNNG);
-        NetconfServerConfigurationBuilder builder = NetconfServerConfigurationBuilder.createDefaultNcServerBuilder
-                (findFreePort())
-                .setAuthenticationHandler(new UTAuthHandler()).setNetconfServerMessageListener(server)
-                .setCapabilities(serverCaps);
+        NetconfServerConfigurationBuilder builder = NetconfServerConfigurationBuilder.createDefaultNcServerBuilder(findFreePort())
+                .setAuthenticationHandler(new UTAuthHandler()).setNetconfServerMessageListener(server).setCapabilities(serverCaps);
 
-        NetconfServerDispatcher dispatcher = new NetconfServerDispatcherImpl(ExecutorServiceProvider.getInstance()
-                .getExecutorService());
+        NetconfServerDispatcher dispatcher = new NetconfServerDispatcherImpl(ExecutorServiceProvider.getInstance().getExecutorService());
         NetconfServerSession s = dispatcher.createServer(builder.build()).get();
 
         // finally kill the server
@@ -170,10 +143,8 @@ public class SshNetconfServerTest {
     }
 
     private ModelNode createJukeBoxModel() throws EditException {
-        Jukebox jukebox = new Jukebox(null, new ModelNodeId(), m_modelNodeHelperRegistry, m_subSystemRegistry,
-                m_schemaRegistry);
-        jukebox.setLibrary(new Library(jukebox, new ModelNodeId(jukebox.getModelNodeId()), m_modelNodeHelperRegistry,
-                m_subSystemRegistry, m_schemaRegistry));
+        Jukebox jukebox = new Jukebox(null, new ModelNodeId(), m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
+        jukebox.setLibrary(new Library(jukebox, new ModelNodeId(jukebox.getModelNodeId()), m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry));
         Artist lenny = jukebox.getLibrary().addArtist("Lenny");
 
         lenny.addAlbum("Greatest hits").addSong("Are you gonne go my way").addSong("Fly Away");
@@ -184,11 +155,11 @@ public class SshNetconfServerTest {
 
     public final class UTAuthHandler extends PasswordAuthHandler {
         @Override
-        public boolean authenticate(ClientAuthenticationInfo clientAuthInfo) {
+        public AuthenticationResult authenticate(ClientAuthenticationInfo clientAuthInfo) {
             if ("UT".equals(clientAuthInfo.getUsername()) && "UT".equals(clientAuthInfo.getPassword())) {
-                return true;
+                return new AuthenticationResult(true, null);
             }
-            return false;
+            return AuthenticationResult.failedAuthResult();
         }
 
     }
@@ -274,8 +245,7 @@ public class SshNetconfServerTest {
         }
 
         @Override
-        public List<Notification> onRpc(NetconfClientInfo info, NetconfRpcRequest rpcRequest, NetconfRpcResponse
-                response) {
+        public List<Notification> onRpc(NetconfClientInfo info, NetconfRpcRequest rpcRequest, NetconfRpcResponse response) {
             return null;
         }
 

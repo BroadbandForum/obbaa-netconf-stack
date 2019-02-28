@@ -19,10 +19,11 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.common.QName;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class StateChangeNotificationTest {
 
@@ -41,19 +42,19 @@ public class StateChangeNotificationTest {
     public void testGetNotificationElement() {
         assertNotNull(m_stateChangeNotification.getNotificationElement());
     }
-
+    
     @Test
     public void testGetType() {
         assertEquals(TYPE, m_stateChangeNotification.getType());
     }
-
+    
     @Test
-    public void testGetValue() {
-        assertEquals(VALUE, m_stateChangeNotification.getValue());
+    public void testGetValue(){
+    	assertEquals(VALUE, m_stateChangeNotification.getValue());
     }
-
+    
     @Test
-    public void testGetTarget() {
-        assertEquals(TARGET, m_stateChangeNotification.getTarget());
+    public void testGetTarget(){
+    	assertEquals(TARGET, m_stateChangeNotification.getTarget());
     }
 }

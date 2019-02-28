@@ -29,10 +29,8 @@ import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.x509certificates.DynamicX509TrustManagerImpl;
 import org.broadband_forum.obbaa.netconf.api.x509certificates.TrustManagerInitException;
-
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslProvider;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -40,7 +38,6 @@ import org.mockito.MockitoAnnotations;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
-
 import java.io.File;
 import java.net.URL;
 import java.util.HashSet;
@@ -53,7 +50,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class SSLContextUtilTest {
     static HashSet<String> m_caps = new HashSet<String>();
-
     static {
         m_caps.add(NetconfResources.NETCONF_BASE_CAP_1_0);
 
@@ -70,21 +66,19 @@ public class SSLContextUtilTest {
     private KeyManager m_mockKeyManager;
 
     @Test
-    public void testGetServerSSLContext_WithCustomManagers() throws Exception {
+    public void testGetServerSSLContext_WithCustomManagers() throws Exception{
         NetconfServerConfiguration config = getCallHomeTLSServerConfiguration();
         doServerAsserts(config);
     }
 
     @Test
-    public void testGetServerSSLContext_WithSelfSignedCert() throws NetconfConfigurationBuilderException,
-            NetconfServerDispatcherException {
+    public void testGetServerSSLContext_WithSelfSignedCert() throws NetconfConfigurationBuilderException, NetconfServerDispatcherException {
         NetconfServerConfiguration config = getCallHomeTLSServerConfigurationSelfSignedCert();
         doServerAsserts(config);
     }
 
     @Test
-    public void testGetServerSSLContext_WithFiles() throws NetconfConfigurationBuilderException,
-            NetconfServerDispatcherException {
+    public void testGetServerSSLContext_WithFiles() throws NetconfConfigurationBuilderException, NetconfServerDispatcherException {
         NetconfServerConfiguration config = getCallHomeTLSServerConfigurationFiles();
         doServerAsserts(config);
     }
@@ -102,21 +96,18 @@ public class SSLContextUtilTest {
     }
 
     @Test
-    public void testGetClientSSLContext_WithSelfSignedCert() throws NetconfConfigurationBuilderException,
-            NetconfClientDispatcherException {
+    public void testGetClientSSLContext_WithSelfSignedCert() throws NetconfConfigurationBuilderException, NetconfClientDispatcherException {
         NetconfClientConfiguration config = getCallHomeTLSClientConfigurationSelfSignedCert();
         doClientAsserts(config);
     }
 
     @Test
-    public void testGetClientSSLContext_WithFiles() throws NetconfConfigurationBuilderException,
-            NetconfClientDispatcherException {
+    public void testGetClientSSLContext_WithFiles() throws NetconfConfigurationBuilderException, NetconfClientDispatcherException {
         NetconfClientConfiguration config = getCallHomeTLSClientConfigurationFiles();
         doClientAsserts(config);
     }
 
-    private NetconfClientConfiguration getCallHomeTLSClientConfigurationFiles() throws
-            NetconfConfigurationBuilderException {
+    private NetconfClientConfiguration getCallHomeTLSClientConfigurationFiles() throws NetconfConfigurationBuilderException {
         NetconfClientConfigurationBuilder builder = new NetconfClientConfigurationBuilder();
         NetconfTransportOrder transportOder = new NetconfTransportOrder();
         transportOder.setTransportType(NetconfTransportProtocol.REVERSE_TLS.name());
@@ -124,8 +115,7 @@ public class SSLContextUtilTest {
         transportOder.setTlsKeepalive(true);
         transportOder.setCallHomePort(4335);
         transportOder.setAllowSelfSigned(false);
-        URL clientTrustChain = Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/trust" +
-                ".crt");
+        URL clientTrustChain = Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/trust.crt");
         File trustChain = new File(clientTrustChain.getPath());
 
         transportOder.setTrustChain(trustChain);
@@ -133,8 +123,7 @@ public class SSLContextUtilTest {
         File keyCertificate = new File(Thread.currentThread().getContextClassLoader()
                 .getResource("sslcontextutiltest/keyCert.crt").getPath());
         transportOder.setCertificateChain(keyCertificate);
-        File privateKey = new File(Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/PK" +
-                ".pem")
+        File privateKey = new File(Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/PK.pem")
                 .getPath());
         transportOder.setPrivateKey(privateKey);
 
@@ -143,8 +132,7 @@ public class SSLContextUtilTest {
         return builder.build();
     }
 
-    private NetconfServerConfiguration getCallHomeTLSServerConfigurationFiles() throws
-            NetconfConfigurationBuilderException {
+    private NetconfServerConfiguration getCallHomeTLSServerConfigurationFiles() throws NetconfConfigurationBuilderException {
         NetconfServerConfigurationBuilder builder = new NetconfServerConfigurationBuilder();
         NetconfTransportOrder transportOder = new NetconfTransportOrder();
         transportOder.setTransportType(NetconfTransportProtocol.REVERSE_TLS.name());
@@ -152,8 +140,7 @@ public class SSLContextUtilTest {
         transportOder.setTlsKeepalive(true);
         transportOder.setCallHomePort(4335);
         transportOder.setAllowSelfSigned(false);
-        URL clientTrustChain = Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/trust" +
-                ".crt");
+        URL clientTrustChain = Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/trust.crt");
         File trustChain = new File(clientTrustChain.getPath());
 
         transportOder.setTrustChain(trustChain);
@@ -161,8 +148,7 @@ public class SSLContextUtilTest {
         File keyCertificate = new File(Thread.currentThread().getContextClassLoader()
                 .getResource("sslcontextutiltest/keyCert.crt").getPath());
         transportOder.setCertificateChain(keyCertificate);
-        File privateKey = new File(Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/PK" +
-                ".pem")
+        File privateKey = new File(Thread.currentThread().getContextClassLoader().getResource("sslcontextutiltest/PK.pem")
                 .getPath());
         transportOder.setPrivateKey(privateKey);
 
@@ -188,8 +174,7 @@ public class SSLContextUtilTest {
         return builder.build();
     }
 
-    private NetconfTransport getTransportWithMgrs(SslProvider sslProvider) throws
-            NetconfConfigurationBuilderException, TrustManagerInitException {
+    private NetconfTransport getTransportWithMgrs(SslProvider sslProvider) throws NetconfConfigurationBuilderException, TrustManagerInitException {
         NetconfTransportOrder transportOder = new NetconfTransportOrder();
         transportOder.setTransportType(NetconfTransportProtocol.REVERSE_TLS.name());
         transportOder.setCallHomeIp("127.0.0.1");
@@ -197,9 +182,9 @@ public class SSLContextUtilTest {
         transportOder.setCallHomePort(4335);
         transportOder.setTrustManager(new DynamicX509TrustManagerImpl(Thread.currentThread().getContextClassLoader()
                 .getResource("sslcontextutiltest/keyCert.crt").getPath()));
-        if (sslProvider.equals(SslProvider.JDK)) {
+        if(sslProvider.equals(SslProvider.JDK)) {
             transportOder.setKeyManager(m_mockKeyManager);
-        } else {
+        }else{
             transportOder.setCertificateChain(new File(Thread.currentThread().getContextClassLoader()
                     .getResource("sslcontextutiltest/keyCert.crt").getPath()));
             transportOder.setPrivateKey(new File(Thread.currentThread().getContextClassLoader()
@@ -210,16 +195,14 @@ public class SSLContextUtilTest {
         return NetconfTransportFactory.makeNetconfTransport(transportOder);
     }
 
-    private NetconfServerConfiguration getCallHomeTLSServerConfigurationSelfSignedCert() throws
-            NetconfConfigurationBuilderException {
+    private NetconfServerConfiguration getCallHomeTLSServerConfigurationSelfSignedCert() throws NetconfConfigurationBuilderException {
         NetconfServerConfigurationBuilder builder = new NetconfServerConfigurationBuilder();
         NetconfTransport transport = getSelfSignedNetconfTransport();
         builder.setCapabilities(m_caps).setTransport(transport);
         return builder.build();
     }
 
-    private NetconfClientConfiguration getCallHomeTLSClientConfigurationSelfSignedCert() throws
-            NetconfConfigurationBuilderException {
+    private NetconfClientConfiguration getCallHomeTLSClientConfigurationSelfSignedCert() throws NetconfConfigurationBuilderException {
         NetconfClientConfigurationBuilder builder = new NetconfClientConfigurationBuilder();
         NetconfTransport transport = getSelfSignedNetconfTransport();
         builder.setCapabilities(m_caps).setTransport(transport);

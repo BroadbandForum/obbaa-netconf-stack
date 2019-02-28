@@ -18,23 +18,19 @@ package org.broadband_forum.obbaa.netconf.persistence.jpa;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.LockModeType;
-import javax.persistence.NoResultException;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.PagingInput;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Created by Keshava on 8/11/15.
@@ -42,57 +38,50 @@ import org.junit.Test;
 public class JPAEntityDataStoreManagerTest {
 
     JPAEntityDataStoreManager m_jpaPersistenceManager = null;
-
     @Before
-    public void setUp() {
-        EMFactory emf = new JPAEntityManagerFactory("pma_test");
+    public void setUp(){
+    	EMFactory emf = new JPAEntityManagerFactory("pma_test");
         m_jpaPersistenceManager = new JPAEntityDataStoreManager(emf);
         System.out.println("Setup");
     }
-
+    
     @Test
-    public void testUniqueKeys() {
+    public void testUniqueKeys(){
         Employee emp1 = new Employee();
         emp1.setEmpId("1A");
         emp1.setName("name1");
-
+        
         Employee emp2 = new Employee();
         emp2.setEmpId("2A");
         emp2.setName("name2");
-
+        
         EntityDataStoreManager manager = m_jpaPersistenceManager;
         manager.beginTransaction();
         manager.create(emp1);
         manager.create(emp2);
         manager.commitTransaction();
-
+        
         manager.beginTransaction();
-        HashMap<String, Object> keys = new HashMap();
+        HashMap<String,Object> keys = new HashMap();
         keys.put("empId", "1A");
         Employee emp = manager.findByUniqueKeys(Employee.class, keys);
         assertEquals(emp, emp1);
-
+        
         keys.clear();
         keys.put("name", "name2");
         emp = manager.findByUniqueKeys(Employee.class, keys);
         assertEquals(emp, emp2);
-        assertTrue(((AbstractEntityDataStoreManager) manager).getTypedQuery().getLockMode().equals(LockModeType
-                .PESSIMISTIC_READ));
         keys.clear();
         keys.put("name", "name2");
         keys.put("empId", "1A");
-        try {
-            manager.findByUniqueKeys(Employee.class, keys);
-            fail("manager expected to fail");
-        } catch (Exception e) {
-            assertTrue(e instanceof NoResultException);
-        }
+        emp = manager.findByUniqueKeys(Employee.class, keys);
+        assertNull(emp);
         manager.commitTransaction();
         manager.close();
     }
 
     @Test
-    public void testMatchValues() {
+    public void testMatchValues(){
         m_jpaPersistenceManager.beginTransaction();
 
         Person personWhoLikesRed = buildPersonWhoLikesRed();
@@ -123,8 +112,7 @@ public class JPAEntityDataStoreManagerTest {
         /**
          * Find Persons whose name is either "Alice" Or "Bob" Or "Charles" and who don't like Purple.
          */
-        List<Person> personsWhoDontLikePurple = m_jpaPersistenceManager.findByMatchAndNotMatchValues(Person.class,
-                matchValues, nonMatchValues);
+        List<Person> personsWhoDontLikePurple = m_jpaPersistenceManager.findByMatchAndNotMatchValues(Person.class, matchValues, nonMatchValues);
         List<Person> expectedPersons = new ArrayList<>();
         personWhoLikesRed.setId(1L);
         expectedPersons.add(personWhoLikesRed);
@@ -135,56 +123,56 @@ public class JPAEntityDataStoreManagerTest {
         m_jpaPersistenceManager.commitTransaction();
         m_jpaPersistenceManager.close();
     }
-
+    
     @Test
-    public void testLikeValues() {
-        EntityDataStoreManager manager = m_jpaPersistenceManager;
-        manager.beginTransaction();
+    public void testLikeValues(){
+    	EntityDataStoreManager manager = m_jpaPersistenceManager;
+    	manager.beginTransaction();
         Person personWhoLikesOrange = buildPersonWhoLikesOrange();
         m_jpaPersistenceManager.create(personWhoLikesOrange);
         manager.commitTransaction();
-
-        Map<String, String> matchValue = new HashMap();
+        
+        Map<String,String> matchValue = new HashMap();
         matchValue.put("firstName", "Al");
-        manager.beginTransaction();
+    	manager.beginTransaction();
         List<Person> person = manager.findLike(Person.class, matchValue);
         assertEquals(1, person.size());
         assertEquals(personWhoLikesOrange, person.get(0));
-
+        
         //test delete
         manager.deleteLike(Person.class, matchValue);
         person = manager.findLike(Person.class, matchValue);
         manager.commitTransaction();
-        assertEquals(0, person.size());
+        assertEquals(0,person.size());
         manager.close();
     }
-
+    
     private List<Person> prepareDatas() {
-        Person person1 = new Person()
-                .setFirstName("Vagrant")
-                .setPhoneNumber("12345")
-                .setFavoriteColor("Orange");
-
-        Person person2 = new Person()
-                .setFirstName("Job")
-                .setPhoneNumber("6789")
-                .setFavoriteColor("Orange");
-
-        Person person3 = new Person()
-                .setFirstName("Alice")
-                .setPhoneNumber("12345")
-                .setFavoriteColor("Blue");
-
-        Person person4 = new Person()
-                .setFirstName("Nexus")
-                .setPhoneNumber("6789")
-                .setFavoriteColor("Orange");
-
-        Person person5 = new Person()
-                .setFirstName("Touch")
-                .setPhoneNumber("12347")
-                .setFavoriteColor("Green");
-
+        Person person1 =  new Person()
+        .setFirstName("Vagrant")
+        .setPhoneNumber("12345")
+        .setFavoriteColor("Orange");
+        
+        Person person2 =  new Person()
+        .setFirstName("Job")
+        .setPhoneNumber("6789")
+        .setFavoriteColor("Orange");
+        
+        Person person3 =  new Person()
+        .setFirstName("Alice")
+        .setPhoneNumber("12345")
+        .setFavoriteColor("Blue");
+        
+        Person person4 =  new Person()
+        .setFirstName("Nexus")
+        .setPhoneNumber("6789")
+        .setFavoriteColor("Orange");
+        
+        Person person5 =  new Person()
+        .setFirstName("Touch")
+        .setPhoneNumber("12347")
+        .setFavoriteColor("Green");
+        
         List<Person> persons = new ArrayList<>();
         persons.add(person1);
         persons.add(person2);
@@ -193,23 +181,23 @@ public class JPAEntityDataStoreManagerTest {
         persons.add(person5);
         return persons;
     }
-
+    
     @Test
-    public void testLikeValuesWithoutMatchValues() {
+    public void testLikeValuesWithoutMatchValues(){
         EntityDataStoreManager manager = m_jpaPersistenceManager;
         manager.beginTransaction();
-
+        
         for (Person person : prepareDatas()) {
             m_jpaPersistenceManager.create(person);
         }
-
+        
         manager.commitTransaction();
-
-        Map<String, String> likeValues = new HashMap();
+        
+        Map<String,String> likeValues = new HashMap();
         likeValues.put("firstName", "li");
         likeValues.put("phoneNumber", "78");
-
-
+        
+        
         manager.beginTransaction();
         List<Person> person = manager.findLikeWithPagingInput(Person.class, null, likeValues, null);
         manager.commitTransaction();
@@ -217,7 +205,7 @@ public class JPAEntityDataStoreManagerTest {
         assertEquals("Job", person.get(0).getFirstName());
         assertEquals("Alice", person.get(1).getFirstName());
         assertEquals("Nexus", person.get(2).getFirstName());
-
+        
         manager.beginTransaction();
         PagingInput input = new PagingInput(0, 2);
         person = manager.findLikeWithPagingInput(Person.class, null, likeValues, input);
@@ -225,84 +213,84 @@ public class JPAEntityDataStoreManagerTest {
         assertEquals(2, person.size());
         assertEquals("Job", person.get(0).getFirstName());
         assertEquals("Alice", person.get(1).getFirstName());
-
+        
         manager.close();
     }
-
+    
     @Test
-    public void testLikeValuesWithMatchValues() {
+    public void testLikeValuesWithMatchValues(){
         EntityDataStoreManager manager = m_jpaPersistenceManager;
         manager.beginTransaction();
-
+        
         for (Person person : prepareDatas()) {
             m_jpaPersistenceManager.create(person);
         }
-
+        
         manager.commitTransaction();
-
-        Map<String, String> likeValues = new HashMap();
+        
+        Map<String,String> likeValues = new HashMap();
         likeValues.put("firstName", "li");
-
-        Map<String, String> matchValues = new HashMap();
+        
+        Map<String,String> matchValues = new HashMap();
         matchValues.put("favoriteColor", "Blue");
         matchValues.put("phoneNumber", "12345");
-
+        
         // (phoneNumber=12345 ) and ( favoriteColor=Blue ) and ( firstName like '%li%' )
         manager.beginTransaction();
         List<Person> person = manager.findLikeWithPagingInput(Person.class, matchValues, likeValues, null);
         manager.commitTransaction();
         assertEquals(1, person.size());
         assertEquals("Alice", person.get(0).getFirstName());
-
-
+        
+        
         // (phoneNumber like '%23%' ) or ( firstName  like '%li%' )
         manager.beginTransaction();
         likeValues = new HashMap();
         likeValues.put("firstName", "li");
         likeValues.put("phoneNumber", "23");
-
+        
         person = manager.findLikeWithPagingInput(Person.class, null, likeValues, null);
         manager.commitTransaction();
         assertEquals(3, person.size());
         assertEquals("Vagrant", person.get(0).getFirstName());
         assertEquals("Alice", person.get(1).getFirstName());
         assertEquals("Touch", person.get(2).getFirstName());
-
-
+        
+        
         // ((phoneNumber = '%23%' ) or ( firstName  like '%li%' )) AND (favoriteColor = Blue)
         manager.beginTransaction();
         likeValues = new HashMap();
         likeValues.put("firstName", "li");
         likeValues.put("phoneNumber", "23");
-
+        
         matchValues = new HashMap();
         matchValues.put("favoriteColor", "Blue");
-
+        
         person = manager.findLikeWithPagingInput(Person.class, matchValues, likeValues, null);
         manager.commitTransaction();
         assertEquals(1, person.size());
         assertEquals("Alice", person.get(0).getFirstName());
-
+        
         manager.close();
     }
-
+    
     @Test
-    public void testFindByMatchMultiValues() {
+    public void testFindByMatchMultiValues(){
         EntityDataStoreManager manager = m_jpaPersistenceManager;
         manager.beginTransaction();
-
+        
         for (Person person : prepareDatas()) {
             m_jpaPersistenceManager.create(person);
         }
         PagingInput paging = new PagingInput(0, 4);
         manager.commitTransaction();
-
+        
         // ( firstName like '%li%' ) and ( phoneNumber like '%23%' )
         List<Map<String, Object>> conditions = new ArrayList<>();
-        Map<String, Object> nameCondition = new HashMap();
+        Map<String,Object> nameCondition = new HashMap();
         nameCondition.put("firstName", "li");
-
-        Map<String, Object> phoneCondition = new HashMap();
+        
+        Map<String,Object> phoneCondition = new HashMap();
         phoneCondition.put("phoneNumber", "23");
         conditions.add(nameCondition);
         conditions.add(phoneCondition);
@@ -312,33 +300,33 @@ public class JPAEntityDataStoreManagerTest {
         manager.commitTransaction();
         assertEquals(1, person.size());
         assertEquals("Alice", person.get(0).getFirstName());
-
+        
         // ((firstName like '%Alice%' ) or (firstName like '%John%' )) and (phoneNumber like '%23%')
         manager.beginTransaction();
-
+        
         conditions = new ArrayList<>();
         nameCondition = new HashMap();
         List<String> listName = new ArrayList<>();
         listName.add("Alice");
         listName.add("John");
         nameCondition.put("firstName", listName);
-
+        
         phoneCondition = new HashMap();
         phoneCondition.put("phoneNumber", "23");
-
+        
         conditions.add(nameCondition);
         conditions.add(phoneCondition);
-
+        
         person = manager.findByMatchMultiConditions(Person.class, conditions, paging);
         manager.commitTransaction();
         assertEquals(1, person.size());
         assertEquals("Alice", person.get(0).getFirstName());
-
+        
         manager.close();
     }
 
     @Test
-    public void testRollBack() {
+    public void testRollBack(){
         System.out.println("testRollBack");
         Employee emp1 = new Employee();
         emp1.setEmpId("1A");
@@ -356,7 +344,7 @@ public class JPAEntityDataStoreManagerTest {
         manager.create(emp2);
         manager.rollbackTransaction();
 
-        HashMap<String, Object> keys = new HashMap();
+        HashMap<String,Object> keys = new HashMap();
         keys.put("empId", "1A");
         manager.beginTransaction();
         Employee emp = manager.findByUniqueKeys(Employee.class, keys);
@@ -364,17 +352,13 @@ public class JPAEntityDataStoreManagerTest {
 
         keys.clear();
         keys.put("name", "name2");
-        try {
-            manager.findByUniqueKeys(Employee.class, keys);
-            fail("NoResultException is expected");
-        } catch (NoResultException e) {
-            //exception expected
-        }
+        emp  = manager.findByUniqueKeys(Employee.class, keys);
+        assertNull(emp);
         manager.commitTransaction();
         manager.close();
     }
 
-
+    
     private Person buildPersonWhoLikesPurple() {
         return new Person()
                 .setFirstName("Charles")
@@ -392,16 +376,16 @@ public class JPAEntityDataStoreManagerTest {
 
     private Person buildPersonWhoLikesRed() {
         return new Person()
-                .setFirstName("Alice")
-                .setPhoneNumber("12347")
-                .setFavoriteColor("Red");
+                            .setFirstName("Alice")
+                            .setPhoneNumber("12347")
+                            .setFavoriteColor("Red");
     }
 
     private Person buildPersonWhoLikesOrange() {
         return new Person()
-                .setFirstName("Alice")
-                .setPhoneNumber("12347")
-                .setFavoriteColor("Orange");
+                            .setFirstName("Alice")
+                            .setPhoneNumber("12347")
+                            .setFavoriteColor("Orange");
     }
 
 }

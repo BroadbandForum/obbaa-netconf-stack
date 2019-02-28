@@ -15,7 +15,7 @@
  */
 
 /**
- *
+ * 
  */
 package org.broadband_forum.obbaa.netconf.api.messages;
 
@@ -26,23 +26,23 @@ import org.w3c.dom.Document;
  * {@code
  * Netconf <lock> request.
  * }
+ * 
  *
- * @author keshava
+ * 
  */
 public class LockRequest extends AbstractNetconfRequest {
     private String m_target;
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addLockElement(m_target)
-                .build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addLockElement(m_target).build();
 
         return doc;
     }
 
     /**
      * Set the target data store to lock.
-     *
+     * 
      * @param target
      * @return Modified instance of {@link LockRequest}
      */
@@ -53,7 +53,7 @@ public class LockRequest extends AbstractNetconfRequest {
 
     /**
      * Set the target data store to lock as "running".
-     *
+     * 
      * @return Modified instance of {@link LockRequest}
      */
     public LockRequest setTargetRunning() {

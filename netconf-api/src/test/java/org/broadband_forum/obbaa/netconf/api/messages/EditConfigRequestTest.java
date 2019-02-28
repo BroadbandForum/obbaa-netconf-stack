@@ -23,12 +23,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class EditConfigRequestTest {
 
@@ -94,8 +92,7 @@ public class EditConfigRequestTest {
         m_editConfigRequest.setConfigElement(m_configElement);
         m_editConfigRequest.setMessageId(m_messageId);
         assertNotNull(m_editConfigRequest.getRequestDocument());
-        assertXMLEquals(loadAsXml("TestXMLResources/editConfigTest.xml"), m_editConfigRequest.getRequestDocument()
-                .getDocumentElement());
+        assertXMLEquals(loadAsXml("TestXMLResources/editConfigTest.xml"), m_editConfigRequest.getRequestDocument().getDocumentElement());
 
     }
 
@@ -146,7 +143,7 @@ public class EditConfigRequestTest {
         m_editConfigRequest_new.setTarget(m_target);
         m_editConfigRequest_new.setDefaultOperation(m_defaultOperation);
         m_editConfigRequest_new.setTestOption(m_testOption);
-
+        
         m_editConfigRequest.setDefaultOperation(m_defaultOperation_null);
         assertFalse(m_editConfigRequest.equals(m_editConfigRequest_new));
         m_editConfigRequest.setDefaultOperation(m_defaultOperation);
@@ -155,7 +152,7 @@ public class EditConfigRequestTest {
         m_editConfigRequest.setErrorOption(m_errorOption);
         m_editConfigRequest.setTarget(m_target_null);
         assertFalse(m_editConfigRequest.equals(m_editConfigRequest_new));
-
+        
         m_editConfigRequest_new.setErrorOption(m_errorOption);
         m_editConfigRequest_new.setWithDelay(m_withDelay);
         m_editConfigRequest_new.setConfigElement(m_configElement);
@@ -165,7 +162,7 @@ public class EditConfigRequestTest {
         assertFalse(m_editConfigRequest_new.equals(m_editConfigRequest));
         assertFalse(m_editConfigRequest.equals(m_editConfigRequest_new));
         assertFalse(m_editConfigRequest.equals(m_editConfigRequest_null));
-
+        
 
     }
 

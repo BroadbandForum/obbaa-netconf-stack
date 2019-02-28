@@ -32,8 +32,10 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfigurationBu
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerDispatcher;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerDispatcherException;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
+import org.broadband_forum.obbaa.netconf.api.server.auth.AuthenticationResult;
 import org.broadband_forum.obbaa.netconf.api.server.auth.ClientAuthenticationInfo;
 import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
+import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerSessionListener;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.server.QueuingMessageHandler;
@@ -54,19 +56,16 @@ public class SshNetconfServer {
         HashSet<String> serverCaps = new HashSet<>();
         serverCaps.add(NetconfResources.NETCONF_BASE_CAP_1_0);
         LoggingServerMessageListener loggingListener = new LoggingServerMessageListener();
-        NetconfServerConfigurationBuilder builder = NetconfServerConfigurationBuilder.createDefaultNcServerBuilder
-                (c_serverPort)
-                .setAuthenticationHandler(new AuthHandlerImpl()) // You can plugin your authentication layer using
-                // Auth handler
+        NetconfServerConfigurationBuilder builder = NetconfServerConfigurationBuilder.createDefaultNcServerBuilder(c_serverPort)
+                .setAuthenticationHandler(new AuthHandlerImpl()) // You can plugin your authentication layer using Auth handler
                 .setAuthenticationListener(m_authListener) // Authentication events will be given on this interface
                 .setNetconfServerMessageListener(loggingListener) //Callback interface for handling netconf RPCs
-                .setServerMessageHandler(new QueuingMessageHandler(loggingListener)) // Message handler to handle rpc
-                // queuing/scheduling
+                .setServerMessageHandler(new QueuingMessageHandler(loggingListener)) // Message handler to handle rpc queuing/scheduling
                 .setConnectionIdleTimeoutMillis(c_connectionTimeout)
                 .setCapabilities(serverCaps);
         NetconfServerDispatcher dispatcher = new NetconfServerDispatcherImpl(m_executorService);
         NetconfServerConfiguration configuration = builder.build();
-        LOGGER.info("Starting server with configuration " + configuration);
+        LOGGER.info("Starting server with configuration "+ configuration);
         return dispatcher.createServer(configuration).get();
     }
 
@@ -75,29 +74,44 @@ public class SshNetconfServer {
         SshNetconfServer server = new SshNetconfServer();
         server.runServer();
         LOGGER.info("Server started");
-        for (; ; ) {
+        for(;;){
             Thread.sleep(Long.MAX_VALUE);
         }
 
     }
 
     public final class AuthHandlerImpl implements NetconfServerAuthenticationHandler {
-        public boolean authenticate(ClientAuthenticationInfo clientAuthInfo) {
+        public AuthenticationResult authenticate(ClientAuthenticationInfo clientAuthInfo) {
             // You can plugin anything here for authentication
             if ("UT".equals(clientAuthInfo.getUsername()) && "UT".equals(clientAuthInfo.getPassword())) {
                 LOGGER.info("Authentication is successful");
-                return true;
+                return new AuthenticationResult(true, "");
             }
             LOGGER.info("Authentication is failed");
-            return false;
+            return AuthenticationResult.failedAuthResult();
         }
 
-        public boolean authenticate(PublicKey pubKey) {
+        public AuthenticationResult authenticate(PublicKey pubKey) {
             //You can plugin anything here for authentication
-            return true;
+            return new AuthenticationResult(true, "");
         }
 
-        public void logout(Serializable sshSessionId) {
+        public void logout(Serializable sessionId) {
+        }
+
+        @Override
+        public void registerServerSessionListener(Serializable sessionId, NetconfServerSessionListener sessionListener) {
+            
+        }
+
+        @Override
+        public void unregisterServerSessionListener(Serializable sessionId) {
+            
+        }
+
+        @Override
+        public NetconfServerSessionListener getServerSessionListener(Serializable sessionId) {
+            return null;
         }
 
     }

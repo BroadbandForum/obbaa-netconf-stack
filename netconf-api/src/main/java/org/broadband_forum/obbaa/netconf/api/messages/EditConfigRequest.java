@@ -22,11 +22,11 @@ import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <edit-config> } operation.
+ * 
+ * @see {@link EditConfigElement}, {@link EditConfigDefaultOperations}, {@link EditConfigErrorOptions}, {@link EditConfigOperations},
+ *      {@link EditConfigTestOptions} for more info.
  *
- * @author keshava
- * @see {@link EditConfigElement}, {@link EditConfigDefaultOperations}, {@link EditConfigErrorOptions},
- * {@link EditConfigOperations},
- * {@link EditConfigTestOptions} for more info.
+ * 
  */
 public class EditConfigRequest extends AbstractNetconfRequest {
     private String m_target = StandardDataStores.RUNNING;
@@ -82,8 +82,7 @@ public class EditConfigRequest extends AbstractNetconfRequest {
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
         Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId)
-                .addEditConfigElement(m_target, m_defaultOperation, m_testOption, m_errorOption, m_withDelay,
-                        m_configElement).build();
+                .addEditConfigElement(m_target, m_defaultOperation, m_testOption, m_errorOption, m_withDelay, m_configElement).build();
         return doc;
     }
 
@@ -103,9 +102,13 @@ public class EditConfigRequest extends AbstractNetconfRequest {
         m_uploadToPmaRequest = true;
     }
 
+    public void setUploadToPmaRequest(boolean uploadToPmaRequest) {
+        m_uploadToPmaRequest = uploadToPmaRequest;
+    }
+
     /**
      * Is this a PMA Upload request?
-     *
+     * 
      * @return true if pmaUpload request
      */
     public boolean isUploadToPmaRequest() {

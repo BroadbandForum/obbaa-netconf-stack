@@ -52,10 +52,8 @@ public abstract class DynamicX509KeyManager extends X509ExtendedKeyManager {
         return null;
     }
 
-    public abstract void initKeyManager(List<String> certificateChain, PrivateKeyInfo privateKeyInfo) throws
-            KeyManagerInitException;
+    public abstract void initKeyManager(List<String> certificateChain, PrivateKeyInfo privateKeyInfo) throws KeyManagerInitException;
 
-    public abstract void initKeyManager(String certificateChainFilePath, String privateKeyFilePath, String
-            privateKeyPass)
+    public abstract void initKeyManager(String certificateChainFilePath, String privateKeyFilePath, String privateKeyPass)
             throws KeyManagerInitException;
 }

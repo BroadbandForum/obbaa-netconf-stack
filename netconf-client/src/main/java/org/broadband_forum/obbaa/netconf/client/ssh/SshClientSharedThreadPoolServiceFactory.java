@@ -29,11 +29,12 @@ import java.io.IOException;
 import java.nio.channels.AsynchronousChannelGroup;
 
 /**
- * Similar to Nio2ServiceFactory except that the ExecutorService is created with configurable number of NIO threads
- * for SSH connection in
+ * 
+ * Similar to Nio2ServiceFactory except that the ExecutorService is created with configurable number of NIO threads for SSH connection in
  * PMA. AsynchronousChannelGroup with this executorService is used to create NIO connector and acceptor.
+ * 
  *
- * @author sgs
+ * 
  */
 public class SshClientSharedThreadPoolServiceFactory extends AbstractCloseable implements IoServiceFactory {
 

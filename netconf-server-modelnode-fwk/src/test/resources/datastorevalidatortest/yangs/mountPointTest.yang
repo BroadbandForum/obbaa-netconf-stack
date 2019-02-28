@@ -1,0 +1,29 @@
+module mount-point-test {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma:mountPointTest";
+	
+	prefix "mpt";
+	
+	import ietf-yang-schema-mount { prefix "yangmnt"; }
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+
+	container mountPoint {
+		
+	}
+
+	container mountPointTest {
+    	yangmnt:mount-point mountPoint1;
+
+    }
+	
+	container mountPointTest1 {
+    	yangmnt:mount-point mountPoint;
+
+    }
+	
+}

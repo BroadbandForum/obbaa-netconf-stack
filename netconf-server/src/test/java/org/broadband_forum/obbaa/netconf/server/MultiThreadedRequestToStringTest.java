@@ -40,25 +40,28 @@ public class MultiThreadedRequestToStringTest {
 
     @Ignore("test can take time to run, not intended to eb used in CI")
     @Test
-    public void testMultiThreadedRequestToStringDoesNotThrowExpcetion() throws NetconfMessageBuilderException,
-            InterruptedException {
-        EditConfigRequest request = new EditConfigRequest().setConfigElement(new EditConfigElement()
-                .addConfigElementContent(DocumentUtils.stringToDocument("<anv:device-manager xmlns:anv=\"http://www.test.com/management-solutions/anv\" \n" +
+    public void testMultiThreadedRequestToStringDoesNotThrowExpcetion() throws NetconfMessageBuilderException, InterruptedException {
+        EditConfigRequest request = new EditConfigRequest().setConfigElement(new EditConfigElement().addConfigElementContent(DocumentUtils.stringToDocument("<anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\" \n" +
                 "                        xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\"> \n" +
-                "      <adh:holder xmlns:adh=\"http://www.test-company.com/solutions/anv-holders\" " +
-                        "\n" +
+                "      <adh:device-holder xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" \n" +
                 "                         xc:operation=\"replace\"> \n" +
                 "        <adh:name>TESTANV</adh:name> \n" +
-                "      </adh:holder> \n" +
+                "        <adh:device> \n" +
+                "          <adh:device-id>R1.S1.LT1.PON1.ONT1</adh:device-id> \n" +
+                "          <adh:hardware-type>SX16F</adh:hardware-type> \n" +
+                "          <adh:interface-version>5.6</adh:interface-version> \n" +
+                "          <adh:duid>TESTANV.R1.S1.LT1.PON1.ONT1</adh:duid> \n" +
+                "        </adh:device> \n" +
+                "      </adh:device-holder> \n" +
                 "    </anv:device-manager> ").getDocumentElement()));
 
         ExecutorService executor = Executors.newCachedThreadPool();
-        List<Exception> errors = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        List <Exception> errors = new ArrayList<>();
+        for(int i =0; i< 1000 ; i++){
             executor.submit(() -> {
-                try {
+                try{
                     request.requestToString();
-                } catch (Exception e) {
+                }catch (Exception e){
                     errors.add(e);
                     //throw new RuntimeException(e);
                 }
@@ -66,9 +69,9 @@ public class MultiThreadedRequestToStringTest {
         }
         executor.shutdown();
         executor.awaitTermination(1000, TimeUnit.SECONDS);
-        if (errors.size() > 0) {
+        if(errors.size() > 0){
             fail("Un expected error occurred");
-            LOGGER.error("Error : ", errors.get(0));
+            LOGGER.error("Error : ",errors.get(0));
         }
     }
 }

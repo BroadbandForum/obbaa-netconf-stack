@@ -1,0 +1,28 @@
+module test-interfaces {
+    
+    yang-version 1;
+    
+    namespace "test-interfaces";
+    
+    prefix "if";
+    
+    typedef intf-ref {
+        type leafref {
+            path "/if:interfaces/if:interface/if:name";
+        }
+        description
+            "This type is used by data models that need to reference
+             configured interfaces.";
+    }    
+    
+    container interfaces {
+        list interface {
+            key name;
+            
+            leaf name{
+                type string;
+            }
+            
+        }
+    }
+}

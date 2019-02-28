@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><module xmlns="urn:ietf:params:xml:ns:yang:yin:1" xmlns:if="urn:ietf:params:xml:ns:yang:ietf-interfaces" xmlns:bbfift="urn:broadband-forum-org:yang:bbf-if-type" name="bbf-if-type">
+    <yang-version value="1"/>
+    <namespace uri="urn:broadband-forum-org:yang:bbf-if-type"/>
+    <prefix value="bbfift"/>
+    <import module="ietf-interfaces">
+        <prefix value="if"/>
+        <revision-date date="2014-05-08"/>
+    </import>
+    <organization>
+        <text>TBD</text>
+    </organization>
+    <contact>
+        <text>TBD</text>
+    </contact>
+    <description>
+        <text>A YANG module which defines interface types that are needed
+for BBF applications but are not defined in iana-if-type</text>
+    </description>
+    <revision date="2015-12-22"/>
+    <identity name="bbf-interface-type">
+        <base name="if:interface-type"/>
+        <description>
+            <text>This identity is used as a base for all interface types
+defined by the BBF that are not in the 'ifType definitions'
+registry maintained by IANA.</text>
+        </description>
+    </identity>
+    <identity name="xdsl">
+        <base name="bbf-interface-type"/>
+        <description>
+            <text>An interface which supports one or more DSL or G.fast
+technologies</text>
+        </description>
+    </identity>
+</module>

@@ -25,7 +25,6 @@ import java.security.Security;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.sshd.common.util.SecurityUtils;
-import org.broadband_forum.obbaa.netconf.client.dispatcher.NetconfClientDispatcherImpl;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 
@@ -34,6 +33,7 @@ import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcherException;
 import org.broadband_forum.obbaa.netconf.api.client.util.NetconfClientConfigurationBuilder;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerDispatcherException;
+import org.broadband_forum.obbaa.netconf.client.dispatcher.NetconfClientDispatcherImpl;
 import org.broadband_forum.obbaa.netconf.client.dispatcher.SshClientDispatcherImpl;
 
 import junit.framework.TestCase;
@@ -54,8 +54,7 @@ public class NetconfClientDispatcherImplTest extends TestCase {
 
     @Test
     public void testSecurityProviderIsBouncyCastle() throws UnknownHostException, NetconfConfigurationBuilderException,
-            NetconfClientDispatcherException, InterruptedException, ExecutionException,
-            NetconfServerDispatcherException,
+            NetconfClientDispatcherException, InterruptedException, ExecutionException, NetconfServerDispatcherException,
             ClassNotFoundException {
 
         // load NetconfClientSessionFactory class should also register bouncy castle statically

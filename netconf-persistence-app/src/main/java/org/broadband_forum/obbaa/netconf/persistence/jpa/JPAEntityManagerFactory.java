@@ -19,36 +19,38 @@ package org.broadband_forum.obbaa.netconf.persistence.jpa;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 
-import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
 import org.hibernate.jpa.HibernatePersistenceProvider;
+
+import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
 
 import java.util.Map;
 
 @Deprecated
-public class JPAEntityManagerFactory implements EMFactory {
-    private EntityManagerFactory m_factory;
+public class JPAEntityManagerFactory implements EMFactory{
+	private EntityManagerFactory m_factory;
+	
+	public JPAEntityManagerFactory(){
+		
+	}
+	
+	public JPAEntityManagerFactory(String persistenceUnitName, Map<String, String> properties) {
+	    initEntityMgr(persistenceUnitName, properties);
+	}
+	
+	public JPAEntityManagerFactory(String dbName){
+		initEntityMgr(dbName, null);
+	}
 
-    public JPAEntityManagerFactory() {
-    }
-
-    public JPAEntityManagerFactory(String persistenceUnitName, Map<String, String> properties) {
-        initEntityMgr(persistenceUnitName, properties);
-    }
-
-    public JPAEntityManagerFactory(String dbName) {
-        initEntityMgr(dbName, null);
-    }
-
-    private void initEntityMgr(String dbName, Map<String, String> properties) {
-        //Persistence.createEntityManagerFacotry creates deprecated HibernatePersistence.
-        //So, instead using HibernatePersistenceProvider
-        	HibernatePersistenceProvider persistenceProvider = new HibernatePersistenceProvider();
-        m_factory = persistenceProvider.createEntityManagerFactory(dbName, properties);
-    }
-
-    @Override
-    public EntityManager createNewEntityManager() {
-        return m_factory.createEntityManager();
-    }
+	private void initEntityMgr(String dbName, Map<String, String> properties) {
+	    //Persistence.createEntityManagerFacotry creates deprecated HibernatePersistence.
+	    //So, instead using HibernatePersistenceProvider
+	    HibernatePersistenceProvider persistenceProvider = new HibernatePersistenceProvider();
+		m_factory = persistenceProvider.createEntityManagerFactory(dbName, properties);
+	}
+	
+	@Override
+	public EntityManager createNewEntityManager() {
+		return m_factory.createEntityManager();
+	}
 
 }

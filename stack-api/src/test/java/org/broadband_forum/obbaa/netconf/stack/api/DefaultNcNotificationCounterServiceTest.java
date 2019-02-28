@@ -18,19 +18,21 @@ package org.broadband_forum.obbaa.netconf.stack.api;
 
 import static org.junit.Assert.assertEquals;
 
+import org.broadband_forum.obbaa.netconf.stack.DefaultNcNotificationCounterService;
+import org.broadband_forum.obbaa.netconf.stack.NcNotificationCounterService;
 import org.junit.Before;
 import org.junit.Test;
 
 public class DefaultNcNotificationCounterServiceTest {
-    NcNotificationCounterService m_counterService;
+    NcNotificationCounterService m_counterService ;
 
     @Before
-    public void setUp() {
+    public void setUp(){
         m_counterService = new DefaultNcNotificationCounterService();
     }
 
     @Test
-    public void testCountersAreIncreasing() {
+    public void testCountersAreIncreasing(){
         assertEquals(0L, m_counterService.getNumberOfNotifications());
         m_counterService.increaseNumberOfNotifications();
         assertEquals(1L, m_counterService.getNumberOfNotifications());

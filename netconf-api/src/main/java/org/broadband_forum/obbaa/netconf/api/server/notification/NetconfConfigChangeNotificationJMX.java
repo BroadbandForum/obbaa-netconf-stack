@@ -20,7 +20,7 @@ public interface NetconfConfigChangeNotificationJMX {
     public void supportNetconfConfigChangeNotification(boolean isSupport);
 
     public boolean isNetconfConfigChangeNotificationSupported();
-
+    
     public void configThresholdForPersistTimeLastSentEvent(int counter);
-
+    
 }

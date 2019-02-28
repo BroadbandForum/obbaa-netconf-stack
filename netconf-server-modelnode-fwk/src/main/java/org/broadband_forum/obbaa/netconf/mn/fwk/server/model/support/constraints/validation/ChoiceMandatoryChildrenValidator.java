@@ -1,23 +1,4 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation;
-
-import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil
-        .NC_DS_VALIDATION;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,32 +7,37 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ChoiceCaseNode;
-import org.opendaylight.yangtools.yang.model.api.ConstraintDefinition;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.parser.stmt.rfc6020.effective.ChoiceEffectiveStatementImpl;
 
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationErrors;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.XmlModelNodeImpl;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ElementCountConstraint;
+import org.opendaylight.yangtools.yang.model.api.ElementCountConstraintAware;
+import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
  * Utility class helps in validating mandatory nodes of a choice/case
@@ -62,12 +48,10 @@ public class ChoiceMandatoryChildrenValidator {
     private final ModelNodeHelperRegistry m_modelNodeHelperRegistry;
     private final DataStoreValidator m_dataStoreValidator;
 
-    private final static AdvancedLogger LOGGER = LoggerFactory.getLogger(ChoiceMandatoryChildrenValidator.class,
-            NC_DS_VALIDATION, "DEBUG", "GLOBAL");
+    private final static AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ChoiceMandatoryChildrenValidator.class, LogAppNames.NETCONF_STACK);
 
-    public ChoiceMandatoryChildrenValidator(SchemaRegistry schemaRegistry, ModelNodeHelperRegistry
-            modelNodeHelperRegistry,
-                                            DataStoreValidator dataStoreValidator) {
+    public ChoiceMandatoryChildrenValidator(SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry,
+            DataStoreValidator dataStoreValidator) {
         this.m_schemaRegistry = schemaRegistry;
         this.m_modelNodeHelperRegistry = modelNodeHelperRegistry;
         this.m_dataStoreValidator = dataStoreValidator;
@@ -75,18 +59,16 @@ public class ChoiceMandatoryChildrenValidator {
 
     private void throwValidationException(ModelNode parentNode, List<QName> qnames) {
         ValidationException exception = null;
-
+        SchemaRegistry registry = SchemaRegistryUtil.getSchemaRegistry(parentNode, m_schemaRegistry);
         for (QName qname : qnames) {
             ModelNodeId modelNodeId = new ModelNodeId(parentNode.getModelNodeId());
             modelNodeId.addRdn(ModelNodeRdn.CONTAINER, qname.getNamespace().toString(), qname.getLocalName());
-            String errorPath = modelNodeId.xPathString(m_schemaRegistry);
+            String errorPath = modelNodeId.xPathString(registry);
             if (exception == null) {
-                exception = DataStoreValidationErrors.getMissingDataException(DataStoreValidationUtil
-                        .MISSING_MANDATORY_NODE, errorPath, modelNodeId.xPathStringNsByPrefix(m_schemaRegistry));
+                exception = DataStoreValidationErrors.getMissingDataException(DataStoreValidationUtil.MISSING_MANDATORY_NODE, errorPath, modelNodeId.xPathStringNsByPrefix(registry));
             } else {
-                NetconfRpcError error = DataStoreValidationErrors.getDataMissingRpcError(DataStoreValidationUtil
-                                .MISSING_MANDATORY_NODE,
-                        errorPath, modelNodeId.xPathStringNsByPrefix(m_schemaRegistry));
+                NetconfRpcError error = DataStoreValidationErrors.getDataMissingRpcError(DataStoreValidationUtil.MISSING_MANDATORY_NODE,
+                        errorPath, modelNodeId.xPathStringNsByPrefix(registry));
                 exception.addNetconfRpcError(error);
             }
 
@@ -94,24 +76,20 @@ public class ChoiceMandatoryChildrenValidator {
         throw exception;
     }
 
-    private Map<ChoiceCaseNode, Collection<DataSchemaNode>> getMandatoryChoiceChildren(ModelNode parentNode,
-                                                                                       ChoiceEffectiveStatementImpl
-                                                                                               choiceNode) {
-        Map<ChoiceCaseNode, Collection<DataSchemaNode>> caseNodes = new HashMap<ChoiceCaseNode,
-                Collection<DataSchemaNode>>();
+    private Map<CaseSchemaNode, Collection<DataSchemaNode>> getMandatoryChoiceChildren(ModelNode parentNode,
+            ChoiceSchemaNode choiceNode) {
+        Map<CaseSchemaNode, Collection<DataSchemaNode>> caseNodes = new HashMap<CaseSchemaNode, Collection<DataSchemaNode>>();
 
-        Collection<ChoiceCaseNode> cases = choiceNode.getCases();
-        for (DataSchemaNode caseNode : cases) {
-            ConstraintDefinition caseConstraint = caseNode.getConstraints();
+        Collection<CaseSchemaNode> cases = choiceNode.getCases().values();
+        for (CaseSchemaNode caseNode : cases) {
             boolean fetchCases = true;
-            if (caseConstraint != null) {
+            if (caseNode.getWhenCondition().isPresent()) {
                 try {
                     // check for any constraint violation of the case.
                     m_dataStoreValidator.validateChild(parentNode, caseNode);
                 } catch (ValidationException e) {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Case constraint failed. No need to validate for its existance for ModelNode {} " +
-                                        "child {}",
+                        LOGGER.debug("Case constraint failed. No need to validate for its existance for ModelNode {} child {}",
                                 parentNode.getModelNodeId(), caseNode, e);
                     }
                     fetchCases = false;
@@ -119,13 +97,13 @@ public class ChoiceMandatoryChildrenValidator {
             }
             if (fetchCases) {
                 // if all good, fetch list of case vs collection(caseChild)
-                caseNodes.put((ChoiceCaseNode) caseNode, getMandatoryCaseChildren((ChoiceCaseNode) caseNode));
+                caseNodes.put((CaseSchemaNode) caseNode, getMandatoryCaseChildren((CaseSchemaNode) caseNode));
             }
         }
         return caseNodes;
     }
 
-    private Collection<DataSchemaNode> getNonMandatoryCaseChildren(ChoiceCaseNode caseNode) {
+    private Collection<DataSchemaNode> getNonMandatoryCaseChildren(CaseSchemaNode caseNode) {
         Set<DataSchemaNode> childNodes = new LinkedHashSet<DataSchemaNode>();
         Collection<DataSchemaNode> children = caseNode.getChildNodes();
         for (DataSchemaNode child : children) {
@@ -133,25 +111,18 @@ public class ChoiceMandatoryChildrenValidator {
                 // not validating for state presence
                 continue;
             }
-            ConstraintDefinition constraint = child.getConstraints();
-            boolean nonMandatory = true;
-            if (constraint != null) {
-                if (constraint.isMandatory()) {
-                    nonMandatory = false;
-                } else if (constraint.getMinElements() != null && constraint.getMinElements() > 0) {
-                    nonMandatory = false;
-                }
-            }
+            
+            boolean mandatory = isChildMandatory(child);
             boolean addChild = (child instanceof LeafSchemaNode) || (child instanceof LeafListSchemaNode)
                     || (child instanceof ListSchemaNode);
-            if (addChild && nonMandatory) {
+            if (addChild && !mandatory) {
                 childNodes.add(child);
             } else if (child instanceof ContainerSchemaNode) {
                 // we dont add containerSchemaNode as part of non-mandatory case validation.
                 // this is because if a container is present, it indicates that case child node is present
                 // whether by NBI request or due to presence of mandatory nodes inside the container
                 // this will be validated as part of mandatory case children validation
-            } else if (child instanceof ChoiceEffectiveStatementImpl && !constraint.isMandatory()) {
+            } else if (child instanceof ChoiceSchemaNode && !mandatory) {
                 // if it is a choiceCase, lets add it. It could well be the only child to this case and we will
                 // lazy load and evaluate it in next cycle
                 childNodes.add(child);
@@ -160,7 +131,24 @@ public class ChoiceMandatoryChildrenValidator {
         return childNodes;
     }
 
-    private Collection<DataSchemaNode> getMandatoryCaseChildren(ChoiceCaseNode caseNode) {
+    private boolean isChildMandatory(DataSchemaNode child) {
+        boolean mandatory = false;
+        if (child instanceof MandatoryAware && ((MandatoryAware) child).isMandatory()) {
+            mandatory = true;
+        }
+        else if (child instanceof ElementCountConstraintAware) {
+            Optional<ElementCountConstraint> optElementCountConstraint = ((ElementCountConstraintAware) child).getElementCountConstraint();
+            if (optElementCountConstraint.isPresent()) {
+                ElementCountConstraint elementCountConstraint = optElementCountConstraint.get();
+                if (elementCountConstraint.getMinElements() != null && elementCountConstraint.getMinElements() > 0) {
+                    mandatory = true;
+                }
+            }
+        }
+        return mandatory;
+    }
+
+    private Collection<DataSchemaNode> getMandatoryCaseChildren(CaseSchemaNode caseNode) {
         Set<DataSchemaNode> childNodes = new LinkedHashSet<DataSchemaNode>();
         Collection<DataSchemaNode> children = caseNode.getChildNodes();
         for (DataSchemaNode child : children) {
@@ -168,22 +156,16 @@ public class ChoiceMandatoryChildrenValidator {
                 // not validating for state presence
                 continue;
             }
-            ConstraintDefinition constraint = child.getConstraints();
-            boolean mandatory = false;
-            if (constraint != null) {
-                if (constraint.isMandatory()) {
-                    mandatory = true;
-                } else if (constraint.getMinElements() != null && constraint.getMinElements() > 0) {
-                    mandatory = true;
-                }
-            }
+            
+            boolean mandatory = isChildMandatory(child);
             boolean addChild = (child instanceof LeafSchemaNode) || (child instanceof LeafListSchemaNode)
                     || (child instanceof ListSchemaNode);
             if (addChild && mandatory) {
                 childNodes.add(child);
-            } else if (child instanceof ContainerSchemaNode) {
+            } else if (child instanceof ContainerSchemaNode && !((ContainerSchemaNode)child).isPresenceContainer()) {
+            	//validate only for non-presence containers
                 childNodes.add(child);
-            } else if (child instanceof ChoiceEffectiveStatementImpl && constraint.isMandatory()) {
+            } else if (child instanceof ChoiceSchemaNode && mandatory) {
                 // if it is a choiceCase, lets add it. It could well be the only child to this case and we will
                 // lazy load and evaluate it in next cycle
                 childNodes.add(child);
@@ -193,19 +175,25 @@ public class ChoiceMandatoryChildrenValidator {
     }
 
     @SuppressWarnings("rawtypes")
-    private boolean validateMandatoryCaseNodes(ModelNodeWithAttributes modelNode, ChoiceCaseNode caseNode,
+    private boolean validateMandatoryCaseNodes(ModelNodeWithAttributes modelNode, CaseSchemaNode caseNode,
                                                Collection<DataSchemaNode> caseChildNodes) throws ModelNodeGetException {
         boolean thisCaseIsPresent = false;
         int nodesFound = 0; // How many nodes were found in this ModelNode of this set
         int totalValidNodes = 0; // total number of valid nodes in this case -> leaf/list/leafList/Container/Choice
-        // with mandatory constraint
+                                 // with mandatory constraint
         List<ValidationException> mandatoryChoiceMissing = new ArrayList<ValidationException>();
         List<QName> notAvailable = new LinkedList<QName>();
         for (DataSchemaNode childNode : caseChildNodes) {
 
             QName childQName = childNode.getQName();
-            ConstraintDefinition constraint = childNode.getConstraints();
-            int minElements = (constraint.getMinElements() == null) ? 0 : constraint.getMinElements();
+            ElementCountConstraint constraint = null;
+            if (childNode instanceof ElementCountConstraintAware) {
+                Optional<ElementCountConstraint> optElementCountConstraint = ((ElementCountConstraintAware) childNode).getElementCountConstraint();
+                if (optElementCountConstraint.isPresent()) {
+                    constraint = optElementCountConstraint.get();
+                }
+            }
+            int minElements = (constraint == null || constraint.getMinElements() == null) ? 0 : constraint.getMinElements();
             if (childNode instanceof LeafSchemaNode) {
                 totalValidNodes++;
                 if (modelNode.getAttribute(childQName) != null) {
@@ -224,10 +212,9 @@ public class ChoiceMandatoryChildrenValidator {
             } else if (childNode instanceof ListSchemaNode) {
                 totalValidNodes++;
 
-                Collection modelNodes = DataStoreValidationUtil.getChildListModelNodes(modelNode, childNode,
-                        m_modelNodeHelperRegistry);
-                if (modelNodes != null && modelNodes.size() >= minElements) {
-                    nodesFound++;
+                    Collection modelNodes = DataStoreValidationUtil.getChildListModelNodes(modelNode, childNode);
+                    if (modelNodes != null && modelNodes.size() >= minElements) {
+                        nodesFound++;
 
                 } else {
                     notAvailable.add(childQName);
@@ -236,24 +223,21 @@ public class ChoiceMandatoryChildrenValidator {
 
             } else if (childNode instanceof ContainerSchemaNode) {
                 totalValidNodes++;
-                ModelNode childContainer = DataStoreValidationUtil.getChildContainerModelNode(modelNode, childNode,
-                        m_modelNodeHelperRegistry);
+                ModelNode childContainer = DataStoreValidationUtil.getChildContainerModelNode(modelNode, childNode);
                 if (childContainer != null) {
                     // A container node that is already here, means it was validated when it was created
                     // as part of internal or NBI request for mandatory nodes. No need to validate it further.
                     nodesFound++;
                 }
-            } else if (childNode instanceof ChoiceEffectiveStatementImpl) {
+            } else if (childNode instanceof ChoiceSchemaNode) {
                 totalValidNodes++;
                 try {
-                    boolean choicePresent = validateMandatoryChoiceChildren(modelNode, (ChoiceEffectiveStatementImpl)
-                            childNode);
+                    boolean choicePresent = validateMandatoryChoiceChildren(modelNode, (ChoiceSchemaNode) childNode);
                     if (choicePresent) {
                         nodesFound++;
                     }
                 } catch (ValidationException e) {
-                    // This seems to be a mandatory Choice and it is missing. Record the exception for now. Throw it,
-                    // if this case has other
+                    // This seems to be a mandatory Choice and it is missing. Record the exception for now. Throw it, if this case has other
                     // nodes present.
                     mandatoryChoiceMissing.add(e);
                 }
@@ -288,8 +272,7 @@ public class ChoiceMandatoryChildrenValidator {
     private boolean checkForCasePresence(ModelNodeWithAttributes modelNode, Collection<DataSchemaNode> caseChildNodes)
             throws ModelNodeGetException {
         /**
-         * We come here, only if we want to check if there are any non-mandatory children of this case available and
-         * all mandatory child of
+         * We come here, only if we want to check if there are any non-mandatory children of this case available and all mandatory child of
          * this case is missing
          */
         boolean thisCaseIsPresent = false;
@@ -304,21 +287,19 @@ public class ChoiceMandatoryChildrenValidator {
                     break;
                 }
             } else if (child instanceof ListSchemaNode) {
-                Collection<ModelNode> modelNodes = DataStoreValidationUtil.getChildListModelNodes(modelNode, child,
-                        m_modelNodeHelperRegistry);
+                Collection<ModelNode> modelNodes = DataStoreValidationUtil.getChildListModelNodes(modelNode, child);
                 if (modelNodes != null && modelNodes.size() > 1) {
                     thisCaseIsPresent = true;
                     break;
                 }
             } else if (child instanceof ContainerSchemaNode) {
-                ModelNode childContainer = DataStoreValidationUtil.getChildContainerModelNode(modelNode, child,
-                        m_modelNodeHelperRegistry);
+                ModelNode childContainer = DataStoreValidationUtil.getChildContainerModelNode(modelNode, child);
                 if (childContainer != null) {
                     thisCaseIsPresent = true;
                     break;
                 }
-            } else if (child instanceof ChoiceEffectiveStatementImpl) {
-                thisCaseIsPresent = validateMandatoryChoiceChildren(modelNode, (ChoiceEffectiveStatementImpl) child);
+            } else if (child instanceof ChoiceSchemaNode) {
+                thisCaseIsPresent = validateMandatoryChoiceChildren(modelNode, (ChoiceSchemaNode) child);
             }
         }
         return thisCaseIsPresent;
@@ -328,10 +309,9 @@ public class ChoiceMandatoryChildrenValidator {
     @SuppressWarnings("unchecked")
     private void checkForCreateOrDeleteDefault(ModelNode node, Collection<DataSchemaNode> childNodes) {
         for (DataSchemaNode childNode : childNodes) {
-            Collection<SchemaPath> schemaPathsToDelete = DataStoreValidationUtil.getValidationContext()
-                    .getSchemaPathsToDelete();
+            Collection<SchemaPath> schemaPathsToDelete = DataStoreValidationUtil.getValidationContext().getSchemaPathsToDelete();
             schemaPathsToDelete.add(childNode.getPath());
-            if (childNode instanceof LeafSchemaNode && ((LeafSchemaNode) childNode).getDefault() != null) {
+            if (childNode instanceof LeafSchemaNode && ((LeafSchemaNode) childNode).getType().getDefaultValue().isPresent()) {
                 m_dataStoreValidator.validateChild(node, childNode);
             }
         }
@@ -339,42 +319,44 @@ public class ChoiceMandatoryChildrenValidator {
 
     /**
      * Given a modelNode and a choice in the modelNode, it validates if all necessary mandatory conditions are satisfied
-     *
+     * 
      * @param modelNode
      * @param choice
      * @throws ModelNodeGetException
      */
-    public boolean validateMandatoryChoiceChildren(ModelNodeWithAttributes modelNode, ChoiceEffectiveStatementImpl
-            choice)
+    public boolean validateMandatoryChoiceChildren(ModelNodeWithAttributes modelNode, ChoiceSchemaNode choice)
             throws ModelNodeGetException {
-        ConstraintDefinition choiceConstraints = choice.getConstraints();
         boolean isValid = true;
         if (!choice.isConfiguration()) {
             return true;
         }
         try {
-            if (choiceConstraints != null) {
+            if (choice.getWhenCondition().isPresent() || choice.isMandatory()) {
                 // if the choice has a constraint, validate it, if it is all good then look for mandatory nodes
                 isValid = m_dataStoreValidator.validateChild(modelNode, choice);
             }
         } catch (ValidationException e) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("constraint validation resulted in error. So this choice {} in modelNode {} cannot " +
-                                "exists", choice,
+                LOGGER.debug("constraint validation resulted in error. So this choice {} in modelNode {} cannot exists", choice,
                         modelNode.getModelNodeId(), e);
             }
             isValid = false;
         }
 
         boolean anyChoicePresent = false;
-        if (isValid) {
-            Map<ChoiceCaseNode, Collection<DataSchemaNode>> childNodes = getMandatoryChoiceChildren(modelNode, choice);
-            for (Map.Entry<ChoiceCaseNode, Collection<DataSchemaNode>> entry : childNodes.entrySet()) {
-                anyChoicePresent = anyChoicePresent || validateMandatoryCaseNodes(modelNode, entry.getKey(), entry
-                        .getValue());
+        if (isValid) {            
+            Map<CaseSchemaNode, Collection<DataSchemaNode>> childNodes = getMandatoryChoiceChildren(modelNode, choice);
+            for (Map.Entry<CaseSchemaNode, Collection<DataSchemaNode>> entry : childNodes.entrySet()) {
+                anyChoicePresent = anyChoicePresent || validateMandatoryCaseNodes(modelNode, entry.getKey(), entry.getValue());
             }
-            if (isValid && choiceConstraints.isMandatory() && !anyChoicePresent) {
-                DataStoreValidationErrors.throwDataMissingException(m_schemaRegistry, modelNode, choice.getQName());
+            if(!anyChoicePresent && modelNode instanceof XmlModelNodeImpl){
+                XmlModelNodeImpl xmlModelNode = (XmlModelNodeImpl) modelNode;
+                if(!xmlModelNode.getChildren().isEmpty()){
+                    anyChoicePresent = true;
+                }
+            }
+            if (isValid && choice.isMandatory() && !anyChoicePresent) {
+                DataStoreValidationErrors.throwDataMissingException(modelNode.getSchemaRegistry(), modelNode, choice.getQName());
             }
         }
         return anyChoicePresent;

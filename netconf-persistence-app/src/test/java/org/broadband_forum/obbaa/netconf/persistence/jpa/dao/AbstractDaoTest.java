@@ -26,14 +26,14 @@ import java.util.Collections;
 
 import javax.persistence.LockModeType;
 
-import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
-import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.PagingInput;
+import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
 
 public class AbstractDaoTest {
 
@@ -44,7 +44,7 @@ public class AbstractDaoTest {
     private EntityDataStoreManager m_edsm;
 
     @Before
-    public void setUp() {
+    public void setUp(){
         MockitoAnnotations.initMocks(this);
         when(m_util.getEntityDataStoreManager()).thenReturn(m_edsm);
         Class klass = AbstractDaoTest.class;
@@ -58,75 +58,74 @@ public class AbstractDaoTest {
     }
 
     @Test
-    public void testFindByIdWithReadLock() {
+    public void testFindByIdWithReadLock(){
         Serializable pk = mock(Serializable.class);
         m_dao.findByIdWithReadLock(pk);
         verify(m_edsm).findById(AbstractDaoTest.class, pk, LockModeType.PESSIMISTIC_READ);
     }
 
     @Test
-    public void testFindById() {
+    public void testFindById(){
         Serializable pk = mock(Serializable.class);
         m_dao.findById(pk);
         verify(m_edsm).findById(AbstractDaoTest.class, pk, LockModeType.PESSIMISTIC_READ);
     }
 
     @Test
-    public void testCreate() {
+    public void testCreate(){
         AbstractDaoTest entity = new AbstractDaoTest();
         m_dao.create(entity);
         verify(m_edsm).create(entity);
     }
 
     @Test
-    public void testDelete() {
+    public void testDelete(){
         AbstractDaoTest entity = new AbstractDaoTest();
         m_dao.delete(entity);
         verify(m_edsm).delete(entity);
     }
 
     @Test
-    public void testDeleteAll() {
+    public void testDeleteAll(){
         m_dao.deleteAll();
         verify(m_edsm).deleteAll(AbstractDaoTest.class);
     }
 
     @Test
-    public void testFindAll() {
+    public void testFindAll(){
         m_dao.findAll();
         verify(m_edsm).findAll(AbstractDaoTest.class, Collections.emptyList());
     }
 
     @Test
-    public void testDeleteById() {
+    public void testDeleteById(){
         Serializable pk = mock(Serializable.class);
         m_dao.deleteById(pk);
         verify(m_edsm).deleteById(AbstractDaoTest.class, pk);
     }
 
     @Test
-    public void testFindByIdWithWriteLock() {
+    public void testFindByIdWithWriteLock(){
         Serializable pk = mock(Serializable.class);
         m_dao.findByIdWithWriteLock(pk);
         verify(m_edsm).findById(AbstractDaoTest.class, pk, LockModeType.PESSIMISTIC_WRITE);
     }
 
     @Test
-    public void testMerge() {
+    public void testMerge(){
         AbstractDaoTest entity = new AbstractDaoTest();
         m_dao.merge(entity);
         verify(m_edsm).merge(entity);
     }
 
     @Test
-    public void testFindWithPaging() {
+    public void testFindWithPaging(){
         PagingInput input = mock(PagingInput.class);
         m_dao.findWithPaging(input);
         verify(m_edsm).findWithPaging(AbstractDaoTest.class, input);
     }
-
     @Test
-    public void testFindWithPagingAndOrderByColumn() {
+    public void testFindWithPagingAndOrderByColumn(){
         PagingInput input = mock(PagingInput.class);
         m_dao.findWithPagingAndOrderByColumn(input, Collections.emptyMap(), "column", true);
         verify(m_edsm).findWithPagingAndOrderByColumn(AbstractDaoTest.class, input, Collections.emptyMap(), "column", true);

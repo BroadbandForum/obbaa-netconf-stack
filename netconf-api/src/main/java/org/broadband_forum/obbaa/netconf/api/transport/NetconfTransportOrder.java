@@ -18,12 +18,10 @@ package org.broadband_forum.obbaa.netconf.api.transport;
 
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
-
 import io.netty.handler.ssl.SslProvider;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
-
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -107,13 +105,11 @@ public class NetconfTransportOrder {
         StringBuilder errorBuilder = new StringBuilder();
         boolean error = false;
 
-        if (NetconfTransportProtocol.REVERSE_TLS.name().equals(m_transportType)) {
-            if (isAllowSelfSigned() && (getTrustManager() != null || getKeyManager() != null || getCertificateChain()
-                    != null
-                    || getPrivateKey() != null || getPrivateKeyPassword() != null)) {
+        if(NetconfTransportProtocol.REVERSE_TLS.name().equals(m_transportType)){
+            if(isAllowSelfSigned() && (getTrustManager() != null || getKeyManager() != null || getCertificateChain() != null
+                    || getPrivateKey() != null || getPrivateKeyPassword() != null )){
                 error = true;
-                errorBuilder.append("Cannot use Self signed mode with trust/key manager OR certificate/private key " +
-                        "files");
+                errorBuilder.append("Cannot use Self signed mode with trust/key manager OR certificate/private key files");
             }
         }
 
@@ -128,8 +124,7 @@ public class NetconfTransportOrder {
                 errorBuilder.append("Call Home IP address is null ");
             }
         } else {
-            throw new NetconfConfigurationBuilderException("Invalid transport type : " + this.toString() +
-                    errorBuilder.toString());
+            throw new NetconfConfigurationBuilderException("Invalid transport type : " + this.toString() + errorBuilder.toString());
         }
         if (error) {
             throw new NetconfConfigurationBuilderException("Invalid options " + errorBuilder.toString());
@@ -142,11 +137,10 @@ public class NetconfTransportOrder {
     }
 
     /**
-     * @param privateKey an X.509 certificate chain file in PEM format. pass null if you are using a
-     * {@link KeyManager} via
-     *                   {@link NetconfTransportOrder#setKeyManager(KeyManager)}
-     * @return
+     * @param privateKey an X.509 certificate chain file in PEM format. pass null if you are using a {@link KeyManager} via
+     *            {@link NetconfTransportOrder#setKeyManager(KeyManager)}
      * @see NetconfTransportOrder#setKeyManager(KeyManager)
+     * @return
      */
     public void setPrivateKey(File privateKey) {
         this.m_privateKey = privateKey;
@@ -173,13 +167,12 @@ public class NetconfTransportOrder {
     }
 
     /**
-     * @param keyManager - the {@link KeyManager} that is used to encrypt data being sent to clients. {@code null} to
-     *                  use the results of
-     *                   parsing {@code certiChain} and {@code keyFile}.
-     * @return
+     * @param keyManager - the {@link KeyManager} that is used to encrypt data being sent to clients. {@code null} to use the results of
+     *            parsing {@code certiChain} and {@code keyFile}.
      * @see NetconfTransportOrder#setCertificateChain(File)
      * @see NetconfTransportOrder#setPrivateKey(File)
      * @see NetconfTransportOrder#setPrivateKeyPassword(String)
+     * @return
      */
     public void setKeyManager(KeyManager keyManager) {
         m_keyManager = keyManager;
@@ -191,10 +184,10 @@ public class NetconfTransportOrder {
 
     /**
      * @param certChain - A X.509 certificate chain file in PEM format.
-     * @return
      * @see NetconfTransportOrder#setPrivateKey(File)
      * @see NetconfTransportOrder#setPrivateKeyPassword(String)
      * @see NetconfTransportOrder#setKeyManager(KeyManager)
+     * @return
      */
     public void setCertificateChain(File certChain) {
         m_certiChain = certChain;
@@ -205,12 +198,11 @@ public class NetconfTransportOrder {
     }
 
     /**
-     * @param trustChain A X.509 certificate chain file in PEM format.This provides the certificate chains used for
-     *                   mutual authentication.
-     *                   pass {@code null} if you are setting a {@code TrustManagerFactory} via
-     *                   {@link NetconfTransportOrder#setTrustManager(TrustManager)} .
-     * @return
+     * @param trustChain A X.509 certificate chain file in PEM format.This provides the certificate chains used for mutual authentication.
+     *            pass {@code null} if you are setting a {@code TrustManagerFactory} via
+     *            {@link NetconfTransportOrder#setTrustManager(TrustManager)} .
      * @see NetconfTransportOrder#setTrustManager(TrustManager)
+     * @return
      */
     public void setTrustChain(File trustChain) {
         m_trustChain = trustChain;
@@ -221,11 +213,11 @@ public class NetconfTransportOrder {
     }
 
     /**
-     * @param trustManager - the {@link TrustManager} that verifies the certificates sent from netconf peers. {@code
-     * null} to use the
-     *                     results of parsing {@code trustChain} file.
-     * @return
+     * @param trustManager - the {@link TrustManager} that verifies the certificates sent from netconf peers. {@code null} to use the
+     *            results of parsing {@code trustChain} file.
      * @see NetconfTransportOrder#setTrustChain(File)
+     * 
+     * @return
      */
     public void setTrustManager(TrustManager trustManager) {
         m_trustManager = trustManager;
@@ -290,9 +282,8 @@ public class NetconfTransportOrder {
     }
 
     /**
-     * This method is to be called by the server if it needs the clients connecting via TLS to be authenticated with
-     * a certificate.
-     *
+     * This method is to be called by the server if it needs the clients connecting via TLS to be authenticated with a certificate.
+     * 
      * @return
      */
     public void setClientAuthenticationNeeded() {
@@ -301,7 +292,7 @@ public class NetconfTransportOrder {
 
     /**
      * ssh heart beat interval in seconds.
-     *
+     * 
      * @return
      */
     public void setHeartbeatInterval(int heartbeatIntervalSecs) {
@@ -310,7 +301,7 @@ public class NetconfTransportOrder {
 
     /**
      * ssh heart beat interval in seconds.
-     *
+     * 
      * @return
      */
     public int getHeartbeatInterval() {
@@ -332,34 +323,6 @@ public class NetconfTransportOrder {
     public void setSslProvider(SslProvider sslProvider) {
         m_sslProvider = sslProvider;
     }
-
-    @Override
-    public String toString() {
-        return "NetconfTransportOrder{" +
-                "m_transportType='" + m_transportType + '\'' +
-                ", m_sslProvider=" + m_sslProvider +
-                ", m_allowSelfSigned=" + m_allowSelfSigned +
-                ", m_trustChain=" + m_trustChain +
-                ", m_certiChain=" + m_certiChain +
-                ", m_privateKey=" + m_privateKey +
-                ", m_ipForTlsTransport='" + m_ipForTlsTransport + '\'' +
-                ", m_portIdForTlsTrasnport=" + m_portIdForTlsTrasnport +
-                ", m_serverSshHostKeyPath='" + m_serverSshHostKeyPath + '\'' +
-                ", m_serverSocketAddress=" + m_serverSocketAddress +
-                ", m_callHomeIp='" + m_callHomeIp + '\'' +
-                ", m_callHomePort=" + m_callHomePort +
-                ", m_callHomeListener=" + m_callHomeListener +
-                ", m_localAddress=" + m_localAddress +
-                ", m_clientAuthenticationNeeded=" + m_clientAuthenticationNeeded +
-                ", m_privateKeyPassword='" + m_privateKeyPassword + '\'' +
-                ", m_heartbeatIntervalSecs=" + m_heartbeatIntervalSecs +
-                ", m_tlsKeepalive=" + m_tlsKeepalive +
-                ", m_trustManager=" + m_trustManager +
-                ", m_keyManager=" + m_keyManager +
-                ", m_tlsHandshaketimeoutMillis=" + m_tlsHandshaketimeoutMillis +
-                '}';
-    }
-
 
     public long getTlsHandshaketimeoutMillis() {
         return m_tlsHandshaketimeoutMillis;

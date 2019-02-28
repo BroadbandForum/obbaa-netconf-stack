@@ -18,7 +18,6 @@ package org.broadband_forum.obbaa.netconf.driver.client;
 
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.junit.Test;
-
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;

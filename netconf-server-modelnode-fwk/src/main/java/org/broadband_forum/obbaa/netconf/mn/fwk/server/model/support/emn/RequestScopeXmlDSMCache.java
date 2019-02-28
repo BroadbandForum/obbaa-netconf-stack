@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import java.util.ArrayList;
@@ -24,20 +8,19 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-
 import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 public class RequestScopeXmlDSMCache implements XmlDSMCache {
-    private static final AdvancedLogger LOGGER = LoggerFactory.getLogger(RequestScopeXmlDSMCache.class,
-            "netconf-server-datastore", "DEBUG", "GLOBAL");
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(RequestScopeXmlDSMCache.class, LogAppNames.NETCONF_STACK);
     private static final String REQUEST_SCOPE_DSM_CACHE = "RequestScopeXmlDSMCache-";
     private static AtomicInteger c_instanceCounter = new AtomicInteger(0);
     private final String m_instanceId;
 
-    public RequestScopeXmlDSMCache() {
+    public RequestScopeXmlDSMCache(){
         m_instanceId = REQUEST_SCOPE_DSM_CACHE + getInstanceId();
         LOGGER.debug("Creating RequestScopeXmlDSMCache with instanceId {}", m_instanceId);
     }
@@ -56,7 +39,7 @@ public class RequestScopeXmlDSMCache implements XmlDSMCache {
     private Map<ModelNodeId, XmlModelNodeImpl> getNodesOfGivenType(SchemaPath nodeType) {
         Map<SchemaPath, Map<ModelNodeId, XmlModelNodeImpl>> cache = getThreadLocalCache();
         Map<ModelNodeId, XmlModelNodeImpl> nodesOfType = cache.get(nodeType);
-        if (nodesOfType == null) {
+        if(nodesOfType == null){
             nodesOfType = new HashMap<>();
             cache.put(nodeType, nodesOfType);
         }
@@ -67,7 +50,7 @@ public class RequestScopeXmlDSMCache implements XmlDSMCache {
         RequestScope currentScope = RequestScope.getCurrentScope();
         Map<SchemaPath, Map<ModelNodeId, XmlModelNodeImpl>> cache =
                 (Map<SchemaPath, Map<ModelNodeId, XmlModelNodeImpl>>) currentScope.getFromCache(m_instanceId);
-        if (cache == null) {
+        if(cache == null){
             cache = new HashMap<>();
             currentScope.putInCache(m_instanceId, cache);
         }
@@ -96,15 +79,14 @@ public class RequestScopeXmlDSMCache implements XmlDSMCache {
     public List<XmlModelNodeImpl> getNodesToBeUpdated() {
         List<XmlModelNodeImpl> nodesToBeUpdated = new ArrayList<>();
         Map<SchemaPath, Map<ModelNodeId, XmlModelNodeImpl>> cache = getThreadLocalCache();
-        for (Map<ModelNodeId, XmlModelNodeImpl> nodesOfType : cache.values()) {
-            for (XmlModelNodeImpl node : nodesOfType.values()) {
-                if (node.isToBeUpdated()) {
+        for(Map<ModelNodeId, XmlModelNodeImpl> nodesOfType : cache.values()){
+            for(XmlModelNodeImpl node : nodesOfType.values()){
+                if(node.isToBeUpdated()) {
                     nodesToBeUpdated.add(node);
                 }
             }
         }
-        LOGGER.debug("Cache-instance {}, number of cached nodes to be updated {}", m_instanceId, nodesToBeUpdated
-                .size());
+        LOGGER.debug("Cache-instance {}, number of cached nodes to be updated {}", m_instanceId, nodesToBeUpdated.size());
         return nodesToBeUpdated;
     }
 
@@ -117,14 +99,12 @@ public class RequestScopeXmlDSMCache implements XmlDSMCache {
         while (mapIterator.hasNext()) {
             Map.Entry<SchemaPath, Map<ModelNodeId, XmlModelNodeImpl>> map = mapIterator.next();
             Map<ModelNodeId, XmlModelNodeImpl> modelNodeIdMap = map.getValue();
-            Iterator<Map.Entry<ModelNodeId, XmlModelNodeImpl>> modelNodeIdIterator = modelNodeIdMap.entrySet()
-                    .iterator();
+            Iterator<Map.Entry<ModelNodeId, XmlModelNodeImpl>> modelNodeIdIterator = modelNodeIdMap.entrySet().iterator();
             while (modelNodeIdIterator.hasNext()) {
                 ModelNodeId modelNodeId = modelNodeIdIterator.next().getKey();
                 if (modelNodeId.beginsWith(nodeId)) {
                     modelNodeIdIterator.remove();
-                    LOGGER.debug("Cache-instance {}, node successfully removed from cache, nodeId {}", m_instanceId,
-                            modelNodeId);
+                    LOGGER.debug("Cache-instance {}, node successfully removed from cache, nodeId {}", m_instanceId, modelNodeId);
                 }
             }
         }

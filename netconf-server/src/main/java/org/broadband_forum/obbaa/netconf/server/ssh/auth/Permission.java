@@ -17,37 +17,39 @@
 package org.broadband_forum.obbaa.netconf.server.ssh.auth;
 
 public class Permission {
+	
+	private Logical m_logical = Logical.OR;
+	private String[] m_permissions;
+	
+	public Permission(Logical logical, String... permissions) {
+		this.m_logical = logical;
+		this.m_permissions = permissions;
+	}
+	
+	public Permission(String... permissions) {
+		this.m_permissions = permissions;
+	}
 
-    private Logical m_logical = Logical.OR;
-    private String[] m_permissions;
+	public Logical getLogical() {
+		if (m_logical == null) {
+			return Logical.OR;
+		}
+		return m_logical;
+	}
 
-    public Permission(Logical logical, String... permissions) {
-        this.m_logical = logical;
-        this.m_permissions = permissions;
-    }
+	public void setLogical(Logical logical) {
+		this.m_logical = logical;
+	}
 
-    public Permission(String... permissions) {
-        this.m_permissions = permissions;
-    }
+	public String[] getPermissions() {
+		return m_permissions;
+	}
 
-    public Logical getLogical() {
-        if (m_logical == null) {
-            return Logical.OR;
-        }
-        return m_logical;
-    }
-
-    public void setLogical(Logical logical) {
-        this.m_logical = logical;
-    }
-
-    public String[] getPermissions() {
-        return m_permissions;
-    }
-
-    public void setPermissions(String[] permissions) {
-        this.m_permissions = permissions;
-    }
-
+	public void setPermissions(String[] permissions) {
+		this.m_permissions = permissions;
+	}
+	
+	
+	
 
 }

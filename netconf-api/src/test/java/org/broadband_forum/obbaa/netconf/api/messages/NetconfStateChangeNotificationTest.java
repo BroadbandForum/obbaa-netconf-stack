@@ -23,10 +23,11 @@ import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.common.QName;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class NetconfStateChangeNotificationTest {
 

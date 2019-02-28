@@ -72,7 +72,7 @@ public class RequestTaskTest {
 
     @Before
     public void setUp() throws NetconfMessageBuilderException {
-        m_clientInfo = new NetconfClientInfo("ut", 1);
+        m_clientInfo = new NetconfClientInfo("ut",1);
         m_clientInfo.setRemoteHost("keshava-nilaya-gudra");
         m_clientInfo.setRemotePort("574241");
         MockitoAnnotations.initMocks(this);
@@ -81,9 +81,7 @@ public class RequestTaskTest {
         m_notifications = new ArrayList<>();
         m_notifications.add(m_netconfConfigChangeNotification);
         m_editConfigRequest = new EditConfigRequest();
-        m_editConfigRequest.setConfigElement(new EditConfigElement().addConfigElementContent(DocumentUtils
-                .stringToDocument
-                        ("<adh:device xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" > \n" +
+        m_editConfigRequest.setConfigElement(new EditConfigElement().addConfigElementContent(DocumentUtils.stringToDocument("<adh:device xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" > \n" +
                 "    <adh:device-id>R1.S1.LT1.PON1.ONT1</adh:device-id> \n" +
                 "    <adh:hardware-type>SX16F</adh:hardware-type> \n" +
                 "    <adh:interface-version>5.6</adh:interface-version> \n" +
@@ -99,36 +97,28 @@ public class RequestTaskTest {
                 return editConfig.getMessageId().equals("1");
             }
         };
-        when(m_serverMessageListener.onEditConfig(any(NetconfClientInfo.class), argThat(ediConfigRequest), any
-                (NetConfResponse.class)))
+        when(m_serverMessageListener.onEditConfig(any(NetconfClientInfo.class), argThat(ediConfigRequest), any(NetConfResponse.class)))
                 .thenReturn(m_notifications);
 
     }
 
     @Test
     public void testSentNetConfConfigChangeNotification() throws NetconfMessageBuilderException {
-        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel,
-                m_serverMessageListener, m_netconfLogger);
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener, m_netconfLogger);
         requestTask.setNotificationService(m_notificationService);
         requestTask.doExecuteRequest();
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
-        verify(m_notificationService, times(1)).sendNotification(NetconfResources.CONFIG_CHANGE_STREAM,
-                m_netconfConfigChangeNotification);
-        verify(m_netconfLogger).logRequest(eq("keshava-nilaya-gudra"), eq("574241"), eq("ut"), eq("1"),
-                documentArgumentCaptor.capture());
-        assertEquals(DocumentUtils.documentToPrettyString(m_editConfigRequest.getRequestDocument()), DocumentUtils
-                .documentToPrettyString(documentArgumentCaptor.getValue()));
-        verify(m_netconfLogger).logResponse(eq("keshava-nilaya-gudra"), eq("574241"), eq("ut"), eq("1"), any(Document
-                .class));
+        verify(m_notificationService, times(1)).sendNotification(NetconfResources.CONFIG_CHANGE_STREAM, m_netconfConfigChangeNotification);
+        verify(m_netconfLogger).logRequest(eq("keshava-nilaya-gudra"), eq("574241"), eq("ut"), eq("1"), documentArgumentCaptor.capture());
+        assertEquals(DocumentUtils.documentToPrettyString(m_editConfigRequest.getRequestDocument()), DocumentUtils.documentToPrettyString(documentArgumentCaptor.getValue()));
+        verify(m_netconfLogger).logResponse(eq("keshava-nilaya-gudra"), eq("574241"), eq("ut"), eq("1"), any(Document.class), eq(m_editConfigRequest));
     }
 
     @Test
     public void testResponseSentWhenThereIsExceptionWhileHandlingRpcMessage() throws NetconfMessageBuilderException {
-        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel,
-                m_serverMessageListener, m_netconfLogger);
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener, m_netconfLogger);
         requestTask.setNotificationService(m_notificationService);
-        doThrow(new RuntimeException("I feel like failing today")).when(m_serverMessageListener).onEditConfig
-                (anyObject(), anyObject(), anyObject());
+        doThrow(new RuntimeException("I feel like failing today")).when(m_serverMessageListener).onEditConfig(anyObject(), anyObject(), anyObject());
         requestTask.run();
         ArgumentCaptor<NetConfResponse> responseCaptor = ArgumentCaptor.forClass(NetConfResponse.class);
         verify(m_responseChannel).sendResponse(responseCaptor.capture(), eq(m_editConfigRequest));
@@ -150,10 +140,9 @@ public class RequestTaskTest {
         rpcResponse.setMessageId("rpc-id");
 
         m_editConfigRequest.setMessageId("new-id");
-        NetconfServerMessageListener listener = new ServerMessageListenerAdapter() {
+        NetconfServerMessageListener listener = new ServerMessageListenerAdapter()  {
             @Override
-            public List<Notification> onEditConfig(NetconfClientInfo info, EditConfigRequest req, NetConfResponse
-                    resp) {
+            public List<Notification> onEditConfig(NetconfClientInfo info, EditConfigRequest req, NetConfResponse resp) {
                 assertNotNull(req.getMessageId());
                 assertNotNull(resp.getMessageId());
                 assertEquals(req.getMessageId(), resp.getMessageId());
@@ -161,16 +150,14 @@ public class RequestTaskTest {
             }
 
             @Override
-            public List<Notification> onRpc(NetconfClientInfo info, NetconfRpcRequest rpcRequest, NetconfRpcResponse
-                    response) {
+            public List<Notification> onRpc(NetconfClientInfo info, NetconfRpcRequest rpcRequest, NetconfRpcResponse response) {
                 assertNotNull(rpcRequest.getMessageId());
                 assertNotNull(response.getMessageId());
                 assertEquals(rpcRequest.getMessageId(), response.getMessageId());
                 return null;
             }
         };
-        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, listener,
-                m_netconfLogger);
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, listener, m_netconfLogger);
         requestTask.run();
 
         NetconfRpcRequest rpcReq = new CreateSubscriptionRequest();

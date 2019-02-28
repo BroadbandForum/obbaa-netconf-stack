@@ -21,16 +21,16 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * This class encapsulates the Tree implementation. Only the Tree interface is exposed to the user. This would help
- * to change the tree
+ * This class encapsulates the Tree implementation. Only the Tree interface is exposed to the user. This would help to change the tree
  * implementation without effecting the clients.
+ * 
  */
 public class TreeHelper {
 
     /**
      * This method returns Tree.
-     *
-     * @param <T>      Data type to be stored in Node of tree
+     * 
+     * @param <T> Data type to be stored in Node of tree
      * @param rootNode root node for this tree
      * @return This method returns Tree.
      */
@@ -39,6 +39,7 @@ public class TreeHelper {
     }
 
     /**
+     * 
      * @param <T> the parameter type for the tree
      * @return returns a tree with rootNode as null
      */

@@ -21,8 +21,9 @@ import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <get>} operation.
+ * 
  *
- * @author keshava
+ * 
  */
 public class GetRequest extends AbstractNetconfGetRequest {
 

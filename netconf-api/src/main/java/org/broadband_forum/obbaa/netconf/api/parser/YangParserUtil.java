@@ -24,40 +24,43 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.parser.api.YangSyntaxErrorException;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaContextFactory;
-import org.opendaylight.yangtools.yang.model.repo.api.SchemaResolutionException;
+import org.opendaylight.yangtools.yang.model.repo.api.SchemaContextFactoryConfiguration;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaSourceException;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaSourceFilter;
 import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.opendaylight.yangtools.yang.model.repo.api.YinTextSchemaSource;
 import org.opendaylight.yangtools.yang.parser.repo.SharedSchemaRepository;
-import org.opendaylight.yangtools.yang.parser.util.ASTSchemaSource;
-import org.opendaylight.yangtools.yang.parser.util.TextToASTTransformer;
+import org.opendaylight.yangtools.yang.parser.rfc7950.repo.ASTSchemaSource;
+import org.opendaylight.yangtools.yang.parser.rfc7950.repo.TextToASTTransformer;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 
 public class YangParserUtil {
 
-    private static final String DEVIATION_FILTER = " deviation \"";
-
     public static SchemaContext parseFiles(String repoName, List<File> yangFiles) {
-        return parseFiles(repoName, yangFiles, null, null);
+    	return parseFiles(repoName, yangFiles, null, null);
     }
-
-    public static SchemaContext parseFiles(String repoName, List<File> yangFiles, Set<QName> supportedFeatures,
-                                           Map<QName, Set<QName>> supportedDeviations) {
+    
+    public static SchemaContext parseFiles(String repoName, List<File> yangFiles, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations) {
         List<YangTextSchemaSource> inputFiles = new ArrayList<>();
         for (File yangFile : yangFiles) {
             inputFiles.add(new FileYangSource(yangFile));
@@ -66,79 +69,63 @@ public class YangParserUtil {
     }
 
     public static SchemaContext parseSchemaSources(String repoName, List<YangTextSchemaSource> inputFiles) {
-        return parseSchemaSources(repoName, inputFiles, null, null);
+		return parseSchemaSources(repoName, inputFiles, null, null);
     }
-
-    public static SchemaContext parseSchemaSources(String repoName, List<YangTextSchemaSource> inputFiles, Set<QName>
-            supportedFeatures, Map<QName, Set<QName>> supportedDeviations) {
+    
+    public static SchemaContext parseSchemaSources(String repoName, List<YangTextSchemaSource> inputFiles, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations) {
         try {
             List<YangTextSchemaSource> filteredInputFiles = removeDuplicates(inputFiles);
             SharedSchemaRepository repo = new SharedSchemaRepository(repoName);
-            List<SourceIdentifier> sourceIds = prepareSchemaRepo(repo, supportedDeviations, filteredInputFiles);
+            List<SourceIdentifier> sourceIds = prepareSchemaRepo(repo, filteredInputFiles);
 
-            SchemaContextFactory factory = repo.createSchemaContextFactory(SchemaSourceFilter.ALWAYS_ACCEPT);
-            CheckedFuture<SchemaContext, SchemaResolutionException> schemaContextFuture = factory.createSchemaContext
-                    (sourceIds, supportedFeatures);
+            SchemaContextFactoryConfiguration factoryConfig = new SchemaContextFactoryConfiguration.Builder()
+                    .setFilter(SchemaSourceFilter.ALWAYS_ACCEPT)
+                    .setSupportedFeatures(supportedFeatures)
+                    .setModulesDeviatedByModules(createDeviationSetMultimap(supportedDeviations))
+                    .build();
+            SchemaContextFactory factory = repo.createSchemaContextFactory(factoryConfig);
+            ListenableFuture<SchemaContext> schemaContextFuture = factory.createSchemaContext(sourceIds);
             return schemaContextFuture.get();
         } catch (Exception e) {
             throw new RuntimeException("Error parsing files", e);
         }
     }
 
-    public static List<SourceIdentifier> prepareSchemaRepo(SharedSchemaRepository repo, Map<QName, Set<QName>>
-            supportedDeviations, List<YangTextSchemaSource> inputFiles) throws SchemaSourceException, IOException,
-            YangSyntaxErrorException, InterruptedException, java.util.concurrent.ExecutionException {
+    public static List<SourceIdentifier> prepareSchemaRepo(SharedSchemaRepository repo, List<YangTextSchemaSource> inputFiles) throws SchemaSourceException, IOException, YangSyntaxErrorException, InterruptedException, java.util.concurrent.ExecutionException {
         List<SourceIdentifier> sourceIds = new ArrayList<>();
         for (YangTextSchemaSource yangSource : inputFiles) {
-            if (checkForDeviations(yangSource, supportedDeviations)) {
-                CheckedFuture<ASTSchemaSource, SchemaSourceException> aSTSchemaSource = Futures
-                        .immediateCheckedFuture(TextToASTTransformer.transformText(yangSource));
-                SettableSchemaProvider<ASTSchemaSource> schemaProvider = SettableSchemaProvider.createImmediate
-                        (aSTSchemaSource.get(),
-                        ASTSchemaSource.class);
-                schemaProvider.setResult();
-                schemaProvider.register(repo);
-                sourceIds.add(schemaProvider.getId());
-            }
+            CheckedFuture<ASTSchemaSource, SchemaSourceException> aSTSchemaSource = Futures
+                    .immediateCheckedFuture(TextToASTTransformer.transformText(yangSource));
+            SettableSchemaProvider<ASTSchemaSource> schemaProvider = SettableSchemaProvider.createImmediate(aSTSchemaSource.get(),
+                    ASTSchemaSource.class);
+            schemaProvider.setResult();
+            schemaProvider.register(repo);
+            sourceIds.add(schemaProvider.getId());
         }
         return sourceIds;
     }
-
-    public static boolean checkForDeviations(YangTextSchemaSource yangSource,
-                                             Map<QName, Set<QName>> supportedDeviations) {
-        InputStream in = null;
-        try {
-            in = yangSource.openBufferedStream();
-            String yangInString = IOUtils.toString(in);
-            if (yangInString.contains(DEVIATION_FILTER)) {
-                String yangModuleName = yangSource.getIdentifier().getName();
-                return isDeviationSupported(yangModuleName, supportedDeviations);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error parsing files", e);
-        } finally {
-            IOUtils.closeQuietly(in);
-        }
-        return true;
-    }
-
-    private static boolean isDeviationSupported(String yangModuleName, Map<QName, Set<QName>> supportedDeviations) {
-        if (supportedDeviations != null) {
-            for (Map.Entry<QName, Set<QName>> entry : supportedDeviations.entrySet()) {
-                for (QName deviation : entry.getValue()) {
-                    if (yangModuleName.equals(deviation.getLocalName())) {
-                        return true;
-                    }
+    
+    public static SetMultimap<QNameModule, QNameModule> createDeviationSetMultimap(Map<QName, Set<QName>> input) {
+        SetMultimap<QNameModule, QNameModule> result = HashMultimap.create();
+        if (input != null) {
+            for (Entry<QName, Set<QName>> entry: input.entrySet()) {
+                QNameModule key = createQNameModule(entry.getKey());
+                for (QName value: entry.getValue()) {
+                    result.put(key, createQNameModule(value));
                 }
             }
         }
-        return false;
+        return result;
+    }
+    
+    private static QNameModule createQNameModule(QName qname) {
+        return QNameModule.create(qname.getNamespace(), qname.getRevision());
     }
 
-    private static List<YangTextSchemaSource> removeDuplicates(List<YangTextSchemaSource> inputFiles) {
+	private static List<YangTextSchemaSource> removeDuplicates(List<YangTextSchemaSource> inputFiles) {
         List<YangTextSchemaSource> result = new ArrayList<>();
         Set<SourceIdentifier> identifiers = new HashSet<>();
-        for (YangTextSchemaSource inputFile : inputFiles) {
+        for (YangTextSchemaSource inputFile: inputFiles) {
             if (identifiers.add(inputFile.getIdentifier())) {
                 result.add(inputFile);
             }
@@ -147,9 +134,8 @@ public class YangParserUtil {
     }
 
     public static Module getParsedModule(SchemaContext schemaContext, String yangModuleFileName) {
-        String fileName = FilenameUtils.getName(yangModuleFileName);
-        /* ODL Restriction: YangTextSchemaSource.identifierFromFilename cannot parse revision in file names while
-    	building SourceIdentifier
+    	String fileName = FilenameUtils.getName(yangModuleFileName);
+    	/* ODL Restriction: YangTextSchemaSource.identifierFromFilename cannot parse revision in file names while building SourceIdentifier
     	 Below is the code in YangTextSchemaSource.identifierFromFilename method:
     	 {code}
     	  checkArgument(name.endsWith(".yang"), "Filename %s does not have a .yang extension", name);
@@ -157,9 +143,9 @@ public class YangParserUtil {
           return SourceIdentifier.create(name.substring(0, name.length() - 5), Optional.<String>absent());
     	 {code}
     	 */
-        if (fileName.contains("@")) {
-            fileName = fileName.substring(0, fileName.indexOf("@")) + ".yang";
-        }
+    	if (fileName.contains("@")) {
+    		fileName = fileName.substring(0, fileName.indexOf("@")) + ".yang";
+    	}
         SourceIdentifier sourceId = YangTextSchemaSource.identifierFromFilename(fileName);
         String moduleName = sourceId.getName();
         for (Module module : schemaContext.getModules()) {
@@ -172,26 +158,34 @@ public class YangParserUtil {
     }
 
     public static YangTextSchemaSource getYangSource(URL url, InputStream in) throws IOException {
-        SourceIdentifier sourceId = YangTextSchemaSource.identifierFromFilename(FilenameUtils.getName(url.getPath()));
+        String filename = FilenameUtils.getName(url.getPath());
+        SourceIdentifier sourceId = YangTextSchemaSource.identifierFromFilename(filename);
         byte[] bytes = IOUtils.toByteArray(in);
-        return YangTextSchemaSource.delegateForByteSource(sourceId, ByteSource.wrap(bytes));
+        YangTextSchemaSource result = YangTextSchemaSource.delegateForByteSource(sourceId, ByteSource.wrap(bytes));
+        return new FileDelegateYangSource(filename, result);
     }
 
     public static YangTextSchemaSource getYangSource(URL url) {
-        SourceIdentifier sourceId = YangTextSchemaSource.identifierFromFilename(FilenameUtils.getName(url.getPath()));
-        return YangTextSchemaSource.delegateForByteSource(sourceId, Resources.asByteSource(url));
+        String filename = FilenameUtils.getName(url.getPath());
+        SourceIdentifier sourceId = YangTextSchemaSource.identifierFromFilename(filename);
+        YangTextSchemaSource result = YangTextSchemaSource.delegateForByteSource(sourceId, Resources.asByteSource(url));
+        return new FileDelegateYangSource(filename, result);
     }
 
     public static YangTextSchemaSource getYangSource(String filename) {
         return new FileYangSource(new File(filename));
     }
 
-    public static Set<ModuleImport> getAllModuleImports(Module module) {
+    public static YinTextSchemaSource getYinSource(String filename) {
+        return new FileYinSource(new File(filename));
+    }
+    
+    public static Set<ModuleImport> getAllModuleImports(Module module){
         Set<ModuleImport> imports = new HashSet<>(module.getImports());
-        for (Module subModule : module.getSubmodules()) {
+        for ( Module subModule : module.getSubmodules()){
             imports.addAll(subModule.getImports());
         }
         return imports;
-
+        
     }
 }

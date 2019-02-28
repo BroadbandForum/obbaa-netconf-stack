@@ -18,7 +18,6 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 
 import static junit.framework.TestCase.assertTrue;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.Difference;
 import org.custommonkey.xmlunit.DifferenceConstants;
@@ -29,6 +28,8 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+
 public class NetconfFilterTest {
 
     @Test
@@ -36,7 +37,7 @@ public class NetconfFilterTest {
         XMLUnit.setIgnoreAttributeOrder(true);
         XMLUnit.setNormalizeWhitespace(true);
         String filterStr = "<nc:filter xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                "    <world xmlns=\"http://test-company.test/country-universe\"/>" +
+                "    <world xmlns=\"http://test-company.test/country-universe\"/>"+
                 "    <ut:universe xmlns:ut=\"http://test-company.test/country-universe\">\n" +
                 "        <ut:name>universe 1</ut:name>\n" +
                 "        <galaxy xmlns=\"http://test-company.test/country-universe\">\n" +
@@ -46,13 +47,12 @@ public class NetconfFilterTest {
                 "        </galaxy>\n" +
                 "    </ut:universe>\n" +
                 "</nc:filter>";
-        String getStr = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\"><get>" + filterStr +
-                "</get></rpc>";
+        String getStr = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\"><get>"+filterStr+"</get></rpc>";
         Document document = DocumentUtils.stringToDocument(getStr);
         NetconfFilter filter = DocumentToPojoTransformer.getFilterFromRpcDocument(document);
         Diff diff = new Diff(filterStr, DocumentUtils.documentToPrettyString(filter.getXmlFilter()));
         ignoreTextNodes(diff);
-        assertTrue("XMLs are different :" + diff.toString(), diff.similar());
+        assertTrue("XMLs are different :"+diff.toString(), diff.similar());
     }
 
     private void ignoreTextNodes(Diff diff) {
@@ -62,21 +62,17 @@ public class NetconfFilterTest {
             public void skippedComparison(Node arg0, Node arg1) {
 
             }
-
             @Override
             public int differenceFound(Difference difference) {
                 if (DifferenceConstants.CHILD_NODELIST_SEQUENCE.equals(difference)) {
                     return RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
                 }
-                if (DifferenceConstants.NAMESPACE_PREFIX.equals(difference)) {
+                if(DifferenceConstants.NAMESPACE_PREFIX.equals(difference)){
                     return RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
                 }
-                if (difference.getTestNodeDetail().getNode().getNodeType() == Node.TEXT_NODE && difference
-                        .getTestNodeDetail().getValue().startsWith("$") && difference.getTestNodeDetail().getNode()
-                        .getParentNode().getNodeName().equalsIgnoreCase("pma:password")) {
+                if(difference.getTestNodeDetail().getNode().getNodeType() == Node.TEXT_NODE && difference.getTestNodeDetail().getValue().startsWith("$") && difference.getTestNodeDetail().getNode().getParentNode().getNodeName().equalsIgnoreCase("pma:password")) {
                     return RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
-                } else if (difference.getTestNodeDetail().getNode().getParentNode().getNodeName().equalsIgnoreCase
-                        ("pma:reachable-last-change")) {
+                } else if (difference.getTestNodeDetail().getNode().getParentNode().getNodeName().equalsIgnoreCase("pma:reachable-last-change")) {
                     return RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
                 }
                 return RETURN_ACCEPT_DIFFERENCE;

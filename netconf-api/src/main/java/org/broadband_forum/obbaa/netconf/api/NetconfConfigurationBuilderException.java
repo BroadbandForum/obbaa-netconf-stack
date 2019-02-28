@@ -18,12 +18,12 @@ package org.broadband_forum.obbaa.netconf.api;
 
 /**
  * Both netconf client and server use configuration builders to define their configuration.
- * <p>
- * This exception is thrown by the configuration builders when there is an error in the supplied netconf
- * client/server configuration. For
+ * 
+ * This exception is thrown by the configuration builders when there is an error in the supplied netconf client/server configuration. For
  * example: when the client/server has not specified a valid transport.
+ * 
  *
- * @author keshava
+ * 
  */
 public class NetconfConfigurationBuilderException extends Exception {
     private static final long serialVersionUID = 1L;
@@ -43,8 +43,7 @@ public class NetconfConfigurationBuilderException extends Exception {
         super(message, cause);
     }
 
-    public NetconfConfigurationBuilderException(String message, Throwable cause, boolean enableSuppression, boolean
-            writableStackTrace) {
+    public NetconfConfigurationBuilderException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 

@@ -18,10 +18,10 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 
 public class InsertOperation {
 
-    public static final String FIRST = "first";
-    public static final String LAST = "last";
-    public static final String BEFORE = "before";
-    public static final String AFTER = "after";
+	public static final String FIRST = "first";
+	public static final String LAST = "last";
+	public static final String BEFORE = "before";
+	public static final String AFTER = "after";
 
     private final String m_value;
     private final String m_name;
@@ -30,7 +30,7 @@ public class InsertOperation {
         this.m_name = name;
         this.m_value = value;
     }
-
+    
     public String getValue() {
         return this.m_value;
     }

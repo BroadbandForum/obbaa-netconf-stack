@@ -18,14 +18,13 @@ package org.broadband_forum.obbaa.netconf.api.transport.security;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
-
 import java.security.Provider;
 
 /**
- * A X509 KeyManagerFactory which lets the users supply an implementation of {@link KeyManager} via
- * {@link X509KeyManagerFactorySpi}.
+ * A X509 KeyManagerFactory which lets the users supply an implementation of {@link KeyManager} via {@link X509KeyManagerFactorySpi}.
+ * 
  *
- * @author keshava
+ * 
  */
 public class X509KeyManagerFactory extends KeyManagerFactory {
     private static final Provider PROVIDER = new Provider("", 0.0, "") {

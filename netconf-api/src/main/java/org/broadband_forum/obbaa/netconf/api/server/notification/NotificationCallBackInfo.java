@@ -24,6 +24,15 @@ public class NotificationCallBackInfo {
     private Set<String> m_capabilities;
     private Set<QName> m_notificationTypes;
     private NotificationCallBack m_callBack;
+    private NotificationApplicableCheck m_notificationApplicableCheck;
+    
+    public NotificationApplicableCheck getNotificationApplicableCheck() {
+		return m_notificationApplicableCheck;
+	}
+
+	public void setNotificationApplicableCheck(NotificationApplicableCheck notificationApplicableCheck) {
+		this.m_notificationApplicableCheck = notificationApplicableCheck;
+	}
 
     public Set<String> getCapabilities() {
         return m_capabilities;

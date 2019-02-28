@@ -16,32 +16,30 @@
 
 package org.broadband_forum.obbaa.netconf.api.server.notification;
 
+import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
-import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 
 /**
- * NotificationStream represents set of event notifications matching some forwarding criteria. Name of Stream is
- * available to Netconf client
+ * NotificationStream represents set of event notifications matching some forwarding criteria. Name of Stream is available to Netconf client
  * for subscription.
- * <p>
+ * 
  * <pre>
- * NotificationStream is responsible for
+ * NotificationStream is responsible for 
  * 1. Creates NotificationSession for each subscription request.
- * 2. when subscription stopTime expires, send notificationComplete and dispose NotificationSession
+ * 2. when subscription stopTime expires, send notificationComplete and dispose NotificationSession  
  * 3. Retrieving logged notification and initiate replay on NotificationSession
  * 4. Broadcasting the notification to all NotificationSession that are matching the subscription filter.
  * </pre>
- * <p>
+ * 
  * Created by pregunat on 1/22/16.
  */
 public interface NotificationStream {
 
     boolean isActiveSubscription(NetconfClientInfo clientInfo);
 
-    void createSubscription(NetconfClientInfo clientInfo, CreateSubscriptionRequest request, ResponseChannel
-            responseChannel);
+    void createSubscription(NetconfClientInfo clientInfo, CreateSubscriptionRequest request, ResponseChannel responseChannel);
 
     void broadcastNotification(Notification notification);
 

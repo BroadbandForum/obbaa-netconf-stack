@@ -143,9 +143,9 @@ public class LoggingServerMessageListener implements NetconfServerMessageListene
 
     }
 
-    @Override
-    public void onAction(NetconfClientInfo info, ActionRequest req, ActionResponse resp) {
+	@Override
+	public void onAction(NetconfClientInfo info, ActionRequest req, ActionResponse resp) {
         logRpc(info, req);
-        getDummyOkResponse(req, resp);
-    }
+        getDummyOkResponse(req, resp);		
+	}
 }

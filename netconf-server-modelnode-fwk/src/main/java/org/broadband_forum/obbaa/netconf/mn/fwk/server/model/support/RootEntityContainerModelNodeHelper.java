@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
@@ -42,8 +26,7 @@ public class RootEntityContainerModelNodeHelper extends DsmContainerModelNodeHel
      * @param schemaRegistry
      * @param modelNodeDSM
      */
-    public RootEntityContainerModelNodeHelper(ContainerSchemaNode schemaNode, ModelNodeHelperRegistry
-            modelNodeHelperRegistry,
+    public RootEntityContainerModelNodeHelper(ContainerSchemaNode schemaNode, ModelNodeHelperRegistry modelNodeHelperRegistry,
                                               SubSystemRegistry subsystemRegistry,
                                               SchemaRegistry schemaRegistry, ModelNodeDataStoreManager modelNodeDSM) {
         super(schemaNode, modelNodeDSM);
@@ -53,17 +36,16 @@ public class RootEntityContainerModelNodeHelper extends DsmContainerModelNodeHel
     }
 
     @Override
-    public ModelNode createChild(ModelNode parentNode, Map<QName, ConfigLeafAttribute> keyAttrs) {
+    public ModelNode createChild(ModelNode parentNode, Map<QName, ConfigLeafAttribute> keyAttrs){
         ModelNodeId parentId = new ModelNodeId();
-        ModelNodeWithAttributes newNode = new ModelNodeWithAttributes(m_schemaNode.getPath(), parentId,
-                m_modelNodeHelperRegistry,
+        ModelNodeWithAttributes newNode = new ModelNodeWithAttributes(m_schemaNode.getPath(), parentId, m_modelNodeHelperRegistry,
                 m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
         newNode.setAttributes(keyAttrs);
         return m_modelNodeDSM.createNode(newNode, parentId);
     }
 
     @Override
-    public void deleteChild(ModelNode parentNode) {
+    public void deleteChild(ModelNode parentNode){
         m_modelNodeDSM.removeNode(parentNode, new ModelNodeId());
     }
 }

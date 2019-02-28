@@ -1,0 +1,92 @@
+module test-module {
+  namespace "urn:test-module";
+  prefix test;
+
+  organization "test-company";
+  contact
+    "FNMS";
+  description
+    "An experimental YANG module to check whether a node has default values or not";
+
+  revision 2018-08-23 {
+    description
+      "Initial revision.";
+    reference "test-company";
+  }
+
+  container testContainer {
+
+      leaf nodeWithDefault{
+        type string;
+        default "test";
+        description "This node has default value.";
+      }
+
+      leaf nodeWithoutDefault{
+          type string;
+          config false;
+          description "This node does not have default value.";
+      }
+
+      leaf-list state-leaf-list{
+          type string;
+          config false;
+          description "This node is used to test the presence of state leaf-list node";
+      }
+
+      leaf-list config-leaf-list{
+            type string;
+            description "This node is used to test the presence of configuration leaf-list node";
+      }
+
+      list state-list{
+
+            key name;
+            config false;
+            description "This is a state attribute list node";
+
+            leaf name {
+                type string;
+                description "Leaf inside state-list node";
+            }
+      }
+
+      list config-list{
+
+          key item;
+          description "This is a configuration attribute list node";
+
+          leaf item {
+              type string;
+              description "Leaf inside state-list node";
+          }
+      }
+
+      container stateContainer{
+          config false;
+      }
+
+      container configContainer{
+
+      }
+
+      choice connection {
+          case callHome {
+                container callHomeContainer{
+
+                }
+                choice innerChoice {
+                	case innerCase{
+                		container innerContainer {
+                		}
+                	}
+                }
+          }
+          case direct {
+                container directContainer{
+                    config false;
+                }
+          }
+      }
+  }
+}

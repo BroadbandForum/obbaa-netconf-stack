@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -32,8 +33,7 @@ public class NetconfCapabilityTest {
 
     @Test
     public void testInstance() {
-        String capStr1 = "urn:ietf:params:xml:ns:netmod:notification?module=nc-notifications&revision=2008-07-14" +
-                "&features=replay-is-supported";
+        String capStr1 = "urn:ietf:params:xml:ns:netmod:notification?module=nc-notifications&revision=2008-07-14&features=replay-is-supported";
         NetconfCapability netconfCap1 = new NetconfCapability(capStr1);
 
         String expectedUri1 = "urn:ietf:params:xml:ns:netmod:notification";
@@ -66,16 +66,14 @@ public class NetconfCapabilityTest {
 
         String features = "entity-state,entity-sensor";
         NetconfCapability netconfCap4 = new NetconfCapability(uri, module, revison, features, null);
-        String expectedUri4 = "urn:ietf:params:xml:ns:netmod:notification?module=nc-notifications&revision=2008-07-14" +
-                "&features=entity-state,entity-sensor";
+        String expectedUri4 = "urn:ietf:params:xml:ns:netmod:notification?module=nc-notifications&revision=2008-07-14&features=entity-state,entity-sensor";
         assertEquals(expectedUri4, netconfCap4.toString());
 
         String deviations = "test-ietf-interfaces-dev";
         uri = "urn:ietf:params:xml:ns:yang:ietf-interfaces";
         module = "ietf-interfaces";
         NetconfCapability netconfCap5 = new NetconfCapability(uri, module, revison, null, deviations);
-        String expectedUri5 = "urn:ietf:params:xml:ns:yang:ietf-interfaces?module=ietf-interfaces&revision=2008-07-14" +
-                "&deviations=test-ietf-interfaces-dev";
+        String expectedUri5 = "urn:ietf:params:xml:ns:yang:ietf-interfaces?module=ietf-interfaces&revision=2008-07-14&deviations=test-ietf-interfaces-dev";
         assertEquals(expectedUri5, netconfCap5.toString());
 
         capStr1 = "urn:ietf:params:xml:ns:netmod:notification";
@@ -83,5 +81,28 @@ public class NetconfCapabilityTest {
 
         assertEquals(Collections.emptyMap(), netconfCap1.getParameters());
         assertNull(netconfCap1.getParameter("revision"));
+
+        capStr1 = "urn:ietf:params:xml:ns:netmod:notification?module=nc-notifications&revision=2008-07-14&features=";
+        netconfCap1 = new NetconfCapability(capStr1);
+
+        expectedUri1 = "urn:ietf:params:xml:ns:netmod:notification";
+        assertEquals(expectedUri1, netconfCap1.getUri());
+        expectedParam1 = new HashMap<>();
+        expectedParam1.put("module", "nc-notifications");
+        expectedParam1.put("revision", "2008-07-14");
+        expectedParam1.put("features", "");
+        assertEquals(expectedParam1, netconfCap1.getParameters());
+
+        assertEquals("2008-07-14", netconfCap1.getParameter("revision"));
+        assertEquals("", netconfCap1.getParameter("features"));
+        assertEquals("nc-notifications", netconfCap1.getParameter("module"));
     }
+
+    @Test
+    public void testWhetherThecapabilitiesAreIdentical() {
+        NetconfCapability cap1 = new NetconfCapability("urn:ietf:params:xml:ns:yang:ietf-interfaces?module=ietf-interfaces&revision=2014-05-08&features=arbitrary-names,if-mib,pre-provisioning&deviations=test1,test-ietf-interfaces-dev");
+        NetconfCapability cap2 = new NetconfCapability("urn:ietf:params:xml:ns:yang:ietf-interfaces?module=ietf-interfaces&revision=2014-05-08&features=arbitrary-names,pre-provisioning,if-mib&deviations=test-ietf-interfaces-dev,test1");
+        assertTrue(cap1.identical(cap2));
+    }
+
 }

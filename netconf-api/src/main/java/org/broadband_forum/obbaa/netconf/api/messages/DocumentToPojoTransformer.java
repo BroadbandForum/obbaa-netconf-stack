@@ -35,7 +35,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
@@ -46,23 +46,25 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 /**
  * A utility class to transform a netconf {@link Document} to a netconf message.
  *
- * @author keshava
+ *
  */
 public class DocumentToPojoTransformer {
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(DocumentToPojoTransformer.class, LogAppNames.NETCONF_LIB);
     static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
     static final String LF = "\n";
     static final String HASH = "#";
-    static final int MAX_CHUNK_SIZE = Integer.MAX_VALUE;// FIXME: FNMS-6877 this is no good, RFC 6242 says max chunk
-    // size can be as long as
+    static final int MAX_CHUNK_SIZE = Integer.MAX_VALUE;// FIXME: FNMS-6877 this is no good, RFC 6242 says max chunk size can be as long as
     // 4294967295,
     // but this would mean we cannot use String, need to revisit this.
     static final Pattern CHUNK_SIZE_PATTERN = Pattern.compile("\n#[0-9]+\n");
-    static final Pattern EOM_CHUNK_PATTERN = Pattern.compile("\n##\n");
+    static final String EOM_CHUNK = "\n##\n";
     static final Pattern CHUNK_SIZE_HASH = Pattern.compile("#");
-    static final Logger logger = Logger.getLogger(DocumentToPojoTransformer.class);
     private static final String EMPTY_STR = "";
 
     public static CloseSessionRequest getCloseSession(Document request) {
@@ -85,44 +87,53 @@ public class DocumentToPojoTransformer {
                     + "\" is not valid. Expected length is [0...255].");
         }
     }
+    
+    private static int getDepthFromNode(Node depthNode) throws NetconfMessageBuilderException {
+        String depthOption = depthNode.getTextContent();
+        try {
+            int delay = Integer.valueOf(depthOption);
+            if (delay < 1 || delay > 65535) {
+                throw new NetconfMessageBuilderException("The value of depth \"" + depthOption
+                        + "\" is not valid. Expected length is [1...65535].");
+            }
+            return delay;
+        } catch (NumberFormatException e) {
+            throw new NetconfMessageBuilderException("The value of depth \"" + depthOption
+                    + "\" is not valid. Expected length is [1...65535].");
+        }
+    }
 
     public static EditConfigRequest getEditConfig(Document request) throws NetconfMessageBuilderException {
         EditConfigRequest editConfigRequest = new EditConfigRequest();
         DocumentUtils docUtils = DocumentUtils.getInstance();
         editConfigRequest.setMessageId(docUtils.getMessageIdFromRpcDocument(request));
         Element rpcNode = request.getDocumentElement();
-        Node defaultOp = docUtils.getChildNodeByName(rpcNode, NetconfResources.DEFAULT_OPERATION, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node defaultOp = docUtils.getChildNodeByName(rpcNode, NetconfResources.DEFAULT_OPERATION, NetconfResources.NETCONF_RPC_NS_1_0);
         if (defaultOp != null) {
             editConfigRequest.setDefaultOperation(defaultOp.getTextContent());
         }
-        Node errorOption = docUtils.getChildNodeByName(rpcNode, NetconfResources.ERROR_OPTION, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node errorOption = docUtils.getChildNodeByName(rpcNode, NetconfResources.ERROR_OPTION, NetconfResources.NETCONF_RPC_NS_1_0);
         if (errorOption != null) {
             editConfigRequest.setErrorOption(errorOption.getTextContent());
         }
-        Node testOption = docUtils.getChildNodeByName(rpcNode, NetconfResources.TEST_OPTION, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node testOption = docUtils.getChildNodeByName(rpcNode, NetconfResources.TEST_OPTION, NetconfResources.NETCONF_RPC_NS_1_0);
         if (testOption != null) {
             editConfigRequest.setTestOption(testOption.getTextContent());
         }
 
-        Node withDelayOption = DocumentUtils.getChildNodeByName(rpcNode, NetconfResources.WITH_DELAY,
-                NetconfResources.WITH_DELAY_NS);
+        Node withDelayOption = DocumentUtils.getChildNodeByName(rpcNode, NetconfResources.WITH_DELAY, NetconfResources.WITH_DELAY_NS);
         if (withDelayOption != null) {
             editConfigRequest.setWithDelay(getWithDelayFromNode(withDelayOption));
         }
 
-        Node target = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_TARGET, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node target = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_TARGET, NetconfResources.NETCONF_RPC_NS_1_0);
         if (target == null) {
             throw new NetconfMessageBuilderException("<target> cannot be null/empty");
         }
         String tar = docUtils.getFirstElementChildNode(target).getLocalName();
         editConfigRequest.setTarget(tar);
 
-        Node config = docUtils.getChildNodeByName(rpcNode, NetconfResources.EDIT_CONFIG_CONFIG, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node config = docUtils.getChildNodeByName(rpcNode, NetconfResources.EDIT_CONFIG_CONFIG, NetconfResources.NETCONF_RPC_NS_1_0);
         if (config == null) {
             throw new NetconfMessageBuilderException("<config> cannot be null/empty");
         }
@@ -151,15 +162,13 @@ public class DocumentToPojoTransformer {
 
         axsCopyConfigRequest.setMessageId(docUtils.getMessageIdFromRpcDocument(document));
         Node rpcNode = docUtils.getChildNodeByName(document, NetconfResources.RPC, NetconfResources.NETCONF_RPC_NS_1_0);
-        Node source = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_SOURCE, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node source = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_SOURCE, NetconfResources.NETCONF_RPC_NS_1_0);
         if (source == null) {
             throw new NetconfMessageBuilderException("<source> cannot be null/empty");
         }
         boolean sourceIsUrl = true;
         String src = EMPTY_STR;
-        Node srcUrlNode = docUtils.getChildNodeByName(source, NetconfResources.URL, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node srcUrlNode = docUtils.getChildNodeByName(source, NetconfResources.URL, NetconfResources.NETCONF_RPC_NS_1_0);
         if (srcUrlNode == null) {
             sourceIsUrl = false;
             Node sourceStore = docUtils.getFirstElementChildNode(source);
@@ -167,8 +176,7 @@ public class DocumentToPojoTransformer {
                 throw new NetconfMessageBuilderException("<source> cannot be null/empty");
             }
             if (NetconfResources.COPY_CONFIG_SRC_CONFIG.equals(sourceStore.getNodeName())) {
-                axsCopyConfigRequest.setSourceConfigElement(docUtils.getElementByName(document, NetconfResources
-                        .COPY_CONFIG_SRC_CONFIG));
+                axsCopyConfigRequest.setSourceConfigElement(docUtils.getElementByName(document, NetconfResources.COPY_CONFIG_SRC_CONFIG));
             } else {
                 src = sourceStore.getLocalName();
             }
@@ -180,15 +188,13 @@ public class DocumentToPojoTransformer {
         }
         axsCopyConfigRequest.setSource(src, sourceIsUrl);
 
-        Node target = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_TARGET, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node target = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_TARGET, NetconfResources.NETCONF_RPC_NS_1_0);
         if (target == null) {
             throw new NetconfMessageBuilderException("<target> cannot be null/empty");
         }
         boolean targetIsUrl = true;
         String tar = EMPTY_STR;
-        Node tarUrlNode = docUtils.getChildNodeByName(target, NetconfResources.URL, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node tarUrlNode = docUtils.getChildNodeByName(target, NetconfResources.URL, NetconfResources.NETCONF_RPC_NS_1_0);
         if (tarUrlNode == null) {
             targetIsUrl = false;
             Node targetStore = docUtils.getFirstElementChildNode(target);
@@ -214,41 +220,47 @@ public class DocumentToPojoTransformer {
         getRequest.setMessageId(docUtils.getMessageIdFromRpcDocument(document));
         getRequest.setFilter(getFilterFromRpcDocument(document));
 
-        Node withDelayOption = DocumentUtils.getChildNodeByName(document.getDocumentElement(), NetconfResources
-                        .WITH_DELAY,
+        Node withDelayOption = DocumentUtils.getChildNodeByName(document.getDocumentElement(), NetconfResources.WITH_DELAY,
                 NetconfResources.WITH_DELAY_NS);
         if (withDelayOption != null) {
             getRequest.setWithDelay(getWithDelayFromNode(withDelayOption));
         }
+        
+        Node depthElement = DocumentUtils.getChildNodeByName(document.getDocumentElement(), NetconfResources.DEPTH,
+                NetconfResources.EXTENSION_NS);
+        if (depthElement != null) {
+            getRequest.setDepth(getDepthFromNode(depthElement));
+        
+        }
+        
         return getRequest;
     }
 
     public static ActionRequest getAction(Document request) throws NetconfMessageBuilderException {
-        ActionRequest actionRequest = new ActionRequest();
+    	ActionRequest actionRequest = new ActionRequest();
         DocumentUtils docUtils = DocumentUtils.getInstance();
-
+        
         Node rpcNode = docUtils.getChildNodeByName(request, NetconfResources.ACTION, NetconfResources.NETCONF_YANG_1);
         if (rpcNode == null) {
             throw new NetconfMessageBuilderException("<action> cannot be null");
-        }
+        }  
         Element actionTreeElement = docUtils.getFirstElementChildNode(rpcNode);
 
         if (actionTreeElement == null) {
             throw new NetconfMessageBuilderException("action tree element cannot be null");
-        }
+        }        
         actionRequest.setMessageId(docUtils.getMessageIdFromRpcDocument(request));
         actionRequest.setActionTreeElement(actionTreeElement);
-        return actionRequest;
+        return actionRequest;        
     }
-
+    
     public static DeleteConfigRequest getDeleteConfig(Document document) throws NetconfMessageBuilderException {
         DeleteConfigRequest deleteConfigRequest = new DeleteConfigRequest();
         DocumentUtils docUtils = DocumentUtils.getInstance();
 
         deleteConfigRequest.setMessageId(docUtils.getMessageIdFromRpcDocument(document));
         Node rpcNode = docUtils.getChildNodeByName(document, NetconfResources.RPC, NetconfResources.NETCONF_RPC_NS_1_0);
-        Node target = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_TARGET, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node target = docUtils.getChildNodeByName(rpcNode, NetconfResources.DATA_TARGET, NetconfResources.NETCONF_RPC_NS_1_0);
         if (target == null) {
             throw new NetconfMessageBuilderException("<target> cannot be null/empty");
         }
@@ -266,11 +278,17 @@ public class DocumentToPojoTransformer {
         getConfigRequest.setSource(docUtils.getSourceFromRpcDocument(request));
         getConfigRequest.setFilter(getFilterFromRpcDocument(request));
 
-        Node withDelayOption = DocumentUtils.getChildNodeByName(request.getDocumentElement(), NetconfResources
-                        .WITH_DELAY,
+        Node withDelayOption = DocumentUtils.getChildNodeByName(request.getDocumentElement(), NetconfResources.WITH_DELAY,
                 NetconfResources.WITH_DELAY_NS);
         if (withDelayOption != null) {
             getConfigRequest.setWithDelay(getWithDelayFromNode(withDelayOption));
+        }
+        
+        Node depthElement = DocumentUtils.getChildNodeByName(request.getDocumentElement(), NetconfResources.DEPTH,
+                NetconfResources.EXTENSION_NS);
+        if (depthElement != null) {
+            getConfigRequest.setDepth(getDepthFromNode(depthElement));
+        
         }
 
         return getConfigRequest;
@@ -292,8 +310,7 @@ public class DocumentToPojoTransformer {
         return rpcRequest;
     }
 
-    public static CreateSubscriptionRequest getCreateSubscriptionRequest(Document request) throws
-            NetconfMessageBuilderException {
+    public static CreateSubscriptionRequest getCreateSubscriptionRequest(Document request) throws NetconfMessageBuilderException {
         DocumentUtils docUtils = DocumentUtils.getInstance();
 
         NetconfRpcRequest netconfRpcRequest = new NetconfRpcRequest();
@@ -311,7 +328,7 @@ public class DocumentToPojoTransformer {
         try {
             return docUtils.getSubscriptionRequest(netconfRpcRequest);
         } catch (DOMException | ParseException e) {
-            logger.error("Error while parsing date", e);
+            LOGGER.error("Error while parsing date", e);
         }
         return null;
     }
@@ -332,8 +349,7 @@ public class DocumentToPojoTransformer {
     public static NetconfFilter getFilterFromRpcDocument(Document request) {
         NetconfFilter getConfigFilter = null;
         DocumentUtils docUtils = DocumentUtils.getInstance();
-        Node filterNode = docUtils.getChildNodeByName(request, NetconfResources.FILTER, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node filterNode = docUtils.getChildNodeByName(request, NetconfResources.FILTER, NetconfResources.NETCONF_RPC_NS_1_0);
         if (filterNode != null) {
             getConfigFilter = new NetconfFilter();
             getConfigFilter.setType(docUtils.getAttributeValueOrNull(filterNode, NetconfResources.TYPE));
@@ -344,8 +360,7 @@ public class DocumentToPojoTransformer {
 
     public static NetconfHelloMessage getHelloMessage(Document responseDoc) {
         Integer sessionIdFromHelloMessage = DocumentUtils.getInstance().getSessionIdFromHelloMessage(responseDoc);
-        NetconfHelloMessage hello = new NetconfHelloMessage().setCapabilities(DocumentUtils.getInstance()
-                .getCapsFromHelloMessage(
+        NetconfHelloMessage hello = new NetconfHelloMessage().setCapabilities(DocumentUtils.getInstance().getCapsFromHelloMessage(
                 responseDoc));
         if (sessionIdFromHelloMessage != null) {
             hello.setSessionId(sessionIdFromHelloMessage);
@@ -355,31 +370,28 @@ public class DocumentToPojoTransformer {
     }
 
     public static NetConfResponse getNetconfResponse(Document responseDoc) {
-        List<Element> outputElements = DocumentUtils.getInstance().getDataElementsFromRpcReply(responseDoc);
-        if (outputElements != null && outputElements.size() > 1) {
-            NetconfRpcResponse response = new NetconfRpcResponse();
-            ((NetConfResponse) response)
-                    .setMessageId(DocumentUtils.getInstance().getMessageIdFromRpcReplyDocument(responseDoc))
-                    .addErrors(getRpcErrorsFromRpcReply(responseDoc))
-                    .setOk(DocumentUtils.getInstance().documentContainsElementWithName(responseDoc, NetconfResources
-                            .OK));
-            for (Element element : outputElements) {
-                response.addRpcOutputElement(element);
-            }
-            return response;
-        } else if (outputElements != null && !outputElements.isEmpty()) {
-            return new NetConfResponse().setData(outputElements.get(0))
-                    .setMessageId(DocumentUtils.getInstance().getMessageIdFromRpcReplyDocument(responseDoc))
-                    .addErrors(getRpcErrorsFromRpcReply(responseDoc))
-                    .setOk(DocumentUtils.getInstance().documentContainsElementWithName(responseDoc, NetconfResources
-                            .OK));
-        } else {
-            return new NetConfResponse().setData(null)
-                    .setMessageId(DocumentUtils.getInstance().getMessageIdFromRpcReplyDocument(responseDoc))
-                    .addErrors(getRpcErrorsFromRpcReply(responseDoc))
-                    .setOk(DocumentUtils.getInstance().documentContainsElementWithName(responseDoc, NetconfResources
-                            .OK));
-        }
+    	List<Element> outputElements = DocumentUtils.getInstance().getDataElementsFromRpcReply(responseDoc);
+    	if (outputElements != null && outputElements.size() > 1){
+    		NetconfRpcResponse response =  new NetconfRpcResponse();
+    		((NetConfResponse)response)
+    					.setMessageId(DocumentUtils.getInstance().getMessageIdFromRpcReplyDocument(responseDoc))
+    					.addErrors(getRpcErrorsFromRpcReply(responseDoc))
+    					.setOk(DocumentUtils.getInstance().documentContainsElementWithName(responseDoc, NetconfResources.OK));
+    		for (Element element:outputElements){
+    			response.addRpcOutputElement(element);
+    		}
+    		return response;
+    	} else if (outputElements != null && !outputElements.isEmpty()) {
+    		return new NetConfResponse().setData(outputElements.get(0))
+    				.setMessageId(DocumentUtils.getInstance().getMessageIdFromRpcReplyDocument(responseDoc))
+    				.addErrors(getRpcErrorsFromRpcReply(responseDoc))
+    				.setOk(DocumentUtils.getInstance().documentContainsElementWithName(responseDoc, NetconfResources.OK));
+    	} else {
+    		return new NetConfResponse().setData(null)
+    				.setMessageId(DocumentUtils.getInstance().getMessageIdFromRpcReplyDocument(responseDoc))
+    				.addErrors(getRpcErrorsFromRpcReply(responseDoc))
+    				.setOk(DocumentUtils.getInstance().documentContainsElementWithName(responseDoc, NetconfResources.OK));
+    	}
 
     }
 
@@ -390,24 +402,18 @@ public class DocumentToPojoTransformer {
             for (int i = 0; i < errorNodeList.size(); i++) {
                 Node error = errorNodeList.get(i);
                 DocumentUtils docUtils = DocumentUtils.getInstance();
-                NetconfRpcErrorTag errorTag = NetconfRpcErrorTag.getType(docUtils.getNodeValueOrNull(docUtils
-                        .getChildNodeByName(error,
+                NetconfRpcErrorTag errorTag = NetconfRpcErrorTag.getType(docUtils.getNodeValueOrNull(docUtils.getChildNodeByName(error,
                         NetconfResources.RPC_ERROR_TAG)));
-                NetconfRpcErrorType errorType = NetconfRpcErrorType.getType(docUtils.getNodeValueOrNull(docUtils
-                        .getChildNodeByName(error,
+                NetconfRpcErrorType errorType = NetconfRpcErrorType.getType(docUtils.getNodeValueOrNull(docUtils.getChildNodeByName(error,
                         NetconfResources.RPC_ERROR_TYPE)));
-                NetconfRpcErrorSeverity errorSeverity = NetconfRpcErrorSeverity.getType(docUtils.getNodeValueOrNull
-                        (docUtils
+                NetconfRpcErrorSeverity errorSeverity = NetconfRpcErrorSeverity.getType(docUtils.getNodeValueOrNull(docUtils
                         .getChildNodeByName(error, NetconfResources.RPC_ERROR_SEVERITY)));
-                String errorMessage = docUtils.getNodeValueOrNull(docUtils.getChildNodeByName(error, NetconfResources
-                        .RPC_ERROR_MESSAGE));
+                String errorMessage = docUtils.getNodeValueOrNull(docUtils.getChildNodeByName(error, NetconfResources.RPC_ERROR_MESSAGE));
 
                 NetconfRpcError rpcError = new NetconfRpcError(errorTag, errorType, errorSeverity, errorMessage)
-                        .setErrorAppTag(docUtils.getNodeValueOrNull(docUtils.getChildNodeByName(error,
-                                NetconfResources.RPC_ERROR_APP_TAG)))
+                        .setErrorAppTag(docUtils.getNodeValueOrNull(docUtils.getChildNodeByName(error, NetconfResources.RPC_ERROR_APP_TAG)))
                         .setErrorInfo((Element) docUtils.getChildNodeByName(error, NetconfResources.RPC_ERROR_INFO))
-                        .setErrorPathElement((Element) docUtils.getChildNodeByName(error, NetconfResources
-                                .RPC_ERROR_PATH));
+                        .setErrorPathElement((Element)docUtils.getChildNodeByName(error, NetconfResources.RPC_ERROR_PATH));
 
                 rpcErrors.add(rpcError);
             }
@@ -438,9 +444,9 @@ public class DocumentToPojoTransformer {
         } else if (isStateChangeNotification(notificationDoc)) {
             notification = handleStateChangeNotification(notificationDoc, notification);
         } else if (isReplayCompleteNotification(notificationDoc)) {
-            notification = handleReplayCompleteNotification(notificationDoc, notification);
+            notification = new NetconfNotification(notificationDoc);
         } else if (isNotificationCompleteNotification(notificationDoc)) {
-            notification = handleNotificationCompleteNotification(notificationDoc, notification);
+            notification = new NetconfNotification(notificationDoc);
         } else {
             notification = new NetconfNotification(notificationDoc);
         }
@@ -453,7 +459,7 @@ public class DocumentToPojoTransformer {
             Document doc = DocumentUtils.stringToDocument(xmlContent);
             notification = getNotification(doc);
         } catch (NetconfMessageBuilderException e) {
-            logger.error("Cannot convert xml content to Notification", e);
+            LOGGER.error("Cannot convert xml content to Notification", e);
         }
         return notification;
     }
@@ -488,16 +494,14 @@ public class DocumentToPojoTransformer {
 
     private static boolean isNotificationCompleteNotification(Document notificationDoc) {
         Element element = notificationDoc.getDocumentElement();
-        Element notificationCompleteElement = DocumentUtils.getChildElement(element, NetconfResources
-                .NOTIFICATION_COMPLETE);
+        Element notificationCompleteElement = DocumentUtils.getChildElement(element, NetconfResources.NOTIFICATION_COMPLETE);
         if (notificationCompleteElement != null) {
             return true;
         }
         return false;
     }
 
-    private static NetconfNotification handleStateChangeNotification(Document notificationDoc, NetconfNotification
-            notification) throws
+    private static NetconfNotification handleStateChangeNotification(Document notificationDoc, NetconfNotification notification) throws
             NetconfMessageBuilderException {
         Element element = notificationDoc.getDocumentElement();
         String target = getTargetFromNotification(element);
@@ -507,24 +511,8 @@ public class DocumentToPojoTransformer {
         return stateChangeNotification;
     }
 
-    private static NetconfNotification handleReplayCompleteNotification(Document notificationDoc, NetconfNotification
-            notification)
-            throws NetconfMessageBuilderException {
-        ReplayComplete replayComplete = new ReplayComplete();
-        replayComplete.setEventTime(notification.getEventTime());
-        return replayComplete;
-    }
 
-    private static NetconfNotification handleNotificationCompleteNotification(Document notificationDoc,
-                                                                              NetconfNotification notification)
-            throws NetconfMessageBuilderException {
-        NotificationComplete notificationComplete = new NotificationComplete();
-        notificationComplete.setEventTime(notification.getEventTime());
-        return notificationComplete;
-    }
-
-    private static NetconfNotification handleConfigChangeNotification(Document notificationDoc, NetconfNotification
-            notification) throws
+    private static NetconfNotification handleConfigChangeNotification(Document notificationDoc, NetconfNotification notification) throws
             NetconfMessageBuilderException {
         String datastore = DocumentUtils.getInstance().getDataStoreFromNotification(notificationDoc);
         List<EditInfo> editInfoList = getEditInfoListFromNotification(notificationDoc);
@@ -534,8 +522,7 @@ public class DocumentToPojoTransformer {
         configChangeNotification.setDataStore(datastore);
         configChangeNotification.setEditList(editInfoList);
         configChangeNotification.setChangedByParams(changedByParam);
-        configChangeNotification.setNotificationElement(configChangeNotification
-                .getNetconfConfigChangeNotificationElement());
+        configChangeNotification.setNotificationElement(configChangeNotification.getNetconfConfigChangeNotificationElement());
         return configChangeNotification;
     }
 
@@ -543,8 +530,7 @@ public class DocumentToPojoTransformer {
         LockRequest axsLockRequest = new LockRequest();
         DocumentUtils docUtils = DocumentUtils.getInstance();
         axsLockRequest.setMessageId(docUtils.getMessageIdFromRpcDocument(request));
-        Node target = docUtils.getChildNodeByName(request.getDocumentElement(), NetconfResources.DATA_TARGET,
-                NetconfResources
+        Node target = docUtils.getChildNodeByName(request.getDocumentElement(), NetconfResources.DATA_TARGET, NetconfResources
                 .NETCONF_RPC_NS_1_0);
         if (target == null) {
             throw new NetconfMessageBuilderException("<target> cannot be null/empty");
@@ -557,8 +543,7 @@ public class DocumentToPojoTransformer {
         UnLockRequest unLockRequest = new UnLockRequest();
         DocumentUtils docUtils = DocumentUtils.getInstance();
         unLockRequest.setMessageId(docUtils.getMessageIdFromRpcDocument(request));
-        Node target = docUtils.getChildNodeByName(request.getDocumentElement(), NetconfResources.DATA_TARGET,
-                NetconfResources
+        Node target = docUtils.getChildNodeByName(request.getDocumentElement(), NetconfResources.DATA_TARGET, NetconfResources
                 .NETCONF_RPC_NS_1_0);
         if (target == null) {
             throw new NetconfMessageBuilderException("<target> cannot be null/empty");
@@ -569,25 +554,20 @@ public class DocumentToPojoTransformer {
 
     public static String processChunkedMessage(final String msg) throws NetconfMessageBuilderException {
         try {
+            LOGGER.trace("Processing the chunked message: {}", LOGGER.sensitiveData(msg));
             String tempReply = new String(msg);
-            if (!EOM_CHUNK_PATTERN.matcher(tempReply).find()) {
-                throw new NetconfMessageBuilderException("the reply does not contain end-of-chunks delimiter" +
-                        tempReply);
+            if (!msg.endsWith(EOM_CHUNK)) {
+                throw new NetconfMessageBuilderException("the reply does not contain end-of-chunks delimiter" + tempReply);
             }
-            tempReply = EOM_CHUNK_PATTERN.matcher(tempReply).replaceAll(EMPTY_STR);
 
             Matcher chunkSizeMatcher = CHUNK_SIZE_PATTERN.matcher(tempReply);
-            Matcher chunkSizeMatcher2 = CHUNK_SIZE_PATTERN.matcher(tempReply);
             List<String> chunks = new ArrayList<String>();
 
             while (chunkSizeMatcher.find()) {
                 String chunkSizeStr = tempReply.substring(chunkSizeMatcher.start(), chunkSizeMatcher.end());
                 int chunkSize = Integer.valueOf(CHUNK_SIZE_HASH.matcher(chunkSizeStr).replaceAll(EMPTY_STR).trim());
                 int startIndex = chunkSizeMatcher.end();
-                int endIndex = tempReply.length();
-                if (chunkSizeMatcher2.find(startIndex)) {
-                    endIndex = chunkSizeMatcher2.start();
-                }
+                int endIndex = chunkSize + startIndex;
                 String chunk = DocumentToPojoTransformer.getChunk(tempReply, startIndex, endIndex);
                 if (chunkSize != chunk.length()) {
                     throw new NetconfMessageBuilderException("Invalid chunk/chunkSize for message" + tempReply);
@@ -598,14 +578,16 @@ public class DocumentToPojoTransformer {
             for (String chunk : chunks) {
                 sb.append(chunk);
             }
-
-            return sb.toString().trim();
+            String trimMsg = sb.toString().trim();
+            LOGGER.trace("After Processing the chunked messages , output message : {}", LOGGER.sensitiveData(trimMsg));
+            return trimMsg;
         } catch (Exception e) {
             throw new NetconfMessageBuilderException("Error while creating message from chunks ", e);
         }
     }
 
     public static String chunkMessage(int chunkSize, final String message) throws NetconfMessageBuilderException {
+        LOGGER.trace("chunking the incoming message : {} with chunk size : {}", LOGGER.sensitiveData(message), chunkSize);
         StringBuilder chunkBuilder = new StringBuilder();
 
         if (message.length() > chunkSize) {
@@ -614,8 +596,7 @@ public class DocumentToPojoTransformer {
             int currentChunkSize = chunkSize;
 
             while (true) {
-                chunkBuilder.append(LF).append(HASH).append(currentChunkSize).append(LF); // chunk = LF HASH
-                // chunk-size LF
+                chunkBuilder.append(LF).append(HASH).append(currentChunkSize).append(LF); // chunk = LF HASH chunk-size LF
                 chunkBuilder.append(message.substring(startIndex, endIndex));
                 if (endIndex == message.length()) {
                     break;
@@ -633,7 +614,9 @@ public class DocumentToPojoTransformer {
                     .append(message);
         }
         chunkBuilder.append(LF).append(HASH).append(HASH).append(LF); // end-of-chunks = LF HASH HASH LF
-        return chunkBuilder.toString();
+        String chunkedStr = chunkBuilder.toString();
+        LOGGER.trace("Chunked message : {} with chunk size : {}", LOGGER.sensitiveData(chunkedStr), chunkSize);
+        return chunkedStr;
     }
 
     public static byte[] addRpcDelimiter(byte[] bytes) {
@@ -669,8 +652,7 @@ public class DocumentToPojoTransformer {
     }
 
     public static String getTypeOfNetconfRequest(Document request) {
-        Node childNodeByName = DocumentUtils.getInstance().getChildNodeByName(request, NetconfResources.RPC,
-                NetconfResources
+        Node childNodeByName = DocumentUtils.getInstance().getChildNodeByName(request, NetconfResources.RPC, NetconfResources
                 .NETCONF_RPC_NS_1_0);
         String requestType = NetconfResources.NONE;
         if (childNodeByName != null) {
@@ -738,7 +720,7 @@ public class DocumentToPojoTransformer {
         for (Element element : editList) {
             EditInfo editInfo = new EditInfo();
 
-            if (isImpliedEdit(element)) {
+            if(isImpliedEdit(element)){
                 editInfo.setImplied(true);
             }
 
@@ -774,14 +756,12 @@ public class DocumentToPojoTransformer {
     }
 
     private static List<ChangedLeafInfo> getChangedLeafInfoFromNotification(Element editElement) {
-        Collection<Element> changedLeafElements = DocumentUtils.getChildElements(editElement, NetconfResources
-                .CHANGED_LEAF);
+        Collection<Element> changedLeafElements = DocumentUtils.getChildElements(editElement, NetconfResources.CHANGED_LEAF);
         if (!changedLeafElements.isEmpty()) {
             List<ChangedLeafInfo> changedLeafInfos = new ArrayList<>();
             for (Element e : changedLeafElements) {
                 Element leafElements = DocumentUtils.getChildElement(e);
-                ChangedLeafInfo changedLeafInfo = new ChangedLeafInfo(leafElements.getLocalName(), leafElements
-                        .getTextContent(),
+                ChangedLeafInfo changedLeafInfo = new ChangedLeafInfo(leafElements.getLocalName(), leafElements.getTextContent(),
                         leafElements.getNamespaceURI(), leafElements.getPrefix());
                 changedLeafInfos.add(changedLeafInfo);
             }

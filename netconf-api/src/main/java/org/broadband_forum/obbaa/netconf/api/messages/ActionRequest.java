@@ -16,45 +16,46 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+
 public class ActionRequest extends AbstractNetconfRequest {
     private Element m_actionTreeElement;
     private SchemaPath m_actionTargetpath;
     private QName m_actionQName;
+    
+	public QName getActionQName() {
+		return m_actionQName;
+	}
 
-    public QName getActionQName() {
-        return m_actionQName;
-    }
+	public void setActionQName(QName actionQName) {
+		this.m_actionQName = actionQName;
+	}
 
-    public void setActionQName(QName actionQName) {
-        this.m_actionQName = actionQName;
-    }
+	public Element getActionTreeElement() {
+		return m_actionTreeElement;
+	}
 
-    public Element getActionTreeElement() {
-        return m_actionTreeElement;
-    }
+	public void setActionTreeElement(Element actionTreeElement) {
+		this.m_actionTreeElement = actionTreeElement;
+	}
 
-    public void setActionTreeElement(Element actionTreeElement) {
-        this.m_actionTreeElement = actionTreeElement;
-    }
+	public SchemaPath getActionTargetpath() {
+		return m_actionTargetpath;
+	}
 
-    public SchemaPath getActionTargetpath() {
-        return m_actionTargetpath;
-    }
-
-    public void setActionTargetpath(SchemaPath actionTargetpath) {
-        this.m_actionTargetpath = actionTargetpath;
-    }
-
-    @Override
-    public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
+	public void setActionTargetpath(SchemaPath actionTargetpath) {
+		this.m_actionTargetpath = actionTargetpath;
+	}
+	
+	@Override
+	public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
         Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addActionElement(m_actionTreeElement).build();
         return doc;
-    }
+	}
 
 }

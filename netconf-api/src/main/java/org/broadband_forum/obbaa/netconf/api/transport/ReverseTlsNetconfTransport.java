@@ -17,30 +17,24 @@
 package org.broadband_forum.obbaa.netconf.api.transport;
 
 import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
-
 import io.netty.handler.ssl.SslProvider;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
-
 import java.io.File;
 import java.net.SocketAddress;
 
-public class ReverseTlsNetconfTransport extends AbstractTLSNetconfTransport {
+public class ReverseTlsNetconfTransport extends AbstractTLSNetconfTransport{
     private String m_callHomeIp;
     private Integer m_callHomePort;
     private CallHomeListener m_callHomeListener;
     private SocketAddress m_localAddress;
 
-    public ReverseTlsNetconfTransport(String callHomeIp, Integer callHomePort, CallHomeListener callHomeListener,
-                                      boolean selfSigned,
-                                      File trustChain, TrustManager trustManager, File certificateChain, File
-                                              privateKey, String privateKeyPassword,
-                                      KeyManager keyManager, SocketAddress localAddress, boolean
-                                              clientAuthenticationNeeded,
+    public ReverseTlsNetconfTransport(String callHomeIp, Integer callHomePort, CallHomeListener callHomeListener, boolean selfSigned,
+                                      File trustChain, TrustManager trustManager, File certificateChain, File privateKey, String privateKeyPassword,
+                                      KeyManager keyManager, SocketAddress localAddress, boolean clientAuthenticationNeeded,
                                       boolean tlsKeepAlive, SslProvider sslProvider, long tlsHandshaketimeoutMillis) {
-        super(clientAuthenticationNeeded, tlsKeepAlive, certificateChain, privateKey, trustManager,
-                privateKeyPassword, selfSigned,
+        super(clientAuthenticationNeeded, tlsKeepAlive, certificateChain, privateKey, trustManager, privateKeyPassword, selfSigned,
                 keyManager, trustChain, sslProvider, tlsHandshaketimeoutMillis);
         this.m_callHomeIp = callHomeIp;
         this.m_callHomePort = callHomePort;
@@ -67,16 +61,5 @@ public class ReverseTlsNetconfTransport extends AbstractTLSNetconfTransport {
 
     public SocketAddress getLocalAddress() {
         return m_localAddress;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("ReverseTlsNetconfTransport{");
-        sb.append("m_callHomeIp='").append(m_callHomeIp).append('\'');
-        sb.append(", m_callHomePort=").append(m_callHomePort);
-        sb.append(", m_callHomeListener=").append(m_callHomeListener);
-        sb.append(", m_localAddress=").append(m_localAddress);
-        sb.append('}');
-        return sb.toString();
     }
 }

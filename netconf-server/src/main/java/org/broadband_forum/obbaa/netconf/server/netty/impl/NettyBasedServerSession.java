@@ -17,9 +17,7 @@
 package org.broadband_forum.obbaa.netconf.server.netty.impl;
 
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
-
 import io.netty.channel.EventLoopGroup;
-
 import org.apache.log4j.Logger;
 
 public abstract class NettyBasedServerSession implements NetconfServerSession {
@@ -34,12 +32,14 @@ public abstract class NettyBasedServerSession implements NetconfServerSession {
                 // FIXME: FNMS-9948 shutting down event loop group is not the right way
                 m_bossGroup.shutdownGracefully().sync();
                 m_workerGroup.shutdownGracefully().sync();
+                LOGGER.info("Successfully shut down the server synchronously");
             } catch (InterruptedException e) {
                 LOGGER.error("Interrupted while shutting down the server ", e);
             }
         } else {
             m_bossGroup.shutdownGracefully();
             m_workerGroup.shutdownGracefully();
+            LOGGER.info("Successfully shut down the server asynchronously");
         }
 
     }

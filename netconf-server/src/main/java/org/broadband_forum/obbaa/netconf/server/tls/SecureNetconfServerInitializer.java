@@ -20,8 +20,9 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import javax.net.ssl.SSLEngine;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.authentication.FailureInfo;
 import org.broadband_forum.obbaa.netconf.api.authentication.SuccessInfo;
@@ -32,8 +33,8 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener
 import org.broadband_forum.obbaa.netconf.api.server.NetconfSessionIdProvider;
 import org.broadband_forum.obbaa.netconf.api.server.ServerCapabilityProvider;
 import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -43,8 +44,6 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-
-import javax.net.ssl.SSLEngine;
 
 public class SecureNetconfServerInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -58,17 +57,14 @@ public class SecureNetconfServerInitializer extends ChannelInitializer<SocketCha
     private ServerMessageHandler m_serverMessageHandler;
     private final NetconfSessionIdProvider m_netconfSessionIdProvider;
     private NetconfLogger m_netconfLogger;
-    private static final Logger LOGGER = Logger.getLogger(SecureNetconfServerInitializer.class);
-    private final long m_handshakeTimeoutMillis;
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SecureNetconfServerInitializer.class, LogAppNames.NETCONF_LIB);
+    private final long  m_handshakeTimeoutMillis;
 
     public SecureNetconfServerInitializer(SslContext sslCtx, Set<String> caps,
-                                          NetconfServerMessageListener serverMessageListener, ServerMessageHandler
-                                                  serverMessageHandler,
+                                          NetconfServerMessageListener serverMessageListener, ServerMessageHandler serverMessageHandler,
 
-                                          AuthenticationListener authenticationListener, boolean needClientAuth,
-                                          boolean tlsKeepalive,
-                                          NetconfSessionIdProvider netconfSessionIdProvider, NetconfLogger
-                                                  netconfLogger,
+                                          AuthenticationListener authenticationListener, boolean needClientAuth, boolean tlsKeepalive,
+                                          NetconfSessionIdProvider netconfSessionIdProvider, NetconfLogger netconfLogger,
                                           long handshakeTimeoutMillis) {
         m_sslCtx = sslCtx;
         m_caps = caps;
@@ -83,14 +79,11 @@ public class SecureNetconfServerInitializer extends ChannelInitializer<SocketCha
     }
 
     public SecureNetconfServerInitializer(SslContext sslCtx, ServerCapabilityProvider capabilityProvider,
-                                          NetconfServerMessageListener netconfServerMessageListener,
-                                          ServerMessageHandler serverMessageHandler,
-                                          AuthenticationListener authenticationListener, boolean
-                                                  clientAuthenticationNeeded,
-                                          boolean tlsKeepalive, NetconfSessionIdProvider sessionIdProvider,
-                                          NetconfLogger netconfLogger,
+                                          NetconfServerMessageListener netconfServerMessageListener, ServerMessageHandler serverMessageHandler,
+                                          AuthenticationListener authenticationListener, boolean clientAuthenticationNeeded,
+                                          boolean tlsKeepalive, NetconfSessionIdProvider sessionIdProvider, NetconfLogger netconfLogger,
                                           long handshakeTimeoutMillis) {
-        this(sslCtx, (Set<String>) null, netconfServerMessageListener, serverMessageHandler, authenticationListener,
+        this(sslCtx, capabilityProvider.getCapabilities(), netconfServerMessageListener, serverMessageHandler, authenticationListener,
                 clientAuthenticationNeeded, tlsKeepalive, sessionIdProvider, netconfLogger, handshakeTimeoutMillis);
         m_capabilityProvider = capabilityProvider;
 
@@ -99,7 +92,7 @@ public class SecureNetconfServerInitializer extends ChannelInitializer<SocketCha
     @Override
     public void initChannel(final SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        ch.config().setKeepAlive(m_tlsKeepalive);
+        ch.config().setKeepAlive(false);
         SSLEngine sslEngine = m_sslCtx.newEngine(ch.alloc());
         if (m_needClientAuth) {
             sslEngine.setNeedClientAuth(true);
@@ -109,18 +102,15 @@ public class SecureNetconfServerInitializer extends ChannelInitializer<SocketCha
         pipeline.addLast(sslHandler);
 
         // On top of the SSL handler, add the text line codec.
-        pipeline.addLast(new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, NetconfDelimiters.rpcEndOfMessageDelimiter
-                ()));
+        pipeline.addLast("EOM_HANDLER",new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, false , NetconfDelimiters.rpcEndOfMessageDelimiter()));
         pipeline.addLast(new StringDecoder());
         pipeline.addLast(new StringEncoder());
 
         // and then business logic.
         final int newSessionId = m_netconfSessionIdProvider.getNewSessionId();
         SecureNetconfServerHandler secureNetconfServerHandler = SecureNetconfServerHandlerFactory.getInstance()
-                .getSecureNetconfServerHandler(m_serverMessageListener, m_serverMessageHandler, newSessionId,
-                        m_netconfLogger);
-
-        SecureSessionManager.getInstance().registerServerHandler(newSessionId, secureNetconfServerHandler);
+                .getSecureNetconfServerHandler(m_serverMessageListener, m_serverMessageHandler, m_caps, newSessionId, m_netconfLogger);
+        
         pipeline.addLast(secureNetconfServerHandler);
 
         // hello business, after ssl handshake is done
@@ -128,7 +118,7 @@ public class SecureNetconfServerInitializer extends ChannelInitializer<SocketCha
             try {
                 if (future.isSuccess()) {
                     if (m_authenticationListener != null) {
-                        InetSocketAddress remoteAddress = ((SocketChannel) ch).remoteAddress();
+                        InetSocketAddress remoteAddress = (ch).remoteAddress();
                         m_authenticationListener.authenticationSucceeded(new SuccessInfo()
                                 .setIp(remoteAddress.getAddress().getHostAddress()).setPort(remoteAddress.getPort()));
                     }
@@ -138,24 +128,21 @@ public class SecureNetconfServerInitializer extends ChannelInitializer<SocketCha
                         caps = m_capabilityProvider.getCapabilities();
                     }
 
-                    PojoToDocumentTransformer builder = new PojoToDocumentTransformer().newServerHelloMessage(caps,
-                            newSessionId);
-                    String helloString = DocumentUtils.documentToString(builder.build()) + NetconfResources
-                            .RPC_EOM_DELIMITER;
+                    PojoToDocumentTransformer builder = new PojoToDocumentTransformer().newServerHelloMessage(caps, newSessionId);
+                    String helloString = new String(secureNetconfServerHandler.getCurrentCodec().encode(builder.build()));
 
                     LOGGER.info("SERVER: sending Hello : " + helloString);
                     ch.writeAndFlush(helloString);
 
                 } else {
                     if (m_authenticationListener != null) {
-                        InetSocketAddress remoteAddress = ((SocketChannel) ch).remoteAddress();
-                        m_authenticationListener.authenticationFailed(new FailureInfo().setIp(remoteAddress
-                                .getAddress().getHostAddress())
+                        InetSocketAddress remoteAddress = (ch).remoteAddress();
+                        m_authenticationListener.authenticationFailed(new FailureInfo().setIp(remoteAddress.getAddress().getHostAddress())
                                 .setPort(remoteAddress.getPort()));
                     }
                 }
             } catch (Exception e) {
-                LOGGER.error(String.format("Error while handling authentication, closing the channel %s", ch), e);
+                LOGGER.error(String.format("Error while handling authentication, closing the channel %s", LOGGER.sensitiveData(ch)), e);
                 ch.close();
                 throw e;
             }

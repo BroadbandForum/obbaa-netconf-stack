@@ -23,9 +23,8 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * belongsToAttribute, attributeNamespace and attributeRevision refers to the localName,namespace and revision of the
- * identityRef attribute
- * All three are mandatory
+ *  belongsToAttribute, attributeNamespace and attributeRevision refers to the localName,namespace and revision of the identityRef attribute
+ *  All three are mandatory
  */
 @Retention(RUNTIME)
 @Target({ElementType.TYPE, ElementType.FIELD})

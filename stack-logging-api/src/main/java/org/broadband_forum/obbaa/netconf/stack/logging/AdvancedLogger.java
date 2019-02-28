@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.stack.logging;
 
+import java.util.List;
+
 public interface AdvancedLogger {
 
     Boolean isTraceEnabled();
@@ -77,5 +79,12 @@ public interface AdvancedLogger {
     void error(String format, Object... arguments);
 
     void error(String msg, Throwable t);
+
+    public SensitiveObjectWrapper sensitiveData(Object object);
+
+    // for testing purposes, to be able to retrieve the log calls afterwards
+    public void setLogCallBuffer(List<LogCallEntry> buffer);
+    
+    public void removeLogCallBuffer();
 
 }

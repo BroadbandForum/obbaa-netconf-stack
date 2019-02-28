@@ -1,0 +1,72 @@
+<!--
+  ~ Copyright 2018 Broadband Forum
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"><!--
+##
+-->
+    <data>
+        <pma:pma xmlns:pma="urn:org:bbf:pma">
+            <pma:certificate-mgmt>
+                <pma:pma-certs />
+                <pma:trusted-ca-certs />
+            </pma:certificate-mgmt>
+            <pma:device-plugs>
+                <pma:device-plug-count>2</pma:device-plug-count>
+                <pma:device-plug>
+                    <pma:default-xml>pma/model/example-jukebox-default.xml</pma:default-xml>
+                    <pma:capabilities>urn:ietf:par\n##\nams:netconf:base:1.0</pma:capabilities>
+                    <pma:capabilities>urn:ietf:params:netconf:base:1.1</pma:capabilities>
+                    <pma:capabilities>urn:ietf:params:netconf:capability:writable-running:1.0</pma:capabilities>
+                    <pma:module-path>/model/pma/example-jukebox.yang</pma:module-path>
+                    <pma:module-path>/model/pma/dpu-swmgmt.yang</pma:module-path>
+                    <pma:module-path>/model/pma/ietf-yang-types.yang</pma:module-path>
+                    <pma:module-path>/model/pma/ietf-inet-types.yang</pma:module-path>
+                    <pma:hardware-type>JUKEBOX</pma:hardware-type>
+                    <pma:interface-version>1.0</pma:interface-version>
+                </pma:device-plug>
+                <pma:device-plug>
+                    <pma:default-xml>pma/model/gfast-default.xml</pma:default-xml>
+                    <pma:capabilities>urn:ietf:params:netconf:base:1.0</pma:capabilities>
+                    <pma:capabilities>urn:ietf:params:netconf:base:1.1</pma:capabilities>
+                    <pma:capabilities>urn:ietf:params:netconf:capability:writable-running:1.0</pma:capabilities>
+                    <pma:module-path>/model/pma/bbf-fast.yang</pma:module-path>
+                    <pma:module-path>/model/pma/ietf-interfaces.yang</pma:module-path>
+                    <pma:module-path>/model/pma/ietf-yang-types.yang</pma:module-path>
+                    <pma:hardware-type>G.FAST</pma:hardware-type>
+                    <pma:interface-version>1.0</pma:interface-version>
+                </pma:device-plug>
+            </pma:device-plugs>
+            <pma:anv-state>
+                <pma:number-of-configured-devices>0</pma:number-of-configured-devices>
+                <pma:number-of-connected-devices>0</pma:number-of-connected-devices>
+                <pma:number-of-edit-config-requests>0</pma:number-of-edit-config-requests>
+                <pma:number-of-get-config-requests>0</pma:number-of-get-config-requests>
+                <pma:number-of-get-requests>1</pma:number-of-get-requests>
+                <pma:number-of-rpc-requests>0</pma:number-of-rpc-requests>
+                <pma:number-of-sbi-edit-config-requests>0</pma:number-of-sbi-edit-config-requests>
+                <pma:number-of-sbi-get-config-requests>0</pma:number-of-sbi-get-config-requests>
+                <pma:number-of-sbi-get-requests>0</pma:number-of-sbi-get-requests>
+                <pma:number-of-sbi-rpc-requests>0</pma:number-of-sbi-rpc-requests>
+            </pma:anv-state>
+            <pma:users>
+                <pma:user-count>1</pma:user-count>
+                <pma:user>
+                    <pma:username>UT</pma:username>
+                </pma:user>
+            </pma:users>
+        </pma:pma>
+    </data>
+</rpc-reply>

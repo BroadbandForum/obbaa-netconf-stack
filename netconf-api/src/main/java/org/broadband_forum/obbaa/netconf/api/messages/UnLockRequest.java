@@ -23,23 +23,23 @@ import org.w3c.dom.Document;
  * {@code
  * Netconf <unlock> request.
  * }
+ * 
  *
- * @author keshava
+ * 
  */
 public class UnLockRequest extends AbstractNetconfRequest {
     private String m_target;
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addUnLockElement(m_target)
-                .build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addUnLockElement(m_target).build();
 
         return doc;
     }
 
     /**
      * Set the target data store to unlock.
-     *
+     * 
      * @param target
      * @return Modified instance of {@link UnLockRequest}
      */
@@ -50,7 +50,7 @@ public class UnLockRequest extends AbstractNetconfRequest {
 
     /**
      * Set the target data store to unlock as "running".
-     *
+     * 
      * @return Modified instance of {@link UnLockRequest}
      */
     public UnLockRequest setTargetRunning() {

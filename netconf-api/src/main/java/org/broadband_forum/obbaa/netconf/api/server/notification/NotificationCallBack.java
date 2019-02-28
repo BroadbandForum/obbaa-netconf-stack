@@ -22,7 +22,7 @@ import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 
 public interface NotificationCallBack {
 
-    public void onNotificationReceived(Notification notification, Object deviceRefId, DateTime receivedTime);
+    void onNotificationReceived(Notification notification, NotificationContext context, DateTime receivedTime);
 
-    public void resynchronize(Object deviceRefId);
+    void resynchronize(Object deviceRefId);
 }

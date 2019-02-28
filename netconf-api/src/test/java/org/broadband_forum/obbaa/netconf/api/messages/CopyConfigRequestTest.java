@@ -21,13 +21,11 @@ import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
-
 import java.io.IOException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class CopyConfigRequestTest {
 
@@ -89,8 +87,7 @@ public class CopyConfigRequestTest {
 
     @Test
     public void testToString() {
-        assertEquals("CopyConfigRequest [source=null, sourceIsUrl=false, target=null, targetIsUrl=false, " +
-                        "sourceConfigElement=null]",
+        assertEquals("CopyConfigRequest [source=null, sourceIsUrl=false, target=null, targetIsUrl=false, sourceConfigElement=null]",
                 m_copyConfigRequest.toString());
         assertNotNull(m_copyConfigRequest);
     }

@@ -18,15 +18,17 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 
 import java.text.ParseException;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.joda.time.DateTime;
 import org.w3c.dom.Document;
 
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+
 /**
  * Netconf request to perform {@code <create-subscription>} operation.
+ * 
  *
- * @author pregunat
+ * 
  */
 
 public class CreateSubscriptionRequest extends NetconfRpcRequest {
@@ -63,15 +65,11 @@ public class CreateSubscriptionRequest extends NetconfRpcRequest {
     }
 
     /**
-     * RFC 5277: "A parameter, <startTime>, used to trigger the replay feature and indicate that the replay should
-     * start at the time
-     * specified. If <startTime> is not present, this is not a replay subscription. It is not valid to specify start
-     * times that are later
-     * than the current time. If the <startTime> specified is earlier than the log can support, the replay will begin
-     * with the earliest
-     * available notification. This parameter is of type dateTime and compliant to [RFC3339]. Implementations must
-     * support time zones."
-     *
+     * RFC 5277: "A parameter, <startTime>, used to trigger the replay feature and indicate that the replay should start at the time
+     * specified. If <startTime> is not present, this is not a replay subscription. It is not valid to specify start times that are later
+     * than the current time. If the <startTime> specified is earlier than the log can support, the replay will begin with the earliest
+     * available notification. This parameter is of type dateTime and compliant to [RFC3339]. Implementations must support time zones."
+     * 
      * @param startTime
      * @return
      * @throws ParseException
@@ -89,14 +87,11 @@ public class CreateSubscriptionRequest extends NetconfRpcRequest {
     }
 
     /**
-     * RFC 5277: "An optional parameter, <stopTime>, used with the optional replay feature to indicate the newest
-     * notifications of interest.
-     * If <stopTime> is not present, the notifications will continue until the subscription is terminated. Must be
-     * used with and be later
-     * than <startTime>. Values of <stopTime> in the future are valid. This parameter is of type dateTime and
-     * compliant to [RFC3339].
+     * RFC 5277: "An optional parameter, <stopTime>, used with the optional replay feature to indicate the newest notifications of interest.
+     * If <stopTime> is not present, the notifications will continue until the subscription is terminated. Must be used with and be later
+     * than <startTime>. Values of <stopTime> in the future are valid. This parameter is of type dateTime and compliant to [RFC3339].
      * Implementations must support time zones."
-     *
+     * 
      * @param stopTime
      * @return
      * @throws ParseException
@@ -170,8 +165,7 @@ public class CreateSubscriptionRequest extends NetconfRpcRequest {
 
     @Override
     public String toString() {
-        return "Create Subscription [Stream: " + m_stream + ", Filter: " + m_filter + ", Start Time: " + m_startTime
-                + ", Stop Time: "
+        return "Create Subscription [Stream: " + m_stream + ", Filter: " + m_filter + ", Start Time: " + m_startTime + ", Stop Time: "
                 + m_stopTime + "]";
     }
 }

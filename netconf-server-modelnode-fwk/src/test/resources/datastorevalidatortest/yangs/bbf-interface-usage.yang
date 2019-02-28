@@ -1,0 +1,43 @@
+module bbf-interface-usage {
+    
+    yang-version 1;
+    
+    namespace "bbf-interface-usage";
+    
+    prefix "intf-usage";
+    
+    import test-interfaces {
+        prefix if;
+    }
+    
+    typedef intf-usage-ref {
+        type enumeration {
+          enum "user-port" {
+            description
+              "The interface having this interface usage connects the 
+               Access Node to a user.";
+          }
+          enum "network-port" {
+            description
+              "The interface having this interface usage connects the 
+               Access Node to a network.";
+          }
+        }
+      }
+    
+    augment "/if:interfaces/if:interface" {
+        description
+          "Augments interfaces with nodes relative to interface usage.";
+
+        container interface-usage {
+          description
+            "Provides the interface with an interface usage.";
+
+          leaf interface-usage {
+            type intf-usage-ref;
+            description
+              "Identifies the position of the interface in the network.";
+          }
+        }
+      }
+}

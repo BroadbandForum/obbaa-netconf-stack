@@ -1,0 +1,306 @@
+module policy-engine {
+    namespace "http://www.test-company.com/solutions/policy-engine";
+    prefix "policy";
+
+    organization "test-company";
+    contact "";
+
+    description "Yang Module for managing policies to automate network operations in AC.";
+
+	import ietf-yang-types { prefix yang; }
+
+    revision "2018-01-04" {
+        description "Initial version.";
+    }
+
+    container policy-engine {
+        list policy {
+            key "name";
+
+            leaf name {
+                mandatory true;
+                type string {
+                    length "1..40";
+                }
+                description "Name of the Policy";
+            }
+
+            leaf description {
+                type string {
+                    length "0..300";
+                }
+                description "A free format description of the Policy";
+            }
+
+            leaf status {
+               type enumeration {
+                 enum active;
+                 enum suspended;
+               }
+               default active;
+               description "Indicates whether the policy is applicable or not, whether it can be executed or not.
+                            Note that if a policy is suspended, the ongoing operations are not stopped";
+            }
+
+            leaf last-triggered {
+                config false;
+                type yang:date-and-time;
+                description "The last time the policy was triggered, in ISO-8601 format";
+            }
+
+            container schedule {
+
+               leaf schedule-start-time {
+                   type yang:date-and-time;
+                   description "The start time of the schedule, in ISO-8601 format";
+               }
+
+               leaf schedule-end-time {
+                   when "../schedule-cron";
+                   type yang:date-and-time;
+                   description "The end time of the schedule, in ISO-8601 format";
+               }
+
+               leaf schedule-cron {
+                   type string;
+                   description "The cron expression of the schedule, compatible with the Quartz scheduler.";
+                   reference "http://www.quartz-scheduler.org/documentation/quartz-2.2.x/tutorials/crontrigger.html#format";
+               }
+            }
+
+            container alarm {
+            	list alarm {
+
+            	   key "type condition";
+
+                   leaf type {
+                       mandatory true;
+                       type string {
+                           length "1..200";
+                       }
+                       description "the alarm type as stored in ES";
+                   }
+
+                   leaf condition {
+                       type enumeration {
+                           enum ALARM_ON;
+                           enum ALARM_OFF;
+                       }
+                       description "Indicates whether the alarm must be raised or cleared to trigger the policy";
+                   }
+            	}
+            }
+
+            container action {
+
+                leaf object-type {
+                    mandatory true;
+                    type enumeration {
+                        enum intent;
+                    }
+                    description "The type of objects that the policy will be able to handle";
+                }
+
+                leaf operation {
+                   mandatory true;
+                   type enumeration {
+                       enum sync-intent;
+                       enum audit-intent;
+                       enum mark-intent-misaligned;
+                   }
+                   description "The possible operations that can be done";
+                }
+
+                list criteria {
+                    key "criteria-id";
+
+                    leaf criteria-id {
+                        type uint8 {
+                            range "1..50";
+                        }
+                    }
+
+                    leaf filter-on {
+                        mandatory true;
+                        type string;
+                    }
+
+                    leaf operator {
+                        mandatory true;
+                        type enumeration {
+                        	enum contains;
+                            enum equal-to;
+                            enum in;
+                            enum older-than;
+                            enum not-older-than;
+                        }
+                    }
+
+                    leaf-list values {
+                        type string;
+                        min-elements 1;
+                    }
+                }
+            }
+        }
+    }
+
+    rpc trigger-policy-execution {
+        input {
+            leaf policy-name {
+                mandatory true;
+                type string {
+                    length "1..100";
+                }
+                description "Name of the Policy to be triggered";
+             }
+
+            list argument {
+                key "name";
+
+                leaf name {
+                    mandatory true;
+                    type string;
+                }
+
+                leaf value {
+                    mandatory true;
+                    type string;
+                }
+             }
+        }
+
+        output {
+            leaf execution-id {
+              type uint64;
+              description "A reference to the policy execution. It can be used as input for the rpc 'get-policy-execution-details'";
+            }
+          }
+    }
+
+    grouping paging-input {
+      leaf page-number {
+        type uint64;
+        description "Starting page number";
+        default 0;
+      }
+      leaf page-size {
+        type uint32;
+        default 500;
+        description "The number of records returned per page";
+      }
+    }
+
+    rpc search-policy-executions {
+      description "Retrieve the policy executions based on start time and policy name";
+      input {
+        leaf policy-name {
+          type string;
+          description "The exact name of the policy. If omitted, all executions are returned else only
+                       the ones for the given policy";
+        }
+        leaf started-before {
+          type yang:date-and-time;
+          description "If omitted, all executions are returned else only the ones started before the given timestamp";
+        }
+        leaf started-after {
+          type yang:date-and-time;
+          description "If omitted, all executions are returned else only the ones started after the given timestamp";
+        }
+        uses paging-input;
+      }
+      output {
+        list policy-execution {
+          key "execution-id";
+          description "The policy executions that match the given criteria";
+
+          leaf execution-id {
+            type uint64;
+            description "A sequence number identifying the execution. Needed by the rpc get-policy-execution-details";
+          }
+          leaf policy-name {
+            type string;
+          }
+          leaf number-of-objects {
+            type uint64;
+            description "The total number of objects that the policy will process";
+          }
+          leaf number-of-errors {
+            type uint64;
+            description "The number of objects for which the execution of the policy encountered a problem";
+          }
+          leaf progress {
+            type uint32;
+            description "The progress of the policy execution, expressed as a percentage";
+          }
+          leaf status {
+            type enumeration {
+              enum creating;
+              enum in-progress;
+              enum completed;
+              enum not-applicable;
+              enum cancelled;
+              enum in-progress-waiting-for-retry;
+            }
+            description "The current status of the policy execution";
+          }
+          leaf remaining {
+            type string;
+            description "The estimated remaining time, expressed as ISO 8601 duration";
+          }
+          leaf started-at {
+            type yang:date-and-time;
+            description "The time at which the execution of the policy started";
+          }
+          leaf finished-at {
+            type yang:date-and-time;
+            description "The time at which the execution of the policy finished";
+          }
+        }
+      }
+    }
+
+    rpc get-policy-execution-details {
+      description "Retrieve the details of a given policy execution";
+      input {
+        leaf execution-id {
+          type uint64;
+          description "A sequence number identifying the execution. Got from the rpc 'search-policy-executions'
+                       or 'trigger-policy-execution'";
+          mandatory true;
+        }
+        uses paging-input;
+      }
+      output {
+        list policy-execution-job {
+          description "The objects on which the policy was executed";
+          key "job-id";
+
+          leaf job-id {
+            type uint64;
+            description "A sequence number";
+          }
+          leaf command-description {
+            type string;
+            description "The action executed on the object and other info";
+          }
+          leaf additional-information {
+            type string;
+            description "Additional information about the execution of the policy on the given object like an
+                         error message";
+          }
+          leaf status {
+            type enumeration {
+              enum pending;
+              enum in-progress;
+              enum success;
+              enum failure;
+              enum not-applicable;
+              enum cancelled;
+            }
+            description "The current status of the job";
+          }
+        }
+      }
+    }
+}

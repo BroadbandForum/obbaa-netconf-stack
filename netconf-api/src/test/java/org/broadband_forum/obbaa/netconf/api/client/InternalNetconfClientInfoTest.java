@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.api.client;
 
+import org.broadband_forum.obbaa.netconf.api.client.InternalNetconfClientInfo;
+import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -31,12 +33,12 @@ public class InternalNetconfClientInfoTest {
         assertEquals(info.getSessionId(), 10);
         assertEquals(info.getClientSessionId(), 100);
         assertTrue(info.isInternalUser());
-
+        
         NetconfClientInfo netconfClientInfo = new InternalNetconfClientInfo("User", 10);
         assertEquals(netconfClientInfo.getUsername(), "User");
         assertEquals(netconfClientInfo.getSessionId(), 10);
         assertTrue(netconfClientInfo.isInternalUser());
-        Assert.assertNull(netconfClientInfo.getClientSessionId());
-
+        Assert.assertNotNull(netconfClientInfo.getClientSessionId());
+        
     }
 }

@@ -1,0 +1,107 @@
+module test-logging-app {
+
+  namespace
+     "http://www.test-company.com/Fixed-Networks/BBA/yang/test-logging-app";
+
+  prefix log-app;
+
+  organization
+    "test";
+
+  contact
+    "tbd";
+
+  description
+    "Scope of this YANG module is to:
+     o enable disable the logging level of available applications
+	 o provide the available application names";
+
+
+
+/* revision */
+
+  revision 2017-09-14 {
+    description
+      "tbd";
+  }
+
+  typedef severity {
+    type enumeration {
+		enum "none" {
+           value -2;
+           description
+             "This enum describes the case where no severities
+              are selected.";
+        }
+		enum "critical" {
+			value 2;
+			description	"The severity level 'Critical' indicate a
+			critical condition.";
+		}
+		enum "error" {
+			value 3;
+			description "The severity level 'Error'
+			indicate an error condition.";
+		}
+		enum "warning" {
+			value 4;
+			description	"The severity level 'Warning'
+			indicate a warning condition.";
+		}
+		enum "info" {
+			value 6;
+			description "The severity level 'Info' indicate
+			an informational message.";
+		}
+		enum "debug" {
+			value 7;
+			description "The severity level 'Debug' indicating
+			a debug-level message.";
+		}
+	}
+   description
+     "Supported logging levels (Severity) as defined in RFC 5424.";
+ }
+
+    container applications {
+
+        leaf app-tag {
+            type string;
+            description
+            "This leaf specifies the syslog message severity.";
+        }
+
+        list config-app{
+            key "app-id";
+            leaf app-id {
+                type string;
+                description
+                "This leaf specifies the syslog message severity.";
+            }
+        }
+
+		list active-applications{
+			key "app-name";
+			config false;
+			leaf app-name {
+				type string;
+				description
+				"Provide the available for logging applications.";
+			}
+			list modules {
+				key "mod-name";
+				leaf mod-name{
+					type string;
+					description
+					"This leaf represent the submodules name";
+				}
+				leaf level {
+					type severity;
+					mandatory true;
+					description
+					"This leaf specifies the syslog message severity.";
+				}
+			}
+		}
+	}
+}

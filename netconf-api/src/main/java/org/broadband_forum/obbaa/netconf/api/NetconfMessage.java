@@ -17,10 +17,12 @@
 package org.broadband_forum.obbaa.netconf.api;
 
 import org.broadband_forum.obbaa.netconf.api.messages.RpcName;
+import org.w3c.dom.Element;
 
 public interface NetconfMessage {
 
-    RpcName getRpcName();
-
-    NetconfRpcPayLoadType getType();
+	RpcName getRpcName();
+	NetconfRpcPayLoadType getType();
+	Element getRpcContext();
+	void setRpcContext(Element rpcContext);
 }

@@ -21,18 +21,18 @@ import java.io.Serializable;
 /**
  * Created by keshava on 5/1/16.
  */
-public class AlbumPK implements Serializable {
+public class AlbumPK implements Serializable{
 
-    private static final long serialVersionUID = 7033674188319890833L;
-    String name;
+	private static final long serialVersionUID = 7033674188319890833L;
+	String name;
     String parentId;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
+        if (this == o){
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass()){
             return false;
         }
 

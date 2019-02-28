@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotSame;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,7 +41,13 @@ public class RequestScopeTest {
 
     @Test
     public void testGetCurrentScope() {
-        assertNotNull(RequestScope.getCurrentScope());
+        RequestScope.withScope(new RequestScope.RsTemplate<Void>(){
+            @Override
+            public Void execute() {
+                assertNotNull(RequestScope.getCurrentScope());
+                return null;
+            }
+        });
     }
 
     @Test

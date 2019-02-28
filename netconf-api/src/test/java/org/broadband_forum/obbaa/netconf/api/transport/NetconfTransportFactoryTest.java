@@ -17,16 +17,18 @@
 package org.broadband_forum.obbaa.netconf.api.transport;
 
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
+import org.broadband_forum.obbaa.netconf.api.transport.AbstractTLSNetconfTransport;
+import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportFactory;
+import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportOrder;
+import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
+import org.broadband_forum.obbaa.netconf.api.transport.SshNetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
-
 import io.netty.handler.ssl.SslProvider;
 import junit.framework.TestCase;
-
 import org.junit.Test;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
-
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -36,7 +38,7 @@ import static org.mockito.Mockito.mock;
 
 public class NetconfTransportFactoryTest extends TestCase {
     NetconfTransportFactory factory = new NetconfTransportFactory();
-    private String m_sshHostKeyPath = "hostKeyPath";
+    private String m_sshHostKeyPath ="hostKeyPath";
     private int m_sshHeartBeatIntervalSecs = 60;
 
     public void testFactoryMakesRightObjects() throws UnknownHostException, NetconfConfigurationBuilderException {
@@ -89,7 +91,7 @@ public class NetconfTransportFactoryTest extends TestCase {
         transportOrder.setAllowSelfSigned(false);
         transportOrder.setCertificateChain(mock(File.class));
         transportOrder.setSslProvider(SslProvider.OPENSSL);
-        transport = assertValidationPasses(transportOrder);
+        transport =  assertValidationPasses(transportOrder);
         assertTrue(SslProvider.OPENSSL.equals(transport.getSslProvider()));
 
         transportOrder = getCallHomeTLSTransport();
@@ -143,8 +145,7 @@ public class NetconfTransportFactoryTest extends TestCase {
         return transportOrder;
     }
 
-    private AbstractTLSNetconfTransport assertValidationPasses(NetconfTransportOrder transportOder) throws
-            NetconfConfigurationBuilderException {
+    private AbstractTLSNetconfTransport assertValidationPasses(NetconfTransportOrder transportOder) throws NetconfConfigurationBuilderException {
         NetconfTransport transport = NetconfTransportFactory.makeNetconfTransport(transportOder);
         assertNotNull(transport);
         assertTrue(transport instanceof AbstractTLSNetconfTransport);

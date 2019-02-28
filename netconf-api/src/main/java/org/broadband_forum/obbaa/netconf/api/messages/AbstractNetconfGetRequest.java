@@ -20,14 +20,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
 import org.opendaylight.yangtools.yang.common.QName;
+
+import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
 
 public abstract class AbstractNetconfGetRequest extends AbstractNetconfRequest {
 
     protected int m_depth = NetconfQueryParams.UNBOUNDED;
-    protected Map<String, List<QName>> m_fieldValues = new HashMap<>();
-
+    protected Map<String, List<QName>> m_fieldValues= new HashMap<>();
+ 
     public Map<String, List<QName>> getFieldValues() {
         return m_fieldValues;
     }

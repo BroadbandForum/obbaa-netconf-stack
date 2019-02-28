@@ -16,6 +16,43 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getDocFromFile;
+import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.StandardSocketOptions;
+import java.net.URL;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.log4j.Logger;
+import org.apache.sshd.client.SshClient;
+import org.apache.sshd.client.channel.ChannelSubsystem;
+import org.apache.sshd.client.session.ClientSession;
+import org.apache.sshd.common.future.CloseFuture;
+import org.apache.sshd.common.future.SshFutureListener;
+import org.apache.sshd.common.io.IoOutputStream;
+import org.apache.sshd.common.io.IoSession;
+import org.apache.sshd.common.io.IoWriteFuture;
+import org.apache.sshd.common.io.nio2.Nio2Session;
+import org.apache.sshd.common.util.buffer.Buffer;
+import org.custommonkey.xmlunit.XMLUnit;
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.Document;
+
 import org.broadband_forum.obbaa.netconf.api.NetconfSessionClosedException;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
@@ -37,48 +74,6 @@ import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import org.apache.log4j.Logger;
-import org.apache.sshd.client.ClientFactoryManager;
-import org.apache.sshd.client.SshClient;
-import org.apache.sshd.client.channel.ChannelSubsystem;
-import org.apache.sshd.client.session.ClientSession;
-import org.apache.sshd.common.SshConstants;
-import org.apache.sshd.common.future.CloseFuture;
-import org.apache.sshd.common.future.SshFutureListener;
-import org.apache.sshd.common.io.IoOutputStream;
-import org.apache.sshd.common.io.IoSession;
-import org.apache.sshd.common.io.IoWriteFuture;
-import org.apache.sshd.common.util.buffer.Buffer;
-import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
-import org.custommonkey.xmlunit.XMLUnit;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.w3c.dom.Document;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.URL;
-import java.util.Collections;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getDocFromFile;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class SshNetconfClientSessionTest {
 
@@ -89,6 +84,8 @@ public class SshNetconfClientSessionTest {
     private ClientSession m_clientSession;
     private static final Logger LOGGER = Logger.getLogger(SshNetconfClientSessionTest.class);
     private SshClient m_mockClient;
+    private Nio2Session m_nio2Session;
+    private AsynchronousSocketChannel m_asynSock;
 
     @Before
     public void setUp() throws Exception {
@@ -98,7 +95,10 @@ public class SshNetconfClientSessionTest {
         m_session.addNotificationListener(notificationListener);
         m_clientChannel = mock(ChannelSubsystem.class);
         m_clientSession = mock(ClientSession.class);
+        m_nio2Session = mock(Nio2Session.class);
+        m_asynSock = mock(AsynchronousSocketChannel.class);
         CloseFuture mockFuture = mock(CloseFuture.class);
+        when(m_clientChannel.isOpen()).thenReturn(true);
         when(m_clientSession.isClosed()).thenReturn(false);
         when(m_clientSession.close(true)).thenReturn(mockFuture);
         when(m_clientSession.close(false)).thenReturn(mockFuture);
@@ -150,8 +150,7 @@ public class SshNetconfClientSessionTest {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 baos.write(buffer.array(), buffer.rpos(), buffer.available());
                 String lastMessageStr = baos.toString();
-                lastMessageStr = lastMessageStr.substring(0, lastMessageStr.indexOf(NetconfResources
-                        .RPC_EOM_DELIMITER));
+                lastMessageStr = lastMessageStr.substring(0, lastMessageStr.indexOf(NetconfResources.RPC_EOM_DELIMITER));
                 try {
                     m_lastSentMessage = DocumentUtils.stringToDocument(lastMessageStr);
                     DocumentUtils.prettyPrint(m_lastSentMessage);
@@ -207,12 +206,9 @@ public class SshNetconfClientSessionTest {
         Document requestDocument = getDocFromFile(file);
 
         EditConfigElement configElement = new EditConfigElement();
-        configElement.addConfigElementContent(DocumentUtils.getInstance().getElementByName(requestDocument,
-                "configuration"));
-        EditConfigRequest request = new EditConfigRequest().setTargetRunning().setTestOption(EditConfigTestOptions
-                .TEST_THEN_SET)
-                .setErrorOption(EditConfigErrorOptions.ROLLBACK_ON_ERROR).setDefaultOperation
-                        (EditConfigDefaultOperations.MERGE)
+        configElement.addConfigElementContent(DocumentUtils.getInstance().getElementByName(requestDocument, "configuration"));
+        EditConfigRequest request = new EditConfigRequest().setTargetRunning().setTestOption(EditConfigTestOptions.TEST_THEN_SET)
+                .setErrorOption(EditConfigErrorOptions.ROLLBACK_ON_ERROR).setDefaultOperation(EditConfigDefaultOperations.MERGE)
                 .setConfigElement(configElement);
         m_session.editConfig(request);
         assertTrue(XMLUnit.compareXML(m_lastSentMessage, requestDocument).similar());
@@ -223,8 +219,7 @@ public class SshNetconfClientSessionTest {
         URL url = Thread.currentThread().getContextClassLoader().getResource("copyConfig.xml");
         File file = new File(url.getPath());
         Document requestDocument = getDocFromFile(file);
-        CopyConfigRequest request = new CopyConfigRequest().setTargetRunning().setSource
-                ("https://user:password@example.com/cfg/new.txt",
+        CopyConfigRequest request = new CopyConfigRequest().setTargetRunning().setSource("https://user:password@example.com/cfg/new.txt",
                 true);
         m_session.copyConfig(request);
         assertTrue(XMLUnit.compareXML(m_lastSentMessage, requestDocument).similar());
@@ -271,14 +266,12 @@ public class SshNetconfClientSessionTest {
     }
 
     @Test
-    public void testSshSessionClose() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException, IOException {
+    public void testSshSessionClose() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, IOException {
         m_session.close();
         verify(m_mockClient, times(1)).close(true);
 
         when(m_clientSession.isClosed()).thenReturn(true);
-        CopyConfigRequest request = new CopyConfigRequest().setTargetRunning().setSource
-                ("https://user:password@example.com/cfg/new.txt",
+        CopyConfigRequest request = new CopyConfigRequest().setTargetRunning().setSource("https://user:password@example.com/cfg/new.txt",
                 true);
         try {
             m_session.copyConfig(request);
@@ -298,28 +291,7 @@ public class SshNetconfClientSessionTest {
     }
 
     @Test
-    public void testSendHeartBeat() throws IOException, InterruptedException {
-        when(m_clientSession.createBuffer(SshConstants.SSH_MSG_GLOBAL_REQUEST)).thenReturn(new ByteArrayBuffer());
-        ClientFactoryManager mockFactoryMgr = mock(ClientFactoryManager.class);
-        when(mockFactoryMgr.getProperties()).thenReturn(Collections.<String, Object>emptyMap());
-        when(m_clientSession.getFactoryManager()).thenReturn(mockFactoryMgr);
-        long currentTimeMillis = System.currentTimeMillis();
-        try {
-            //by sleeping for 1 milli , we make sure the idletimestart gets reset to a higher value
-            Thread.sleep(1L);
-        } catch (InterruptedException e) {
-            Assert.fail("interrupted while sleeping");
-        }
-        m_session.sendHeartBeat(20000L);
-        verify(m_clientSession).request(eq(SshNetconfClientSession.KEEP_ALIVE_REQ_NAME), (Buffer) anyObject(), eq(20000L), eq(TimeUnit
-                .MILLISECONDS));
-        verify(m_session, never()).close();
-        assertTrue(m_session.getIdleTimeStart() > currentTimeMillis);
-    }
-
-
-    @Test
-    public void testIsOpen() {
+    public void testIsOpen(){
         when(m_clientChannel.isOpen()).thenReturn(true);
         assertTrue(m_session.isOpen());
 
@@ -331,14 +303,13 @@ public class SshNetconfClientSessionTest {
     }
 
     @Test
-    public void testToString() {
-        assertEquals("SshNetconfClientSession{localsocket=/127.0.0.1:4335, remotesocket=/135.0.0.1:9496, " +
-                "creationtime=" + NetconfResources
-                .DATE_TIME_FORMATTER.print(m_session.getCreationTime()) + "}", m_session.toString());
+    public void testToString(){
+        assertEquals("SshNetconfClientSession{localsocket=/127.0.0.1:4335, remotesocket=/135.0.0.1:9496, creationtime="+NetconfResources
+                .DATE_TIME_FORMATTER.print(m_session.getCreationTime())+"}", m_session.toString());
     }
 
     @Test
-    public void testCloseAsync() {
+    public void testCloseAsync(){
         m_session.closeAsync();
         verify(m_clientSession).close(true);
     }
@@ -350,26 +321,18 @@ public class SshNetconfClientSessionTest {
     }
 
     @Test
-    public void testIncrementAndGetFailedKACount() {
-        m_session.incrementAndGetFailedKACount();
-        AtomicInteger ai = new AtomicInteger(1);
-        assertEquals(ai.get(), m_session.getKeepAliveFailure().get());
+    public void testSetKa() throws IOException {
+        when(m_clientSession.getIoSession()).thenReturn(m_nio2Session);
+        when(m_nio2Session.getSocket()).thenReturn(m_asynSock);
+        when(m_asynSock.setOption(StandardSocketOptions.SO_KEEPALIVE, true)).thenReturn(m_asynSock);
+        m_session.setTcpKeepAlive(true);
+        verify(m_asynSock).setOption(StandardSocketOptions.SO_KEEPALIVE, true);
 
-    }
-
-    @Test
-    public void testResetKACount() {
-        m_session.incrementAndGetFailedKACount();
-        AtomicInteger ai = new AtomicInteger(1);
-        assertEquals(ai.get(), m_session.getKeepAliveFailure().get());
-        m_session.resetKAFailureCount();
-        ai.set(0);
-        assertEquals(ai.get(), m_session.getKeepAliveFailure().get());
-
-    }
-
-    @Test
-    public void testResetIdleTimeoutStart() {
-
+        doThrow(new RuntimeException("Exception setting TCP KA")).when(m_asynSock).setOption(StandardSocketOptions.SO_KEEPALIVE, false);
+        try {
+            m_session.setTcpKeepAlive(false);
+        } catch(Exception e) {
+            assertEquals("Exception setting TCP KA", e.getMessage());
+        }
     }
 }

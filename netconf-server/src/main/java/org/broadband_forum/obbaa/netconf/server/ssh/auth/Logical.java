@@ -17,8 +17,8 @@
 package org.broadband_forum.obbaa.netconf.server.ssh.auth;
 
 /**
- * An enum for specifying a logical operation that can be used for
- * interpreting authorization annotations
+ * An enum for specifying a logical operation that can be used for 
+ * interpreting authorization annotations 
  */
 public enum Logical {
     AND, OR

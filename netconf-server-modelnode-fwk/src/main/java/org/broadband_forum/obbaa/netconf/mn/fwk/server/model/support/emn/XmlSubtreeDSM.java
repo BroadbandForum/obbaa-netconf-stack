@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.documentToPrettyString;
@@ -34,17 +18,14 @@ import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import javax.transaction.Transactional.TxType;
 
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
+import org.broadband_forum.obbaa.netconf.api.IndexedList;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaMountRegistryProvider;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
@@ -54,13 +35,23 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNode
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigAttributeFactory;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.HelperDrivenModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.InvalidIdentityRefException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationMountContext;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * A ModelNodeDataStoreManager, which understands Subtree XML annotations.
@@ -71,48 +62,49 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     private final PersistenceManagerUtil m_persistenceManagerUtil;
     private final SchemaRegistry m_schemaRegistry;
     protected final XmlModelNodeToXmlMapper m_xmlModelNodeToXmlMapper;
-    private static final AdvancedLogger LOGGER = LoggerFactory.getLogger(XmlSubtreeDSM.class,
-            "netconf-server-datastore", "DEBUG", "GLOBAL");
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(XmlSubtreeDSM.class, LogAppNames.NETCONF_STACK);
     private final RequestScopeXmlDSMCache m_dsmCache;
     private final ModelNodeDSMRegistry m_modelNodeDSMRegistry;
     private final ModelNodeHelperRegistry m_modelNodeHelperRegistry;
 
-    public XmlSubtreeDSM(PersistenceManagerUtil persistenceManagerUtil, EntityRegistry entityRegistry, SchemaRegistry
-            schemaRegistry,
-                         ModelNodeHelperRegistry modelNodeHelperRegistry, SubSystemRegistry subsystemRegistry,
-                         ModelNodeDSMRegistry modelNodeDSMRegistry) {
-        super(persistenceManagerUtil, entityRegistry, schemaRegistry, modelNodeHelperRegistry, subsystemRegistry,
-                modelNodeDSMRegistry);
+    public XmlSubtreeDSM(PersistenceManagerUtil persistenceManagerUtil, EntityRegistry entityRegistry, SchemaRegistry schemaRegistry,
+                         ModelNodeHelperRegistry modelNodeHelperRegistry, SubSystemRegistry subsystemRegistry, ModelNodeDSMRegistry modelNodeDSMRegistry){
+        super(persistenceManagerUtil, entityRegistry, schemaRegistry, modelNodeHelperRegistry, subsystemRegistry, modelNodeDSMRegistry);
         m_modelNodeHelperRegistry = modelNodeHelperRegistry;
         m_persistenceManagerUtil = persistenceManagerUtil;
         m_entityRegistry = entityRegistry;
         m_schemaRegistry = schemaRegistry;
         m_dsmCache = new RequestScopeXmlDSMCache();
         m_modelNodeDSMRegistry = modelNodeDSMRegistry;
-        m_xmlModelNodeToXmlMapper = new XmlModelNodeToXmlMapperImpl(m_dsmCache, m_schemaRegistry,
-                modelNodeHelperRegistry, subsystemRegistry, m_entityRegistry);
+        m_xmlModelNodeToXmlMapper = new XmlModelNodeToXmlMapperImpl(m_dsmCache, m_schemaRegistry, modelNodeHelperRegistry, subsystemRegistry, m_entityRegistry);
     }
 
     @Override
     public List<ModelNode> listNodes(SchemaPath nodeType) throws DataStoreException {
         Class entityClass = m_entityRegistry.getEntityClass(nodeType);
-        if (entityClass != null) {
+        if(entityClass!=null && m_entityRegistry.getYangXmlSubtreeGetter(entityClass) == null){
             return super.listNodes(nodeType);
-        } else {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("listNodes with nodeType: {}", nodeType);
+        }else{
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("listNodes with nodeType: {}",nodeType);
             }
             List<ModelNode> modelNodes = new ArrayList<>();
             SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(nodeType);
-            if (storedParentSchemaPath != null) {
-                ModelNodeId storedGrandParentId = EMNKeyUtil.getParentIdFromSchemaPath(storedParentSchemaPath);
-                //FIXME: FNMS-10112 This wont work
+            if (storedParentSchemaPath!=null){
+                ModelNodeId storedGrandParentId = EMNKeyUtil.getParentIdFromSchemaPath(storedParentSchemaPath); //FIXME: FNMS-10112 This wont work
                 // when stored parent is a list!
-                XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath,
-                        storedGrandParentId,
+                DataSchemaNode storeSchemaNode = m_schemaRegistry.getDataSchemaNode(storedParentSchemaPath);
+                if(storeSchemaNode instanceof ListSchemaNode){
+                    throw new IllegalArgumentException("Stored schema node is a list node, hence listNodes API will not work here, use findNodes API instead");
+                }
+                XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath,storedGrandParentId,
                         storedGrandParentId); //FIXME:  FNMS-10112  This is clearly wrong
                 if (storedParentModelNode != null) {
-                    modelNodes = retrieveModelNodes(nodeType, storedParentModelNode, null);
+                    if (nodeType.equals(storedParentSchemaPath)) {
+                        modelNodes.add(storedParentModelNode);
+                    }else {
+                        modelNodes = retrieveModelNodes(nodeType, storedParentModelNode, null);
+                    }
                 }
             }
             return modelNodes;
@@ -122,69 +114,73 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     @Override
     public List<ModelNode> listChildNodes(SchemaPath childType, ModelNodeId parentId) throws DataStoreException {
         Class entityClass = m_entityRegistry.getEntityClass(childType);
-        if (entityClass != null) {
+        if(entityClass!=null ) {
             if (m_entityRegistry.getYangXmlSubtreeGetter(entityClass) == null) {
                 return super.listChildNodes(childType, parentId);
-            } else {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("listChildNodes with childType: {} parentId: {}", childType, parentId);
+            }else{
+                if(LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("listChildNodes with childType: {} parentId: {}",childType,parentId);
                 }
                 // This is a list of stored ModelNodes
                 List<ModelNode> modelNodes = new ArrayList<>();
                 Collection<Object> childEntities = super.getChildEntities(childType, parentId);
-                for (Object entity : childEntities) {
+                for(Object entity: childEntities){
                     XmlModelNodeImpl xmlModelNode = m_xmlModelNodeToXmlMapper.getModelNode(entity, this);
                     modelNodes.add(xmlModelNode);
                 }
                 return modelNodes;
             }
-        } else {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("listChildNodes with childType: {} parentId: {}", childType, parentId);
+        }else {
+            if(LOGGER.isDebugEnabled()) {
+                LOGGER.debug("listChildNodes with childType: {} parentId: {}",childType,parentId);
             }
             List<ModelNode> modelNodes = new ArrayList<>();
             SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(childType);
-            ModelNodeId storedGrandParentId = EMNKeyUtil.scopeModelNodeId(m_schemaRegistry, storedParentSchemaPath
-                    .getParent(), parentId);
-            XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath, parentId,
-                    storedGrandParentId);
-            if (storedParentModelNode != null) {
-                modelNodes = retrieveModelNodes(childType, storedParentModelNode, parentId);
+            if(storedParentSchemaPath != null){
+                ModelNodeId storedGrandParentId = EMNKeyUtil.scopeModelNodeId(m_schemaRegistry, storedParentSchemaPath.getParent(), parentId);
+                XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath, parentId, storedGrandParentId);
+                if (storedParentModelNode != null) {
+                    modelNodes = retrieveModelNodes(childType, storedParentModelNode, parentId);
+                }
             }
-
             return modelNodes;
         }
     }
 
     @Override
-    public ModelNodeWithAttributes findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId) throws
-            DataStoreException {
+    public ModelNodeWithAttributes findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId) throws DataStoreException {
         Class klass = m_entityRegistry.getEntityClass(nodeType);
         if (klass != null && m_entityRegistry.getYangXmlSubtreeGetter(klass) == null) {
             return super.findNode(nodeType, key, parentId);
         }
 
-        LOGGER.debug("findNode with nodeType: {} key: {} parentId: {}", nodeType, key, parentId);
+        LOGGER.debug( "findNode with nodeType: {} key: {} parentId: {}",nodeType,key,parentId);
         ModelNodeId modelNodeId = EMNKeyUtil.getModelNodeId(key, parentId, nodeType);
         //SchemaPath of the parent which is stored as an Entity in DS
         SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(nodeType);
-        //ParentId of the storedParent
-        ModelNodeId storedGrandParentId = EMNKeyUtil.scopeModelNodeId(m_schemaRegistry, storedParentSchemaPath
-                .getParent(), modelNodeId);
-        XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath, modelNodeId,
-                storedGrandParentId);
-
-        if (nodeType.equals(storedParentSchemaPath)) {
-            return storedParentModelNode;
-        } else if (storedParentModelNode != null) {
-            return retrieveModelNode(nodeType, modelNodeId, storedParentModelNode);
+        if (storedParentSchemaPath == null) {
+            SchemaPath mountPath = (SchemaPath) RequestScope.getCurrentScope().getFromCache(SchemaRegistryUtil.MOUNT_PATH);
+            if (mountPath != null) {
+                storedParentSchemaPath = getStoredParentSchemaPath(mountPath);
+            }
+        }
+        if (storedParentSchemaPath != null) {
+            // ParentId of the storedParent
+            ModelNodeId storedGrandParentId = EMNKeyUtil.scopeModelNodeId(m_schemaRegistry,
+                    storedParentSchemaPath.getParent(), modelNodeId);
+            XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath, modelNodeId,
+                    storedGrandParentId);
+            if (nodeType.equals(storedParentSchemaPath)) {
+                return storedParentModelNode;
+            } else if (storedParentModelNode != null) {
+                return retrieveModelNode(nodeType, modelNodeId, storedParentModelNode);
+            }
         }
         return null;
     }
 
     @Override
-    public List<ModelNode> findNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId
-            parentId) throws DataStoreException {
+    public List<ModelNode> findNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId) throws DataStoreException {
         Class klass = m_entityRegistry.getEntityClass(nodeType);
         if (klass != null && m_entityRegistry.getYangXmlSubtreeGetter(klass) == null) {
             return super.findNodes(nodeType, matchCriteria, parentId);
@@ -192,54 +188,54 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         List<ModelNode> nodes = new ArrayList<>();
         LOGGER.debug("findNodes with nodeType: {} matchCriteria: {} parentId: {}", nodeType, matchCriteria, parentId);
 
-        if (MNKeyUtil.containsAllKeys(nodeType, matchCriteria, m_schemaRegistry)) {
-            LOGGER.debug("all keys found in matchCriteria, for findNodes with nodeType: {} matchCriteria: {} " +
-                            "parentId: {}", nodeType,
+        if(MNKeyUtil.containsAllKeys(nodeType, matchCriteria, m_schemaRegistry)){
+            LOGGER.debug("all keys found in matchCriteria, for findNodes with nodeType: {} matchCriteria: {} parentId: {}", nodeType,
                     matchCriteria, parentId);
             ModelNodeKey key = MNKeyUtil.getKeyFromCriteria(nodeType, matchCriteria, m_schemaRegistry);
             ModelNodeWithAttributes node = findNode(nodeType, key, parentId);
-            if (node != null) {
+            if(node != null) {
                 nodes.add(node);
             }
-        } else {
-            LOGGER.debug("all keys not found in matchCriteria, for findNodes with nodeType: {} matchCriteria: {} " +
-                            "parentId: {}",
+        }else {
+            LOGGER.debug("all keys not found in matchCriteria, for findNodes with nodeType: {} matchCriteria: {} parentId: {}",
                     nodeType, matchCriteria, parentId);
             //SchemaPath of the parent which is stored as an Entity in DS
             SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(nodeType);
+            if (storedParentSchemaPath == null) {
+                SchemaPath mountPath = (SchemaPath) RequestScope.getCurrentScope().getFromCache(SchemaRegistryUtil.MOUNT_PATH);
+                if (mountPath != null) {
+                    storedParentSchemaPath = getStoredParentSchemaPath(mountPath);
+                }
+            }
             //ParentId of the storedParent
-            ModelNodeId storedGrandParentId = EMNKeyUtil.scopeModelNodeId(m_schemaRegistry, storedParentSchemaPath
-                    .getParent(), parentId);
+            ModelNodeId storedGrandParentId = EMNKeyUtil.scopeModelNodeId(m_schemaRegistry, storedParentSchemaPath.getParent(), parentId);
             Class storedParentClass = m_entityRegistry.getEntityClass(storedParentSchemaPath);
             List<?> storedParentEntities;
-            if (nodeType.equals(storedParentSchemaPath)) {
+            if(nodeType.equals(storedParentSchemaPath)){
                 //we cannot scope to a single parent here because the matchCriteria does not contain all keys
                 storedParentEntities = getParentEntities(storedParentClass, matchCriteria, parentId);
                 if (storedParentEntities != null) {
-                    for (Object storedParentEntity : storedParentEntities) {
+                    for(Object storedParentEntity : storedParentEntities){
+                        HelperDrivenModelNode.checkForGetTimeOut();
                         String yangXmlSubtree = getXmlSubtree(storedParentEntity, storedParentClass);
                         Element element = getXmlSubtreeElement(yangXmlSubtree);
                         Map<QName, ConfigLeafAttribute> configAttrsFromEntity = null;
                         try {
-                            configAttrsFromEntity = XmlModelNodeToXmlMapperImpl.getConfigAttributesFromEntity
-                                    (m_schemaRegistry, storedParentSchemaPath,
+                            configAttrsFromEntity = XmlModelNodeToXmlMapperImpl.getConfigAttributesFromEntity(m_schemaRegistry, storedParentSchemaPath,
                                     m_entityRegistry, storedParentClass, storedParentEntity);
                         } catch (IllegalAccessException | InvocationTargetException e) {
                             throw new RuntimeException(e);
                         }
-                        List<XmlModelNodeImpl> storedParentModelNodes = m_xmlModelNodeToXmlMapper
-                                .getModelNodeFromNodeSchemaPath(element,
+                        List<XmlModelNodeImpl> storedParentModelNodes = m_xmlModelNodeToXmlMapper.getModelNodeFromNodeSchemaPath(element,
                                 configAttrsFromEntity, storedParentSchemaPath, storedGrandParentId, null, this);
-                        for (XmlModelNodeImpl storedParentModelNode : storedParentModelNodes) {
-                            fillNodes(nodeType, matchCriteria, parentId, nodes, storedParentSchemaPath,
-                                    storedParentModelNode);
+                        for(XmlModelNodeImpl storedParentModelNode: storedParentModelNodes){
+                            fillNodes(nodeType, matchCriteria, parentId, nodes, storedParentSchemaPath, storedParentModelNode);
                         }
                     }
                 }
-            } else {
+            }else{
                 //we can scope to a single stored parent here since we have parentId
-                XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath, parentId,
-                        storedGrandParentId);
+                XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode(storedParentSchemaPath, parentId, storedGrandParentId);
                 fillNodes(nodeType, matchCriteria, parentId, nodes, storedParentSchemaPath, storedParentModelNode);
             }
         }
@@ -248,13 +244,12 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         return nodes;
     }
 
-    private void fillNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId,
-                           List<ModelNode>
+    private void fillNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId, List<ModelNode>
             nodes, SchemaPath storedParentSchemaPath, XmlModelNodeImpl storedParentModelNode) {
-        if (storedParentModelNode != null) {
-            if (nodeType.equals(storedParentSchemaPath)) {
+        if(storedParentModelNode != null){
+            if(nodeType.equals(storedParentSchemaPath)) {
                 nodes.add(storedParentModelNode);
-            } else {
+            } else{
                 nodes.addAll(retrieveModelNodes(nodeType, matchCriteria, storedParentModelNode, parentId));
             }
         }
@@ -262,24 +257,23 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
 
     private void doFinalFilter(List<ModelNode> nodes, Map<QName, ConfigLeafAttribute> matchCriteria) {
         Iterator<ModelNode> nodeIterator = nodes.iterator();
-        while (nodeIterator.hasNext()) {
+        while(nodeIterator.hasNext()){
             ModelNode node = nodeIterator.next();
-            if (!MNKeyUtil.isMatch(matchCriteria, (ModelNodeWithAttributes) node, m_schemaRegistry)) {
-                LOGGER.debug("node: {}, did not match the match criteria matchCriteria: {} ", node, matchCriteria);
+            if(!MNKeyUtil.isMatch(matchCriteria, (ModelNodeWithAttributes) node, m_schemaRegistry)){
+                LOGGER.debug("node: {}, did not match the match criteria matchCriteria: {} ",node, matchCriteria);
                 nodeIterator.remove();
             }
         }
     }
 
-    private List<ModelNodeWithAttributes> retrieveModelNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute>
-            matchCriteria, XmlModelNodeImpl
+    private List<ModelNodeWithAttributes> retrieveModelNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, XmlModelNodeImpl
             storedParentModelNode, ModelNodeId parentId) {
         List<ModelNodeWithAttributes> nodes = new ArrayList<>(200);
         XmlModelNodeImpl parentModelNode = retrieveModelNode(nodeType.getParent(), parentId, storedParentModelNode);
         if (parentModelNode != null) {
-            List<XmlModelNodeImpl> children = parentModelNode.getChildren().get(nodeType.getLastComponent());
+            IndexedList<ModelNodeId, XmlModelNodeImpl> children = parentModelNode.getChildren().get(nodeType.getLastComponent());
             if (children != null) {
-                for (XmlModelNodeImpl child : children) {
+                for (XmlModelNodeImpl child:children.list()) {
                     if (MNKeyUtil.isMatch(matchCriteria, child, m_schemaRegistry)) {
                         nodes.add(child);
                     }
@@ -289,25 +283,23 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         return nodes;
     }
 
-    protected List<? extends Object> getParentEntities(Class storedParentClass, Map<QName, ConfigLeafAttribute>
-            matchCriteria, ModelNodeId parentId) throws
+    protected List<? extends Object> getParentEntities(Class storedParentClass, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId) throws
             DataStoreException {
         return getEntities(storedParentClass, matchCriteria, parentId);
     }
 
     @Override
-    public ModelNode createNode(ModelNode modelNode, ModelNodeId parentId) throws DataStoreException {
+    public ModelNode createNode(ModelNode modelNode, ModelNodeId parentId) throws DataStoreException{
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("createNode : {} parentId: {}", modelNode.getModelNodeSchemaPath(), parentId);
+            LOGGER.debug("createNode : {} parentId: {}",modelNode.getModelNodeSchemaPath(),parentId);
         }
         SchemaPath schemaPath = modelNode.getModelNodeSchemaPath();
         Class klass = m_entityRegistry.getEntityClass(schemaPath);
         if (klass != null && m_entityRegistry.getYangXmlSubtreeGetter(klass) == null) {
             return super.createNode(modelNode, parentId);
         } else {
-            if (modelNode.isRoot()) {
-                XmlModelNodeImpl xmlmodelNode = m_xmlModelNodeToXmlMapper.getRootXmlModelNode(
-                        (ModelNodeWithAttributes) modelNode, this);
+            if(modelNode.isRoot()){
+                XmlModelNodeImpl xmlmodelNode = m_xmlModelNodeToXmlMapper.getRootXmlModelNode((ModelNodeWithAttributes)modelNode, this);
                 super.createNode(xmlmodelNode, parentId);
                 markNodesToBeUpdated(modelNode.getModelNodeSchemaPath(), xmlmodelNode);
                 return xmlmodelNode;
@@ -322,10 +314,15 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
                 super.createNode(modelNode, parentId); // EntityModelNode DSM can handle this.
             } else {
                 SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(schemaPath);
+                if (storedParentSchemaPath == null) {
+                    storedParentSchemaPath = getStoredParentSchemaPath(parentModelNode.getModelNodeSchemaPath());
+                }
                 XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode((XmlModelNodeImpl) modelNode);
                 if (storedParentModelNode != null) {
                     parentModelNode.addChild(modelNode.getQName(), (XmlModelNodeImpl) modelNode);
-                    markNodesToBeUpdated(storedParentSchemaPath, storedParentModelNode);
+                    markNodesToBeUpdated(
+                            storedParentSchemaPath == null ? storedParentModelNode.getModelNodeSchemaPath() : storedParentSchemaPath,
+                            storedParentModelNode);
                 }
             }
         }
@@ -335,19 +332,16 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     @Override
     public void endModify() {
         LOGGER.debug("Updating the modified stored parent XML subtree nodes from cache into hibernate context");
-        for (XmlModelNodeImpl nodeToBeUpdated : m_dsmCache.getNodesToBeUpdated()) {
+        for(XmlModelNodeImpl nodeToBeUpdated: m_dsmCache.getNodesToBeUpdated()){
             SchemaPath nodeType = nodeToBeUpdated.getModelNodeSchemaPath();
             Class storedParentClass = m_entityRegistry.getEntityClass(nodeType);
             ModelNodeId parentId = nodeToBeUpdated.getParentNodeId();
-            ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(m_schemaRegistry, nodeType, nodeToBeUpdated
-                    .getModelNodeId());
+            ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(m_schemaRegistry, nodeType, nodeToBeUpdated.getModelNodeId());
             Object storedParentEntity;
-            storedParentEntity = getParentEntity(storedParentClass, modelNodeKey, parentId, LockModeType
-                    .PESSIMISTIC_WRITE);
+            storedParentEntity = getParentEntity(storedParentClass, modelNodeKey, parentId, LockModeType.PESSIMISTIC_WRITE);
             Element xmlValue = m_xmlModelNodeToXmlMapper.getXmlValue(nodeToBeUpdated);
-            String xmlSubtreeString = getXmlSubtreeString(getXmlSubtree(storedParentEntity, storedParentClass),
-                    nodeToBeUpdated, xmlValue);
-            if (xmlSubtreeString != null) {
+            String xmlSubtreeString = getXmlSubtreeString(getXmlSubtree(storedParentEntity, storedParentClass), nodeToBeUpdated, xmlValue);
+            if (xmlSubtreeString!=null) {
                 setXmlSubtree(storedParentEntity, storedParentClass, xmlSubtreeString);
             }
         }
@@ -355,9 +349,9 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     }
 
     @Override
-    public ModelNode createNode(ModelNode modelNode, ModelNodeId parentId, int insertIndex) throws DataStoreException {
+    public ModelNode createNode(ModelNode modelNode, ModelNodeId parentId, int insertIndex) throws DataStoreException{
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("createNode :" + modelNode.getModelNodeSchemaPath() + " parentId:" + parentId);
+            LOGGER.debug("createNode :"+modelNode.getModelNodeSchemaPath() +" parentId:"+parentId);
         }
         SchemaPath schemaPath = modelNode.getModelNodeSchemaPath();
         Class klass = m_entityRegistry.getEntityClass(schemaPath);
@@ -365,7 +359,7 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
             return super.createNode(modelNode, parentId, insertIndex);
         } else {
             XmlModelNodeImpl parentModelNode = null;
-            if (modelNode instanceof XmlModelNodeImpl) {
+            if (modelNode instanceof XmlModelNodeImpl){
                 parentModelNode = ((XmlModelNodeImpl) modelNode).getParentModelNode();
             }
 
@@ -375,8 +369,7 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
                 SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(schemaPath);
                 XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode((XmlModelNodeImpl) modelNode);
                 if (storedParentModelNode != null) {
-                    parentModelNode.addChildAtSpecificIndex(modelNode.getQName(), (XmlModelNodeImpl) modelNode,
-                            insertIndex);
+                    parentModelNode.addChildAtSpecificIndex(modelNode.getQName(), (XmlModelNodeImpl) modelNode, insertIndex);
                     markNodesToBeUpdated(storedParentSchemaPath, storedParentModelNode);
                 }
             }
@@ -385,39 +378,34 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     }
 
     @Override
-    @Transactional(value = TxType.REQUIRED, rollbackOn = {DataStoreException.class, RuntimeException.class, Exception
-            .class})
-    public void updateNode(ModelNode modelNode, ModelNodeId parentId, Map<QName, ConfigLeafAttribute>
-            configAttributes, Map<QName,
+    @Transactional(value=TxType.REQUIRED,rollbackOn={DataStoreException.class,RuntimeException.class,Exception.class})
+    public void updateNode(ModelNode modelNode, ModelNodeId parentId, Map<QName,ConfigLeafAttribute> configAttributes, Map<QName,
             LinkedHashSet<ConfigLeafAttribute>> leafListAttributes, boolean removeNode) throws DataStoreException {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("updateNode :" + modelNode.getModelNodeSchemaPath() + " parentId:" + parentId);
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("updateNode :"+modelNode.getModelNodeSchemaPath() +" parentId:"+parentId);
         }
         updateNode(modelNode, parentId, configAttributes, leafListAttributes, -1, removeNode);
     }
 
     @Override
-    @Transactional(value = TxType.REQUIRED, rollbackOn = {DataStoreException.class, RuntimeException.class, Exception
-            .class})
-    public void updateNode(ModelNode modelNode, ModelNodeId parentId, Map<QName, ConfigLeafAttribute>
-            configAttributes, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes, int insertIndex,
-                           boolean removeNode) throws DataStoreException {
-        if (modelNode.isRoot()) {
+    @Transactional(value=TxType.REQUIRED,rollbackOn={DataStoreException.class,RuntimeException.class,Exception.class})
+    public void updateNode(ModelNode modelNode, ModelNodeId parentId, Map<QName,ConfigLeafAttribute> configAttributes, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes, int insertIndex, boolean removeNode) throws DataStoreException {
+        if(modelNode.isRoot()){
             SchemaPath schemaPath = modelNode.getModelNodeSchemaPath();
             Class klass = m_entityRegistry.getEntityClass(schemaPath);
-            if (klass != null && m_entityRegistry.getYangXmlSubtreeGetter(klass) != null) {
-                ((ModelNodeWithAttributes) modelNode).updateConfigAttributes(configAttributes);
-                if (leafListAttributes != null) {
-                    ((ModelNodeWithAttributes) modelNode).setLeafLists(leafListAttributes);
+            if(klass != null && m_entityRegistry.getYangXmlSubtreeGetter(klass) != null){
+                ((ModelNodeWithAttributes)modelNode).updateConfigAttributes(configAttributes);
+                if(leafListAttributes != null){
+                    ((ModelNodeWithAttributes)modelNode).setLeafLists(leafListAttributes);
                 }
                 markNodesToBeUpdated(modelNode);
                 return;
             }
         }
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("updateNode :" + modelNode.getModelNodeSchemaPath() + " parentId:" + parentId);
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("updateNode :"+modelNode.getModelNodeSchemaPath() +" parentId:"+parentId);
         }
-        if (modelNode != null) {
+        if(modelNode!=null) {
             SchemaPath schemaPath = modelNode.getModelNodeSchemaPath();
             Class klass = m_entityRegistry.getEntityClass(schemaPath);
             if (klass != null) {
@@ -425,14 +413,14 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
                 updateCache(modelNode, configAttributes, leafListAttributes);
             } else {
                 SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(schemaPath);
-                ModelNode freshModelNode = findNode(modelNode.getModelNodeSchemaPath(), MNKeyUtil.getModelNodeKey
-                        (modelNode, m_schemaRegistry), parentId);
+                if (storedParentSchemaPath == null && modelNode.isSchemaMountImmediateChild()) {
+                    storedParentSchemaPath = getStoredParentSchemaPath(modelNode.getParentMountPath());
+                }
+                ModelNode freshModelNode = findNode(modelNode.getModelNodeSchemaPath(), MNKeyUtil.getModelNodeKey(modelNode, m_schemaRegistry), parentId);
                 if (freshModelNode != null) {
-                    XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode((XmlModelNodeImpl)
-                            freshModelNode);
+                    XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode((XmlModelNodeImpl) freshModelNode);
                     if (storedParentModelNode != null) {
-                        findAndUpdateModelNode(storedParentModelNode, (XmlModelNodeImpl) freshModelNode,
-                                configAttributes, leafListAttributes, removeNode);
+                        findAndUpdateModelNode(storedParentModelNode, (XmlModelNodeImpl) freshModelNode, configAttributes, leafListAttributes, removeNode);
                         markNodesToBeUpdated(storedParentSchemaPath, storedParentModelNode);
                     }
                 }
@@ -441,15 +429,14 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     }
 
     private void markNodesToBeUpdated(ModelNode modelNode) {
-        markNodesToBeUpdated(modelNode.getModelNodeSchemaPath(), (XmlModelNodeImpl) modelNode);
+        markNodesToBeUpdated(modelNode.getModelNodeSchemaPath(), (XmlModelNodeImpl)modelNode);
     }
 
-    private void updateCache(ModelNode modelNode, Map<QName, ConfigLeafAttribute> configAttributes, Map<QName,
-            LinkedHashSet<ConfigLeafAttribute>> leafListAttributes) {
+    private void updateCache(ModelNode modelNode, Map<QName, ConfigLeafAttribute> configAttributes, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes) {
         SchemaPath nodeType = modelNode.getModelNodeSchemaPath();
         ModelNodeId nodeId = modelNode.getModelNodeId();
         XmlModelNodeImpl nodeFromCache = m_dsmCache.getFromCache(nodeType, nodeId);
-        if (nodeFromCache != null) {
+        if(nodeFromCache != null){
             LOGGER.debug("Updated the node from cache, nodeType {}, nodeId {}", nodeType, nodeId);
             nodeFromCache.updateConfigAttributes(configAttributes);
             nodeFromCache.updateLeafListAttributes(leafListAttributes);
@@ -458,36 +445,27 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
 
     @Override
     public void removeNode(ModelNode modelNode, ModelNodeId parentId) throws DataStoreException {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("removeNode :" + modelNode.getModelNodeSchemaPath() + " parentId:" + parentId);
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("removeNode :"+modelNode.getModelNodeSchemaPath() +" parentId:"+parentId);
         }
-        if (modelNode != null) {
+        if(modelNode!=null) {
+            SchemaRegistry registry = SchemaRegistryUtil.getSchemaRegistry(modelNode, m_schemaRegistry);
             SchemaPath schemaPath = modelNode.getModelNodeSchemaPath();
             Class klass = m_entityRegistry.getEntityClass(schemaPath);
             if (klass != null) {
-                ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(m_schemaRegistry, modelNode
-                        .getModelNodeSchemaPath(), modelNode.getModelNodeId());
+                ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(registry, modelNode.getModelNodeSchemaPath(), modelNode.getModelNodeId());
                 Object entity = getParentEntity(klass, modelNodeKey, parentId, LockModeType.PESSIMISTIC_WRITE);
                 setXmlSubtree(entity, klass, "");
                 super.removeNode(modelNode, parentId);
                 m_dsmCache.removeFromCache(modelNode.getModelNodeId());
             } else {
                 SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(schemaPath);
-                ModelNode storedModelNode = findNode(modelNode.getModelNodeSchemaPath(), MNKeyUtil.getModelNodeKey
-                        (modelNode, m_schemaRegistry), parentId);
+                ModelNode storedModelNode = findNode(modelNode.getModelNodeSchemaPath(), MNKeyUtil.getModelNodeKey(modelNode, registry),parentId);
                 XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode((XmlModelNodeImpl) storedModelNode);
                 if (storedParentModelNode != null) {
                     XmlModelNodeImpl parentModelNode = ((XmlModelNodeImpl) storedModelNode).getParentModelNode();
-                    List<XmlModelNodeImpl> xmlModelNodes = parentModelNode.getChildren().get(storedModelNode.getQName
-                            ());
-                    Iterator<XmlModelNodeImpl> iterator = xmlModelNodes.iterator();
-                    while (iterator.hasNext()) {
-                        XmlModelNodeImpl child = iterator.next();
-                        if (child.getModelNodeId().equals(storedModelNode.getModelNodeId())) {
-                            iterator.remove();
-                            break;
-                        }
-                    }
+                    IndexedList<ModelNodeId, XmlModelNodeImpl> xmlModelNodes = parentModelNode.getChildren().get(storedModelNode.getQName());
+                    xmlModelNodes.remove(storedModelNode.getModelNodeId());
                     markNodesToBeUpdated(storedParentSchemaPath, storedParentModelNode);
                 }
             }
@@ -495,22 +473,20 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     }
 
     @Override
-    public void removeAllNodes(ModelNode parentNode, SchemaPath nodeType, ModelNodeId grandParentId) throws
-            DataStoreException {
-        if (LOGGER.isDebugEnabled()) {
+    public void removeAllNodes(ModelNode parentNode, SchemaPath nodeType, ModelNodeId grandParentId) throws DataStoreException {
+        if(LOGGER.isDebugEnabled()) {
             LOGGER.debug("removeAllNodes :" + parentNode.getModelNodeSchemaPath() + " parentId:" + grandParentId);
         }
-        if (parentNode != null) {
+        if(parentNode !=null) {
             SchemaPath schemaPath = parentNode.getModelNodeSchemaPath();
             Class klass = m_entityRegistry.getEntityClass(schemaPath);
             if (klass != null && m_entityRegistry.getYangXmlSubtreeGetter(klass) == null) {
-                super.removeAllNodes(parentNode, nodeType, grandParentId);
+                super.removeAllNodes(parentNode,nodeType,grandParentId);
             } else {
                 SchemaPath storedParentSchemaPath = getStoredParentSchemaPath(nodeType);
                 XmlModelNodeImpl storedParentModelNode = getStoredParentModelNode((XmlModelNodeImpl) parentNode);
                 if (storedParentModelNode != null) {
-                    List<XmlModelNodeImpl> xmlModelNodes = ((XmlModelNodeImpl) parentNode).getChildren().get(nodeType
-                            .getLastComponent());
+                    IndexedList<ModelNodeId, XmlModelNodeImpl> xmlModelNodes = ((XmlModelNodeImpl) parentNode).getChildren().get(nodeType.getLastComponent());
                     if (xmlModelNodes != null) {
                         xmlModelNodes.clear();
                         markNodesToBeUpdated(storedParentSchemaPath, storedParentModelNode);
@@ -520,18 +496,16 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         }
     }
 
-    private void findAndUpdateModelNode(XmlModelNodeImpl parentModelNode, XmlModelNodeImpl xmlModelNode, Map<QName,
-            ConfigLeafAttribute>
+    private void findAndUpdateModelNode(XmlModelNodeImpl parentModelNode, XmlModelNodeImpl xmlModelNode, Map<QName, ConfigLeafAttribute>
             configAttributes, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes, boolean removeNode) {
         //Map<QName, List<XmlModelNodeImpl>> children = parentModelNode.getChildren();
-        ModelNodeWithAttributes targetModelNode = retrieveModelNode(xmlModelNode.getModelNodeSchemaPath(),
-                xmlModelNode.getModelNodeId(), parentModelNode);
+        ModelNodeWithAttributes targetModelNode = retrieveModelNode(xmlModelNode.getModelNodeSchemaPath(), xmlModelNode.getModelNodeId(), parentModelNode);
         if (targetModelNode != null) {
-            if (configAttributes != null) {
+            if (configAttributes!=null) {
                 targetModelNode.updateConfigAttributes(configAttributes);
             }
-            if (leafListAttributes != null) {
-                if (removeNode) {
+            if(leafListAttributes!=null){
+                if (removeNode){
                     targetModelNode.removeLeafListAttributes(leafListAttributes);
                 } else {
                     targetModelNode.updateLeafListAttributes(leafListAttributes);
@@ -540,11 +514,15 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         }
     }
 
-    private XmlModelNodeImpl retrieveModelNode(SchemaPath nodeType, ModelNodeId modelNodeId, XmlModelNodeImpl
-            storedParentModelNode) {
-        if (modelNodeId.xPathString().equals(storedParentModelNode.getModelNodeId().xPathString())) {
+    private XmlModelNodeImpl retrieveModelNode(SchemaPath nodeType, ModelNodeId modelNodeId, XmlModelNodeImpl storedParentModelNode, SchemaRegistry schemaRegistry) {
+        if (modelNodeId.equals(storedParentModelNode.getModelNodeId())) {
             return storedParentModelNode;
         }
+
+        if (schemaRegistry == null) {
+            schemaRegistry = m_schemaRegistry;
+        }
+
         /**
          * The idea here is simple. The Super Grand Parent modelNode has a Map<QName,ModelNode>.
          * The QName is the immediate child of the Super grand Parent node and this is how the xml tree is
@@ -573,43 +551,77 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         ModelNodeRdn rdn = modelNodeId.getNextChildRdn(storedParentModelNode.getModelNodeId());
         QName nextQName = null;
         if (ModelNodeRdn.CONTAINER.equals(rdn.getRdnName())) {
-            nextQName = m_schemaRegistry.lookupQName(rdn.getNamespace(), rdn.getRdnValue());
-            List<XmlModelNodeImpl> childList = storedParentModelNode.getChildren().get(nextQName);
-            if (childList != null && !childList.isEmpty()) {
-                if (childList.get(0).getModelNodeSchemaPath().equals(nodeType)) {
-                    for (XmlModelNodeImpl child : childList) {
-                        if (modelNodeId.xPathString().equals(child.getModelNodeId().xPathString())) {
-                            return child;
+            nextQName = getRdnQNameFromRegistry(rdn, storedParentModelNode);
+            IndexedList<ModelNodeId, XmlModelNodeImpl> childList = storedParentModelNode.getChildren().get(nextQName);
+            if (( childList == null || childList.isEmpty()) && AnvExtensions.MOUNT_POINT.isExtensionIn(storedParentModelNode.getSchemaRegistry().getDataSchemaNode(storedParentModelNode.getModelNodeSchemaPath()))) {
+                if (storedParentModelNode.getSchemaRegistry().getMountRegistry() != null) {
+                    SchemaMountRegistryProvider provider = storedParentModelNode.getSchemaRegistry().getMountRegistry().getProvider(storedParentModelNode.getModelNodeSchemaPath());
+                    if (provider != null) {
+                        SchemaRegistry mountRegistry = provider.getSchemaRegistry(storedParentModelNode);
+                        RequestScope.getCurrentScope().putInCache(SchemaRegistryUtil.MOUNT_CONTEXT_PROVIDER, provider);
+                        RequestScope.getCurrentScope().putInCache(SchemaRegistryUtil.MOUNT_CONTEXT_SCHEMA_REGISTRY, mountRegistry);
+                        if (mountRegistry != null && !mountRegistry.getMountPath().equals(schemaRegistry.getMountPath())) {
+                            return retrieveModelNode(nodeType, modelNodeId, storedParentModelNode, mountRegistry);
                         }
                     }
-                } else if (childList.size() == 1) {
-                    return retrieveModelNode(nodeType, modelNodeId, childList.get(0));
+                }
+            }
+
+            if (childList != null && !childList.isEmpty()) {
+                if (childList.get(0).getModelNodeSchemaPath().equals(nodeType)) {
+                    return childList.map().get(modelNodeId);
+                } else if (childList.size() == 1){
+                    return retrieveModelNode(nodeType, modelNodeId, childList.get(0), schemaRegistry);
                 } else {
                     ModelNodeId nextId = modelNodeId.getNextChildId(storedParentModelNode.getModelNodeId());
-                    for (XmlModelNodeImpl child : childList) {
-                        if (nextId.xPathString().equals(child.getModelNodeId().xPathString())) {
-                            return retrieveModelNode(nodeType, modelNodeId, child);
-                        }
+                    XmlModelNodeImpl child = childList.map().get(nextId);
+                    if(child != null){
+                        return retrieveModelNode(nodeType, modelNodeId, child, schemaRegistry);
                     }
                 }
             }
         }
         return null;
+
     }
 
-    private List<ModelNode> retrieveModelNodes(SchemaPath nodeType, XmlModelNodeImpl storedParentModelNode,
-                                               ModelNodeId parentId) {
+    private QName getRdnQNameFromRegistry(ModelNodeRdn rdn, XmlModelNodeImpl storedParentModelNode) {
+        SchemaRegistry registry = m_schemaRegistry;
+        if(storedParentModelNode.hasSchemaMount() || storedParentModelNode.isSchemaMountImmediateChild()){
+            registry = SchemaRegistryUtil.getSchemaRegistry(m_schemaRegistry);
+        } else {
+            XmlModelNodeImpl grandParent = storedParentModelNode.getParentModelNode();
+            while(grandParent != null){
+                if(grandParent.hasSchemaMount() || grandParent.isSchemaMountImmediateChild()){
+                    registry = SchemaRegistryUtil.getSchemaRegistry(m_schemaRegistry);
+                    break;
+                }else {
+                    grandParent = grandParent.getParentModelNode();
+                }
+            }
+        }
+        QName nextQName = registry.lookupQName(rdn.getNamespace(), rdn.getRdnValue());
+        return nextQName;
+    }
+
+    private XmlModelNodeImpl retrieveModelNode(SchemaPath nodeType, ModelNodeId modelNodeId, XmlModelNodeImpl storedParentModelNode) {
+        return retrieveModelNode(nodeType, modelNodeId, storedParentModelNode, null);
+    }
+
+    private List<ModelNode> retrieveModelNodes(SchemaPath nodeType, XmlModelNodeImpl storedParentModelNode, ModelNodeId parentId) {
         List<ModelNode> modelNodes = new ArrayList<>();
         if (parentId != null) {
             XmlModelNodeImpl parentModelNode = retrieveModelNode(nodeType.getParent(), parentId, storedParentModelNode);
             if (parentModelNode != null) {
                 QName childQName = nodeType.getLastComponent();
-                List children = parentModelNode.getChildren().get(childQName);
-                modelNodes.addAll(children);
+                IndexedList<ModelNodeId, XmlModelNodeImpl> children = parentModelNode.getChildren().get(childQName);
+                if (children!=null) {
+                    modelNodes.addAll(children.list());
+                }
             }
         } else {
-            for (Map.Entry<QName, List<XmlModelNodeImpl>> entry : storedParentModelNode.getChildren().entrySet()) {
-                for (XmlModelNodeImpl child : entry.getValue()) {
+            for (Map.Entry<QName, IndexedList<ModelNodeId, XmlModelNodeImpl>> entry : storedParentModelNode.getChildren().entrySet()) {
+                for (XmlModelNodeImpl child : entry.getValue().list()) {
                     if (child.getModelNodeSchemaPath().equals(nodeType)) {
                         if (parentId != null && parentId.equals(child.getParentModelNode().getModelNodeId())) {
                             modelNodes.add(child);
@@ -628,30 +640,23 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         return modelNodes;
     }
 
-    private XmlModelNodeImpl getStoredParentModelNode(SchemaPath storedParentSchemaPath, ModelNodeId parentId,
-                                                      ModelNodeId storedGrandParentId) {
+    private XmlModelNodeImpl getStoredParentModelNode(SchemaPath storedParentSchemaPath, ModelNodeId parentId, ModelNodeId storedGrandParentId){
         XmlModelNodeImpl storedParentModelNode;
         Class storedParentClass = m_entityRegistry.getEntityClass(storedParentSchemaPath);
         ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(m_schemaRegistry, storedParentSchemaPath, parentId);
-        storedParentModelNode = m_dsmCache.getFromCache(storedParentSchemaPath, EMNKeyUtil.getModelNodeId
-                (modelNodeKey, storedGrandParentId, storedParentSchemaPath));
-        if (storedParentModelNode != null) {
+        storedParentModelNode = m_dsmCache.getFromCache(storedParentSchemaPath, EMNKeyUtil.getModelNodeId(modelNodeKey, storedGrandParentId, storedParentSchemaPath));
+        if(storedParentModelNode != null){
             return storedParentModelNode;
         }
         try {
-            Object storedParentEntity = getParentEntity(storedParentClass, modelNodeKey, storedGrandParentId,
-                    LockModeType.PESSIMISTIC_READ);
+            Object storedParentEntity = getParentEntity(storedParentClass, modelNodeKey, storedGrandParentId, LockModeType.PESSIMISTIC_READ);
             if (storedParentEntity != null) {
                 String yangXmlSubtree = getXmlSubtree(storedParentEntity, storedParentClass);
                 Element element = getXmlSubtreeElement(yangXmlSubtree);
-                Map<QName, ConfigLeafAttribute> configAttrsFromEntity = XmlModelNodeToXmlMapperImpl
-                        .getConfigAttributesFromEntity(m_schemaRegistry, storedParentSchemaPath, m_entityRegistry,
-                                storedParentClass, storedParentEntity);
-                List<XmlModelNodeImpl> storedParentModelNodes = m_xmlModelNodeToXmlMapper
-                        .getModelNodeFromNodeSchemaPath(element, configAttrsFromEntity, storedParentSchemaPath,
-                                storedGrandParentId, null, this);
-                for (XmlModelNodeImpl node : storedParentModelNodes) {
-                    if (storedGrandParentId.equals(node.getParentNodeId())) {
+                Map<QName, ConfigLeafAttribute> configAttrsFromEntity = XmlModelNodeToXmlMapperImpl.getConfigAttributesFromEntity(m_schemaRegistry, storedParentSchemaPath, m_entityRegistry, storedParentClass, storedParentEntity);
+                List<XmlModelNodeImpl> storedParentModelNodes = m_xmlModelNodeToXmlMapper.getModelNodeFromNodeSchemaPath(element, configAttrsFromEntity, storedParentSchemaPath, storedGrandParentId, null, this);
+                for(XmlModelNodeImpl node : storedParentModelNodes){
+                    if(storedGrandParentId.equals(node.getParentNodeId())){
                         storedParentModelNode = node;
                         break;
                     }
@@ -663,14 +668,14 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         return storedParentModelNode;
     }
 
-    private XmlModelNodeImpl getStoredParentModelNode(XmlModelNodeImpl xmlModelNode) {
-        if (xmlModelNode.getParentModelNode() != null) {
+    private XmlModelNodeImpl getStoredParentModelNode(XmlModelNodeImpl xmlModelNode){
+        if(xmlModelNode !=null && xmlModelNode.getParentModelNode()!=null){
             XmlModelNodeImpl parentModelNode = xmlModelNode.getParentModelNode();
-            while (parentModelNode.getParentModelNode() != null) {
+            while(parentModelNode.getParentModelNode()!=null){
                 parentModelNode = parentModelNode.getParentModelNode();
             }
             return parentModelNode;
-        } else {
+        }else{
             return xmlModelNode;
         }
     }
@@ -680,12 +685,10 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     }
 
     @SuppressWarnings("unchecked")
-    protected Object getParentEntity(Class klass, ModelNodeKey modelNodeKey, ModelNodeId parentId, LockModeType
-            lockModeType) throws
+    protected Object getParentEntity(Class klass, ModelNodeKey modelNodeKey, ModelNodeId parentId, LockModeType lockModeType) throws
             DataStoreException {
-        Object pk = EMNKeyUtil.buildPrimaryKey(klass, parentId, modelNodeKey, m_entityRegistry,
-                getEntityDataStoreManager(klass));
-        return getEntityDataStoreManager(klass).findById(klass, pk, lockModeType);
+        Object pk = EMNKeyUtil.buildPrimaryKey(klass, parentId, modelNodeKey, m_entityRegistry, getEntityDataStoreManager(klass));
+        return getEntityDataStoreManager(klass).findById(klass, pk,lockModeType);
     }
 
     protected EntityDataStoreManager getEntityDataStoreManager(Class klass) {
@@ -699,8 +702,20 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     }
 
     private SchemaPath getStoredParentSchemaPath(SchemaPath schemaPath) {
+        SchemaPath inPath = schemaPath;
         while (schemaPath != null && m_entityRegistry.getEntityClass(schemaPath) == null) {
             schemaPath = schemaPath.getParent();
+        }
+        if (schemaPath == null) {
+            DSValidationMountContext context = SchemaRegistryUtil.getDataSchemaNode(m_schemaRegistry, inPath);
+            DataSchemaNode inSchemaNode = context.getDataSchemaNode();
+            if (inSchemaNode != null) {
+                DataSchemaNode parentNode = SchemaRegistryUtil.getEffectiveParentNode(inSchemaNode, m_schemaRegistry);
+                schemaPath = parentNode != null ? parentNode.getPath() : null;
+                if (schemaPath != null) {
+                    return getStoredParentSchemaPath(schemaPath);
+                }
+            }
         }
         return schemaPath;
     }
@@ -708,7 +723,7 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
     private Element getXmlSubtreeElement(String yangXmlSubtree) {
         Element parentElement = null;
         try {
-            if (yangXmlSubtree != null && !yangXmlSubtree.isEmpty()) {
+            if(yangXmlSubtree !=null && !yangXmlSubtree.isEmpty()) {
                 parentElement = stringToDocument(yangXmlSubtree).getDocumentElement();
             }
         } catch (NetconfMessageBuilderException e) {
@@ -719,21 +734,19 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
 
     private String getXmlSubtreeString(String currentXmlStr, XmlModelNodeImpl node, Element xmlValue) {
         Element fulXmlElement = xmlValue;
-        if (node.isRoot()) {
-            if (currentXmlStr != null && !currentXmlStr.isEmpty()) {
+        if(node.isRoot()){
+            if(currentXmlStr != null && !currentXmlStr.isEmpty()){
                 try {
                     Element dataElement = DocumentUtils.stringToDocument(currentXmlStr).getDocumentElement();
                     fulXmlElement = dataElement;
-                    appendXmlValue(dataElement, m_schemaRegistry.getDataSchemaNode(node.getModelNodeSchemaPath()),
-                            xmlValue, node);
-                } catch (NetconfMessageBuilderException | InvalidIdentityRefException e) {
+                    appendXmlValue(dataElement, m_schemaRegistry.getDataSchemaNode(node.getModelNodeSchemaPath()), xmlValue, node);
+                } catch (NetconfMessageBuilderException |InvalidIdentityRefException e) {
                     throw new RuntimeException(e);
                 }
-            } else {
+            }else {
                 //xml string is null or empty string
                 Document ownerDocument = xmlValue.getOwnerDocument();
-                fulXmlElement = ownerDocument.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                        .RPC_REPLY_DATA);
+                fulXmlElement = ownerDocument.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_REPLY_DATA);
                 fulXmlElement.appendChild(xmlValue);
             }
         }
@@ -747,17 +760,16 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         return xmlSubtreeString;
     }
 
-    private void appendXmlValue(Element dataElement, DataSchemaNode dataSchemaNode, Element xmlValue,
-                                XmlModelNodeImpl node) throws InvalidIdentityRefException {
+    private void appendXmlValue(Element dataElement, DataSchemaNode dataSchemaNode, Element xmlValue, XmlModelNodeImpl node) throws InvalidIdentityRefException {
 
         Document ownerDocument = dataElement.getOwnerDocument();
         boolean appended = false;
-        if (dataSchemaNode instanceof ListSchemaNode) {
+        if(dataSchemaNode instanceof ListSchemaNode){
             Map<QName, ConfigLeafAttribute> keyAttributesFromNode = node.getKeyAttributes();
             ListSchemaNode listSchemaNode = (ListSchemaNode) dataSchemaNode;
-            for (Element rootNode : DocumentUtils.getChildElements(dataElement)) {
+            for(Element rootNode: DocumentUtils.getChildElements(dataElement)){
                 Map<QName, ConfigLeafAttribute> keyAttributesFromXml = getKeysFromXml(listSchemaNode, rootNode);
-                if (keyAttributesFromNode.equals(keyAttributesFromXml)) {
+                if(keyAttributesFromNode.equals(keyAttributesFromXml)){
                     rootNode.getParentNode().removeChild(rootNode);
                     dataElement.appendChild(ownerDocument.importNode(xmlValue, true));
                     appended = true;
@@ -766,9 +778,8 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
             }
         } else {
             //container
-            for (Element rootNode : DocumentUtils.getChildElements(dataElement)) {
-                if (rootNode.getNamespaceURI().equals(xmlValue.getNamespaceURI()) && rootNode.getLocalName().equals
-                        (xmlValue.getLocalName())) {
+            for(Element rootNode: DocumentUtils.getChildElements(dataElement)){
+                if(rootNode.getNamespaceURI().equals(xmlValue.getNamespaceURI()) && rootNode.getLocalName().equals(xmlValue.getLocalName())){
                     rootNode.getParentNode().removeChild(rootNode);
                     dataElement.appendChild(ownerDocument.importNode(xmlValue, true));
                     appended = true;
@@ -776,20 +787,18 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
                 }
             }
         }
-        if (!appended) {
+        if(!appended){
             //newly created node, so append at the end
             dataElement.appendChild(ownerDocument.importNode(xmlValue, true));
         }
     }
 
-    private Map<QName, ConfigLeafAttribute> getKeysFromXml(ListSchemaNode listSchemaNode, Element rootNode) throws
-            InvalidIdentityRefException {
+    private Map<QName, ConfigLeafAttribute> getKeysFromXml(ListSchemaNode listSchemaNode, Element rootNode) throws InvalidIdentityRefException {
         Map<QName, ConfigLeafAttribute> keyAttributesFromXml = new LinkedHashMap<>();
-        for (QName keyQname : listSchemaNode.getKeyDefinition()) {
-            for (Element field : DocumentUtils.getChildElements(rootNode)) {
-                if (nodesMatch(field, keyQname)) {
-                    keyAttributesFromXml.put(keyQname, ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry,
-                            listSchemaNode.getPath(), keyQname, field));
+        for(QName keyQname:listSchemaNode.getKeyDefinition()){
+            for(Element field : DocumentUtils.getChildElements(rootNode)){
+                if(nodesMatch(field, keyQname)){
+                    keyAttributesFromXml.put(keyQname, ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, listSchemaNode.getPath(), keyQname, field));
                 }
             }
         }
@@ -820,4 +829,13 @@ public class XmlSubtreeDSM extends AnnotationBasedModelNodeDataStoreManager {
         }
     }
 
+    @Override
+    public boolean isChildTypeBigList(SchemaPath nodeType) {
+        Class entityClass = m_entityRegistry.getEntityClass(nodeType);
+        if (entityClass != null) {
+            return super.isChildTypeBigList(nodeType);
+        } else {
+            return false;
+        }
+    }
 }

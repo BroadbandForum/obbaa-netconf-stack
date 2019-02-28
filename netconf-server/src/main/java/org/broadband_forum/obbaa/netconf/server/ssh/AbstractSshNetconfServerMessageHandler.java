@@ -22,17 +22,16 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.apache.sshd.common.future.SshFutureListener;
 import org.apache.sshd.common.io.IoOutputStream;
 import org.apache.sshd.common.io.IoWriteFuture;
 import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.channel.ChannelSession;
-import org.broadband_forum.obbaa.netconf.server.AbstractResponseChannel;
-import org.broadband_forum.obbaa.netconf.server.AnvTracingUtil;
 import org.w3c.dom.Document;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.MessageToolargeException;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLoggingContext;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
@@ -53,17 +52,21 @@ import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.server.AbstractResponseChannel;
+import org.broadband_forum.obbaa.netconf.server.AnvTracingUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
- * An abstract class provides that takes care of sending processed netconf request. The actual processing is done by
- * the subclasses based on
+ * An abstract class provides that takes care of sending processed netconf request. The actual processing is done by the subclasses based on
  * the type netconf SSH Framing Protocol.
- *
- * @author keshava
+ * 
  * @see <a href="https://tools.ietf.org/html/rfc6242#section-4.1">RFC 6242 Netconf over SSH Framing Protocol</a>
+ *
+ * 
  */
 public abstract class AbstractSshNetconfServerMessageHandler implements SshServerNetconfMessageHandler {
-    private static final Logger LOGGER = Logger.getLogger(AbstractSshNetconfServerMessageHandler.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(AbstractSshNetconfServerMessageHandler.class, LogAppNames.NETCONF_LIB);
     protected NetconfServerMessageListener m_serverMessageListener;
     private NetconfClientInfo m_clientInfo;
     protected IoOutputStream m_out;
@@ -74,10 +77,8 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
     protected ServerMessageHandler m_serverMessageHandler;
     protected ResponseChannel m_responseChannel;
 
-    public AbstractSshNetconfServerMessageHandler(NetconfServerMessageListener axsNetconfServerMessageListener,
-                                                  IoOutputStream out,
-                                                  ExitCallback exitCallBack, ServerMessageHandler
-                                                          serverMessageHandler, ChannelSession channel) {
+    public AbstractSshNetconfServerMessageHandler(NetconfServerMessageListener axsNetconfServerMessageListener, IoOutputStream out,
+                                                  ExitCallback exitCallBack, ServerMessageHandler serverMessageHandler,ChannelSession channel) {
         this.m_serverMessageListener = axsNetconfServerMessageListener;
         this.m_out = out;
         this.m_exitCallBack = exitCallBack;
@@ -99,15 +100,14 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
         NetConfResponse response = new NetConfResponse();
         AbstractNetconfRequest netconfRequest = null;
         try {
-            request = getRequestDocument(rpcMessage);
+            request = decode(rpcMessage);
             String requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(request);
-            if (AnvTracingUtil.isEmptyRequest(request, requestType)) {
+            if (AnvTracingUtil.isEmptyRequest(request, requestType)){
                 NetconfLoggingContext.suppress();
             }
             String messageId = DocumentUtils.getInstance().getMessageIdFromRpcDocument(request);
             if (messageId == null || messageId.isEmpty()) {
-                throw new NetconfMessageBuilderException(new NetconfRpcError(NetconfRpcErrorTag.MISSING_ATTRIBUTE,
-                        NetconfRpcErrorType.RPC,
+                throw new NetconfMessageBuilderException(new NetconfRpcError(NetconfRpcErrorTag.MISSING_ATTRIBUTE, NetconfRpcErrorType.RPC,
                         NetconfRpcErrorSeverity.Error, "<message-id> cannot be null/empty")
                         .addErrorInfoElement(NetconfRpcErrorInfo.BadAttribute, NetconfResources.MESSAGE_ID)
                         .addErrorInfoElement(NetconfRpcErrorInfo.BadElement, NetconfResources.RPC).toString());
@@ -115,66 +115,62 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
             response.setMessageId(messageId);
             if (requestType != null) {
                 switch (requestType) {
-                    case NetconfResources.CLOSE_SESSION:
-                        netconfRequest = DocumentToPojoTransformer.getCloseSession(request);
-                        break;
-                    case NetconfResources.COPY_CONFIG:
-                        netconfRequest = DocumentToPojoTransformer.getCopyConfig(request);
-                        break;
-                    case NetconfResources.DELETE_CONFIG:
-                        netconfRequest = DocumentToPojoTransformer.getDeleteConfig(request);
-                        break;
-                    case NetconfResources.EDIT_CONFIG:
-                        netconfRequest = DocumentToPojoTransformer.getEditConfig(request);
-                        break;
-                    case NetconfResources.GET:
-                        netconfRequest = DocumentToPojoTransformer.getGet(request);
-                        break;
-                    case NetconfResources.GET_CONFIG:
-                        netconfRequest = DocumentToPojoTransformer.getGetConfig(request);
-                        break;
-                    case NetconfResources.KILL_SESSION:
-                        netconfRequest = DocumentToPojoTransformer.getKillSession(request);
-                        if (!isKillSessionValid((KillSessionRequest) netconfRequest)) {
-                            invalidRequest = true;
-                            response.setOk(false);
-                            NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.INVALID_VALUE,
-                                    NetconfRpcErrorType.Application,
-                                    NetconfRpcErrorSeverity.Error, "Invalid session ID");
-                            response.addError(rpcError);
-                        }
-                        break;
-                    case NetconfResources.LOCK:
-                        netconfRequest = DocumentToPojoTransformer.getLockRequest(request);
-                        break;
-                    case NetconfResources.UNLOCK:
-                        netconfRequest = DocumentToPojoTransformer.getUnLockRequest(request);
-                        break;
-                    case NetconfResources.CREATE_SUBSCRIPTION:
-                        netconfRequest = DocumentToPojoTransformer.getCreateSubscriptionRequest(request);
-                        break;
-                    case NetconfResources.ACTION:
-                        netconfRequest = DocumentToPojoTransformer.getAction(request);
-                        break;
-                    default:
-                        // Could be a special rpc request
-                        netconfRequest = DocumentToPojoTransformer.getRpcRequest(request);
+                case NetconfResources.CLOSE_SESSION:
+                    netconfRequest = DocumentToPojoTransformer.getCloseSession(request);
+                    break;
+                case NetconfResources.COPY_CONFIG:
+                    netconfRequest = DocumentToPojoTransformer.getCopyConfig(request);
+                    break;
+                case NetconfResources.DELETE_CONFIG:
+                    netconfRequest = DocumentToPojoTransformer.getDeleteConfig(request);
+                    break;
+                case NetconfResources.EDIT_CONFIG:
+                    netconfRequest = DocumentToPojoTransformer.getEditConfig(request);
+                    break;
+                case NetconfResources.GET:
+                    netconfRequest = DocumentToPojoTransformer.getGet(request);
+                    break;
+                case NetconfResources.GET_CONFIG:
+                    netconfRequest = DocumentToPojoTransformer.getGetConfig(request);
+                    break;
+                case NetconfResources.KILL_SESSION:
+                    netconfRequest = DocumentToPojoTransformer.getKillSession(request);
+                    if (!isKillSessionValid((KillSessionRequest) netconfRequest)) {
+                        invalidRequest = true;
+                        response.setOk(false);
+                        NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.INVALID_VALUE, NetconfRpcErrorType.Application,
+                                NetconfRpcErrorSeverity.Error, "Invalid session ID");
+                        response.addError(rpcError);
+                    }
+                    break;
+                case NetconfResources.LOCK:
+                    netconfRequest = DocumentToPojoTransformer.getLockRequest(request);
+                    break;
+                case NetconfResources.UNLOCK:
+                    netconfRequest = DocumentToPojoTransformer.getUnLockRequest(request);
+                    break;
+                case NetconfResources.CREATE_SUBSCRIPTION:
+                    netconfRequest = DocumentToPojoTransformer.getCreateSubscriptionRequest(request);
+                    break;
+                case NetconfResources.ACTION:
+                    netconfRequest = DocumentToPojoTransformer.getAction(request);
+                    break;
+                default:
+                    // Could be a special rpc request
+                    netconfRequest = DocumentToPojoTransformer.getRpcRequest(request);
                 }
             } else {
                 // Send RPC error and close the session
                 invalidRequest = true;
                 response.setOk(false);
-                NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.MALFORMED_MESSAGE,
-                        NetconfRpcErrorType.RPC,
+                NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.MALFORMED_MESSAGE, NetconfRpcErrorType.RPC,
                         NetconfRpcErrorSeverity.Error, "Invalid request type");
                 response.addError(rpcError);
                 m_closeSession = true;
             }
         } catch (NetconfMessageBuilderException e) {
             if (request != null) {
-                try {
-                    LOGGER.error("Got an invalid netconf request from :" + m_clientInfo + " " + DocumentUtils
-                            .documentToString(request));
+                try {LOGGER.error("Got an invalid netconf request from :" + m_clientInfo + " " + DocumentUtils.documentToString(request));
                 } catch (NetconfMessageBuilderException ex) {
                     LOGGER.error("Got an invalid netconf request from :" + m_clientInfo, ex);
                 }
@@ -182,8 +178,14 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
             invalidRequest = true;
             response.setOk(false);
             NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.OPERATION_FAILED, NetconfRpcErrorType.RPC,
-                    NetconfRpcErrorSeverity.Error, "Got an invalid netconf request from " + m_clientInfo);
+                    NetconfRpcErrorSeverity.Error, "Got an invalid netconf request from username : " + m_clientInfo.getUsername() +", sessionId : " + m_clientInfo.getSessionId()
+                    + ", IP address : " +m_clientInfo.getRemoteHost() + ", Port: " + m_clientInfo.getRemotePort());
             response.addError(rpcError);
+        } catch (MessageToolargeException e) {
+            LOGGER.warn("Closing netconf session, incoming message too long to decode", e);
+            invalidRequest = true;
+            m_closeSession = true;
+            response = null;
         } finally {
             NetconfLoggingContext.enable();
         }
@@ -207,67 +209,70 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
     protected void closeSession() {
         m_exitCallBack.onExit(0, "close-session sent by client");
         m_responseChannel.markSessionClosed();
-        LOGGER.info("Channel is marked as closed, sessionId: " + m_clientInfo.getSessionId());
+        LOGGER.info("Channel is marked as closed, sessionId: " + LOGGER.sensitiveData(m_clientInfo.getSessionId()));
         m_serverMessageListener.sessionClosed("session closed", m_clientInfo.getSessionId());
         NetconfSubsystem.removeSession(m_clientInfo.getSessionId());
-        try {
+        try{
             m_channelSession.getSession().close();
-        } catch (IOException e) {
-            LOGGER.error(String.format("Error while closing connection: {}", m_channelSession), e);
+        }catch (IOException e){
+            LOGGER.error(String.format("Error while closing connection: {}",m_channelSession), e);
         }
     }
 
-    protected void killSession(KillSessionRequest request) {
-        NetconfSubsystem.killSession(request.getSessionId());
+    protected void killSession(int sessionId) {
+        NetconfSubsystem.killSession(sessionId);
         m_responseChannel.markSessionClosed();
     }
-
-    protected abstract byte[] getResponseBytes(Document responseDoc) throws NetconfMessageBuilderException;
-
-    protected abstract Document getRequestDocument(String rpcMessage) throws NetconfMessageBuilderException;
 
     protected ResponseChannel getResponseChannel() {
         return m_responseChannel;
     }
 
     private class SSHChannel extends AbstractResponseChannel {
-        public synchronized void sendResponse(NetConfResponse response, AbstractNetconfRequest request) throws
-                NetconfMessageBuilderException {
-            // write to the wire
+        public synchronized void sendResponse(NetConfResponse response, AbstractNetconfRequest request) throws NetconfMessageBuilderException {
+            markSessionToBeClosedOrKillSession(request, response);
+            writeResponse(response);
+        }
+
+        private void markSessionToBeClosedOrKillSession(AbstractNetconfRequest request, NetConfResponse response) throws NetconfMessageBuilderException {
             if (request != null) {
                 try {
-                    response.setOtherRpcAttributes(DocumentUtils.getInstance().getRpcOtherAttributes(request
-                            .getRequestDocument()));
+                    response.setOtherRpcAttributes(DocumentUtils.getInstance().getRpcOtherAttributes(request.getRequestDocument()));
                     if (AnvTracingUtil.isEmptyRequest(request)) {
                         NetconfLoggingContext.suppress();
                     }
                     if (request instanceof CloseSessionRequest) {
-                        LOGGER.info("received close session request, sessionId: " + m_clientInfo.getSessionId());
+                        LOGGER.info("received close session request, sessionId: " + LOGGER.sensitiveData(m_clientInfo.getSessionId()));
                         if (response.isOk()) {
                             m_closeSession = true;
                         }
                     } else if (request instanceof KillSessionRequest) {
-                        LOGGER.info("received kill session request, sessionId: " + m_clientInfo.getSessionId());
+                        LOGGER.info("received kill session request, sessionId: " + LOGGER.sensitiveData(m_clientInfo.getSessionId()));
 
                         if (response.isOk()) {
-                            killSession((KillSessionRequest) request);
+                            killSession(((KillSessionRequest) request).getSessionId());
                         }
+                    } else if (response.isCloseSession()) {
+                         m_closeSession = true;
                     }
                 } finally {
                     NetconfLoggingContext.enable();
                 }
             }
+        }
 
+        private void writeResponse(NetConfResponse response) throws NetconfMessageBuilderException {
             try {
-                Document responseDoc = response.getResponseDocument();
-                byte[] responseBytes = getResponseBytes(responseDoc);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(String.format("Sending response: %s , bytes to be sent: %s", DocumentUtils
-                            .prettyPrint(responseDoc), responseBytes));
-                }
-                writeBytes(response, responseBytes);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(String.format("Sent response: %s", DocumentUtils.prettyPrint(responseDoc)));
+                if(response != null) {
+                    Document responseDoc = response.getResponseDocument();
+                    byte[] responseBytes = encode(responseDoc);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(String.format("Sending response: %s , bytes to be sent: %s", DocumentUtils.prettyPrint(responseDoc), responseBytes));
+                    }
+                    writeBytes(response, responseBytes);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(String.format("Sent response: %s", DocumentUtils.prettyPrint(responseDoc)));
+                    }
                 }
             } finally {
                 if (m_closeSession) {
@@ -281,31 +286,27 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
         public synchronized void sendNotification(Notification notification) {
             try {
                 Document document = notification.getNotificationDocument();
-                byte[] notificationBytes = DocumentToPojoTransformer.addRpcDelimiter(DocumentToPojoTransformer
-                        .getBytesFromDocument(document));
+                byte[] notificationBytes = encode(document);
                 if (m_out.isClosed()) {
-                    LOGGER.debug("session " + m_clientInfo.getSessionId() + " is already closed, m_out: " + m_out
-                            .hashCode());
+                    LOGGER.debug("session " + LOGGER.sensitiveData(m_clientInfo.getSessionId()) + " is already closed, m_out: " + m_out.hashCode());
                 }
                 if (m_out.isClosing()) {
-                    LOGGER.debug("session " + m_clientInfo.getSessionId() + " is being closed");
+                    LOGGER.debug("session " + LOGGER.sensitiveData(m_clientInfo.getSessionId()) + " is being closed");
                 }
                 if (!m_out.isClosed() && !m_out.isClosing()) {
                     writeBytes(notification, notificationBytes);
-                    if (LOGGER.isDebugEnabled()) {
+                    if(LOGGER.isDebugEnabled()){
                         LOGGER.debug(String.format("A notification has been pushed to %s", m_clientInfo.toString()));
                     }
                 } else {
                     // session is closed
                     m_closeSession = true;
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Notification not pushed to " + m_clientInfo.toString() + "-session closed-" +
-                                notification.notificationToPrettyString());
+                    if(LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Notification not pushed to " + m_clientInfo.toString() + "-session closed-" + notification.notificationToPrettyString());
                     }
                 }
             } catch (Exception e) {
-                // When the server fails to deliver a notification (EG TCP error), the server closes the session that
-                // created the
+                // When the server fails to deliver a notification (EG TCP error), the server closes the session that created the
                 // subscription
                 LOGGER.error("Error occurred when sending notification, closing session..", e);
                 m_closeSession = true;
@@ -329,7 +330,7 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
                         }
                     }
                 });
-
+                
                 if (m_closeSession) {
                     try {
                         writeFuture.await(CLOSE_RESPONSE_TIME_OUT_SECS, TimeUnit.SECONDS);
@@ -337,7 +338,7 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
                         LOGGER.warn("Interrupted while sending close/kill session response", e);
                     }
                 }
-            } catch (Exception e) {
+            } catch (Exception e){
                 LOGGER.error("Error while sending the reponse to " + m_clientInfo.toString(), e);
                 message.getMessageSentFuture().completeExceptionally(e);
                 if (message instanceof Notification) {
@@ -347,11 +348,11 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
         }
 
     }
-
+    
     /**
      * Only for UT
-     **/
-    protected void setNetConfClientInfo(NetconfClientInfo clientInfo) {
+     * **/
+    protected void setNetConfClientInfo(NetconfClientInfo clientInfo){
         m_clientInfo = clientInfo;
     }
 

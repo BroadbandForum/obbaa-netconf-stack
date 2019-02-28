@@ -20,13 +20,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
@@ -36,21 +37,21 @@ public class SchemaPathUtil {
     public static final String DELIMITER = ",";
 
     public static Map<String, URI> m_namespaceCache = new ConcurrentHashMap<>();
-    public static Map<String, Date> m_revisionCache = new ConcurrentHashMap<>();
+    public static Map<String, Revision> m_revisionCache = new ConcurrentHashMap<>();
 
     public static SchemaPath fromString(String schemaPathStr) {
         List<String> parts = Arrays.asList(schemaPathStr.split(DELIMITER));
         List<QName> qNames = new ArrayList<>();
         Iterator<String> partsIter = parts.iterator();
-        while (partsIter.hasNext()) {
+        while (partsIter.hasNext()){
             String namespace = partsIter.next();
             String formattedRev = partsIter.next();
             String localName = partsIter.next();
             QName qName = null;
-            if (!formattedRev.isEmpty()) {
+            if(!formattedRev.isEmpty()) {
                 qName = QName.create(getNamespace(namespace), getRevision(formattedRev), localName);
-            } else {
-                qName = QName.create(getNamespace(namespace), null, localName);
+            }else{
+                qName = QName.create(getNamespace(namespace), (Revision)null, localName);
             }
             qNames.add(qName);
         }
@@ -64,16 +65,16 @@ public class SchemaPathUtil {
                 uri = new URI(namespace);
                 m_namespaceCache.putIfAbsent(namespace, uri);
             } catch (URISyntaxException e) {
-                throw new IllegalArgumentException(String.format("Namespace '%s' is not a valid URI", namespace), e);
+                throw new IllegalArgumentException(String.format("Namespace '%s' is not a valid URI",  namespace), e);
             }
         }
         return uri;
     }
 
-    private static Date getRevision(String revision) {
-        Date date = m_revisionCache.get(revision);
+    private static Revision getRevision(String revision) {
+        Revision date = m_revisionCache.get(revision);
         if (date == null) {
-            date = QName.parseRevision(revision);
+            date = Revision.of(revision);
             m_revisionCache.putIfAbsent(revision, date);
         }
         return date;
@@ -82,10 +83,23 @@ public class SchemaPathUtil {
     public static String toString(SchemaPath schemaPath) {
         Iterator<QName> pathIter = schemaPath.getPathFromRoot().iterator();
         StringBuilder sb = new StringBuilder();
-        while (pathIter.hasNext()) {
+        while(pathIter.hasNext()){
+            QName next = pathIter.next();
+            Optional<Revision> revObj = next.getRevision();
+            sb.append(next.getNamespace().toString()).append(DELIMITER)
+                    .append(revObj.isPresent() ? revObj.get().toString() : "").append(DELIMITER)
+                    .append(next.getLocalName()).append(DELIMITER);
+        }
+        return sb.toString();
+    }
+
+    public static String toStringNoRev(SchemaPath schemaPath) {
+        Iterator<QName> pathIter = schemaPath.getPathFromRoot().iterator();
+        StringBuilder sb = new StringBuilder();
+        while(pathIter.hasNext()){
             QName next = pathIter.next();
             sb.append(next.getNamespace().toString()).append(DELIMITER)
-                    .append(next.getFormattedRevision()).append(DELIMITER)
+                    .append("").append(DELIMITER)
                     .append(next.getLocalName()).append(DELIMITER);
         }
         return sb.toString();

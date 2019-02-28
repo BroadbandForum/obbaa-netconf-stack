@@ -1,0 +1,10 @@
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <rpc-error>
+        <error-type>application</error-type>
+        <error-tag>data-missing</error-tag>
+        <error-severity>error</error-severity>
+        <error-app-tag>instance-required</error-app-tag>
+        <error-path xmlns:policy="http://www.test-company.com/solutions/policy-engine">/policy:policy-engine/policy:policy[policy:name='test123']/policy:action/policy:object-type</error-path>
+        <error-message>Missing mandatory node</error-message>
+    </rpc-error>
+</rpc-reply>

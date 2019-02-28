@@ -17,18 +17,19 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Element;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 /**
  * Created by nhtoan on 1/28/16.
  */
 public class StateChangeNotification extends NetconfNotification {
-
+    
     private static final Logger LOGGER = Logger.getLogger(StateChangeNotification.class);
-
+    
     public static final QName TYPE = QName.create(NetconfResources.NC_STACK_NS, "state-change-notification");
 
     private String m_target;
@@ -37,7 +38,7 @@ public class StateChangeNotification extends NetconfNotification {
     public StateChangeNotification() {
         super();
     }
-
+    
     public StateChangeNotification(String target, String value) {
         super();
         this.m_target = target;
@@ -67,7 +68,7 @@ public class StateChangeNotification extends NetconfNotification {
         }
         return null;
     }
-
+    
     @Override
     public QName getType() {
         return TYPE;

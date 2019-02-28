@@ -1,0 +1,37 @@
+module datastore-validator-grouping-test {
+
+    yang-version 1;
+
+    namespace "urn:org:bbf:pma:load-balancer";
+
+    prefix "lb";
+
+    revision "2018-07-20" {
+        description "version";
+    }
+
+    identity load-balancing-algorithm {
+        description "Base identity";
+    }
+
+    identity least-loaded {
+        base "load-balancing-algorithm";
+        description "Lead loaded algorithm";
+    }
+
+    identity round-robin {
+        base "load-balancing-algorithm";
+        description "Round robin algorithm";
+    }
+
+    grouping load-balancer {
+        container load-balancer {
+            leaf distribution-algorithm {
+                type identityref {
+                    base "load-balancing-algorithm";
+                }
+                default lb:round-robin;
+            }
+        }
+    }
+}

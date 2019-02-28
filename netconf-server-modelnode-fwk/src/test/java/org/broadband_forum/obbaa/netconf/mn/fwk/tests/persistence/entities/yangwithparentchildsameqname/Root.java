@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.yangwithparentchildsameqname;
 
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangContainer;
@@ -28,7 +12,7 @@ import javax.persistence.Table;
 
 @Entity(name = "yangwithparentchildsameqname_root")
 @Table(name = "yangwithparentchildsameqname_root")
-@YangContainer(name = "root", namespace = "urn:yang-with-parent-child-same-qname", revision = "2016-07-11")
+@YangContainer(name="root", namespace = "urn:yang-with-parent-child-same-qname", revision= "2016-07-11")
 public class Root {
     @Id
     @YangParentId
@@ -38,7 +22,7 @@ public class Root {
     @Column(length = 1000)
     String schemaPath;
 
-    @Column(length = 100000)
+    @Column(length=100000)
     @YangXmlSubtree
     private String xmlSubtree;
 
@@ -66,8 +50,7 @@ public class Root {
         this.schemaPath = schemaPath;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
         return "Root{" +
                 "schemaPath='" + schemaPath + '\'' +
                 ", parentId='" + parentId + '\'' +

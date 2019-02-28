@@ -6,6 +6,14 @@ module datastore-validator-test {
 	
 	prefix "validation";
 	
+    import ietf-inet-types {
+          prefix inet;
+	}
+    
+    import datastore-validator-grouping-test {
+    	prefix lb;
+    }
+	
 	revision "2015-12-14" {
 	      description "Initial version.";
 	}
@@ -21,17 +29,31 @@ module datastore-validator-test {
 		base some-identity;
 	}
 
+	typedef test-interface-ref {
+		type leafref {
+		   path "/validation:validation/validation:test-interfaces/validation:test-interface/validation:name";
+		}
+    }
 	    
     grouping group1 {
         container groupContainer1 {
             leaf groupContainerLeaf1 {
                type leafref {
-                   path "validation:validation/validation:validation";
+                   path "/validation:validation/validation:validation";
                 }
             }
         }
+
+        container groupContainer2 {
+        	leaf groupContainerLeaf2 {
+        		type leafref {
+        			path "/validation/validation";
+        		}
+        	}
+        }        
     }
-    
+
+
     grouping group-ref {
         leaf group-name {
             mandatory true;
@@ -42,6 +64,49 @@ module datastore-validator-test {
             type string;
         }
     }
+    
+    grouping policy-entry-ref {
+        leaf name {
+          type leafref {
+            path "/validation:validation3" +
+             "/validation:policies" +
+    	     "/validation:policy" +
+    	     "/validation:name";
+          }
+        }
+      }
+    grouping classifier-entry-ref {
+        leaf name {
+          type leafref {
+            path "/validation:validation3" +
+             "/validation:classifiers" +
+    	     "/validation:classifier-entry" +
+    	     "/validation:name";
+          }
+        }
+      }
+    
+    grouping classifier-entry-inline-attr {
+
+        container match-criteria {
+          uses dscp-match;
+        }
+      }
+    
+    grouping dscp-match {
+        leaf dscp-range {
+          type union {
+            type string;
+            type enumeration {
+              enum "any" {
+                description
+                  "Matches 'any' dscp value in the range of 0 to 63.";
+              }
+            }
+          }
+          default "any";
+        }
+      }
     
     container validation1 {
         must "count(list1) <= 1";
@@ -55,6 +120,31 @@ module datastore-validator-test {
     			type string;
     		}
     	}
+    }
+    
+    container validation5 {
+    	leaf type {
+	          type identityref {
+	            base some-identity;
+	          }
+		}
+    	container must-with-derived-from-or-self {
+            must "derived-from-or-self(/validation5/type, 'validation:identity2')";
+            leaf mustLeaf {
+                type string;
+                default "must";
+            }
+        }
+    	
+        
+        container testinterface-state {
+            when "derived-from-or-self(/validation5/type, 'validation:identity2')";
+            config false;
+            
+                  leaf type {
+                        type string;
+                  }            
+        }
     }
     
     container validation2 {
@@ -94,6 +184,12 @@ module datastore-validator-test {
         	type string;
         }
         
+        container container1 {
+         leaf validation3Leaf {
+        	type string;
+         }
+        }
+        
     	list list1{
     		key key1;
     		leaf key1{
@@ -119,14 +215,304 @@ module datastore-validator-test {
     				}
     			}
     		}
+    		
+    	    container container2 {
+    				list address{
+    			   		key "ip";
+    			 		leaf ip {
+    			    	    must "not(count(../../container2/address[ip = current()]) >=2)"{ 
+         	   	            error-message "IP address can not be same"; 
+    			    	}
+    			    	type inet:ipv4-address-no-zone;
+    			      }
+    			   }
+    				leaf refClass1 {
+			    	    must "count(current()) =1";
+    					type string;
+    				}
+    				leaf refClass2 {
+    					must "count(current()/../address[ip = '1.1.1.1']) = 1";
+    					type string;
+    				}
+    				
+    				leaf container2leaf {
+    					type string;
+    				}
+    			}
+    	}
+    
+    	  container qos-policy-profiles {
+
+    		    list policy-profile {
+    		      key "name";
+
+    		      leaf name{
+    		        type string;
+    		      }
+
+    		      list policy-list {
+    		        key "name";
+    		        ordered-by user;
+
+    		        uses policy-entry-ref;
+    		      }
+    		    }
+    		  }
+    	  
+    	  container classifiers {
+
+    		    list classifier-entry {
+    		      key "name";
+
+    		      leaf name {
+    		        type string;
+    		      }
+
+    		      choice filter-method {
+    		        description 
+    		          "Choice of filter configuration way.";
+
+    		          case inline {
+    		            uses classifier-entry-inline-attr;
+    		          }
+    		       }
+    		    }
+    		  }
+    	  
+    	  container policies {
+
+    	    list policy {
+    	      key "name";
+
+    	      leaf name {
+    	        type string;
+    	      }
+
+    	      list classifiers {
+    	        key "name";
+    	        ordered-by user;
+
+    	        uses classifier-entry-ref;
+    	      }
+    	    }
+    	  }
+    	
+	 list must-validation {
+            must "value ='test' ";
+            key key1;
+
+            leaf key1 {
+                type string;
+            }
+
+            leaf value {
+                type string;
+            }
+        }
+
+        list must-validation1 {
+            must "key1 = 'key' and value ='test' ";
+            key key1;
+
+            leaf key1 {
+                type string;
+            }
+
+            leaf value {
+                type string;
+            }
+        }
+
+        list must-validation2 {
+            must "key1 = 'key' and values ='test' ";
+            key key1;
+
+            leaf key1 {
+                type string;
+            }
+
+            leaf-list values {
+                type string;
+            }
+        }
+        
+        list when-validation {
+            when "key1 = 'key' and values ='test' ";
+            key key1;
+
+            leaf key1 {
+                type string;
+            }
+
+            leaf-list values {
+                type string;
+            }
+        }
+
+    }
+
+    augment "/validation/augmentContainer" {
+    	when "validation = 'augment'";
+    	container containerAugment {
+    		leaf leaf1 {
+    			mandatory true;
+    			type string;
+    		}
+    	}
+    }
+    
+    augment "/validation" {
+    	when "/validation/load-balancing = 'round-robin'";
+    	container identityContainer {
+          uses lb:load-balancer;
     	}
     }
 
+    augment "/validation/dummy-interfaces/dummy-interface" {
+        	when "dummy-type = 'forwarding'";
+        	container dummy-forwarding {
+        	    leaf forwarding-leaf {
+        	        type string;
+        	        default "dummyForwarding";
+        	    }
+            }
+    }
+
+    augment "/validation/dummy-interfaces/dummy-interface" {
+             container dummy-traps {
+                leaf trap-leaf {
+                	 type string;
+                	 default "dummyTrap";
+                	 when "../../dummy-type = 'traps'";
+                }
+            }
+    }
+    
+ grouping acl-ip-header-fields {
+
+        description
+                "IP header fields common to ipv4 and ipv6";
+        leaf dscp {
+            type inet:dscp;
+            description
+                        "Value of dscp.";
+        }
+        leaf protocol {
+            type uint8;
+            description
+                        "Internet Protocol number.";
+        }
+        uses acl-transport-header-fields;
+    }
+
+    grouping acl-transport-header-fields {
+        container source-port-range {
+            presence "Enables setting source port range";
+            leaf lower-port {
+                type int8;
+                mandatory true;
+            }
+            leaf upper-port {
+                must ". >= ../lower-port" ;
+                type int8;
+            }
+        }
+        container destination-port-range {
+            leaf lower-port {
+            	default 1;
+                type int8;
+                mandatory true;
+            }
+            leaf upper-port {
+                must ". >= ../lower-port";
+                type int8;
+            }
+        }
+    }
+
+    grouping acl-ipv4-header-fields {
+        leaf destination-ipv4 {
+            type string;
+        }
+        leaf source-ipv4 {
+            type string;
+        }
+    }
+
+    grouping acl-ipv6-header-fields {
+        leaf destination-ipv6 {
+            type string;
+        }
+        leaf source-ipv6 {
+            type string;
+        }
+    }
+
+    grouping acl-eth-header-fields {
+        leaf destination-mac-address {
+            type string;
+        }
+        leaf source-mac-address {
+            type string;
+        }
+    }
+
+    container validation6 {
+        container access-lists {
+            list acl {
+
+                key "acl-type acl-name";
+
+                leaf acl-type {
+                    type string;
+                }
+
+                leaf acl-name {
+                    type string;
+                }
+
+                container access-list-entries {
+                	
+                    list ace {
+                        key "rule-name";
+                        leaf rule-name {
+                            type string;
+                        }
+
+                        container matches {
+                            choice ace-type {
+                                case ace-ip {
+                                    choice ace-ip-version {
+                                        case ace-ipv4 {
+                                            uses acl-ipv4-header-fields;
+                                        }
+                                        case ace-ipv6 {
+                                            uses acl-ipv6-header-fields;
+                                        }
+                                    }
+                                    uses acl-ip-header-fields;
+                                }
+                                case ace-eth {
+                                    uses acl-eth-header-fields;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     
     container validation {
-    
+    	
+    	container augmentContainer {
+    		leaf validation {
+    			type string;
+    		}
+    	}
+    	
     	container sameContainerAsRoot {
-    		
+    			
     		container validation {
     			leaf validation1 {
     				type leafref { 
@@ -136,7 +522,50 @@ module datastore-validator-test {
     				
     		}
     	}
-    	
+
+        container dummy-interfaces {
+            list dummy-interface {
+                key "dummy-name";
+
+                leaf dummy-name {
+                   type string;
+                   description
+                       "The name of the interface.";
+                }
+
+                leaf dummy-type {
+                   type string;
+                   mandatory true;
+                }
+            }
+        }
+
+		leaf nonExistantLeaf {
+			type string;
+			when "1 = 1 and iamImpactNode != 'iAmNotNull'";
+		}
+		
+		leaf load-balancing {
+			type string;
+		}
+		
+		leaf iamImpactNode {
+			type string;
+		}
+		
+    	leaf mustCount {
+			must "count(../list1) > 0";
+			type string;
+		}
+		
+		list list1 {
+			key someKey;
+			
+			leaf someKey {
+				type string;
+			}
+		}    	
+		
     	list booleanCurrent {
     		key key;
     		
@@ -187,6 +616,26 @@ module datastore-validator-test {
     		}
     	}
     	
+    	container test-interfaces {
+    		
+    		list test-interface {
+    			key "name";
+
+    			leaf name {
+    			    type string;
+    			    description
+    			      "The name of the interface.";
+    			}
+    			
+    		    leaf type {
+    		    	type string; 
+    		        mandatory true;    
+    		    }
+    		}
+
+    	}
+    	
+    	
     	list someList {
     		must "sum(/validation/someList/sumValue) < 100 and sum(../someList/sumValue) > 5";
     		
@@ -196,12 +645,231 @@ module datastore-validator-test {
     		}
     		
     		leaf sumValue {
-    			must "not(contains(.,10))";
     			type int8;
     		}
     		
     		
     	}
+    	
+    	list alarm-list {
+    		
+    		key key;
+    		leaf key {
+    			type string;
+    		}
+    		
+    		leaf severity {
+    	         type enumeration {
+    	           enum cleared {
+    	             value 1;
+    	           }
+    	           enum indeterminate {
+    	             value 2;
+    	           }
+    	           enum minor {
+    	             value 3;
+    	           }
+    	           enum warning {
+    	             value 4;
+    	           }
+    	           enum major {
+    	             value 5;
+    	           }
+    	           enum critical {
+    	             value 6;
+    	           }
+    	         }
+    	     }
+    		
+    		 leaf test-enum-value-with-parent-pattern {
+        		must "enum-value(../severity) >= 5";
+        		type string;
+        	 }
+    		 
+    		 leaf test-enum-value-with-empty-node-set {
+          		must "enum-value() >= 5";
+          		type string;
+          	 }
+    	}
+    	
+    	container test-enum-value-container {
+    		
+    		container test-container-one {
+    			
+    			leaf leaf1 {
+    				type enumeration {
+    					enum one {
+    						value 1;
+    					} 
+    					enum two {
+    						value 2;
+    					}
+    				}
+    			}
+    			
+    			leaf-list leaflist1 {
+    				type enumeration {
+    					enum one {
+    						value 1;
+    					} 
+    					enum two {
+    						value 2;
+    					}
+    					enum three {
+    						value 3;
+    					}
+    					enum four {
+    						value 4;
+    					}
+    				}
+    			}
+    			
+    			list list1{
+    				
+    				key key;
+    				
+    				leaf key {
+    					type string;
+    				}
+    				
+    				leaf valueLeaf {
+    					type enumeration {
+    						
+    						enum one {
+    							value 1;
+    						} 
+    						enum two {
+    							value 2;
+    						}
+    					}
+    				}
+    			}
+    			
+    			leaf non-enum-leaf1 {
+    				type string;
+    			}
+    			
+				leaf-list non-enum-leaf-list1{
+					type string;
+				}
+				
+    			choice choice1{
+    				
+    				case case1 {
+    					leaf leaf11{
+    						type string;
+    					}
+    				}
+    				
+    				case case2 {
+    					leaf leaf22{
+    						type enumeration{
+    	    					enum one {
+    	    						value 1;
+    	    					} 
+    	    					enum two {
+    	    						value 2;
+    	    					}
+    						}
+    					}
+    				}
+    				
+    				case case3 {
+    					leaf leaf33{
+    						type string;
+    					}
+    				}
+    			}
+    		}
+    		
+    		container test-container-two {
+    			
+    			leaf test-enum-leaf {
+    				must "enum-value(../../test-container-one/leaf1) > 1";
+    				type string;
+    			}
+    			
+    			leaf test-enum-leaf-with-absolute-path {
+    				must "enum-value(/validation/test-enum-value-container/test-container-one/list1[key = current()]/valueLeaf) > 1";
+    				type string;
+    			}
+    			
+    			leaf test-enum-leaf-for-leaf-list {
+    				must "enum-value(../../test-container-one/leaflist1) > 2";
+    				type string;
+    			}
+    			
+    			leaf test-for-non-enum-leaf-list {
+    				must "enum-value(../../test-container-one/non-enum-leaf-list1) > 2";
+    				type string;
+    			}
+    			
+    			leaf test-for-non-enum-leaf {
+    				must "enum-value(/validation/test-enum-value-container/test-container-one/non-enum-leaf1) > 1";
+    				type string;
+    			}
+    			
+    			leaf test-enum-leaf-in-choice-case {
+    				must "enum-value(../../test-container-one/leaf22) > 1";
+    				type string;
+    			}
+    			
+    			leaf test-leaf {
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}
+    					enum three{
+    						value 3;
+    					}
+    				}
+    			}
+    			
+    			leaf test-enum-leaf-with-dot-operator {
+    				must "enum-value(.) > 1";
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}	
+    				}
+    			}
+    			
+    			leaf-list test-enum-leaf-list-with-dot-operator {
+    				must "enum-value(.) > 2";
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}
+    					enum three{
+    						value 3;
+    					}
+    				}
+    			}
+    			
+    			leaf test-enum-leaf-xpath-from-dot {
+    				must "enum-value(./../test-leaf) > enum-value(.)";
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}
+    				}
+    				
+    			}
+    		}
+    	}
+    	
 		leaf validation {
 			type string;
 			mandatory false;
@@ -332,6 +1000,12 @@ module datastore-validator-test {
 				}
 				
 			}
+		}
+		
+		container group-validation-without-prefixes {
+			presence "yes";
+			
+			uses group1;
 		}
 		
 		container mandatory-validation-container {
@@ -484,7 +1158,7 @@ module datastore-validator-test {
 				
 				choice choice2 {
 					mandatory true;
-					when "../../../validation = 'choice2'";
+					when "../../validation = 'choice2'";
 					case case1 {
 						leaf leaf11 {
 							type int8;
@@ -551,6 +1225,29 @@ module datastore-validator-test {
 			}
 		}
 		
+	container current-validation {
+            list list1 {
+                key key;
+
+                leaf key {
+                    type string;
+                }
+
+                leaf type {
+                    type string;
+                }
+
+                leaf value {
+                    type int8;
+                }
+            }
+
+            leaf leaf1 {
+                must "count(/validation/current-validation/list1[key = current() and /validation/current-validation/list1[key = 'key1']/value = /validation/current-validation/list1[key = current()]/value]) = 1";
+                type string;
+            }
+        }
+ 		
 		leaf defaultLeaf1 {
 			default "2";
 			type string;
@@ -567,6 +1264,11 @@ module datastore-validator-test {
 			type int8;
 		}
 		
+		container inner-validation {
+			leaf containsLeaf {
+				type int8;
+			}
+		}
 		leaf rpcRefLeaf{
 			type string;
 		}
@@ -575,8 +1277,70 @@ module datastore-validator-test {
            type leafref {
                path "../validation:validation";
             }
-        }			
-			    	
+        }
+
+	container when-validation1 {
+            leaf when-leaf {
+                when "../enabled = 'true'";
+                type string;
+            }
+
+            leaf enabled {
+                type boolean;
+            }
+        }
+
+        container must-validation1 {
+            leaf must-leaf {
+                must "../enabled = 'true'";
+                type string;
+            }
+
+            leaf enabled {
+                type boolean;
+            }
+        }
+
+        container when-mandatory-validation {
+            leaf when-mandatory-leaf {
+                when "../enabled = 'true'";
+                type string;
+                mandatory true;
+            }
+
+            leaf enabled {
+                type boolean;
+            }
+        }
+
+ container when-mandatory-leafref-validation {
+
+            leaf when-mandatory-leaf {
+                when "../enabled = 'true'";
+                type leafref {
+                    path '../profiles/profile/name';
+                }
+                mandatory true;
+            }
+
+            leaf enabled {
+                type boolean;
+            }
+
+            container profiles {
+
+                list profile {
+                    key name;
+
+                    leaf name {
+                        type string;
+                    }
+                }
+            }
+        }
+
+
+
     	list newList {
     		key validation;
     		
@@ -613,6 +1377,37 @@ module datastore-validator-test {
     		}
     		
     		
+    	}
+    	
+    	container current-usage {
+    		
+    		leaf current-usage {
+    			type string;
+    		}
+    		
+    		leaf current-usage-for-list {
+    			type string;
+    		}
+    	} 
+    	
+    	container test-profiler {
+    		must "current()/../validation:current-usage/validation:current-usage = 'current-leafvalue'";
+    		leaf profile {
+    			type string;
+    		}
+    		
+    		list student {
+    			must "current()/../../validation:current-usage/validation:current-usage-for-list = 'current-leafvalue-list'";
+    			key name;
+    			
+    			leaf name {
+    				type string;
+    			}
+    			
+    			leaf native-place {
+    				type string;
+    			}
+    		}
     	}
     	
     	container class-validation {
@@ -700,6 +1495,13 @@ module datastore-validator-test {
     			when "../caseList[current()]/class = 'class'";
     			type string;
     		}
+    		
+    		container must-validation {
+    		    leaf class {
+    		        must "current() = 'test'";
+    		        type string;
+    		    }
+    		}
     	}
     	
     
@@ -774,6 +1576,33 @@ module datastore-validator-test {
             }
 
             leaf status {
+                type string;
+            }
+
+        }
+        
+        list listWithMust {
+        	
+        	must "./one" 
+            { 
+                error-message "one leaf is mandatory"; 
+            } 
+            must "./two" 
+            { 
+                error-message "two leaf is mandatory"; 
+            } 
+        	
+            key id;
+
+            leaf id {
+                type string;
+            }
+
+            leaf one {
+                type string;
+            }
+
+            leaf two {
                 type string;
             }
 
@@ -1015,6 +1844,16 @@ module datastore-validator-test {
         			when "/validation/leaf-ref/album[name = current()/../current-leaf]/song-count >= 10";
         			type string;
         		}
+        		
+        		leaf-list current-leaf1 {
+        			type string;
+        		}
+        		
+        		leaf-list current-leaf2 {
+        			when "/validation/leaf-ref/album[name = current()/../current-leaf1]/song-count >= 10";
+        			type string;
+        		}
+        		
         	}
             
         	container current-multi-parent {
@@ -1060,6 +1899,7 @@ module datastore-validator-test {
         	}
         	
            container stateValue {
+        	   config false;
               leaf value1 {
                   type string;
                   config false;
@@ -1182,6 +2022,20 @@ module datastore-validator-test {
 	    			case case2 {
 	    				leaf case-leaf2{
 	    					type string;
+	    				}
+	    			}
+	    			case case3 {
+	    				container case3Container{
+	    					leaf case-leaf3{
+	    						type string;
+	    					}
+	    				}
+	    			}
+	    			case case4 {
+	    				container case4Container{
+	    					leaf case-leaf4{
+	    						type string;
+	    					}
 	    				}
 	    			}
 	    		}
@@ -1624,13 +2478,13 @@ module datastore-validator-test {
 				
 				choice leaf-type {
 					case leafcase-success {
-						when "../../validation:result-choice = 'success'";
+						when "validation:result-choice = 'success'";
 						leaf leaf-case-success {
 							type string;
 						}
 					}
 					case leafcase-failed {
-						when "../../validation:result-choice = 'failed'";
+						when "validation:result-choice = 'failed'";
 						leaf leaf-case-failed {
 							type string;
 						}
@@ -1639,13 +2493,13 @@ module datastore-validator-test {
 				
 				choice leaflist-type {
 					case leaflist-case-success {
-						when "../../validation:result-choice = 'success'";
+						when "validation:result-choice = 'success'";
 						leaf-list leaflist-case-success {
 							type string;
 						}
 					}
 					case leaflist-case-failed {
-						when "../../validation:result-choice = 'failed'";
+						when "validation:result-choice = 'failed'";
 						leaf-list leaflist-case-failed {
 							type string;
 						}
@@ -1653,9 +2507,9 @@ module datastore-validator-test {
 				}
 				
 				choice container-type {
-					when "../validation:data-choice > 100";
+					when "validation:data-choice > 100";
 					case container-case-success {
-						when "../../validation:result-choice = 'success'";
+						when "validation:result-choice = 'success'";
 						container container-case-success {
 							leaf container-success-leaf1 {
 								type string;
@@ -1666,7 +2520,7 @@ module datastore-validator-test {
 						}
 					}
 					case container-case-failed {
-						when "../../validation:result-choice = 'failed'";
+						when "validation:result-choice = 'failed'";
 						container container-case-failed {
 							leaf container-failed-leaf1 {
 								type string;
@@ -1680,7 +2534,7 @@ module datastore-validator-test {
 				
 				choice list-type {
 					case list-case-success {
-						when "../../validation:result-choice = 'success'";
+						when "validation:result-choice = 'success'";
 						list list-case-success {
 							key success-id;
 							leaf success-id {
@@ -1692,7 +2546,7 @@ module datastore-validator-test {
 						}
 					}
 					case list-case-failed {
-						when "../../validation:result-choice = 'failed'";
+						when "validation:result-choice = 'failed'";
 						list list-case-failed {
 							key failed-id;
 							leaf failed-id {
@@ -1722,12 +2576,12 @@ module datastore-validator-test {
 
 				choice anyXml-type {
 					case anyxml-case-success {
-						when "../../validation:result-choice = 'success'";
+						when "validation:result-choice = 'success'";
 						anyxml data-success;
 					}
 					
 					case anyxml-case-failed {
-						when "../../validation:result-choice = 'failed'";
+						when "validation:result-choice = 'failed'";
 						anyxml data-failed;
 					}
 				}
@@ -1749,6 +2603,11 @@ module datastore-validator-test {
 			    type string;
 			}
 			
+			leaf when-no-arg-local-name-leaf {
+			    when "local-name() = 'when-no-arg-local-name-leaf'";
+			    type string;
+			}
+			
 			leaf when-parent-local-name-container-leaf {
 			    when "local-name(../choicecase) = 'choicecase'";
 			    type string;
@@ -1759,6 +2618,11 @@ module datastore-validator-test {
 			    type string;
 			}
 			
+			leaf when-no-arg-name-leaf {
+			    when "name() = 'validation:when-no-arg-name-leaf'";
+			    type string;
+			}
+			
 			leaf when-parent-name-container-leaf {
 			    when "name(../choicecase) = 'validation:choicecase'";
 			    type string;
@@ -1766,6 +2630,11 @@ module datastore-validator-test {
 			
 			leaf when-parent-namespace-leaf {
 			    when "namespace-uri(..) = 'urn:org:bbf:pma:validation'";
+			    type string;
+			}
+			
+			leaf when-no-arg-namespace-leaf {
+			    when "namespace-uri() = 'urn:org:bbf:pma:validation'";
 			    type string;
 			}
 			
@@ -1786,7 +2655,21 @@ module datastore-validator-test {
 					leaf non-mandatory-leaf {
 						type string;
 					}
+					leaf non-mandatory-leaf2 {
+					    type string;
+					}
 				}
+				
+				case non-mandatory-list{
+				    list level1-list{
+				        key name;
+				        
+				        leaf name{
+				            type string;
+				        }
+				    }
+				}
+				
 				case non-mandatory-case {
 					leaf level1-default-leaf {
 						type empty;
@@ -1861,6 +2744,18 @@ module datastore-validator-test {
 				must "string(../number1) = '42'";
 				type string;
 			}
+			leaf no-arg-string-function-leaf {
+				must "string() = string(current())";
+				type string;
+			}
+			leaf no-arg-string-length-function-leaf {
+				must "string-length() = string-length(current())";
+				type string;
+			}
+			leaf no-arg-normalize-space-function-leaf {
+				must "normalize-space() = normalize-space(current())";
+				type string;
+			}
 			leaf concat-function-leaf {
 				must "concat(../string1,../string2) = 'AB'";
 				type string;
@@ -1903,6 +2798,12 @@ module datastore-validator-test {
 			leaf string1 {
 				type string;
 			}
+			leaf number1 {
+			    type int16;
+			}
+			leaf-list nodeset1 {
+			    type string;
+			}
 			leaf boolean-function-leaf {
 				must "boolean(../string1)";
 				type string;
@@ -1919,6 +2820,58 @@ module datastore-validator-test {
 				must "not(false())";
 				type string;
 			}
+			
+			//UT associated with below leaf will fail
+			leaf no-arg-not-function-leaf {
+				must "not()";
+				type string;
+			}
+			
+			leaf boolean-string-conversion-leaf {
+			    must "../string1";
+			    type string;
+			}
+			
+			leaf boolean-string-conversion-in-and-leaf {
+			    must "5 = 5 and ../string1";
+			    type string;
+			}
+			
+			leaf boolean-string-conversion-in-or-leaf {
+			    must "4 = 5 or ../string1";
+			    type string;
+			}
+            
+            leaf boolean-number-conversion-leaf {
+                must "../number1";
+                type string;
+            }
+            
+            leaf boolean-number-conversion-in-and-leaf {
+                must "5 = 5 and ../number1";
+                type string;
+            }
+            
+            leaf boolean-number-conversion-in-or-leaf {
+                must "4 = 5 or ../number1";
+                type string;
+            }
+            
+            leaf boolean-nodeset-conversion-leaf {
+                must "../nodeset1";
+                type string;
+            }
+            
+            leaf boolean-nodeset-conversion-in-and-leaf {
+                must "5 = 5 and ../nodeset1";
+                type string;
+            }
+            
+            leaf boolean-nodeset-conversion-in-or-leaf {
+                must "4 = 5 or ../nodeset1";
+                type string;
+            }
+            
 		}
 		
 		container number-function-validation {
@@ -1934,6 +2887,10 @@ module datastore-validator-test {
 				must "number(../string1) = 42";
 				type string;
 			}
+			leaf no-arg-number-function-leaf {
+				must "number() = number(current())";
+				type string;
+			}
 			leaf floor-function-leaf {
 				must "floor(../number1) = 42";
 				type string;
@@ -1947,7 +2904,166 @@ module datastore-validator-test {
 				type string;
 			}
 		}
+		
+		container leaf-list-add-validation {
+			leaf-list configured-mode {
+				type string;
+			}
+			leaf fast-leaf {
+				when "../configured-mode = 'fast'";
+				type string;
+			}
+		}
+		
+		container when-validation-container {
+            list list1 {
+                key "key";
+
+                leaf key {
+                    type uint8 {
+                        range "1..50";
+                    }
+                }
+                leaf operator {
+                    mandatory true;
+                    type enumeration {
+                        enum contains;
+                        enum equal-to;
+                        enum in;
+                    }
+                }
+
+                leaf value {
+                    when "../operator != 'in'";
+                    type string;
+                    mandatory true;
+                }
+
+                leaf-list values {
+                    when "../operator = 'in'";
+                    type string;
+                    min-elements 2;
+                }
+            }
+        }
+
+		  container routing {
+
+			    container control-plane-protocols {
+			      list control-plane-protocol {
+			        key "type name";
+			        leaf type {
+			          type identityref {
+			            base some-identity;
+			          }
+			          description
+			            "Type of the control-plane protocol - an identity derived
+			             from the 'control-plane-protocol' base identity.";
+			        }
+			        leaf name {
+			          type string;
+			          description
+			            "An arbitrary name of the control-plane protocol
+			             instance.";
+			        }
+			        container static-routes {
+			          when "derived-from-or-self(../type, 'validation:identity2')" {
+			            description
+			              "This container is only valid for the 'static' routing
+			               protocol.";
+			          }
+			        }
+			      }
+			    }
+		  }
+		  
+		  container choice-when-validation {
+        
+                presence "choice-when";
+                
+                leaf limit {
+                     type int16;
+                     default 0;
+                }
+                
+                leaf must-limit {
+                     type int16;
+                     default 0;
+                }
+          }
+    
     }
+    
+    augment "/validation:validation/validation:choice-when-validation" {
+    
+         when "./limit = 1 or ./limit = 2";
+                
+         choice choice-when {
+            
+            default case1;
+            
+            case case1 {
+            
+                leaf leaf1 {
+                    must "../must-limit = 1";
+                    type int16;
+                    default 0;
+                }
+            }
+            
+            case case2 {
+            
+                leaf leaf2 {
+                    must "../must-limit = 2";
+                    type int16;
+                    default 0;
+                }
+            }
+         }
+     }
+    
+    augment "/validation:validation/validation:routing/validation:control-plane-protocols/"
+    + "validation:control-plane-protocol/validation:static-routes" {
+container ipv4 {
+  list route {
+    key "destination-prefix";
+    leaf destination-prefix {
+      type inet:ipv4-prefix;
+      mandatory "true";
+      description
+        "IPv4 destination prefix.";
+    }
+    container next-hop {
+      description
+        "Configuration of next-hop.";
+	    // WORKAROUND: NOT SUPPORTED BY ANV - COPYING DEFINITION of next-hop-content from ietf-routing.yang here - See also FNMS-6874
+	    choice next-hop-options {
+	      mandatory "true";
+	      case simple-next-hop {
+            leaf next-hop-address {
+              type inet:ipv4-address;
+            }
+	      }
+	      case next-hop-list {
+	        container next-hop-list {
+	          description
+	            "Container for multiple next-hops.";
+	          list next-hop {
+	            key "index";
+	            leaf index {
+	              type string;
+	            }
+                leaf next-hop-address {
+                  type inet:ipv4-address;
+                }
+	          }
+	        }
+	      }
+	    }
+    }
+  }
+}
+}
     
     rpc groupingTest {
      input {
@@ -1965,6 +3081,39 @@ module datastore-validator-test {
     	}
     }
     
+    rpc mustCount {
+    	input {
+    		list list1 {
+    			key key;
+    			leaf key {
+    				type string;
+    			}
+    		}
+    		
+    		leaf someLeaf {
+    			must "count(../list1) > 0";
+    			type string;
+    		}
+    		
+    		container container1 {
+    			must "count(current()/list2) >= 1";
+    			list list2 {
+    				key key;
+    				leaf key {type string;}
+    			}
+    			
+    			leaf someLeaf {
+    				type string;
+    				must "../../someLeaf = 'hello' and count(../list2) > 0 and count(../../list1[key = current()]) > 0";
+    			}
+    			
+    			leaf someLeaf1 {
+    				type string;
+    				must "current() = ../someLeaf and . = ../../container1/list2[key = current()/../someLeaf]";
+    			}
+    		}
+    	}
+    }
     rpc testRpcOutput {
     	output {
     		uses group-ref;
@@ -1983,12 +3132,21 @@ module datastore-validator-test {
     			type string;
     		}
 
+            leaf test4 {
+                type string;
+            }
+            
+            leaf test5 {
+                type string;
+            }
+            
     		container container0{
     			leaf leaf1{
     				type string;
     			}
     		}
     		container container1{
+                
     			container innerContainer{
     				list innerList{
     					key innerLeaf;
@@ -2017,6 +3175,31 @@ module datastore-validator-test {
     		}
     	}
     }
+    
+  augment "/testRpcOutput/output/container1" {
+    when "../test4='test4' and ../test5 = 'test5'";
+    uses testGrouping;
+  }
+
+  grouping testGrouping{
+      container test {
+      leaf enumLeaf1 {
+          type string;
+          default "bridge-mode";
+      }
+      }
+    container groupingContainer {
+        leaf enumLeaf {
+            type string;
+            default "bridge-mode";
+        }
+        
+        leaf whenOnEnum{
+            when "../enumLeaf = 'bridge-mode' and ../../test/enumLeaf1 = 'bridge-mode'";                
+            type string;
+        }
+    }
+  }
     
     rpc testRpc {
         description
@@ -2104,13 +3287,13 @@ module datastore-validator-test {
 				
 				choice leaf-type {
 					case leafcase-success {
-						when "../../result-choice = 'success'";
+						when "result-choice = 'success'";
 						leaf leaf-case-success {
 							type string;
 						}
 					}
 					case leafcase-failed {
-						when "../../result-choice = 'failed'";
+						when "result-choice = 'failed'";
 						leaf leaf-case-failed {
 							type string;
 						}
@@ -2119,13 +3302,13 @@ module datastore-validator-test {
 				
 				choice leaflist-type {
 					case leaflist-case-success {
-						when "../../validation:result-choice = 'success'";
+						when "validation:result-choice = 'success'";
 						leaf-list leaflist-case-success {
 							type string;
 						}
 					}
 					case leaflist-case-failed {
-						when "../../validation:result-choice = 'failed'";
+						when "validation:result-choice = 'failed'";
 						leaf-list leaflist-case-failed {
 							type string;
 						}
@@ -2148,9 +3331,9 @@ module datastore-validator-test {
 				}
 				
 				choice container-type {
-					when "../data-choice > 100";
+					when "data-choice > 100";
 					case container-case-success {
-						when "../../result-choice = 'success'";
+						when "result-choice = 'success'";
 						container container-case-success {
 							leaf container-success-leaf1 {
 								type string;
@@ -2161,7 +3344,7 @@ module datastore-validator-test {
 						}
 					}
 					case container-case-failed {
-						when "../../result-choice = 'failed'";
+						when "result-choice = 'failed'";
 						container container-case-failed {
 							leaf container-failed-leaf1 {
 								type string;
@@ -2174,9 +3357,9 @@ module datastore-validator-test {
 				}
 				
 				choice list-type {
-				when "../data-choice < 50";
+				when "data-choice < 50";
 					case list-case-success {
-						when "../../result-choice = 'success'";
+						when "result-choice = 'success'";
 						list list-case-success {
 							key success-id;
 							leaf success-id {
@@ -2188,7 +3371,7 @@ module datastore-validator-test {
 						}
 					}
 					case list-case-failed {
-						when "../../result-choice = 'failed'";
+						when "result-choice = 'failed'";
 						list list-case-failed {
 							key failed-id;
 							leaf failed-id {
@@ -2382,8 +3565,38 @@ module datastore-validator-test {
 	            }
         	}	        
 	    }
+        
     }
     
-    
-
+	 rpc testConfigValidationInputRpc {
+	        input {
+	            leaf leaf1 {
+	                type string;
+	                config false;
+	            }
+	            leaf leaf2 {
+	                type string;
+	                config true;
+	            }
+	        }
+	    }
+	
+	    rpc testConfigValidationOutputRpc {
+	        output {
+	            leaf leaf1 {
+	                type string;
+	                config false;
+	            }
+	            leaf leaf2 {
+	                type string;
+	                config true;
+	            }
+	        }
+	    }
+ 
+    notification testNotification {
+        container notif-container {
+            
+        }
+    }
 }

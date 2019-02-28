@@ -19,29 +19,30 @@ package org.broadband_forum.obbaa.netconf.api.server;
 import java.util.List;
 import java.util.Set;
 
-import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.DeleteConfigRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
+import org.w3c.dom.Document;
+
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
+import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.ActionResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.CopyConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.DeleteConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.GetConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.KillSessionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.LockRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
-import org.w3c.dom.Document;
-
-import org.broadband_forum.obbaa.netconf.api.messages.ActionResponse;
-import org.broadband_forum.obbaa.netconf.api.messages.CopyConfigRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.KillSessionRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 
 /**
  * A listener to be implemented by the netconf server to listen to netconf messages from clients.
+ * 
  *
- * @author keshava
+ * 
  */
 public interface NetconfServerMessageListener {
     public static final String ON_HELLO_METHOD = "onHello";
@@ -49,7 +50,8 @@ public interface NetconfServerMessageListener {
     public static final String ON_GET_CONFIG_METHOD = "onGetConfig";
     public static final String ON_EDIT_CONFIG_METHOD = "onEditConfig";
     public static final String ON_RPC_METHOD = "onRpc";
-
+    public static final String ON_ACTION = "onAction";
+    
     public static final String ON_COPY_CONFIG_METHOD = "onCopyConfig";
     public static final String ON_DELETE_CONFIG_METHOD = "onDeleteConfig";
     public static final String ON_LOCK_METHOD = "onLock";
@@ -89,11 +91,10 @@ public interface NetconfServerMessageListener {
 
     /**
      * This is a call back when a session is closed by the server. This can happen for multiple reasons. For example:
-     * <p>
+     * 
      * <pre>
      * {@code
-     * 1. The client sent a <close-session> (In this case the NetconfServerMessageListener#onCloseSession
-     * (NetconfClientInfo, CloseSessionRequest, NetConfResponse) is also called).
+     * 1. The client sent a <close-session> (In this case the NetconfServerMessageListener#onCloseSession(NetconfClientInfo, CloseSessionRequest, NetConfResponse) is also called).
      * 2. Idle time out occurred, etc
      * }
      * @param reasonForClosing

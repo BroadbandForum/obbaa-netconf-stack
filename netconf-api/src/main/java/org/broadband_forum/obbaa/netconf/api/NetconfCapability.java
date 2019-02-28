@@ -16,9 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.api;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class NetconfCapability {
 
@@ -29,6 +32,7 @@ public class NetconfCapability {
     private static final String QUESTION_MARK = "?";
     public static final String AMPERSAND = "&";
     public static final String EQUAL = "=";
+    public static final String COMMA = ",";
     private final String m_uri;
     private final Map<String, String> m_parameters = new LinkedHashMap<>();
 
@@ -39,7 +43,7 @@ public class NetconfCapability {
             String parameterList = split1[1];
             String[] split2 = parameterList.split(AMPERSAND);
             for (String parameterEntry : split2) {
-                String[] split3 = parameterEntry.split(EQUAL);
+                String[] split3 = parameterEntry.split(EQUAL, -1);
                 m_parameters.put(split3[0], split3[1]);
             }
         }
@@ -48,7 +52,9 @@ public class NetconfCapability {
     public NetconfCapability(String uri, String module, String revision) {
         m_uri = uri;
         m_parameters.put(MODULE_PARAM, module);
-        m_parameters.put(REVISION_PARAM, revision);
+        if (revision != null) {
+            m_parameters.put(REVISION_PARAM, revision);
+        }
     }
 
     public NetconfCapability(String uri, String module, String revision, String supportedFeatures,
@@ -118,4 +124,46 @@ public class NetconfCapability {
         }
         return builder.toString();
     }
+
+    public boolean identical(final NetconfCapability capability) {
+        if (this == capability)
+            return true;
+        if (capability == null)
+            return false;
+        if (m_parameters == null) {
+            if (capability.m_parameters != null)
+                return false;
+        } else if (!isParameterMatch(capability.m_parameters))
+            return false;
+        if (m_uri == null) {
+            if (capability.m_uri != null)
+                return false;
+        } else if (!m_uri.equals(capability.m_uri))
+            return false;
+        return true;
+    }
+
+    private boolean isParameterMatch(final Map<String, String> parameters) {
+        if (!parameters.keySet().equals(this.m_parameters.keySet())) {
+            return false;
+        }
+        for (Map.Entry<String, String> entry : parameters.entrySet()) {
+            final String parameterValue = entry.getValue();
+            final String storedValue = this.m_parameters.get(entry.getKey());
+            if ((parameterValue == null && storedValue != null) || (storedValue == null && parameterValue != null)) {
+                return false;
+            }
+            if (parameterValue.contains(COMMA) && storedValue.contains(COMMA)) {
+                final Set<String> parameterValueSet = new HashSet<>(Arrays.asList(parameterValue.split(COMMA)));
+                final Set<String> storedValueSet = new HashSet<>(Arrays.asList(storedValue.split(COMMA)));
+                if (!parameterValueSet.equals(storedValueSet)) {
+                    return false;
+                }
+            } else if (!parameterValue.equals(storedValue)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

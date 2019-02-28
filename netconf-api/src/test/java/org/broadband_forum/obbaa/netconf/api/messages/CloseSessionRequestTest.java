@@ -19,12 +19,10 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.assertXMLEquals;
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import static org.junit.Assert.assertNotNull;
-
 import java.io.IOException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class CloseSessionRequestTest {
 

@@ -1,32 +1,22 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.opendaylight.yangtools.yang.common.QName;
+import org.broadband_forum.obbaa.netconf.api.IndexedList;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigDefaultOperations;
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.StringUtil;
+import org.opendaylight.yangtools.yang.common.QName;
 
-public class EditContainmentNode {
+public class EditContainmentNode implements IndexedList.IndexableListEntry<ModelNodeId> {
+    public static final String DUPLICATE_ELEMENTS_FOUND = "Duplicate elements in node ";
+    public static final String DATA_NOT_UNIQUE = "data-not-unique";
     private EditChangeSource m_changeSource = EditChangeSource.user;
     private static final String LF = System.getProperty("line.separator");
     /**
@@ -36,7 +26,7 @@ public class EditContainmentNode {
      */
     private List<EditMatchNode> m_matchNodes = new LinkedList<EditMatchNode>();
     private List<EditChangeNode> m_changeNodes = new ArrayList<EditChangeNode>();
-    private List<EditContainmentNode> m_childNodes = new ArrayList<EditContainmentNode>();
+    private IndexedList<ModelNodeId, EditContainmentNode> m_childNodes = new IndexedList<>();
     private List<QName> m_disabledDefaultCreationNodes = new ArrayList<>();
 
     private String m_name;
@@ -87,15 +77,30 @@ public class EditContainmentNode {
 
     public EditContainmentNode addChild(EditContainmentNode childNode) {
         if (childNode != null) {
+            validateChildNode(childNode);
             this.m_childNodes.add(childNode);
             childNode.setParent(this);
         }
         return this;
     }
 
+    private void validateChildNode(EditContainmentNode childNode) {
+        if (m_childNodes.map().containsKey(childNode.getKey()) && m_childNodes.map().get(childNode.getKey()).getNamespace().equals(childNode.getNamespace())) {
+            throwDuplicateNodesEditConfigException(childNode.getModelNodeId().xPathString(), childNode.getQName());
+        }
+    }
+
+    public static void throwDuplicateNodesEditConfigException(String errorPath, QName qName) {
+        NetconfRpcError rpcError = NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED,
+                DUPLICATE_ELEMENTS_FOUND + qName);
+        rpcError.setErrorAppTag(DATA_NOT_UNIQUE);
+        rpcError.setErrorPath(errorPath, null);
+        throw new EditConfigException(rpcError);
+    }
+
     public EditContainmentNode removeChild(EditContainmentNode childNode) {
         if (childNode != null) {
-            this.m_childNodes.remove(childNode);
+            this.m_childNodes.remove(childNode.getModelNodeId());
             childNode.setParent(null);
         }
         return this;
@@ -103,8 +108,7 @@ public class EditContainmentNode {
 
     public EditMatchNode getEditMatchNode(String nodeName, String namespace) {
         for (EditMatchNode matchNode : m_matchNodes) {
-            if (nodeName.equals(matchNode.getName()) && (namespace == null || namespace.equals(matchNode.getNamespace
-                    ()))) {
+            if (nodeName.equals(matchNode.getName()) && (namespace == null || namespace.equals(matchNode.getNamespace()))) {
                 return matchNode;
             }
         }
@@ -113,8 +117,7 @@ public class EditContainmentNode {
 
     public EditChangeNode getEditChangeNode(String nodeName, String namespace) {
         for (EditChangeNode changeNode : m_changeNodes) {
-            if (nodeName.equals(changeNode.getName()) && (namespace == null || namespace.equals(changeNode
-                    .getNamespace()))) {
+            if (nodeName.equals(changeNode.getName()) && (namespace == null || namespace.equals(changeNode.getNamespace()))) {
                 return changeNode;
             }
         }
@@ -122,7 +125,7 @@ public class EditContainmentNode {
     }
 
     public List<EditContainmentNode> getChildren() {
-        return m_childNodes;
+        return m_childNodes.list();
     }
 
     public String getName() {
@@ -158,20 +161,12 @@ public class EditContainmentNode {
         return m_editOperation;
     }
 
-	/*
+    /*
      * public boolean isLeaf(){ return (m_childNodes.size() == 0); }
-	 * 
-	 * public List<EditConfigNode> getLeavesUnderNode() { List<EditConfigNode> leaves = new ArrayList<EditConfigNode>
-	 *     (); for(EditConfigNode
-	 * child : m_childNodes){ if(child.isLeaf()){ leaves.add(child); } } return leaves; }
-	 */
-
-    public EditContainmentNode addContainmentNode(QName qname, String editOperation) {
-        EditContainmentNode node = new EditContainmentNode(qname, editOperation);
-        m_childNodes.add(node);
-        node.setParent(this);
-        return node;
-    }
+     *
+     * public List<EditConfigNode> getLeavesUnderNode() { List<EditConfigNode> leaves = new ArrayList<EditConfigNode>(); for(EditConfigNode
+     * child : m_childNodes){ if(child.isLeaf()){ leaves.add(child); } } return leaves; }
+     */
 
     public List<EditChangeNode> getChangeNodes() {
         return m_changeNodes;
@@ -197,22 +192,30 @@ public class EditContainmentNode {
         return this;
     }
 
-    public EditContainmentNode addChangeNode(QName qname, ConfigLeafAttribute nodeValue) {
-        return addChangeNode(qname, nodeValue, EditChangeSource.user);
+    public EditContainmentNode addLeafChangeNode(QName qname, ConfigLeafAttribute nodeValue) {
+        return addLeafChangeNode(qname, nodeValue, EditChangeSource.user);
     }
 
-    public EditContainmentNode addChangeNode(QName qname, ConfigLeafAttribute nodeValue, EditChangeSource
-            changeSource) {
+    public EditContainmentNode addLeafChangeNode(QName qname, ConfigLeafAttribute nodeValue, EditChangeSource changeSource) {
         EditChangeNode node = new EditChangeNode(qname, nodeValue);
         node.setChangeSource(changeSource);
+        validateLeafChangeNode(this, node);
         this.m_changeNodes.add(node);
         return this;
+    }
+
+    private void validateLeafChangeNode(EditContainmentNode parentNode, EditChangeNode childNode) {
+
+        for (EditChangeNode changeNode : m_changeNodes) {
+            if (changeNode.getQName().equals(childNode.getQName())) {
+                throwDuplicateNodesEditConfigException(parentNode.getModelNodeId().xPathString() + "/" + childNode.getName(), childNode.getQName());
+            }
+        }
     }
 
     public EditContainmentNode addChangeNode(EditChangeNode node) {
         this.m_changeNodes.add(node);
         return this;
-
     }
 
     public EditContainmentNode removeChangeNode(EditChangeNode node) {
@@ -227,79 +230,23 @@ public class EditContainmentNode {
         return this;
     }
 
-
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result
-                + ((m_editOperation == null) ? 0 : m_editOperation.hashCode());
-        result = prime * result
-                + ((m_changeNodes == null) ? 0 : m_changeNodes.hashCode());
-        result = prime * result
-                + ((m_childNodes == null) ? 0 : m_childNodes.hashCode());
-        result = prime * result
-                + ((m_matchNodes == null) ? 0 : m_matchNodes.hashCode());
-        result = prime * result + ((m_qname == null) ? 0 : m_qname.hashCode());
-        return result;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        EditContainmentNode that = (EditContainmentNode) o;
+
+        if (m_editOperation != null ? !m_editOperation.equals(that.m_editOperation) : that.m_editOperation != null)
+            return false;
+        return m_modelNodeId != null ? m_modelNodeId.equals(that.m_modelNodeId) : that.m_modelNodeId == null;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        EditContainmentNode other = (EditContainmentNode) obj;
-        if (m_editOperation == null) {
-            if (other.m_editOperation != null) {
-                return false;
-            }
-        } else if (!m_editOperation.equals(other.m_editOperation)) {
-            return false;
-        }
-        if (m_changeNodes == null) {
-            if (other.m_changeNodes != null) {
-                return false;
-            }
-        } else if (!m_changeNodes.equals(other.m_changeNodes)) {
-            return false;
-        }
-        if (m_childNodes == null) {
-            if (other.m_childNodes != null) {
-                return false;
-            }
-        } else if (!m_childNodes.equals(other.m_childNodes)) {
-            return false;
-        }
-        if (m_matchNodes == null) {
-            if (other.m_matchNodes != null) {
-                return false;
-            }
-        } else if (!m_matchNodes.equals(other.m_matchNodes)) {
-            return false;
-        }
-        if (m_qname == null) {
-            if (other.m_qname != null) {
-                return false;
-            }
-        } else if (!m_qname.equals(other.m_qname)) {
-            return false;
-        }
-        if (m_insertOperation == null) {
-            if (other.m_insertOperation != null) {
-                return false;
-            }
-        } else if (!m_insertOperation.equals(other.m_insertOperation)) {
-            return false;
-        }
-
-        return true;
+    public int hashCode() {
+        int result = m_editOperation != null ? m_editOperation.hashCode() : 0;
+        result = 31 * result + (m_modelNodeId != null ? m_modelNodeId.hashCode() : 0);
+        return result;
     }
 
     @Override
@@ -312,12 +259,10 @@ public class EditContainmentNode {
         String filler = StringUtil.blanks(indent);
 
         if (printChangeSource) {
-            sb.append(filler).append("Containment [" + m_editOperation + "," + getName() + "," + getNamespace() + ","
-                    + getChangeSource() +
+            sb.append(filler).append("Containment [" + m_editOperation + "," + getName() + "," + getNamespace() + "," + getChangeSource() +
                     "]" + LF);
         } else {
-            sb.append(filler).append("Containment [" + m_editOperation + "," + getName() + "," + getNamespace() + "]"
-                    + LF);
+            sb.append(filler).append("Containment [" + m_editOperation + "," + getName() + "," + getNamespace() + "]" + LF);
         }
 
         for (EditMatchNode matchNode : m_matchNodes) {
@@ -326,7 +271,7 @@ public class EditContainmentNode {
         for (EditChangeNode changeNode : m_changeNodes) {
             sb.append(filler).append(" ").append(changeNode.toString(printChangeSource)).append(LF);
         }
-        for (EditContainmentNode configNode : m_childNodes) {
+        for (EditContainmentNode configNode : m_childNodes.list()) {
             sb.append(configNode.toString(indent + 1, printChangeSource));
         }
         return sb.toString();
@@ -343,7 +288,7 @@ public class EditContainmentNode {
     }
 
     public EditContainmentNode getChildNode(QName qName) {
-        for (EditContainmentNode child : m_childNodes) {
+        for (EditContainmentNode child : m_childNodes.list()) {
             if (child.getQName().equals(qName)) {
                 return child;
             }
@@ -423,5 +368,10 @@ public class EditContainmentNode {
         for (EditContainmentNode child : node.getChildren()) {
             setParentForEditContainmentNode(child, node);
         }
+    }
+
+    @Override
+    public ModelNodeId getKey() {
+        return getModelNodeId();
     }
 }

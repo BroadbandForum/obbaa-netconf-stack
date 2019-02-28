@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
@@ -32,10 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -62,6 +44,7 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeFactoryException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
@@ -73,11 +56,9 @@ import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 
 public class GetWithStateAttributesTest {
 
-    private static final String EXAMPLE_JUKEBOX_WITH_STATE_ATTRIBUTES_YANG =
-            "/getstateattributestest/example-jukebox-with-state-attributes.yang";
+    private static final String EXAMPLE_JUKEBOX_WITH_STATE_ATTRIBUTES_YANG = "/getstateattributestest/example-jukebox-with-state-attributes.yang";
     private static final String EXAMPLE_JUKEBOX_XML = "/getstateattributestest/example-jukebox.xml";
-    private static final String FULL_GET_RESPONSE_WITH_STATE_ATTRIBUTES_XML =
-            "/getstateattributestest/full_get_response_with_state_attributes.xml";
+    private static final String FULL_GET_RESPONSE_WITH_STATE_ATTRIBUTES_XML = "/getstateattributestest/full_get_response_with_state_attributes.xml";
     private static final String LIBRARY_ADMIN_XML = "/getstateattributestest/library-admin.xml";
     private static final String LIST_FAVOURITE_SONG_XML = "/getstateattributestest/list-favourite-song.xml";
     private static final String LEAFLIST_LANGUAGE_XML = "/getstateattributestest/leaf-list-language.xml";
@@ -94,16 +75,13 @@ public class GetWithStateAttributesTest {
     private List<String> m_listOfStateAttributes;
 
     @Before
-    public void setUp() throws SchemaBuildException, ParserConfigurationException, GetAttributeException,
-            ModelNodeInitException,
+    public void setUp() throws SchemaBuildException, ParserConfigurationException, GetAttributeException, ModelNodeInitException,
             ModelNodeFactoryException {
 
-        String yangFilePath = GetWithStateContainerTest.class.getResource(EXAMPLE_JUKEBOX_WITH_STATE_ATTRIBUTES_YANG)
-                .getPath();
+        String yangFilePath = GetWithStateContainerTest.class.getResource(EXAMPLE_JUKEBOX_WITH_STATE_ATTRIBUTES_YANG).getPath();
         String xmlFilePath = GetWithStateContainerTest.class.getResource(EXAMPLE_JUKEBOX_XML).getPath();
-        m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), new NoLockService());
-        m_schemaRegistry.loadSchemaContext(COMPONENT_ID, Arrays.asList(TestUtil.getByteSource
-                (EXAMPLE_JUKEBOX_WITH_STATE_ATTRIBUTES_YANG)), Collections.emptySet(), Collections.emptyMap());
+        m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource> emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        m_schemaRegistry.loadSchemaContext(COMPONENT_ID, Arrays.asList(TestUtil.getByteSource(EXAMPLE_JUKEBOX_WITH_STATE_ATTRIBUTES_YANG)), Collections.emptySet(), Collections.emptyMap());
 
         m_jukeBoxSystem = Mockito.mock(DsmJukeboxSubsystem.class);
         m_subSystemRegistry = new SubSystemRegistryImpl();
@@ -114,8 +92,7 @@ public class GetWithStateAttributesTest {
                 m_subSystemRegistry, m_schemaRegistry, new InMemoryDSM(m_schemaRegistry));
         m_rootModelNodeAggregator.addModelServiceRoot(COMPONENT_ID, m_jukeBoxModelNode);
         Map<ModelNodeId, List<Element>> values = mockSubSystemResponse();
-        when(m_jukeBoxSystem.retrieveStateAttributes(Mockito.anyMap(), Mockito.any(NetconfQueryParams.class)))
-                .thenReturn(values);
+        when(m_jukeBoxSystem.retrieveStateAttributes(Mockito.anyMap(), Mockito.any(NetconfQueryParams.class))).thenReturn(values);
 
         m_server = new NetConfServerImpl(m_schemaRegistry);
         m_nbiNotificationHelper = mock(NbiNotificationHelper.class);
@@ -124,8 +101,7 @@ public class GetWithStateAttributesTest {
         ModelNodeDataStoreManager modelNodeDsm = mock(ModelNodeDataStoreManager.class);
         m_server.setDataStore(StandardDataStores.RUNNING, dataStore);
 
-        Module module = YangUtils.deployInMemoryHelpers(yangFilePath, m_jukeBoxSystem, m_modelNodeHelperRegistry,
-                m_subSystemRegistry,
+        Module module = YangUtils.deployInMemoryHelpers(yangFilePath, m_jukeBoxSystem, m_modelNodeHelperRegistry, m_subSystemRegistry,
                 m_schemaRegistry, modelNodeDsm);
         m_listOfStateAttributes = new ArrayList<>();
         createListOfStateAttributes(module.getChildNodes());
@@ -146,8 +122,7 @@ public class GetWithStateAttributesTest {
         m_server.onGet(client, request, response);
 
         for (String stateAttribute : m_listOfStateAttributes)
-            assertEquals(stateAttribute, DocumentUtils.getChildNodeByName(response.getData(), stateAttribute, JB_NS)
-                    .getLocalName());
+            assertEquals(stateAttribute, DocumentUtils.getChildNodeByName(response.getData(), stateAttribute, JB_NS).getLocalName());
 
         assertXMLEquals(FULL_GET_RESPONSE_WITH_STATE_ATTRIBUTES_XML, response);
     }
@@ -188,7 +163,7 @@ public class GetWithStateAttributesTest {
     private Map<ModelNodeId, List<Element>> mockSubSystemResponse() throws ParserConfigurationException {
 
         Map<ModelNodeId, List<Element>> subSystemResponse = new HashMap<>();
-
+        
         Document newDocument = getNewDocument();
         Element albumCount = newDocument.createElementNS(JB_NS, "album-count");
         albumCount.setTextContent("1");
@@ -213,8 +188,7 @@ public class GetWithStateAttributesTest {
         elements.add(favouriteSong);
         elements.add(language);
 
-        subSystemResponse.put(new ModelNodeId("/container=jukebox/container=library", JukeboxConstants.JB_NS),
-                elements);
+        subSystemResponse.put(new ModelNodeId("/container=jukebox/container=library", JukeboxConstants.JB_NS), elements);
 
         return subSystemResponse;
     }

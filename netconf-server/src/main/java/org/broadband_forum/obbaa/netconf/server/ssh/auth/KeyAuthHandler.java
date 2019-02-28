@@ -18,6 +18,7 @@ package org.broadband_forum.obbaa.netconf.server.ssh.auth;
 
 import java.security.PublicKey;
 
+import org.broadband_forum.obbaa.netconf.api.server.auth.AuthenticationResult;
 import org.broadband_forum.obbaa.netconf.api.server.auth.ClientAuthenticationInfo;
 
 public final class KeyAuthHandler extends AbstractKeyAuthHandler {
@@ -30,15 +31,15 @@ public final class KeyAuthHandler extends AbstractKeyAuthHandler {
     }
 
     @Override
-    public boolean authenticate(ClientAuthenticationInfo clientAuthInfo) {
-        return false;
+    public AuthenticationResult authenticate(ClientAuthenticationInfo clientAuthInfo) {
+        return AuthenticationResult.failedAuthResult();
     }
 
     @Override
-    public boolean authenticate(PublicKey pubKey) {
+    public AuthenticationResult authenticate(PublicKey pubKey) {
 
         String filePathAuthKey = Thread.currentThread().getContextClassLoader().getResource(m_authKeyFile).getPath();
-        return m_sshFileKeyValidator.isValidPublicKey(filePathAuthKey, pubKey);
+        return new AuthenticationResult(m_sshFileKeyValidator.isValidPublicKey(filePathAuthKey, pubKey), null, "");
     }
 }
 

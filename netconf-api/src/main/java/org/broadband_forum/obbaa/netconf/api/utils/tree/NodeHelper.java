@@ -21,8 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * This class encapsulate the node implementation. Only the Tree and Node interface are exposed. This would help to
- * change the
+ * This class encapsulate the node implementation. Only the Tree and Node interface are exposed. This would help to change the
  * implementation of tree without affecting the clients using it.
  */
 public class NodeHelper {

@@ -16,6 +16,22 @@
 
 package org.broadband_forum.obbaa.netconf.client.tls;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.EOM_HANDLER;
+
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLEngine;
+
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
+import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
+import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfDelimiters;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -25,23 +41,10 @@ import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.SSLEngine;
-
-import org.apache.log4j.Logger;
-
-import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
-import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
-import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfDelimiters;
-
 public class CallhomeTlsNetconfClientInitializer extends ChannelInitializer<SocketChannel> {
 
     private final SslContext m_sslContext;
-    static final Logger LOGGER = Logger.getLogger(CallhomeTlsNetconfClientInitializer.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(CallhomeTlsNetconfClientInitializer.class, LogAppNames.NETCONF_LIB);
     private final boolean m_tlsKeepalive;
     private final ExecutorService m_executorService;
     private Set<String> m_capabilities;
@@ -52,13 +55,10 @@ public class CallhomeTlsNetconfClientInitializer extends ChannelInitializer<Sock
     private final NotificationListener m_notificationListener;
     private final long m_handshakeTimeoutMillis;
 
-    public CallhomeTlsNetconfClientInitializer(SslContext sslCtx, CallHomeListener callHomeListener, Set<String>
-            clientCaps,
-                                               AuthenticationListener authenticationListener, NotificationListener
-                                                       notificationListener, boolean tlsKeepalive,
+    public CallhomeTlsNetconfClientInitializer(SslContext sslCtx, CallHomeListener callHomeListener, Set<String> clientCaps,
+                                               AuthenticationListener authenticationListener, NotificationListener notificationListener, boolean tlsKeepalive,
 
-                                               boolean selfSigned, ExecutorService executorService, ExecutorService
-                                                       callHomeExecutorService, long handshakeTimeoutMillis) {// NOSONAR
+                                               boolean selfSigned, ExecutorService executorService, ExecutorService callHomeExecutorService, long handshakeTimeoutMillis) {// NOSONAR
         m_sslContext = sslCtx;
         m_callHomeListener = callHomeListener;
         m_capabilities = clientCaps;
@@ -73,8 +73,8 @@ public class CallhomeTlsNetconfClientInitializer extends ChannelInitializer<Sock
 
     @Override
     protected void initChannel(final SocketChannel channel) throws Exception {
-        LOGGER.debug("A netconf server is calling home on " + channel);
-        channel.config().setKeepAlive(m_tlsKeepalive);
+        LOGGER.debug("A netconf server is calling home on {}", LOGGER.sensitiveData(channel));
+        channel.config().setKeepAlive(false);
         ChannelPipeline pipeline = channel.pipeline();
         SSLEngine sslEngine = m_sslContext.newEngine(channel.alloc());
         // Add ssl handlers
@@ -82,13 +82,11 @@ public class CallhomeTlsNetconfClientInitializer extends ChannelInitializer<Sock
         sslHandler.setHandshakeTimeout(m_handshakeTimeoutMillis, TimeUnit.MILLISECONDS);
         pipeline.addLast(sslHandler);
         // On top of the SSL handler, add the text line codec.
-        pipeline.addLast(new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, NetconfDelimiters.rpcEndOfMessageDelimiter
-                ()));
+        pipeline.addLast(EOM_HANDLER, new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, false, NetconfDelimiters.rpcEndOfMessageDelimiter()));
         pipeline.addLast(new StringDecoder());
         pipeline.addLast(new StringEncoder());
         sslHandler.handshakeFuture().addListener(
-                new SslFutureChannelListener(sslEngine, channel, m_authenticationListener, m_selfSigned,
-                        m_capabilities, m_notificationListener,
+                new SslFutureChannelListener(sslEngine, channel, m_authenticationListener, m_selfSigned, m_capabilities, m_notificationListener,
                         m_executorService, m_callHomeExecutorService, m_callHomeListener));
 
     }

@@ -19,20 +19,21 @@ package org.broadband_forum.obbaa.netconf.api;
 public enum NetconfRpcPayLoadType {
 
     REQUEST,
-    RESPONSE;
-
-    public boolean isRequest() {
-        if (this.equals(REQUEST)) {
+    RESPONSE
+    ;
+    
+    public boolean isRequest(){
+        if (this.equals(REQUEST)){
             return true;
         }
         return false;
     }
-
-    public boolean isResponse() {
-        if (this.equals(RESPONSE)) {
+    
+    public boolean isResponse(){
+        if (this.equals(RESPONSE)){
             return true;
         }
         return false;
     }
-
+   
 }

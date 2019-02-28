@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import java.lang.reflect.Field;
@@ -26,18 +10,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.EntityRegistryBuilder;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangOrderByUser;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentId;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
  * Created by keshava on 6/12/15.
@@ -59,24 +43,25 @@ public class EntityRegistryImpl implements EntityRegistry {
     private final ConcurrentHashMap<Class, Method> m_parentIdSetters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Class, Method> m_parentIdGetters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<Class>> m_componentClass = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, List<Map<SchemaPath, Class>>> m_schemaPathsFromComponent = new
-            ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Class, Map<QName, Method>> m_yangLeafListGetters = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Class, Map<QName, Method>> m_yangLeafListSetters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<Map<SchemaPath, Class>>> m_schemaPathsFromComponent = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Class, Map<QName,Method>> m_yangLeafListGetters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Class, Map<QName,Method>> m_yangLeafListSetters = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Class, Map<QName,String>> m_keyColumnInfos = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Class, Method> m_orderByUserGetters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Class, Method> m_orderByUserSetters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Class, Boolean> m_bigListType = new ConcurrentHashMap<>();
 
-    private static final AdvancedLogger LOGGER = LoggerFactory.getLogger(EntityRegistryImpl.class,
-            "netconf-server-datastore", "DEBUG", "GLOBAL");
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(EntityRegistryImpl.class, LogAppNames.NETCONF_STACK);
+    private ConcurrentHashMap<String, Class> m_classesWithYangParentSchemaPathAnnotation = new ConcurrentHashMap<>();
 
-    public EntityRegistryImpl() {
+    public EntityRegistryImpl(){
 
     }
 
     @Override
     public QName getQName(Class aClass) {
         List<SchemaPath> schemaPaths = m_classToSchemaPath.get(aClass);
-        if (schemaPaths == null || schemaPaths.isEmpty()) {
+        if(schemaPaths == null || schemaPaths.isEmpty()){
             return null;
         }
         return schemaPaths.get(0).getLastComponent();
@@ -90,9 +75,9 @@ public class EntityRegistryImpl implements EntityRegistry {
     }
 
     @Override
-    public void addComponentClass(String componentId, Class klass) {
+    public void addComponentClass(String componentId, Class klass){
         Set<Class> classSet = m_componentClass.get(componentId);
-        if (classSet == null) {
+        if(classSet == null){
             classSet = new HashSet<>();
             m_componentClass.putIfAbsent(componentId, classSet);
             classSet = m_componentClass.get(componentId);
@@ -106,18 +91,17 @@ public class EntityRegistryImpl implements EntityRegistry {
     }
 
     @Override
-    public void addConfigAttributeGetters(Class klass, Map<QName, Method> configAttributeGetters, Map<QName, String>
-            fieldNames) {
+    public void addConfigAttributeGetters(Class klass, Map<QName, Method> configAttributeGetters, Map<QName, String> fieldNames) {
         Map<QName, Method> existingGetters = m_configAttributeGetters.get(klass);
-        if (existingGetters == null) {
-            existingGetters = new HashMap<>();
+        if(existingGetters==null){
+            existingGetters= new HashMap<>();
             m_configAttributeGetters.putIfAbsent(klass, existingGetters);
             existingGetters = m_configAttributeGetters.get(klass);
         }
         existingGetters.putAll(configAttributeGetters);
 
         Map<QName, String> existingFieldNamesMap = m_fieldNames.get(klass);
-        if (existingFieldNamesMap == null) {
+        if(existingFieldNamesMap==null){
             existingFieldNamesMap = new HashMap<>();
             m_fieldNames.putIfAbsent(klass, existingFieldNamesMap);
             existingFieldNamesMap = m_fieldNames.get(klass);
@@ -136,11 +120,10 @@ public class EntityRegistryImpl implements EntityRegistry {
     }
 
     @Override
-    public void addConfigAttributeSetters(Class klass, Map<QName, Method> configAttributeSetters, Method
-            parentIdSetter) {
+    public void addConfigAttributeSetters(Class klass, Map<QName, Method> configAttributeSetters, Method parentIdSetter) {
         Map<QName, Method> existingSetters = m_configAttributeSetters.get(klass);
-        if (existingSetters == null) {
-            existingSetters = new HashMap<>();
+        if(existingSetters==null){
+            existingSetters= new HashMap<>();
             m_configAttributeSetters.putIfAbsent(klass, existingSetters);
             existingSetters = m_configAttributeSetters.get(klass);
         }
@@ -186,12 +169,12 @@ public class EntityRegistryImpl implements EntityRegistry {
     public Method getSchemaPathSetter(Class klass) {
         return m_schemaPathSetters.get(klass);
     }
-
+    
     @Override
     public void addOrderByUserGetter(Class subrootClass, Method schemaPathGetter) {
-        if (schemaPathGetter != null) {
-            m_orderByUserGetters.put(subrootClass, schemaPathGetter);
-        }
+    	if (schemaPathGetter != null) {
+    		m_orderByUserGetters.put(subrootClass, schemaPathGetter);
+    	}
     }
 
     public Method getOrderByUserGetter(Class klass) {
@@ -200,9 +183,9 @@ public class EntityRegistryImpl implements EntityRegistry {
 
     @Override
     public void addOrderByUserSetter(Class subrootClass, Method schemaPathSetter) {
-        if (schemaPathSetter != null) {
-            m_orderByUserSetters.put(subrootClass, schemaPathSetter);
-        }
+    	if (schemaPathSetter != null) {
+    		m_orderByUserSetters.put(subrootClass, schemaPathSetter);
+    	}
     }
 
     @Override
@@ -212,8 +195,8 @@ public class EntityRegistryImpl implements EntityRegistry {
 
     @Override
     public void addYangChildGetters(Class subrootClass, Map<QName, Method> yangChildGetters) {
-        Map<QName, Method> existingGetters = m_yangChildGetters.get(subrootClass);
-        if (existingGetters == null) {
+        Map<QName,Method> existingGetters = m_yangChildGetters.get(subrootClass);
+        if(existingGetters==null) {
             existingGetters = new HashMap<>();
             m_yangChildGetters.putIfAbsent(subrootClass, existingGetters);
             existingGetters = m_yangChildGetters.get(subrootClass);
@@ -228,8 +211,8 @@ public class EntityRegistryImpl implements EntityRegistry {
 
     @Override
     public void addYangChildSetters(Class subrootClass, Map<QName, Method> yangChildSetters) {
-        Map<QName, Method> existingSetters = m_yangChildSetters.get(subrootClass);
-        if (existingSetters == null) {
+        Map<QName,Method> existingSetters = m_yangChildSetters.get(subrootClass);
+        if(existingSetters==null) {
             existingSetters = new HashMap<>();
             m_yangChildSetters.putIfAbsent(subrootClass, existingSetters);
             existingSetters = m_yangChildSetters.get(subrootClass);
@@ -263,9 +246,9 @@ public class EntityRegistryImpl implements EntityRegistry {
     }
 
     @Override
-    public void addYangLeafListGetters(Class subrootClass, Map<QName, Method> yangLeafListGetters) {
+    public void addYangLeafListGetters(Class subrootClass, Map<QName, Method> yangLeafListGetters){
         Map<QName, Method> existingGetters = m_yangLeafListGetters.get(subrootClass);
-        if (existingGetters == null) {
+        if(existingGetters==null) {
             existingGetters = new HashMap<>();
             m_yangLeafListGetters.putIfAbsent(subrootClass, existingGetters);
             existingGetters = m_yangLeafListGetters.get(subrootClass);
@@ -279,9 +262,9 @@ public class EntityRegistryImpl implements EntityRegistry {
     }
 
     @Override
-    public void addYangLeafListSetters(Class subrootClass, Map<QName, Method> yangLeafListSetters) {
+    public void addYangLeafListSetters(Class subrootClass, Map<QName, Method> yangLeafListSetters){
         Map<QName, Method> existingSetters = m_yangLeafListSetters.get(subrootClass);
-        if (existingSetters == null) {
+        if(existingSetters==null) {
             existingSetters = new HashMap<>();
             m_yangLeafListSetters.putIfAbsent(subrootClass, existingSetters);
             existingSetters = m_yangLeafListSetters.get(subrootClass);
@@ -293,11 +276,21 @@ public class EntityRegistryImpl implements EntityRegistry {
     public Map<QName, Method> getYangLeafListSetters(Class klass) {
         return m_yangLeafListSetters.get(klass);
     }
+    
+    @Override
+    public void addBigListType(Class klass, boolean bigListType) {
+        m_bigListType.put(klass, bigListType);
+    }
+    
+    @Override
+    public boolean getBigListType(Class klass) {
+        return m_bigListType.get(klass);
+    }
 
     @Override
     public void undeploy(String componentId) {
         Set<Class> classSet = m_componentClass.get(componentId);
-        if (classSet != null) {
+        if(classSet != null){
             m_configAttributeGetters.keySet().removeAll(classSet);
             m_configAttributeSetters.keySet().removeAll(classSet);
             m_yangChildGetters.keySet().removeAll(classSet);
@@ -313,10 +306,11 @@ public class EntityRegistryImpl implements EntityRegistry {
             m_yangLeafListGetters.keySet().removeAll(classSet);
             m_yangLeafListSetters.keySet().removeAll(classSet);
             m_fieldNames.keySet().removeAll(classSet);
+            m_bigListType.keySet().removeAll(classSet);
         }
         List<Map<SchemaPath, Class>> schemaPathsFromComponent = m_schemaPathsFromComponent.get(componentId);
-        if (schemaPathsFromComponent != null) {
-            for (Map<SchemaPath, Class> schemaPathClassMap : schemaPathsFromComponent) {
+        if(schemaPathsFromComponent != null){
+            for(Map<SchemaPath,Class> schemaPathClassMap : schemaPathsFromComponent) {
                 m_schemaPaths.keySet().removeAll(schemaPathClassMap.keySet());
                 m_classToSchemaPath.keySet().removeAll(schemaPathClassMap.values());
             }
@@ -324,21 +318,19 @@ public class EntityRegistryImpl implements EntityRegistry {
 
         m_componentClass.remove(componentId);
         m_schemaPathsFromComponent.remove(componentId);
-        LOGGER.debug("Un-deployed {}", componentId);
+        m_classesWithYangParentSchemaPathAnnotation.remove(componentId);
+        LOGGER.debug("Un-deployed {}",componentId);
     }
 
     @Override
-    public void updateRegistry(String componentId, List<Class> classes, SchemaRegistry schemaRegistry,
-                               EntityDataStoreManager entityDSM, ModelNodeDSMRegistry modelNodeDSMRegistry) throws
-            AnnotationAnalysisException {
-        EntityRegistryBuilder.updateEntityRegistry(componentId, classes, this, schemaRegistry, entityDSM,
-                modelNodeDSMRegistry);
+    public void updateRegistry(String componentId, List<Class> classes, SchemaRegistry schemaRegistry, EntityDataStoreManager entityDSM, ModelNodeDSMRegistry modelNodeDSMRegistry) throws AnnotationAnalysisException {
+        EntityRegistryBuilder.updateEntityRegistry(componentId, classes, this, schemaRegistry, entityDSM, modelNodeDSMRegistry);
     }
 
     private void updateClassToSchemaPathMap(Map<SchemaPath, Class> schemaPaths) {
-        for (Map.Entry<SchemaPath, Class> entry : schemaPaths.entrySet()) {
+        for(Map.Entry<SchemaPath, Class> entry : schemaPaths.entrySet()) {
             List<SchemaPath> existingSchemaPathsForClass = m_classToSchemaPath.get(entry.getValue());
-            if (existingSchemaPathsForClass == null) {
+            if(existingSchemaPathsForClass == null){
                 existingSchemaPathsForClass = new ArrayList<>();
                 m_classToSchemaPath.putIfAbsent(entry.getValue(), existingSchemaPathsForClass);
                 existingSchemaPathsForClass = m_classToSchemaPath.get(entry.getValue());
@@ -349,38 +341,38 @@ public class EntityRegistryImpl implements EntityRegistry {
 
     private void addComponentSchemaPaths(String componentId, Map<SchemaPath, Class> schemaPaths) {
         List<Map<SchemaPath, Class>> schemaPathsFromComponent = m_schemaPathsFromComponent.get(componentId);
-        if (schemaPathsFromComponent == null) {
+        if(schemaPathsFromComponent == null){
             schemaPathsFromComponent = new ArrayList<>();
             m_schemaPathsFromComponent.putIfAbsent(componentId, schemaPathsFromComponent);
             schemaPathsFromComponent = m_schemaPathsFromComponent.get(componentId);
         }
         schemaPathsFromComponent.add(schemaPaths);
     }
-
-    @Override
-    public String getOrderByFieldName(Class entityClass) {
-        for (Field field : entityClass.getDeclaredFields()) {
-            if (field.getAnnotation(YangOrderByUser.class) != null) {
-                return field.getName();
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public String getYangParentIdFieldName(Class entityClass) {
+    
+	@Override
+	public String getOrderByFieldName(Class entityClass) {
+		for (Field field : entityClass.getDeclaredFields()) {
+			if (field.getAnnotation(YangOrderByUser.class) != null) {
+				return field.getName();
+			}
+		}
+		return null;
+	}
+	
+	@Override
+	public String getYangParentIdFieldName(Class entityClass){
         for (Field field : entityClass.getDeclaredFields()) {
             if (field.getAnnotation(YangParentId.class) != null) {
                 return field.getName();
             }
         }
         return null;
-    }
+	}
 
     @Override
     public void addYangAttributeNSGetters(Class klass, Map<QName, Method> yangAttributeNSGetters) {
         Map<QName, Method> existingGetters = m_yangAttributeNSGetters.get(klass);
-        if (existingGetters == null) {
+        if(existingGetters==null) {
             existingGetters = new HashMap<>();
             m_yangAttributeNSGetters.putIfAbsent(klass, existingGetters);
             existingGetters = m_yangAttributeNSGetters.get(klass);
@@ -396,7 +388,7 @@ public class EntityRegistryImpl implements EntityRegistry {
     @Override
     public void addYangAttributeNSSetters(Class klass, Map<QName, Method> yangAttributeNSSetters) {
         Map<QName, Method> existingSetters = m_yangAttributeNSSetters.get(klass);
-        if (existingSetters == null) {
+        if(existingSetters==null) {
             existingSetters = new HashMap<>();
             m_yangAttributeNSSetters.putIfAbsent(klass, existingSetters);
             existingSetters = m_yangAttributeNSSetters.get(klass);
@@ -407,5 +399,31 @@ public class EntityRegistryImpl implements EntityRegistry {
     @Override
     public Map<QName, Method> getYangAttributeNSSetters(Class klass) {
         return m_yangAttributeNSSetters.get(klass);
+    }
+
+    @Override
+    public void addJpaAttributesInfo(Class klass, Map<QName, String> attributesInfo) {
+        Map<QName, String> existingInfos = m_keyColumnInfos.get(klass);
+        if(existingInfos==null) {
+            existingInfos = new HashMap<>();
+            m_keyColumnInfos.putIfAbsent(klass, existingInfos);
+            existingInfos = m_keyColumnInfos.get(klass);
+        }
+        existingInfos.putAll(attributesInfo);
+    }
+
+    @Override
+    public Map<QName, String> getJpaAttributesInfo(Class klass) {
+        return m_keyColumnInfos.get(klass);
+    }
+
+    @Override
+    public void addClassWithYangParentSchemaPathAnnotation(String componentId, Class klass) {
+        m_classesWithYangParentSchemaPathAnnotation.put(componentId, klass);
+    }
+
+    @Override
+    public boolean classHasYangParentSchemaPathAnnotation(Class<?> klass) {
+        return m_classesWithYangParentSchemaPathAnnotation.values().contains(klass);
     }
 }

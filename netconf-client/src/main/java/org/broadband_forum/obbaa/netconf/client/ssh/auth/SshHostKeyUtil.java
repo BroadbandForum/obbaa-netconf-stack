@@ -18,7 +18,6 @@ package org.broadband_forum.obbaa.netconf.client.ssh.auth;
 
 import org.broadband_forum.obbaa.netconf.api.client.authentication.LoginKey;
 import org.broadband_forum.obbaa.netconf.api.utils.PemReader;
-
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
 import io.netty.util.CharsetUtil;
@@ -34,15 +33,17 @@ import java.util.List;
 
 /**
  * This class gives the API to read and write the Keypair in PEM format.
+ * 
  *
- * @author Venkat
+ * 
  */
 public class SshHostKeyUtil {
 
     /**
      * This method reads the public and private key from the file(PEM format).
-     *
+     * 
      * @param loginKey - This object should contain the public and private key file name.
+     * 
      */
     public static KeyPair doReadKeyPair(LoginKey loginKey) throws Exception {
 
@@ -71,15 +72,13 @@ public class SshHostKeyUtil {
     public static void doWriteKeyPair(KeyPair paramKeyPair, OutputStream paramOutputStream) throws Exception {
 
         String pubKeyText = "-----BEGIN PUBLIC KEY-----\n"
-                + Base64.encode(Unpooled.wrappedBuffer(paramKeyPair.getPublic().getEncoded()), true).toString
-                (CharsetUtil.US_ASCII)
+                + Base64.encode(Unpooled.wrappedBuffer(paramKeyPair.getPublic().getEncoded()), true).toString(CharsetUtil.US_ASCII)
                 + "\n-----END PUBLIC KEY-----\n";
 
         paramOutputStream.write(pubKeyText.getBytes(CharsetUtil.US_ASCII));
 
         String privKeyText = "-----BEGIN PRIVATE KEY-----\n"
-                + Base64.encode(Unpooled.wrappedBuffer(paramKeyPair.getPrivate().getEncoded()), true).toString
-                (CharsetUtil.US_ASCII)
+                + Base64.encode(Unpooled.wrappedBuffer(paramKeyPair.getPrivate().getEncoded()), true).toString(CharsetUtil.US_ASCII)
                 + "\n-----END PRIVATE KEY-----\n";
 
         paramOutputStream.write(privKeyText.getBytes(CharsetUtil.US_ASCII));

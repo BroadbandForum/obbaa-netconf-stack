@@ -1,0 +1,9 @@
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <data>
+    <toast:toaster xmlns:toast="http://netconfcentral.org/ns/toaster">
+      <toast:toasterManufacturer>toasterManufacturer</toast:toasterManufacturer>
+      <toast:toasterModelNumber>toasterModelNumber</toast:toasterModelNumber>
+      <toast:toasterStatus>up</toast:toasterStatus>
+    </toast:toaster>
+  </data>
+</rpc-reply>

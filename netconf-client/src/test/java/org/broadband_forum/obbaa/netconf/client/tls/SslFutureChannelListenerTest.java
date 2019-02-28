@@ -65,8 +65,8 @@ import org.broadband_forum.obbaa.netconf.api.x509certificates.ByteArrayCertifica
 import org.broadband_forum.obbaa.netconf.api.x509certificates.CertificateUtil;
 
 public class SslFutureChannelListenerTest {
-
-    private static final String PEER_CERT = "MIIDpDCCAowCCQCBGDthXaSq4zANBgkqhkiG9w0BAQsFADCBjDELMAkGA1UEBhMC\n"
+	
+	private static final String PEER_CERT = "MIIDpDCCAowCCQCBGDthXaSq4zANBgkqhkiG9w0BAQsFADCBjDELMAkGA1UEBhMC\n"
             + "SU4xEjAQBgNVBAgMCVRhbWlsbmFkdTEQMA4GA1UEBwwHQ2hlbm5haTEUMBIGA1UE\n"
             + "CgwLQ0EgUHZ0LiBMdGQxFjAUBgNVBAsMDUNBIERlcGFydG1lbnQxDzANBgNVBAMM\n"
             + "BmNhX2NydDEYMBYGCSqGSIb3DQEJARYJY2FAY2EuY29tMB4XDTE2MDYzMDE4MTM0\n"
@@ -84,9 +84,9 @@ public class SslFutureChannelListenerTest {
             + "a8+/cC97Cdw0mvQBqEjC5ABc0VcTgnokN7UYCuIRXbI+eWdIkZkfGW4HcziTPDv2\n"
             + "ZooKXrqREUpBE4d3v+4HR/Kn57FKCDIP8jyiO5oRZIzLnBFp4RuZPxlSi5f8ImrZ\n"
             + "xVkkUZaJMREB9u6ucP8aFQctCuqnq9DrbcbR+t8Qi9VPVAojU+pc16uqhS2P9/98\n"
-            + "OmEz0e5n154YpYsbh/IoMvZ55aOV6SjSbgLaL4bx7NWNllIncakVX+TnR4LrPeAM\n"
+            + "OmEz0e5n154YpYsbh/IoMvZ55aOV6SjSbgLaL4bx7NWNllIncakVX+TnR4LrPeAM\n" 
             + "Gbb5tJYvB7VFbLJm029Jx4yI8MWnCSbA\n";
-
+	
     private static final String CA_CERT = "MIIDrzCCApcCCQCVj1/2EkeoqTANBgkqhkiG9w0BAQsFADCBpTELMAkGA1UEBhMC\n"
             + "SU4xEjAQBgNVBAgMCVRhbWlsbmFkdTEQMA4GA1UEBwwHQ2hlbm5haTEZMBcGA1UE\n"
             + "CgwQUm9vdCBDQSBQdnQuIEx0ZDEbMBkGA1UECwwSUm9vdCBDQSBEZXBhcnRtZW50\n"
@@ -105,7 +105,7 @@ public class SslFutureChannelListenerTest {
             + "+Ip1DAk0xhDnuAs549RQFsAQqZaUBiu3+V1neBw47v9UvS5VAgLP58UyMsyS2AEa\n"
             + "xkXha9kZFuULTPWpBcQM/lpjArJ+rxpeQ6AwrG0EpSfoKoRpFcv+RtP39EFysXLn\n"
             + "Ntnc96a5wZPZdW5ENR3GI3vMKvMLda9NcKrVWDtvIjI36vKQO/fpQmqjlusQ8QMC\n"
-            + "q3OLxgkdAcyBdjMY7kcmJXHDKM8g6XNUDq3OyLlHcBdsZ/Cr0bKVlxDJLK/wzRjq\n"
+            + "q3OLxgkdAcyBdjMY7kcmJXHDKM8g6XNUDq3OyLlHcBdsZ/Cr0bKVlxDJLK/wzRjq\n" 
             + "LWjLygha9PgeCPi/s9YwuGQTj1SOnY+5hcB6eQ8I/SQQTaU=\n";
 
     private static final String ROOT_CA_CERT = "MIIEHzCCAwegAwIBAgIJAPqIoyFtil02MA0GCSqGSIb3DQEBCwUAMIGlMQswCQYD\n"
@@ -129,7 +129,7 @@ public class SslFutureChannelListenerTest {
             + "oe/KAmMbghC0htKuS+UiGoRDLgp+iJzA4inoca4Zv9nI2/fyp5Gcg2oxYBR87NZi\n"
             + "16o2RQTIXVU2SA+FVFEt8BmiVkJiECF78f95MsbqTRiHFg/siNrLmojAw9K20Fby\n"
             + "SZs7S/tUg4AGbdtj+jo2vDZjy+5u83edgqpXLtEkx9Hm/CzzPyljQoj7yap6E3vg\n"
-            + "juMOo5L6L4haKLNgl5qGbk5B4kpb7dYw+PaArODkYKhPIu+0FxNXVkdNwfLbMrhW\n"
+            + "juMOo5L6L4haKLNgl5qGbk5B4kpb7dYw+PaArODkYKhPIu+0FxNXVkdNwfLbMrhW\n" 
             + "mRfL\n";
 
     private SocketChannel m_channel;
@@ -160,13 +160,12 @@ public class SslFutureChannelListenerTest {
         m_notificationListener = mock(NotificationListener.class);
 
         m_callHomeListener = mock(CallHomeListener.class);
-
-        List<ByteArrayCertificate> byteCertificates = CertificateUtil.getByteArrayCertificates(Arrays.asList
-                (PEER_CERT, CA_CERT, ROOT_CA_CERT));
+        
+        List<ByteArrayCertificate> byteCertificates = CertificateUtil.getByteArrayCertificates(Arrays.asList(PEER_CERT, CA_CERT, ROOT_CA_CERT));
         m_peerCertificateChain = CertificateUtil.getX509Certificates(byteCertificates).toArray(new Certificate[0]);
         m_peerCertificate = CertificateUtil.getX509Certificate(PEER_CERT);
     }
-
+    
     @Test
     public void testOperationCompleteWhenHandShakeSuccess() throws Exception {
         // dummy executor
@@ -180,13 +179,11 @@ public class SslFutureChannelListenerTest {
             }
         }).when(executorService).execute(any(Runnable.class));
         SSLEngine sSLEngine = createSSLSession();
-
-
+        
+        
         // prepare component to test
-        SslFutureChannelListener sslFutureChannelListener = new SslFutureChannelListener(sSLEngine, m_channel,
-                m_authenticationListener,
-                m_selfSigned, m_capabilities, m_notificationListener, executorService, executorService,
-                m_callHomeListener);
+        SslFutureChannelListener sslFutureChannelListener = new SslFutureChannelListener(sSLEngine, m_channel, m_authenticationListener,
+                m_selfSigned, m_capabilities, m_notificationListener, executorService, executorService, m_callHomeListener);
 
         // prepare test input handshake success future
         Future<Channel> futureChannel = new SucceededFuture<Channel>(null, m_channel);
@@ -198,28 +195,19 @@ public class SslFutureChannelListenerTest {
         SuccessInfo successInfo = new SuccessInfo().setIp(m_inetSocketAddress.getAddress().getHostAddress()).setPort(
                 m_inetSocketAddress.getPort()).setPeerCertificate(m_peerCertificate);
         verify(m_authenticationListener, times(1)).authenticationSucceeded(successInfo);
-
-        verify(executorService, times(1)).execute(any(Runnable.class));
-
-        verify(m_callHomeListener, times(1)).connectionEstablished(any(NetconfClientSession.class), any
-                        (NetconfLoginProvider.class),
-                any(X509Certificate.class), any(boolean.class));
     }
 
     @Test
     public void testOperationCompleteWhenHandShakeSuccessButExecutorRejected() throws Exception {
         // dummy executor
         ExecutorService executorService = mock(ExecutorService.class);
-        doThrow(new RejectedExecutionException("executor service queue reached max allowed limit")).when
-                (executorService).submit(
+        doThrow(new RejectedExecutionException("executor service queue reached max allowed limit")).when(executorService).submit(
                 any(Runnable.class));
         SSLEngine sSLEngine = createSSLSession();
-
+        
         // prepare component to test
-        SslFutureChannelListener sslFutureChannelListener = new SslFutureChannelListener(sSLEngine, m_channel,
-                m_authenticationListener,
-                m_selfSigned, m_capabilities, m_notificationListener, executorService, executorService,
-                m_callHomeListener);
+        SslFutureChannelListener sslFutureChannelListener = new SslFutureChannelListener(sSLEngine, m_channel, m_authenticationListener,
+                m_selfSigned, m_capabilities, m_notificationListener, executorService, executorService, m_callHomeListener);
 
         // prepare test input handshake success future
         Future<Channel> futureChannel = new SucceededFuture<Channel>(null, m_channel);
@@ -231,21 +219,15 @@ public class SslFutureChannelListenerTest {
         SuccessInfo successInfo = new SuccessInfo().setIp(m_inetSocketAddress.getAddress().getHostAddress()).setPort(
                 m_inetSocketAddress.getPort()).setPeerCertificate(m_peerCertificate);
         verify(m_authenticationListener, times(1)).authenticationSucceeded(successInfo);
-
-        verify(executorService, times(1)).execute(any(Runnable.class));
-
-        verify(m_callHomeListener, times(0)).connectionEstablished(any(NetconfClientSession.class), any
-                        (NetconfLoginProvider.class),
-                any(X509Certificate.class), any(boolean.class));
     }
 
-    private SSLEngine createSSLSession() throws SSLPeerUnverifiedException {
-        SSLEngine sSLEngine = mock(SSLEngine.class);
+	private SSLEngine createSSLSession() throws SSLPeerUnverifiedException {
+		SSLEngine sSLEngine = mock(SSLEngine.class);
         SSLSession sSLSession = mock(SSLSession.class);
         when(sSLEngine.getSession()).thenReturn(sSLSession);
         when(sSLSession.getPeerCertificates()).thenReturn(m_peerCertificateChain);
-        return sSLEngine;
-    }
+		return sSLEngine;
+	}
 
     @Test
     public void testOperationCompleteWhenHandShakeFailed() throws Exception {
@@ -262,12 +244,10 @@ public class SslFutureChannelListenerTest {
         SSLEngine sSLEngine = mock(SSLEngine.class);
         SSLSession sSLSession = mock(SSLSession.class);
         when(sSLEngine.getHandshakeSession()).thenReturn(sSLSession);
-
+        
         // prepare component to test
-        SslFutureChannelListener sslFutureChannelListener = new SslFutureChannelListener(sSLEngine, m_channel,
-                m_authenticationListener,
-                m_selfSigned, m_capabilities, m_notificationListener, executorService, executorService,
-                m_callHomeListener);
+        SslFutureChannelListener sslFutureChannelListener = new SslFutureChannelListener(sSLEngine, m_channel, m_authenticationListener,
+                m_selfSigned, m_capabilities, m_notificationListener, executorService, executorService, m_callHomeListener);
 
         // prepare test input handshake failed future
         FailedFuture<Channel> failedFuture = new FailedFuture<Channel>(null, new Throwable());
@@ -282,8 +262,7 @@ public class SslFutureChannelListenerTest {
 
         verify(executorService, times(0)).submit(any(Runnable.class));
 
-        verify(m_callHomeListener, times(0)).connectionEstablished(any(NetconfClientSession.class), any
-                        (NetconfLoginProvider.class),
+        verify(m_callHomeListener, times(0)).connectionEstablished(any(NetconfClientSession.class), any(NetconfLoginProvider.class), 
                 any(X509Certificate.class), any(boolean.class));
     }
 

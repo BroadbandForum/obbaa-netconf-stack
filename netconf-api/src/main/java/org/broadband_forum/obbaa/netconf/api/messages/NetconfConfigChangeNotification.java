@@ -20,10 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Element;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class NetconfConfigChangeNotification extends NetconfNotification {
 
@@ -44,12 +45,12 @@ public class NetconfConfigChangeNotification extends NetconfNotification {
 
     public NetconfConfigChangeNotification setDataStore(int datastore) {
         switch (datastore) {
-            case 0:
-                this.m_datastore = StandardDataStores.RUNNING;
-                break;
-            case 1:
-                this.m_datastore = StandardDataStores.STARTUP;
-                break;
+        case 0:
+            this.m_datastore = StandardDataStores.RUNNING;
+            break;
+        case 1:
+            this.m_datastore = StandardDataStores.STARTUP;
+            break;
         }
         return this;
     }
@@ -77,12 +78,12 @@ public class NetconfConfigChangeNotification extends NetconfNotification {
     public void setChangedByParams(ChangedByParams changedByParams) {
         this.m_changedByParams = changedByParams;
     }
-
+    
     public Element getNetconfConfigChangeNotificationElement() throws NetconfMessageBuilderException {
         PojoToDocumentTransformer transformer = new PojoToDocumentTransformer();
         return transformer.getConfigChangeNotificationElement(m_datastore, m_editList, m_changedByParams);
     }
-
+    
     @Override
     public Element getNotificationElement() {
         try {
@@ -97,7 +98,7 @@ public class NetconfConfigChangeNotification extends NetconfNotification {
         }
         return null;
     }
-
+    
     @Override
     public QName getType() {
         return TYPE;

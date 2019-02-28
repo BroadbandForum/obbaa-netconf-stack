@@ -20,28 +20,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Element;
 
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+
 public class NetconfStateChangeNotification extends NetconfNotification {
-
-    private static final Logger LOGGER = Logger.getLogger(StateChangeNotification.class);
-
+    
+private static final Logger LOGGER = Logger.getLogger(StateChangeNotification.class);
+    
     public static final QName TYPE = QName.create(NetconfResources.NC_STACK_NS, "netconf-state-change");
-
+    
     private List<StateChangeInfo> m_changesList = new ArrayList<StateChangeInfo>();
-
-
+    
+    
     public NetconfStateChangeNotification(List<StateChangeInfo> changesList) {
         this.m_changesList = changesList;
     }
-
+    
     public NetconfStateChangeNotification(StateChangeInfo stateChangeInfo) {
         m_changesList.add(stateChangeInfo);
     }
-
+    
     public List<StateChangeInfo> getChangesList() {
         return m_changesList;
     }
@@ -49,7 +50,7 @@ public class NetconfStateChangeNotification extends NetconfNotification {
     public void setChangesList(List<StateChangeInfo> changesList) {
         this.m_changesList = changesList;
     }
-
+    
     public void setChangesList(StateChangeInfo stateChangeInfo) {
         m_changesList.add(stateChangeInfo);
     }
@@ -68,7 +69,7 @@ public class NetconfStateChangeNotification extends NetconfNotification {
         }
         return nofElement;
     }
-
+    
     @Override
     public QName getType() {
         return TYPE;

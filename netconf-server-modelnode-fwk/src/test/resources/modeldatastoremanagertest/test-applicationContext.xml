@@ -15,7 +15,7 @@
         </map>
     </constructor-arg>
   </bean>
-  <bean id="persistenceManagerUtil" class="org.broadband_forum.obbaa.netconf.persistence.jpa.ThreadLocalPersistenceManagerUtil">
+  <bean id="persistenceManagerUtil" class="org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.SpyingThreadLocalPersistenceManagerUtil">
     <constructor-arg ref="entityManagerFactory"/>
   </bean>
   <bean id="jukeboxDao" class="org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.annotation.dao.JukeboxDao">

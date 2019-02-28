@@ -28,6 +28,12 @@ public class DefaultLogger implements InvocationHandler {
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(DefaultLogger.class);
 
     private Logger m_slf4jLogger;//NOSONAR
+    private static final String SENSITIVE_DATA = "sensitiveData";
+    private static final String SET_LOG_CALL_BUFFER = "setLogCallBuffer";
+    private static final String REMOVE_LOG_CALL_BUFFER = "removeLogCallBuffer";
+    
+    // for testing purposes, to be able to retrieve the log calls afterwards
+    private List<LogCallEntry> m_logCallBuffer = null;
 
     public DefaultLogger(String category) {
         m_slf4jLogger = org.slf4j.LoggerFactory.getLogger(category);
@@ -35,12 +41,25 @@ public class DefaultLogger implements InvocationHandler {
 
     @Override
     public Object invoke(Object object, Method method, Object[] args) throws Throwable {
+        if (m_logCallBuffer != null) {
+            m_logCallBuffer.add(new LogCallEntry(method, args));
+        }
         List<Object> slf4jParams = new ArrayList<>();
-        if (args != null) {
+        if(args != null){
             slf4jParams.addAll(Arrays.asList(args));
         }
-        Method targetMethod = getTargetMethod(method, method.getParameterTypes());
-        return targetMethod.invoke(m_slf4jLogger, slf4jParams.toArray());
+        if (SENSITIVE_DATA.equals(method.getName())) {
+            return new SensitiveObjectWrapper(args[0]);
+        } else if (SET_LOG_CALL_BUFFER.equals(method.getName())) {
+            m_logCallBuffer = (List<LogCallEntry>) args[0];
+            return null;
+        } else if (REMOVE_LOG_CALL_BUFFER.equals(method.getName())) {
+            m_logCallBuffer = null;
+            return null;
+        } else {
+            Method targetMethod = getTargetMethod(method, method.getParameterTypes());
+            return targetMethod.invoke(m_slf4jLogger, slf4jParams.toArray());
+        }
     }
 
     private Method getTargetMethod(Method method, Class<?>[] paramTypes) {

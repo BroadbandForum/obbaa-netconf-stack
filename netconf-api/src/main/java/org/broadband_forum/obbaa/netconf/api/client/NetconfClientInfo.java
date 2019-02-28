@@ -18,6 +18,10 @@ package org.broadband_forum.obbaa.netconf.api.client;
 
 import java.io.Serializable;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 public class NetconfClientInfo {
     public static final String NON_INET_HOST = "non-inet-host";
     public static final String NON_INET_PORT = "non-inet-port";
@@ -26,10 +30,47 @@ public class NetconfClientInfo {
     private String m_remoteHost;
     private String m_remotePort;
     private Serializable m_clientSessionId;
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfClientInfo.class, LogAppNames.NETCONF_LIB);
 
+    private ContextSetter m_clientContextSetter = new ContextSetter() {
+        @Override
+        public void setContext() {
+        }
+
+        @Override
+        public void resetContext() {
+        }
+    };
+    private boolean m_isRestConf;
+
+    public void setClientContext() {
+        m_clientContextSetter.setContext();
+    }
+
+    public void resetClientContext() {
+        m_clientContextSetter.resetContext();
+    }
+
+    public ContextSetter getClientContextSetter() {
+        return m_clientContextSetter;
+    }
+
+    public void setClientContextSetter(ContextSetter clientContextSetter) {
+        m_clientContextSetter = clientContextSetter;
+    }
+
+    public boolean isRestConf() {
+        return m_isRestConf;
+    }
+
+    public void setRestConf(boolean restConf) {
+        m_isRestConf = restConf;
+    }
+
+    static class ClientSessionId implements Serializable{
+    }
     public NetconfClientInfo(String username, int sessionId) {
-        this.username = username;
-        this.sessionId = sessionId;
+        this(username, sessionId, new ClientSessionId());
     }
 
     public NetconfClientInfo(String username, int sessionId, Serializable clientSessionId) {
@@ -68,11 +109,12 @@ public class NetconfClientInfo {
         return false;
     }
 
-    @Override
+	@Override
     public String toString() {
-        return "NetconfClientInfo{" + "username='" + username + '\'' + ", sessionId=" + sessionId + ", " +
-                "m_remoteHost='" + m_remoteHost
-                + '\'' + ", m_remotePort='" + m_remotePort + '\'' + '}';
+        return "NetconfClientInfo{" + "username='" + ((this.getUsername()!=null) ? LOGGER.sensitiveData(username) : username) + '\'' + "," +
+                " sessionId=" + LOGGER.sensitiveData(sessionId) +
+                ", m_remoteHost='" + ((this.getRemoteHost()!=null) ? LOGGER.sensitiveData(m_remoteHost) : m_remoteHost) + '\''
+                + ", m_remotePort='" +((this.getRemotePort()!=null) ? LOGGER.sensitiveData(m_remotePort) : m_remotePort) + '\'' + '}';
     }
 
     @Override
@@ -100,7 +142,11 @@ public class NetconfClientInfo {
         return result;
     }
 
-    public Serializable getClientSessionId() {
-        return m_clientSessionId;
+	public Serializable getClientSessionId() {
+		return m_clientSessionId;
+	}
+
+    public void setClientSessionId(Serializable clientSessionId) {
+        m_clientSessionId = clientSessionId;
     }
 }

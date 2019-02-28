@@ -52,9 +52,8 @@ public interface EntityDataStoreManager {
     public <E> List<E> findAll(Class<E> pojoClass, String orderByColumn);
 
     public <E> List<E> findAll(Class<E> pojoClass, List<String> orderByColumn);
-
-    public <E> List<E> findRange(Class<E> pojoClass, String predicateColumn, PredicateCondition condition, Double
-            value);
+ 
+    public <E> List<E> findRange(Class<E> pojoClass, String predicateColumn, PredicateCondition condition, Double value);
 
     public <E> List<E> findWithPaging(Class<E> entityClass, PagingInput pagingInput);
 
@@ -64,53 +63,43 @@ public interface EntityDataStoreManager {
 
     public <E> List<E> findByMatchValue(Class<E> entityClass, Map<String, Object> matchValues);
 
-    public <E> List<E> findByMatchValue(Class<E> entityClass, Map<String, Object> matchValues, LockModeType
-            lockModeType);
+    public <E> List<E> findByMatchValue(Class<E> entityClass,Map<String, Object> matchValues, LockModeType lockModeType);
 
     public <E> List<E> findByMatchValue(Class<E> pojoClass, Map<String, Object> matchValues, String orderByColumn);
 
-    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String,
-            Object>
+    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String, Object>
             notMatchValues, LockModeType lockModeType);
 
-    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String,
-            Object>
+    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String, Object>
             notMatchValues, String orderByColumn, LockModeType lockModeType);
 
-    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String,
-            Object>
+    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String, Object>
             notMatchValues, String orderByColumn, boolean isDesc, LockModeType lockModeType);
 
-    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues,
-                                                    Map<String,
+    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues, Map<String,
             List<Object>> notMatchValues);
 
-    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues,
-                                                    Map<String,
+    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues, Map<String,
             List<Object>> notMatchValues, String orderByColumn);
 
     public <E> List<E> findByIsNotNull(Class<E> entityClass, List<String> attributes);
 
     public <E> List<E> findLike(Class<E> entity, Map<String, String> matchValue);
+    
+    public <E> List<E> findLikeWithPagingInput(Class<E> entity, Map<String, String> matchValues, Map<String, String> likeValues, PagingInput pagingInput);
 
-    public <E> List<E> findLikeWithPagingInput(Class<E> entity, Map<String, String> matchValues, Map<String, String>
-            likeValues, PagingInput pagingInput);
-
-    public <E> List<E> findWithPagingAndOrderByColumn(Class<E> entityClass, PagingInput pagingInput, Map<String,
-            Object> matchValues,
+    public <E> List<E> findWithPagingAndOrderByColumn(Class<E> entityClass, PagingInput pagingInput, Map<String, Object> matchValues,
                                                       String orderByColumn, Boolean isDesc);
 
-    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object>
-            notMatchValues);
+    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object> notMatchValues);
+    
+    public Long countByMatchAndLikeValue(Class entityClass, Map<String, String> matchValues, Map<String, String> likeValues, LockModeType lockMode);
 
-    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object>
-            notMatchValues, LockModeType lockMode);
-
-    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput
-            pagingInput);
-
-    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput
-            pagingInput, String orderBy);
+    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object> notMatchValues, LockModeType lockMode);
+    
+    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput pagingInput);
+    
+    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput pagingInput, String orderBy);
 
     public <E> boolean merge(E entity);
 
@@ -141,8 +130,7 @@ public interface EntityDataStoreManager {
     public Metamodel getMetaModel();
 
     public <E> List<E> findSelectedColumnsWithMatchedValues(Class<E> entityClass, PagingInput pagingInput,
-                                                            Map<String, Object> matchedValues, List<String>
-                                                                    selectedAttrs);
+                                                            Map<String, Object> matchedValues, List<String> selectedAttrs);
 
     public List<Object[]> findByNativeQuery(String query);
 
@@ -151,22 +139,25 @@ public interface EntityDataStoreManager {
     /*
      * (non-Javadoc)
      * 
-     * @see EntityDataStoreManager#findFirstObjectByQuery(java.lang.Class, java.lang.String) The select list
+     * @see org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager#findFirstObjectByQuery(java.lang.Class, java.lang.String) The select list
      * of the query must contain only a single item
      * 
      * @param qlString a Java Persistence query string
      * @param resultClass the type of the query result
      * @return the new query instance
      * @throws NoResultException if no result is found
-     * @throws IllegalArgumentException if the query string is found to be invalid or if the query result is found to
-      * not be assignable to
+     * @throws IllegalArgumentException if the query string is found to be invalid or if the query result is found to not be assignable to
      * the specified type
      */
     public <E> E findFirstObjectByQuery(Class<E> entityClass, String query);
 
+    <E> List<E> findByLike(Class<E> entityClass, String columnName, String value);
+
     <E> List<E> findByLike(Class<E> entityClass, String columnName, String value, int count);
 
-    <E> List<E> findByLike(Class<E> entityClass, String columnName, String value);
+    <E> List<E> findByLike(Class klass, Map<String, String> columnKeyMap, Map<String, Object> matchValues, int maxResults);
+
+    <E> List<E> findByLikeWithFieldsContain(Class klass, Map<String, String> columnKeyMap, Map<String, Object> parentIdMatchMap, int maxResults);
 
     public <E> void lock(E entity, LockModeType lockMode);
 

@@ -18,10 +18,11 @@ package org.broadband_forum.obbaa.netconf.api.authentication;
 
 /**
  * A transport level authentication (TLS/SSH) can fail either at client side or at the server side.
- * <p>
+ * 
  * This enum indicates where the authentication failed.
+ * 
  *
- * @author keshava
+ * 
  */
 public enum PointOfFailure {
     client, server

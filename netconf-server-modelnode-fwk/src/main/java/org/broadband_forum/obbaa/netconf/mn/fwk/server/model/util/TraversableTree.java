@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util;
 
 import java.util.ArrayList;
@@ -32,8 +16,9 @@ import java.util.TreeSet;
  * which doesn't hinder this class being used for storing any fully-qualified
  * nodes (e.g., schema nodes, data nodes, identities, etc,.)
  *
+ *
+ *
  * @param <T>
- * @author R Kaja Mohideen
  */
 public class TraversableTree<T extends Comparable<T>> {
 
@@ -65,11 +50,11 @@ public class TraversableTree<T extends Comparable<T>> {
     }
 
     public List<T> findPathTo(T value) {
-        if (value == null) {
+        if(value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
         TreeNode<T> parentNode = m_allNodesInTree.get(value);
-        if (parentNode == null) {
+        if(parentNode == null) {
             return null;
         }
         List<T> path = new ArrayList<>();
@@ -101,7 +86,7 @@ public class TraversableTree<T extends Comparable<T>> {
             return m_rootNode;
         }
         TreeNode<T> currentNode = m_rootNode;
-        for (Iterator<T> iterator = path.iterator(); iterator.hasNext(); ) {
+        for (Iterator<T> iterator = path.iterator(); iterator.hasNext();) {
             T pathSegment = iterator.next();
             Set<TreeNode<T>> availableBranches = currentNode.getChildNodes();
             for (TreeNode<T> branch : availableBranches) {

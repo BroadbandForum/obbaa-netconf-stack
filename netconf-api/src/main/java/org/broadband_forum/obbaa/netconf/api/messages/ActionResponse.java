@@ -20,28 +20,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class ActionResponse extends NetConfResponse {
 
-    private List<Element> m_outputElements = new ArrayList<>();
+	private List<Element> m_outputElements = new ArrayList<>();
 
-    private ActionDefinition m_actionDefinition;
+	private ActionDefinition m_actionDefinition;
 
-    public ActionDefinition getActionDefinition() {
-        return m_actionDefinition;
-    }
+	public ActionDefinition getActionDefinition() {
+		return m_actionDefinition;
+	}
 
-    public void setActionDefinition(ActionDefinition actionDefinition) {
-        this.m_actionDefinition = actionDefinition;
-    }
+	public void setActionDefinition(ActionDefinition actionDefinition) {
+		this.m_actionDefinition = actionDefinition;
+	}
+	
+	public List<Element> getActionOutputElements() {
+		return m_outputElements;
+	}
 
-    public List<Element> getActionOutputElements() {
-        return m_outputElements;
-    }
-
-    public void setActionOutputElements(List<Element> outputElements) {
-        m_outputElements = outputElements;
+	public void setActionOutputElements(List<Element> outputElements){
+		m_outputElements = outputElements;
+	}
+	
+	@Override
+    public Document getResponseDocument() throws NetconfMessageBuilderException {
+        synchronized (this){
+            PojoToDocumentTransformer responseBuilder = new PojoToDocumentTransformer()
+                    .newNetconfRpcReplyDocument(getMessageId(),
+                            getOtherRpcAttributes()).addRpcErrors(getErrors());
+            if (! m_outputElements.isEmpty()){
+            	for (Element outputElement: m_outputElements) {
+                    responseBuilder.addRpcElement(outputElement);
+                }
+            } else if (isOk()) {
+                responseBuilder.addOk();
+            }
+            return responseBuilder.build();
+        }
     }
 
 }

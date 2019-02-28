@@ -17,16 +17,16 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 public class ChangedLeafInfo {
-
+    
     private String m_name;
     private String m_changedValue;
     private String m_namespace;
     private String m_prefix;
-
+    
     public ChangedLeafInfo() {
-
+        
     }
-
+    
     public ChangedLeafInfo(String name, String changedValue, String namespace, String prefix) {
         super();
         this.m_name = name;
@@ -34,35 +34,28 @@ public class ChangedLeafInfo {
         this.m_namespace = namespace;
         this.m_prefix = prefix;
     }
-
+    
     public String getName() {
         return m_name;
     }
-
     public void setName(String name) {
         this.m_name = name;
     }
-
     public String getChangedValue() {
         return m_changedValue;
     }
-
     public void setChangedValue(String changedValue) {
         this.m_changedValue = changedValue;
     }
-
     public String getNamespace() {
         return m_namespace;
     }
-
     public void setNamespace(String namespace) {
         this.m_namespace = namespace;
     }
-
     public String getPrefix() {
         return m_prefix;
     }
-
     public void setPrefix(String prefix) {
         this.m_prefix = prefix;
     }
@@ -109,5 +102,5 @@ public class ChangedLeafInfo {
             return false;
         return true;
     }
-
+    
 }

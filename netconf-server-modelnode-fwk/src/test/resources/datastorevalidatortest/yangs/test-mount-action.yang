@@ -1,0 +1,25 @@
+module test-mount-action {
+   	yang-version 1.1;
+   	namespace "urn:example:test-mount-action";
+   	prefix "test-mount";
+
+	revision "2018-01-03" {
+		description "Initial version.";
+	}
+	container test-mount-action-container {
+   		action mount-container-reset {
+       		input {
+         		leaf reset-at {
+           			type string;
+           			mandatory true;
+          		}
+        	}
+        	output {
+          		leaf reset-finished-at {
+            		type string;
+            		mandatory true;
+          		}
+        	}
+		}
+	}
+}

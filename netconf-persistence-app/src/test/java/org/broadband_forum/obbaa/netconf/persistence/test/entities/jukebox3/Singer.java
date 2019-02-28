@@ -31,55 +31,55 @@ import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
 @Entity(name = "singer")
 @Table(name = "singer")
 @IdClass(SingerPK.class)
-@YangLeafList(name = "singer", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
+@YangLeafList(name = "singer", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
 public class Singer {
+	
+	@Id
+	@Column
+	@YangAttribute(name="singer", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+	private String singer;
+	
+	@Id
+	@YangParentId
+	String parentId;
+	
+	@YangSchemaPath
+	@Column(length = 1000)
+	String schemaPath;
+	
+	@Column
+	@YangOrderByUser
+	private Integer insertOrder;
+	
+	public String getSchemaPath() {
+		return schemaPath;
+	}
 
-    @Id
-    @Column
-    @YangAttribute(name = "singer", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-    private String singer;
+	public void setSchemaPath(String schemaPath) {
+		this.schemaPath = schemaPath;
+	}
 
-    @Id
-    @YangParentId
-    String parentId;
+	public String getParentId() {
+		return parentId;
+	}
 
-    @YangSchemaPath
-    @Column(length = 1000)
-    String schemaPath;
-
-    @Column
-    @YangOrderByUser
-    private Integer insertOrder;
-
-    public String getSchemaPath() {
-        return schemaPath;
-    }
-
-    public void setSchemaPath(String schemaPath) {
-        this.schemaPath = schemaPath;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
-
-    public String getSinger() {
-        return singer;
-    }
-
-    public void setSinger(String singer) {
-        this.singer = singer;
-    }
-
-    public int getInsertOrder() {
-        return insertOrder;
-    }
-
-    public void setInsertOrder(Integer insertOrder) {
-        this.insertOrder = insertOrder;
-    }
+	public void setParentId(String parentId) {
+		this.parentId = parentId;
+	}
+	
+	public String getSinger() {
+		return singer;
+	}
+	
+	public void setSinger(String singer) {
+		this.singer = singer;
+	}
+	
+	public int getInsertOrder() {
+		return insertOrder;
+	}
+	
+	public void setInsertOrder(Integer insertOrder) {
+		this.insertOrder = insertOrder;
+	}
 }

@@ -25,22 +25,22 @@ import org.junit.Test;
 
 public class FileUtilTest {
 
-    private static final String IETF_YANG_PATH = "/yangs/ietf/ietf-yang-types.yang";
+	private static final String IETF_YANG_PATH = "/yangs/ietf/ietf-yang-types.yang";
 
-    private static String m_loadAsString = null;
-    private static String m_loadFileString = null;
+	private static String m_loadAsString = null;
+	private static String m_loadFileString = null;
 
-    @Test
-    public void testLoadFileAsString() throws FileNotFoundException {
-        m_loadFileString = FileUtil.loadFileAsString(FileUtilTest.class.getResource(IETF_YANG_PATH).getPath());
-        assertNotNull(m_loadFileString);
-    }
+	@Test
+	public void testLoadFileAsString() throws FileNotFoundException {
+		m_loadFileString = FileUtil.loadFileAsString(FileUtilTest.class.getResource(IETF_YANG_PATH).getPath());
+		assertNotNull(m_loadFileString);
+	}
 
-    @Test
-    public void testLoadAsString() {
-        m_loadAsString = FileUtil.loadAsString(IETF_YANG_PATH);
-        assertNotNull(m_loadAsString);
-        assertEquals(m_loadFileString, m_loadAsString);
-    }
+	@Test
+	public void testLoadAsString() {
+		m_loadAsString = FileUtil.loadAsString(IETF_YANG_PATH);
+		assertNotNull(m_loadAsString);
+		assertEquals(m_loadFileString,m_loadAsString);
+	}
 
 }

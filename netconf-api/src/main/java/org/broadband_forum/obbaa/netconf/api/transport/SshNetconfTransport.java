@@ -27,7 +27,7 @@ public class SshNetconfTransport extends NetconfTransport {
 
     /**
      * ssh heart beat interval in seconds.
-     *
+     * 
      * @return
      */
     public int getHeartBeatInterval() {
@@ -36,7 +36,7 @@ public class SshNetconfTransport extends NetconfTransport {
 
     /**
      * ssh heart beat interval in seconds.
-     *
+     * 
      * @return
      */
     public SshNetconfTransport setHeartBeatInterval(int heartBeatIntervalSecs) {
@@ -65,14 +65,5 @@ public class SshNetconfTransport extends NetconfTransport {
     public SshNetconfTransport setHostKeyPath(String hostKeyPath) {
         this.m_hostKeyPath = hostKeyPath;
         return this;
-    }
-
-    @Override
-    public String toString() {
-        return "SshNetconfTransport{" +
-                "m_socketAddr=" + m_socketAddr +
-                ", m_hostKeyPath='" + m_hostKeyPath + '\'' +
-                ", m_heartBeatIntervalSecs=" + m_heartBeatIntervalSecs +
-                '}';
     }
 }

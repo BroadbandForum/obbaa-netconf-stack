@@ -19,15 +19,15 @@ package org.broadband_forum.obbaa.netconf.api.transport.security;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactorySpi;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 
 /**
  * A X509 TrustManagerFactory Service Provider which lets the users supply an implementation of {@link TrustManager}
+ * 
  *
- * @author keshava
+ * 
  */
 public class X509TrustManagerFactorySpi extends TrustManagerFactorySpi {
 
@@ -39,7 +39,7 @@ public class X509TrustManagerFactorySpi extends TrustManagerFactorySpi {
 
     @Override
     protected TrustManager[] engineGetTrustManagers() {
-        return new TrustManager[]{m_trustManager};
+        return new TrustManager[] { m_trustManager };
     }
 
     @Override

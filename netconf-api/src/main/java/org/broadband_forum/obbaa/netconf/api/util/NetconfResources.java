@@ -31,7 +31,8 @@ import org.joda.time.format.ISODateTimeFormat;
 /**
  * Various netconf resources
  *
- * @author keshava
+ *
+ *
  */
 public final class NetconfResources {
 
@@ -62,11 +63,15 @@ public final class NetconfResources {
     public static final String NETCONF_RPC_NS_1_0 = "urn:ietf:params:xml:ns:netconf:base:1.0";
     public static final String NETCONF_BASE_CAP_1_0 = "urn:ietf:params:netconf:base:1.0";
     public static final String NETCONF_BASE_CAP_1_1 = "urn:ietf:params:netconf:base:1.1";
+    public static final String CAPABILITY_TYPE = "CAPABILITY_TYPE";
+    public static final String DEFAULT_VALUE_1_1 = "1.1";
     public static final String NETCONF_YANG_1 = "urn:ietf:params:xml:ns:yang:1";
     public static final String NETCONF_NOTIFICATION = "urn:ietf:params:netconf:capability:notification:1.0";
     public static final String NETCONF_NOTIFICATION_NS = "urn:ietf:params:xml:ns:netconf:notification:1.0";
     public static final String IETF_NOTIFICATION_NS = "urn:ietf:params:xml:ns:yang:ietf-netconf-notifications";
+    public static final String BBF_NOTIFICATION_NS = "urn:broadband-forum-org:yang:bbf-software-image-management";
     public static final String NC_NOTIFICATION_NS = "urn:ietf:params:xml:ns:netmod:notification";
+    public static final String NOTIFICATION_BUFFER_NS = "http://www.test-company.com/solutions/anv-notification-buffer";
     public static final String NETCONF_WRITABLE_RUNNNG = "urn:ietf:params:netconf:capability:writable-running:1.0";
     public static final String NETCONF_ROLLBACK_ON_ERROR = "urn:ietf:params:netconf:capability:rollback-on-error:1.0";
     public static final String WITH_DEFAULTS_NS = "urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults";
@@ -87,10 +92,16 @@ public final class NetconfResources {
     public static final String LOCK = "lock";
     public static final String UNLOCK = "unlock";
     public static final String GET = "get";
-    public static final String WITH_DELAY_NS = "http://bbf.org/netconf-extensions";
+    public static final String WITH_DELAY_NS = "http://www.test-company.com/solutions/anv-test-netconf-extensions";
     public static final String WITH_DELAY = "with-delay";
-    public static final String EXTENSION_NS = "http://bbf.org/netconf-extensions";
-    public static final String NC_STACK_NS = "http://bbf.org/netconf-stack";
+    public static final String EXTENSION_NS = "http://www.test-company.com/solutions/netconf-extensions";
+    public static final String NC_STACK_NS = "urn:bbf:yang:obbaa:netconf-stack";
+    public static final String SYSTEM_STATE_NS = "urn:ietf:params:xml:ns:yang:ietf-system";
+    public static final String SYSTEM_STATE = "system-state";
+    public static final String SYSTEM_STATE_NAMESPACE = "urn:ietf:params:xml:ns:yang:ietf-system";
+    public static final String CLOCK = "clock";
+    public static final String SYS_CURRENT_DATE_TIME = "sys:current-datetime";
+    public static final String CURRENT_DATE_TIME = "current-datetime";
     public static final String DEPTH = "depth";
     public static final String FIELDS = "fields";
     public static final String DATA_NODE = "data-node";
@@ -107,6 +118,10 @@ public final class NetconfResources {
     public static final String CAPABILITY = "capability";
     public static final String RPC_EOM_DELIMITER = "]]>]]>";
     public static final String RPC_CHUNKED_DELIMITER = "\n##\n";
+    public static final String EOM_HANDLER = "EOM_HANDLER";
+    public static final String CHUNKED_HANDLER = "CHUNKED_HANDLER";
+    public static final String CHUNK_SIZE = "CHUNK_SIZE";
+    public static final String MAXIMUM_SIZE_OF_CHUNKED_MESSAGES = "MAXIMUM_SIZE_OF_CHUNKED_MESSAGES";
     public static final String RPC_REPLY = "rpc-reply";
     public static final String OK = "ok";
     public static final String RPC_REPLY_DATA = "data";
@@ -129,10 +144,8 @@ public final class NetconfResources {
             + "---------------------------------";
     public static final String RESPONSE_LOG_STMT = "Sending response to %s/%s ( %s ) session-id %s\n %s \n"
             + "---------------------------------";
-    public static final String NOTIFICATION_LOG_STMT = "Got notification for %s stream: \n %s" +
-            "---------------------------------";
-    public static final String CREATESUBSCRIPTION_LOG_STMT = "Create subscription request: \n %s" +
-            "---------------------------------";
+    public static final String NOTIFICATION_LOG_STMT = "Got notification for %s stream: \n %s" + "---------------------------------";
+    public static final String CREATESUBSCRIPTION_LOG_STMT = "Create subscription request: \n %s" + "---------------------------------";
     public static final String SUFFIX = "_STREAM_LOGGER";
     public static final String UNCLASSIFIED_NOTIFICATIONS = "unclassified notifications";
     public static final DateTimeFormatter DATE_TIME_FORMATTER = ISODateTimeFormat.dateTimeNoMillis();
@@ -151,7 +164,7 @@ public final class NetconfResources {
     public static final String EVENT_TIME = "eventTime";
     public static final String DATA_STORE = "datastore";
     public static final String CHANGED_BY = "changed-by";
-    public static final String USER_NAME = "user-name";
+    public static final String USER_NAME = "username";
     public static final String SOURCE_HOST = "source-host";
     public static final String EDIT = "edit";
     public static final String TARGET = "target";
@@ -169,6 +182,7 @@ public final class NetconfResources {
     public static final String CHANGES = "changes";
     public static final String INTERLEAVE = "interleave";
     public static final String CONFIG_CHANGE_STREAM = "CONFIG_CHANGE";
+    public static final String SYSTEM_STREAM = "SYSTEM";
     public static final String OPER_STATE_CHANGE = "oper-state-change";
     public static final String OLD_OPER_STATUS = "old-oper-status";
     public static final String NEW_OPER_STATUS = "new-oper-status";
@@ -178,23 +192,22 @@ public final class NetconfResources {
      * '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[\+\-]\d{2}:\d{2})'; }
      */
     public static final DateTimeFormatter DATE_TIME_WITH_TZ = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
-    public static final DateTimeFormatter DATE_TIME_WITH_TZ_WITHOUT_MS = DateTimeFormat.forPattern
-            ("yyyy-MM-dd'T'HH:mm:ssZZ");
-    public static final Pattern DATE_TIME_WITH_TZ_WITH_MS_PATTERN = Pattern.compile
-            ("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)(Z|[\\+\\-]\\d{2}:\\d{2})");
-    public static final Pattern DATE_TIME_WITH_TZ_WITHOUT_MS_PATTERN = Pattern.compile
-            ("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[\\+\\-]\\d{2}:\\d{2})");
+    public static final DateTimeFormatter DATE_TIME_WITH_TZ_WITHOUT_MS = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZZ");
+    public static final Pattern DATE_TIME_WITH_TZ_WITH_MS_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)(Z|[\\+\\-]\\d{2}:\\d{2})");
+    public static final Pattern DATE_TIME_WITH_TZ_WITHOUT_MS_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[\\+\\-]\\d{2}:\\d{2})");
     public static final String IMPLICATION_CHANGE = "--automatic--";
 
-    public static DateTime parseDateTime(String dateTimeStr) {
+    public static final String NC_NBI_CLIENT_IDLE_CONNECTION_TIMEOUT_MS = "NC_NBI_CLIENT_IDLE_CONNECTION_TIMEOUT_MS";
+
+    public static DateTime parseDateTime(String dateTimeStr){
         return ISODateTimeFormat.dateTimeParser().parseDateTime(dateTimeStr);
     }
 
-    public static String printWithoutMillis(DateTime dateTime) {
+    public static String printWithoutMillis(DateTime dateTime){
         return DATE_TIME_WITH_TZ_WITHOUT_MS.print(dateTime);
     }
 
-    public static String printWithMillis(DateTime dateTime) {
+    public static String printWithMillis(DateTime dateTime){
         return DATE_TIME_WITH_TZ.print(dateTime);
     }
 

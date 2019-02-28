@@ -19,17 +19,12 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import java.util.HashMap;
 
 public enum NetconfRpcErrorTag {
-    DATA_EXISTS("data-exists"), DATA_MISSING("data-missing"), BAD_ATTRIBUTE("bad-attribute"), INVALID_VALUE
-            ("invalid-value"), IN_USE(
-            "in-use"), TOO_BIG("too-big"), MISSING_ATTRIBUTE("missing-attribute"), UNKNOWN_ATTRIBUTE
-            ("unknown-attribute"), MISSING_ELEMENT(
-            "missing-element"), BAD_ELEMENT("bad-element"), UNKNOWN_ELEMENT("unknown-element"), UNKNOWN_NAMESPACE
-            ("unknown-namespace"), ACCESS_DENIED(
-            "access-denied"), LOCK_DENIED("lock-denied"), RESOURCE_DENIED("resource-denied"), ROLLBACK_FAILED
-            ("rollback-failed"), OPERATION_NOT_SUPPORTED(
-            "operation-not-supported"), OPERATION_FAILED("operation-failed"), PARTIAL_OPERATION("partial-operation"),
-    MALFORMED_MESSAGE(
-            "malformed-message");
+    DATA_EXISTS("data-exists"), DATA_MISSING("data-missing"), BAD_ATTRIBUTE("bad-attribute"), INVALID_VALUE("invalid-value"), IN_USE(
+            "in-use"), TOO_BIG("too-big"), MISSING_ATTRIBUTE("missing-attribute"), UNKNOWN_ATTRIBUTE("unknown-attribute"), MISSING_ELEMENT(
+            "missing-element"), BAD_ELEMENT("bad-element"), UNKNOWN_ELEMENT("unknown-element"), UNKNOWN_NAMESPACE("unknown-namespace"), ACCESS_DENIED(
+            "access-denied"), LOCK_DENIED("lock-denied"), RESOURCE_DENIED("resource-denied"), ROLLBACK_FAILED("rollback-failed"), OPERATION_NOT_SUPPORTED(
+            "operation-not-supported"), OPERATION_FAILED("operation-failed"), PARTIAL_OPERATION("partial-operation"), MALFORMED_MESSAGE(
+            "malformed-message"), GENERAL_ERROR("general-error");
 
     private String m_value;
     private static HashMap<String, NetconfRpcErrorTag> m_valueToName;

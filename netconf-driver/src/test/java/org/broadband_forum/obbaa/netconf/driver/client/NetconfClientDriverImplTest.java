@@ -15,7 +15,7 @@
  */
 
 /**
- *
+ * 
  */
 package org.broadband_forum.obbaa.netconf.driver.client;
 
@@ -58,6 +58,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -68,7 +69,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author gnanavek
+ *
+ * 
  */
 public class NetconfClientDriverImplTest {
 
@@ -98,8 +100,7 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendGetRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException,
-            SAXException,
+    public void testSendGetRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, SAXException,
             IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
@@ -131,8 +132,7 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendGetConfigRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException, SAXException,
+    public void testSendGetConfigRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, SAXException,
             IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
@@ -158,8 +158,7 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendEditConfigRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException, SAXException,
+    public void testSendEditConfigRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, SAXException,
             IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
@@ -187,8 +186,7 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendCopyConfigRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException, SAXException,
+    public void testSendCopyConfigRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, SAXException,
             IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
@@ -216,13 +214,12 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendRpcRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException,
-            SAXException,
+    public void testSendRpcRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, SAXException,
             IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
             @Override
-            public Future<NetConfResponse> answer(InvocationOnMock invocation) throws Throwable {
+            public CompletableFuture<NetConfResponse> answer(InvocationOnMock invocation) throws Throwable {
                 NetconfRpcRequest actualRpcRequest = (NetconfRpcRequest) invocation.getArguments()[0];
                 assertEquals(60000L, actualRpcRequest.getReplyTimeout());
 
@@ -243,8 +240,7 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendLockRequestRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException, SAXException,
+    public void testSendLockRequestRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, SAXException,
             IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
@@ -270,8 +266,7 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendUnLockRequestRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException,
+    public void testSendUnLockRequestRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException,
             SAXException, IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
@@ -297,8 +292,7 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendCloseSessionRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException,
+    public void testSendCloseSessionRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException,
             SAXException, IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
@@ -323,15 +317,14 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendKillSessionRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException, SAXException,
+    public void testSendKillSessionRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, SAXException,
             IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
             @Override
             public Future<NetConfResponse> answer(InvocationOnMock invocation) throws Throwable {
                 KillSessionRequest actualKillSessionRequest = (KillSessionRequest) invocation.getArguments()[0];
-                assertEquals(30000L, actualKillSessionRequest.getReplyTimeout());
+                assertEquals(60000L, actualKillSessionRequest.getReplyTimeout());
 
                 assertEquals("9", actualKillSessionRequest.getMessageId());
                 assertEquals("4", actualKillSessionRequest.getSessionId().toString());
@@ -350,15 +343,13 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendCreateSubscriptionRequest() throws NetconfMessageBuilderException, InterruptedException,
-            ExecutionException,
+    public void testSendCreateSubscriptionRequest() throws NetconfMessageBuilderException, InterruptedException, ExecutionException,
             SAXException, IOException {
 
         Mockito.doAnswer(new Answer<Future<NetConfResponse>>() {
             @Override
             public Future<NetConfResponse> answer(InvocationOnMock invocation) throws Throwable {
-                CreateSubscriptionRequest actualCreateSubscriptionRequest = (CreateSubscriptionRequest) invocation
-                        .getArguments()[0];
+                CreateSubscriptionRequest actualCreateSubscriptionRequest = (CreateSubscriptionRequest) invocation.getArguments()[0];
                 assertEquals(100000L, actualCreateSubscriptionRequest.getReplyTimeout());
 
                 assertEquals("10", actualCreateSubscriptionRequest.getMessageId());
@@ -368,12 +359,10 @@ public class NetconfClientDriverImplTest {
                 final NetConfResponse testResponse = getNetconfResponse(responseDocument);
                 return new FutureNetconfReponse(testResponse);
             }
-        }).when(m_clientSession).createSubscription(Mockito.any(CreateSubscriptionRequest.class), Mockito.any
-                (NotificationListener.class));
+        }).when(m_clientSession).createSubscription(Mockito.any(CreateSubscriptionRequest.class), Mockito.any(NotificationListener.class));
         NotificationListener notificationListener = Mockito.mock(NotificationListener.class);
         String response = m_netconfDriver
-                .sendCreateSubscriptionRequest(loadAsString("createSubscriptionRequest.xml"), notificationListener,
-                        100000L);
+                .sendCreateSubscriptionRequest(loadAsString("createSubscriptionRequest.xml"), notificationListener, 100000L);
 
         Element expectedResponse = stringToDocument(loadAsString("ok-response.xml")).getDocumentElement();
         Element actualResponse = stringToDocument(response).getDocumentElement();
@@ -381,19 +370,16 @@ public class NetconfClientDriverImplTest {
     }
 
     @Test
-    public void testSendANotWellformedXMLRequest() throws InterruptedException, ExecutionException,
-            NetconfMessageBuilderException,
+    public void testSendANotWellformedXMLRequest() throws InterruptedException, ExecutionException, NetconfMessageBuilderException,
             SAXException, IOException {
 
         String errorResponse = m_netconfDriver.sendEditConfigRequest(loadAsString("notWellformedXMLRequest.xml"), null);
-        Element expectedErrorResponse = stringToDocument(loadAsString("errorWellformed-response.xml"))
-                .getDocumentElement();
+        Element expectedErrorResponse = stringToDocument(loadAsString("errorWellformed-response.xml")).getDocumentElement();
         Element actualErrorResponse = stringToDocument(errorResponse).getDocumentElement();
         assertXMLEquals(expectedErrorResponse, actualErrorResponse);
     }
 
-    public static boolean assertXMLEquals(Element expectedOutput, Element actualOutput) throws SAXException,
-            IOException,
+    public static boolean assertXMLEquals(Element expectedOutput, Element actualOutput) throws SAXException, IOException,
             NetconfMessageBuilderException {
         String expected = documentToPrettyString(expectedOutput);
         String actual = documentToPrettyString(actualOutput);

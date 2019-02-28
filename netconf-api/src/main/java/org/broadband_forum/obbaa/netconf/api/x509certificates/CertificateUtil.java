@@ -36,29 +36,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utility class that helps prepare a X509 Certificates.
+ * Utility class that helps prepare a X509 Certificates. 
  * Created by keshava on 4/28/15.
  */
 public class CertificateUtil {
-
+    
     private static final Logger LOGGER = Logger.getLogger(CertificateUtil.class);
-
-    private static final Pattern X509_CERT_WITH_DELIMITER_PATTERN = Pattern.compile("-+BEGIN\\s+.*CERTIFICATE[^-]*-+" +
-            "(?:\\s|\\r|\\n)+"
+    
+    private static final Pattern X509_CERT_WITH_DELIMITER_PATTERN = Pattern.compile("-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+"
             + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*CERTIFICATE[^-]*-+", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern CERT_BINARY_PATTERN = Pattern.compile("([a-z0-9+/=\\r\\n]+)", Pattern
-            .CASE_INSENSITIVE);
+    private static final Pattern CERT_BINARY_PATTERN = Pattern.compile("([a-z0-9+/=\\r\\n]+)", Pattern.CASE_INSENSITIVE);
 
     /**
      * Convert certificate Strings into ByteArrayCertificates.
-     *
+     * 
      * @param trustedCaCertificates - base64 encoded Strings containing certificate bytes
      * @return
      * @throws CertificateException
      */
-    public static List<ByteArrayCertificate> getByteArrayCertificates(List<String> trustedCaCertificates) throws
-            CertificateException {
+    public static List<ByteArrayCertificate> getByteArrayCertificates(List<String> trustedCaCertificates) throws CertificateException {
         List<ByteArrayCertificate> certs = new ArrayList<ByteArrayCertificate>();
 
         for (String trustedCaCertificate : trustedCaCertificates) {
@@ -70,13 +67,12 @@ public class CertificateUtil {
 
     /**
      * Convert Certificate string to base64 encoded certificate String
-     *
+     * 
      * @param trustedCaCertificate
      * @return
      * @throws CertificateException
      */
-    public static ByteArrayCertificate getByteArrayCertificateFromDelimitedString(String trustedCaCertificate) throws
-            CertificateException {
+    public static ByteArrayCertificate getByteArrayCertificateFromDelimitedString(String trustedCaCertificate) throws CertificateException {
         Matcher matcher = X509_CERT_WITH_DELIMITER_PATTERN.matcher(trustedCaCertificate.trim());
         if (!matcher.matches()) {
             throw new CertificateException("Invalid certificate found " + trustedCaCertificate);
@@ -86,7 +82,7 @@ public class CertificateUtil {
 
     /**
      * Convert base64 encoded certificate String into ByteArrayCertificate.
-     *
+     * 
      * @param trustedCaCertificateBase64String
      * @return
      * @throws CertificateException
@@ -107,13 +103,12 @@ public class CertificateUtil {
 
     /**
      * Convert ByteArrayCertificates into X509Certificates.
-     *
+     * 
      * @param byteCertificates
      * @return
      * @throws CertificateException
      */
-    public static List<X509Certificate> getX509Certificates(List<ByteArrayCertificate> byteCertificates) throws
-            CertificateException {
+    public static List<X509Certificate> getX509Certificates(List<ByteArrayCertificate> byteCertificates) throws CertificateException {
         List<X509Certificate> x509Certificates = new ArrayList<>();
         for (ByteArrayCertificate byteCertificate : byteCertificates) {
             x509Certificates.add(getX509Certificate(byteCertificate));
@@ -123,21 +118,20 @@ public class CertificateUtil {
 
     /**
      * Convert ByteArrayCertificate into X509Certificate.
-     *
+     * 
      * @param byteCertificate
      * @return
      * @throws CertificateException
      */
     public static X509Certificate getX509Certificate(ByteArrayCertificate byteCertificate) throws CertificateException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(byteCertificate
-                .getBytes()));
+        return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(byteCertificate.getBytes()));
     }
 
     /**
      * Convert base64 encoded certificate String to X509Certificate. This method is a shorthand for
      * <code>CertificateUtil.getX509Certificate(CertificateUtil.getByteArrayCertificate(certificateString)); <code>
-     *
+     * 
      * @param certificateStringInBase64
      * @return
      * @throws CertificateException
@@ -149,20 +143,19 @@ public class CertificateUtil {
     /**
      * Convert base64 encoded certificate Strings to X509Certificates. This method is a shorthand for
      * <code>CertificateUtil.getX509Certificates(CertificateUtil.getByteArrayCertificates(certificateString)); <code>
-     *
+     * 
      * @param certificateStringsInBase64
      * @return
      * @throws CertificateException
      */
-    public static List<X509Certificate> getX509CertificatesFromCertificateStrings(List<String>
-                                                                                          certificateStringsInBase64)
+    public static List<X509Certificate> getX509CertificatesFromCertificateStrings(List<String> certificateStringsInBase64)
             throws CertificateException {
         return getX509Certificates(getByteArrayCertificates(certificateStringsInBase64));
     }
 
     /**
      * Read the -----BEGIN CERTIFICATE----- and -----END CERTIFICATE----- delimited strings from the file.
-     *
+     * 
      * @param certificateChainFile
      * @return
      * @throws CertificateException
@@ -188,10 +181,10 @@ public class CertificateUtil {
         X509Certificate peerX509Certificate = null;
         try {
             Certificate[] peerCertificates = sSLSession.getPeerCertificates();
-            if (peerCertificates != null && peerCertificates.length > 0) {
-                if (peerCertificates[0] instanceof X509Certificate) {
-                    peerX509Certificate = (X509Certificate) peerCertificates[0];
-                }
+            if(peerCertificates != null && peerCertificates.length > 0 ) {
+               if (peerCertificates[0] instanceof X509Certificate) {
+                   peerX509Certificate = (X509Certificate) peerCertificates[0];
+               }
             } else {
                 LOGGER.warn("empty peer certificate chain");
             }
@@ -203,10 +196,10 @@ public class CertificateUtil {
 
     public static List<String> stripDelimiters(List<String> certificateChain) {
         List<String> strippedBinaries = new ArrayList<>();
-        for (String cert : certificateChain) {
+        for(String cert : certificateChain){
             String strippedCert = cert;
             Matcher matcher = X509_CERT_WITH_DELIMITER_PATTERN.matcher(cert);
-            if (matcher.find()) {
+            if(matcher.find()){
                 strippedCert = matcher.group(1).trim();
             }
             strippedBinaries.add(strippedCert);

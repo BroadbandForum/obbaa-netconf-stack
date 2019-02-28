@@ -12,7 +12,7 @@
 					</pma:container-c>
 				</pma:container-b>
 				<pma:container-d />
-				<caps:container-e xmlns:caps="urn:com:test:pma:caps">
+				<caps:container-e xmlns:caps="urn:org:bbf:pma:caps">
 					<caps:e1>e1</caps:e1>
 				</caps:container-e>
 			</pma:list-a>

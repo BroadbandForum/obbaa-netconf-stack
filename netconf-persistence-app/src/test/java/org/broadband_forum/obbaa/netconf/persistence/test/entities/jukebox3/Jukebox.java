@@ -28,14 +28,13 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
-
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity(name = "jukebox")
+@Entity(name= "jukebox")
 @Table(name = "jukebox")
-@YangContainer(name = "jukebox", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-public class Jukebox {
+@YangContainer(name="jukebox", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+public class Jukebox  {
     @Id
     @YangParentId
     String parentId;
@@ -69,8 +68,8 @@ public class Jukebox {
     }
 
     public Library getLibrary() {
-        return library;
-    }
+		return library;
+	}
 
     public void setLibrary(Library library) {
         this.library = library;

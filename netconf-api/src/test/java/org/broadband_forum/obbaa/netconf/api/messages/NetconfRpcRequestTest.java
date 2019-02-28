@@ -23,12 +23,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class NetconfRpcRequestTest {
 
@@ -47,28 +48,31 @@ public class NetconfRpcRequestTest {
     public void testGetRpcName() {
         m_netconfRpcRequest.setRpcInput(m_inputElement);
         assertNotEquals(m_rpcName, m_netconfRpcRequest.getRpcName());
+        assertFalse(m_netconfRpcRequest.isSchemaMountedRpc());
+        m_netconfRpcRequest.setIsSchemaMountedRpc(true);
+        assertTrue(m_netconfRpcRequest.isSchemaMountedRpc());
     }
-
+    
     @Test
-    public void testRpcRequestType() {
+    public void testRpcRequestType(){
         assertTrue(m_netconfRpcRequest.getType().isRequest());
         assertFalse(m_netconfRpcRequest.getType().isResponse());
     }
 
     @Test
-    public void testGetDocument() throws NetconfMessageBuilderException {
+    public void testGetDocument() throws NetconfMessageBuilderException{
         Element element = DocumentUtils.createDocument().createElementNS("test", "test");
         m_netconfRpcRequest.setRpcInput(element);
         Document document = m_netconfRpcRequest.getRequestDocument();
         Node node = document.getFirstChild();
-        if (node instanceof Element) {
-            assertTrue(((Element) node).getLocalName().equals("rpc"));
-            if (node.getFirstChild() instanceof Element) {
-                assertTrue(((Element) node.getFirstChild()).getLocalName().equals("test"));
-                assertTrue(((Element) node.getFirstChild()).getNamespaceURI().equals("test"));
+        if (node instanceof Element){
+            assertTrue(((Element)node).getLocalName().equals("rpc"));
+            if (node.getFirstChild() instanceof Element){
+                assertTrue(((Element)node.getFirstChild()).getLocalName().equals("test"));
+                assertTrue(((Element)node.getFirstChild()).getNamespaceURI().equals("test"));
             }
         }
-
+        
     }
 
 }

@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 /**
  * Created by pgorai on 2/3/16.
  */
@@ -56,12 +40,10 @@ public class ModelNodeDSMRegistryImplTest {
         m_schemaPath1 = SchemaPath.create(true, QName.create("http://example.com/ns/example-jukebox", "play"));
         m_dsm1 = mock(ModelNodeDataStoreManager.class);
 
-        m_schemaPath2 = SchemaPath.create(true, QName.create("http://example.com/ns/example-jukebox", "2016-01-29",
-                "play"));
+        m_schemaPath2 = SchemaPath.create(true, QName.create("http://example.com/ns/example-jukebox", "2016-01-29", "play"));
         m_dsm2 = mock(ModelNodeDataStoreManager.class);
 
-        m_schemaPath3 = SchemaPath.create(true, QName.create("http://example.com/ns/example-jukebox", "2016-01-29",
-                "play2"));
+        m_schemaPath3 = SchemaPath.create(true, QName.create("http://example.com/ns/example-jukebox", "2016-01-29", "play2"));
     }
 
     @Test
@@ -86,7 +68,7 @@ public class ModelNodeDSMRegistryImplTest {
     }
 
     @Test
-    public void testGetAllDSMs() {
+    public void testGetAllDSMs(){
         m_modelNodeDSMRegistry.register(TEST_COMPONENT, m_schemaPath1, m_dsm1);
         m_modelNodeDSMRegistry.register(TEST_COMPONENT1, m_schemaPath2, m_dsm2);
         m_modelNodeDSMRegistry.register(TEST_COMPONENT1, m_schemaPath3, m_dsm2);

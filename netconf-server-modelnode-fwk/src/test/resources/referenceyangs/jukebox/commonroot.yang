@@ -1,0 +1,13 @@
+// Contents of "commonroot"
+module commonroot {
+    namespace "urn:opendaylight:commonroot";
+    prefix "commonroot";
+
+    revision 2018-05-17 {
+        description "Initial revision";
+    }
+
+    container root-container{
+    	
+    }
+}

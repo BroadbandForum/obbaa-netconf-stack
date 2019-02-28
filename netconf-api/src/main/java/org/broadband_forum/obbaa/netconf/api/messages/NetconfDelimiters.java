@@ -24,7 +24,7 @@ import io.netty.buffer.Unpooled;
 public class NetconfDelimiters {
 
     public static ByteBuf[] rpcEndOfMessageDelimiter() {
-        return new ByteBuf[]{Unpooled.wrappedBuffer(new byte[]{']', ']', '>', ']', ']', '>'}) // ]]>]]>
+        return new ByteBuf[]{Unpooled.wrappedBuffer(NetconfResources.RPC_EOM_DELIMITER.getBytes()) // ]]>]]>
         };
     }
 
@@ -32,4 +32,8 @@ public class NetconfDelimiters {
         return NetconfResources.RPC_EOM_DELIMITER;
     }
 
+    public static ByteBuf[] rpcChunkMessageDelimiter() {
+        return new ByteBuf[]{Unpooled.wrappedBuffer(NetconfResources.RPC_CHUNKED_DELIMITER.getBytes()) //  \n##\n
+        };
+    }
 }

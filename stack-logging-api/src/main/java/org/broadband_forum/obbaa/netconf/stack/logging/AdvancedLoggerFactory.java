@@ -16,11 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.stack.logging;
 
-/**
- * Created by kbhatk on 10/30/17.
- */
 public interface AdvancedLoggerFactory {
     AdvancedLogger getLogger(String category, String application, String logType, String logScope);
-
     AdvancedLogger getLogger(Class klass, String application, String logType, String logScope);
 }

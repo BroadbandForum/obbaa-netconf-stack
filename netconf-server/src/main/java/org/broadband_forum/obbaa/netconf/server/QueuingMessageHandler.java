@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
  */
 public class QueuingMessageHandler implements ServerMessageHandler {
     private static final Logger LOGGER = Logger.getLogger(QueuingMessageHandler.class);
-    private final NetconfServerMessageListener m_netconfServerMessageListener;
+    private NetconfServerMessageListener m_netconfServerMessageListener;
     private NetconfLogger m_netconfLogger;
 
     public QueuingMessageHandler(NetconfServerMessageListener netconfServerMessageListener) {
@@ -39,14 +39,20 @@ public class QueuingMessageHandler implements ServerMessageHandler {
     }
 
     @Override
-    public synchronized void processRequest(NetconfClientInfo clientInfo, AbstractNetconfRequest request,
-                                            ResponseChannel channel) {
-        LOGGER.debug(String.format("processing incoming request %s from client %s on channel %s", request,
-                clientInfo, channel));
-        RequestTask task = new RequestTask(clientInfo, request, channel, m_netconfServerMessageListener,
-                m_netconfLogger);
+    public synchronized void processRequest(NetconfClientInfo clientInfo, AbstractNetconfRequest request, ResponseChannel channel) {
+        LOGGER.debug(String.format("processing incoming request %s from client %s on channel %s", request, clientInfo, channel));
+        RequestTask task = new RequestTask(clientInfo, request, channel, m_netconfServerMessageListener, m_netconfLogger);
         task.run();
-        LOGGER.debug(String.format("done processing incoming request %s from client %s on channel %s", request,
-                clientInfo, channel));
+        LOGGER.debug(String.format("done processing incoming request %s from client %s on channel %s", request, clientInfo, channel));
+    }
+
+    @Override
+    public NetconfServerMessageListener getServerMessageListener() {
+        return m_netconfServerMessageListener;
+    }
+
+    @Override
+    public void setServerMessageListener(NetconfServerMessageListener listener) {
+        m_netconfServerMessageListener = listener;
     }
 }

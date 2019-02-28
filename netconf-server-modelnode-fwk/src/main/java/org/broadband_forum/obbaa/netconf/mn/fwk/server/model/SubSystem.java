@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
@@ -36,14 +20,13 @@ import java.util.Map;
  * IpSubsystem takes care of assigning IP and RoutingSubsystem takes care of routing logic.
  *
  * IpSubsystem registers itself to be notified of the changes related to IpConfiguration node via SubsystemRegistry.
- * Similarly RoutingSubsystem registers itself to be notified of the changes related to RoutingConfiguration node via
- * SubsystemRegistry.
+ * Similarly RoutingSubsystem registers itself to be notified of the changes related to RoutingConfiguration node via SubsystemRegistry.
  *
  * If the netconf server receives changes to the IpConfiguration IpSubsystem is notified via notifyChanged().
  * If the netconf server receives changes to the RoutingConfiguration RoutingSubsystem is notified via notifyChanged().
  * </pre>
  *
- * @author steven
+ *
  */
 public interface SubSystem {
 
@@ -53,12 +36,10 @@ public interface SubSystem {
      * Each subsystem that is affected by the change is called once with a list of change notifications
      *
      * @param changeNotificationList
-     * @throws SubSystemValidationException - Exception the be thrown by subsystems when edit changes are not be
-     * committed into the data
-     *                                      store .
+     * @throws SubSystemValidationException - Exception the be thrown by subsystems when edit changes are not be committed into the data
+     * store .
      */
-    public void notifyPreCommitChange(List<ChangeNotification> changeNotificationList) throws
-            SubSystemValidationException;
+    public void notifyPreCommitChange(List<ChangeNotification> changeNotificationList) throws SubSystemValidationException;
 
     /**
      * Will be called after data store commits the config changes.
@@ -77,10 +58,8 @@ public interface SubSystem {
      * @return Map<ModelNodeId, List<Element>> - Map of state attributes/subtrees elements of a specific ModelNodeId
      * @throws GetAttributeException
      */
-    public Map<ModelNodeId, List<Element>> retrieveStateAttributes(Map<ModelNodeId, Pair<List<QName>,
-            List<FilterNode>>> attributes,
-                                                                   NetconfQueryParams queryParams) throws
-            GetAttributeException;
+    public Map<ModelNodeId, List<Element>> retrieveStateAttributes(Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>> attributes,
+                                                                   NetconfQueryParams queryParams) throws GetAttributeException;
 
 
     /**
@@ -92,8 +71,7 @@ public interface SubSystem {
      * @param modelNodeHelperRegistry
      * @throws SubSystemValidationException
      */
-    public void testChange(EditContext editContext, ModelNodeChangeType changeType, ModelNode changedNode,
-                           ModelNodeHelperRegistry
+    public void testChange(EditContext editContext, ModelNodeChangeType changeType, ModelNode changedNode, ModelNodeHelperRegistry
             modelNodeHelperRegistry) throws SubSystemValidationException;
 
     /**
@@ -116,6 +94,6 @@ public interface SubSystem {
      * Notification to subsystems after app has been un-deployed.
      */
     void appUndeployed();
-
+    
     public List<Element> executeAction(ActionRequest actionRequest) throws ActionException;
 }

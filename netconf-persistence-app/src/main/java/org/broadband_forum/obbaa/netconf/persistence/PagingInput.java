@@ -17,60 +17,61 @@
 package org.broadband_forum.obbaa.netconf.persistence;
 
 public class PagingInput {
-    private int m_firstResult;
-    private int m_maxResult;
+	private int m_firstResult;
+	private int m_maxResult;
+	
+	public PagingInput(int firstResult, int maxResult) {
+		m_firstResult = firstResult;
+		m_maxResult = maxResult;
+	}
 
-    public PagingInput(int firstResult, int maxResult) {
-        m_firstResult = firstResult;
-        m_maxResult = maxResult;
-    }
+	public int getFirstResult() {
+		return m_firstResult;
+	}
 
-    public int getFirstResult() {
-        return m_firstResult;
-    }
+	public void setFirstResult(int firstResult) {
+		m_firstResult = firstResult;
+	}
 
-    public void setFirstResult(int firstResult) {
-        m_firstResult = firstResult;
-    }
+	public int getMaxResult() {
+		return m_maxResult;
+	}
 
-    public int getMaxResult() {
-        return m_maxResult;
-    }
+	public void setMaxResult(int maxResult) {
+		m_maxResult = maxResult;
+	}
 
-    public void setMaxResult(int maxResult) {
-        m_maxResult = maxResult;
-    }
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + m_firstResult;
+		result = prime * result + m_maxResult;
+		return result;
+	}
 
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + m_firstResult;
-        result = prime * result + m_maxResult;
-        return result;
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		PagingInput other = (PagingInput) obj;
+		if (m_firstResult != other.m_firstResult)
+			return false;
+		if (m_maxResult != other.m_maxResult)
+			return false;
+		return true;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        PagingInput other = (PagingInput) obj;
-        if (m_firstResult != other.m_firstResult)
-            return false;
-        if (m_maxResult != other.m_maxResult)
-            return false;
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "PagingInput [m_firstResult=" + m_firstResult + ", m_maxResult="
-                + m_maxResult + "]";
-    }
+	@Override
+	public String toString() {
+		return "PagingInput [m_firstResult=" + m_firstResult + ", m_maxResult="
+				+ m_maxResult + "]";
+	}
 
 
+	
 }

@@ -1,0 +1,59 @@
+module rpc-output-augmentation-validation-test {
+
+    yang-version 1;
+
+    namespace "urn:org:bbf:pma:rpc-output";
+
+    prefix "rpcoutput";
+    
+    import datastore-validator-test { prefix "validation"; }
+
+    revision "2018-10-23" {
+        description "version";
+    }
+
+    typedef workmode-type {
+        type enumeration {
+            enum "bridge-mode" {
+                description "Bridge mode.";
+            }
+            enum "router-mode" {
+                description "Router mode";
+            }
+        }
+    }
+    grouping intentGrouping {
+        container intentContainer {
+            leaf workType {
+                type workmode-type;
+                default "bridge-mode";
+            }
+            leaf whenOnWorkType {
+                when "../workType = 'bridge-mode'";
+                type string;
+            }
+            
+            list ipv4-rules {
+                key "name";
+                leaf name {
+                    type string;
+                }
+                
+                leaf lower-port {
+                    type int8;
+                }
+                
+                leaf upper-port {
+                    must ". >= ../lower-port" ;
+                    type int8;
+                }
+			}
+            
+        }
+    }
+
+    augment "/validation:testRpcOutput/validation:output/validation:container1" {
+        when "../validation:test4='intent'";
+        uses rpcoutput:intentGrouping;
+    }
+}

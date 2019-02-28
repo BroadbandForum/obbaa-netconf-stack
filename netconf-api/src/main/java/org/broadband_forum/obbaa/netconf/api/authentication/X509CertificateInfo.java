@@ -20,8 +20,9 @@ import java.io.File;
 
 /**
  * This class holds information that is typically needed for TLS peer authentication.
+ * 
  *
- * @author keshava
+ * 
  */
 public class X509CertificateInfo {
     private final File m_certificateChain;
@@ -31,12 +32,11 @@ public class X509CertificateInfo {
 
     /**
      * Creates a X509CertificateInfo object.
-     *
-     * @param certificateChain   - The X.509 Certificate chain used to authenticate self.
-     * @param trustChain         - The CA public key chain used to verify CA signatures on the peer's X.509 certificate.
-     * @param privateKey         - The private key file.
-     * @param privateKeyPassword - The password for the private key file, set to null if the file is not password
-     *                           protected.
+     * 
+     * @param certificateChain - The X.509 Certificate chain used to authenticate self.
+     * @param trustChain - The CA public key chain used to verify CA signatures on the peer's X.509 certificate.
+     * @param privateKey - The private key file.
+     * @param privateKeyPassword - The password for the private key file, set to null if the file is not password protected.
      */
     public X509CertificateInfo(File certificateChain, File trustChain, File privateKey, String privateKeyPassword) {
         m_certificateChain = certificateChain;
@@ -47,7 +47,7 @@ public class X509CertificateInfo {
 
     /**
      * The X.509 Certificate chain used to authenticate self.
-     *
+     * 
      * @return
      */
     public File getCertificateChain() {
@@ -56,7 +56,7 @@ public class X509CertificateInfo {
 
     /**
      * The CA public key chain used to verify CA signatures on the peer's X.509 certificate.
-     *
+     * 
      * @return
      */
     public File getTrustChain() {
@@ -65,7 +65,7 @@ public class X509CertificateInfo {
 
     /**
      * The private key file.
-     *
+     * 
      * @return
      */
     public File getPrivateKey() {
@@ -74,7 +74,7 @@ public class X509CertificateInfo {
 
     /**
      * The password for the private key file, set to null if the file is not password protected.
-     *
+     * 
      * @return
      */
     public String getPrivateKeyPassword() {

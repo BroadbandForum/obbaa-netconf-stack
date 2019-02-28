@@ -41,14 +41,14 @@ import java.util.List;
 @Entity(name = "playlist")
 @Table(name = "playlist")
 @IdClass(PlayListPK.class)
-@YangList(name = "playlist", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
+@YangList(name="playlist", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
 public class PlayList {
     private static final String NAME = "name";
     private static final String DESCRIPTION = "description";
 
     @Id
-    @Column(name = NAME)
-    @YangListKey(name = "name")
+    @Column(name=NAME)
+    @YangListKey(name="name")
     String name;
 
     @Id
@@ -56,14 +56,14 @@ public class PlayList {
     String parentId;
 
     @Id
-    @Column(name = DESCRIPTION)
-    @YangAttribute(name = "description")
+    @Column(name=DESCRIPTION)
+    @YangAttribute(name="description")
     String description;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @YangChild
     List<PlayListSong> songs = new ArrayList<>();
-
+    
     @Column
     @YangOrderByUser
     Integer insertOrder;
@@ -111,12 +111,12 @@ public class PlayList {
     public void setSchemaPath(String schemaPath) {
         this.schemaPath = schemaPath;
     }
-
+    
     public Integer getInsertOrder() {
-        return insertOrder;
-    }
-
-    public void setInsertOrder(Integer insertOrder) {
-        this.insertOrder = insertOrder;
-    }
+		return insertOrder;
+	}
+	
+	public void setInsertOrder(Integer insertOrder) {
+		this.insertOrder = insertOrder;
+	}
 }

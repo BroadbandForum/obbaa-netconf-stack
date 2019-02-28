@@ -16,14 +16,14 @@
 
 package org.broadband_forum.obbaa.netconf.persistence.jpa;
 
-import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
+import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 
 @Deprecated
 public class ThreadLocalPersistenceManagerUtil extends AbstractThreadLocalPersistenceManagerUtil {
 
     public ThreadLocalPersistenceManagerUtil(EMFactory entityManagerFactory) {
-        super(entityManagerFactory);
+       super(entityManagerFactory);
     }
 
     protected EntityDataStoreManager createEntityDataStoreManager() {

@@ -1,31 +1,18 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
+import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.common.QName;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 public class EditContainmentNodeTest {
 
@@ -51,16 +38,15 @@ public class EditContainmentNodeTest {
         m_qName = QName.create(TEST_NAMESPACE, TEST_LOCAL_NAME);
         m_editContainmentNode = new EditContainmentNode(m_qName, TEST_OPERATION);
         m_testChildNode = new EditContainmentNode(QName.create(TEST_NAMESPACE2, TEST_LOCAL_NAME2), TEST_OPERATION2);
-        m_editMatchNode = new EditMatchNode(m_qName,new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
-        m_editChangeNode = new EditChangeNode(m_qName,new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
+        m_editMatchNode = new EditMatchNode(m_qName, new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
+        m_editChangeNode = new EditChangeNode(m_qName, new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
     }
 
     @Test
     public void testParentEditContainmentNode() {
         EditContainmentNode child = new EditContainmentNode(m_qName, TEST_NODE_VALUE);
         ModelNodeId parentId = new ModelNodeId();
-        parentId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, m_editContainmentNode.getNamespace(),
-                m_editContainmentNode.getName()));
+        parentId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, m_editContainmentNode.getNamespace(), m_editContainmentNode.getName()));
         assertEquals(parentId, m_editContainmentNode.getModelNodeId());
 
         InsertOperation ins = new InsertOperation("name", "value");
@@ -171,11 +157,6 @@ public class EditContainmentNodeTest {
         assertNull(m_editContainmentNode.getEditChangeNode(TEST_LOCAL_NAME, TEST_NAMESPACE));
     }
 
-    @Test
-    public void testAddContainmentNode() {
-        assertEquals(m_testChildNode, m_editContainmentNode.addContainmentNode(QName.create(TEST_NAMESPACE2,
-                TEST_LOCAL_NAME2), TEST_OPERATION2));
-    }
 
     @Test
     public void testRemoveChangeNode() {
@@ -202,6 +183,10 @@ public class EditContainmentNodeTest {
     @Test
     public void testEqualsWhenObjectsDiffer() {
         assertFalse(m_editContainmentNode.equals(m_editChangeNode));
+        EditContainmentNode otherNode = new EditContainmentNode(m_qName, TEST_OPERATION);
+        assertEquals(m_editContainmentNode, otherNode);
+        otherNode.getModelNodeId().addRdn(new ModelNodeRdn(m_qName, "test"));
+        assertFalse(m_editContainmentNode.equals(otherNode));
     }
 
     @Test
@@ -228,8 +213,8 @@ public class EditContainmentNodeTest {
 
     @Test
     public void testAddChangeNode() {
-        assertEquals(m_editContainmentNode, m_editContainmentNode.addChangeNode(m_qName,new
-            GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE)));
+        assertEquals(m_editContainmentNode, m_editContainmentNode.addLeafChangeNode(m_qName, new
+                GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE)));
     }
 
     @Test
@@ -265,4 +250,91 @@ public class EditContainmentNodeTest {
         m_editContainmentNode.addChild(testChildNode2);
         assertEquals(testChildNode2, m_editContainmentNode.getChildNode(qName2));
     }
+
+    @Test
+    public void testAddChildShouldThrowExceptionInCaseOfDuplicateContainer() {
+        EditContainmentNode node1 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION);
+        QName qname1 = QName.create(TEST_NAMESPACE, "test1");
+        EditChangeNode changeNode = new EditChangeNode(qname1, new GenericConfigAttribute("test1", TEST_NAMESPACE, "value1"));
+        node1.addChangeNode(changeNode);
+        EditContainmentNode node2 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION);
+        QName qname2 = QName.create(TEST_NAMESPACE, "test2");
+        EditChangeNode changeNode2 = new EditChangeNode(qname2, new GenericConfigAttribute("test2", TEST_NAMESPACE, "value2"));
+        node2.addChangeNode(changeNode2);
+
+        m_editContainmentNode.addChild(node1);
+        try {
+            m_editContainmentNode.addChild(node2);
+        } catch (EditConfigException e) {
+            NetconfRpcError rpcError = e.getRpcError();
+            NetConfResponse response = new NetConfResponse().addError(rpcError).setMessageId("1");
+            assertEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+                    "  <rpc-error>\n" +
+                    "    <error-type>application</error-type>\n" +
+                    "    <error-tag>operation-failed</error-tag>\n" +
+                    "    <error-severity>error</error-severity>\n" +
+                    "    <error-app-tag>data-not-unique</error-app-tag>\n" +
+                    "    <error-path>/Container1</error-path>\n" +
+                    "    <error-message>Duplicate elements in node (testNamespace)Container1</error-message>\n" +
+                    "  </rpc-error>\n" +
+                    "</rpc-reply>", response.responseToString().trim());
+        }
+    }
+
+    @Test
+    public void testAddChildShouldThrowExceptionInCaseOfDuplicateList() {
+        EditContainmentNode node1 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "List1"), TEST_OPERATION);
+        QName qname1 = QName.create(TEST_NAMESPACE, "name1");
+        EditMatchNode matchNode = new EditMatchNode(qname1, new GenericConfigAttribute("name1", TEST_NAMESPACE, "value1"));
+        node1.addMatchNode(matchNode);
+        EditContainmentNode node2 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "List1"), TEST_OPERATION);
+        QName qname2 = QName.create(TEST_NAMESPACE, "name1");
+        EditMatchNode matchNode2 = new EditMatchNode(qname2, new GenericConfigAttribute("name1", TEST_NAMESPACE, "value1"));
+        node2.addMatchNode(matchNode2);
+
+        m_editContainmentNode.addChild(node1);
+        try {
+            m_editContainmentNode.addChild(node2);
+        } catch (EditConfigException e) {
+            NetconfRpcError rpcError = e.getRpcError();
+            NetConfResponse response = new NetConfResponse().addError(rpcError).setMessageId("1");
+            assertEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+                    "  <rpc-error>\n" +
+                    "    <error-type>application</error-type>\n" +
+                    "    <error-tag>operation-failed</error-tag>\n" +
+                    "    <error-severity>error</error-severity>\n" +
+                    "    <error-app-tag>data-not-unique</error-app-tag>\n" +
+                    "    <error-path>/List1[name1='value1']</error-path>\n" +
+                    "    <error-message>Duplicate elements in node (testNamespace)List1</error-message>\n" +
+                    "  </rpc-error>\n" +
+                    "</rpc-reply>", response.responseToString().trim());
+        }
+    }
+
+    @Test
+    public void testAddChildShouldThrowExceptionInCaseOfDuplicateLeaf() {
+        EditContainmentNode node1 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION);
+        QName qname1 = QName.create(TEST_NAMESPACE, "test1");
+        ConfigLeafAttribute leaf1 = new GenericConfigAttribute("test1", "testNamespace", "value1");
+        ConfigLeafAttribute leaf2 = leaf1;
+        node1.addLeafChangeNode(qname1, leaf1);
+
+        try {
+            node1.addLeafChangeNode(qname1, leaf2);
+        } catch (EditConfigException e) {
+            NetconfRpcError rpcError = e.getRpcError();
+            NetConfResponse response = new NetConfResponse().addError(rpcError).setMessageId("1");
+            assertEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+                    "  <rpc-error>\n" +
+                    "    <error-type>application</error-type>\n" +
+                    "    <error-tag>operation-failed</error-tag>\n" +
+                    "    <error-severity>error</error-severity>\n" +
+                    "    <error-app-tag>data-not-unique</error-app-tag>\n" +
+                    "    <error-path>/Container1/test1</error-path>\n" +
+                    "    <error-message>Duplicate elements in node (testNamespace)test1</error-message>\n" +
+                    "  </rpc-error>\n" +
+                    "</rpc-reply>", response.responseToString().trim());
+        }
+    }
+
 }

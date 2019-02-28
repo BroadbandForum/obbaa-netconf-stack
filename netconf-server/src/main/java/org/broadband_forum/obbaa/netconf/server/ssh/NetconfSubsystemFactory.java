@@ -35,8 +35,7 @@ public final class NetconfSubsystemFactory implements NamedFactory<Command> {
     private final NetconfSessionIdProvider m_sessionIdProvider;
 
     public NetconfSubsystemFactory(NetconfServerMessageListener netconfServerMessageListener,
-                                   ServerMessageHandler serverMessageHandler, Set<String> caps,
-                                   NetconfSessionIdProvider sessionIdProvider) {
+                                   ServerMessageHandler serverMessageHandler, Set<String> caps, NetconfSessionIdProvider sessionIdProvider) {
         m_netconfServerMessageListener = netconfServerMessageListener;
         m_serverMessageHandler = serverMessageHandler;
         m_caps = caps;
@@ -44,8 +43,7 @@ public final class NetconfSubsystemFactory implements NamedFactory<Command> {
     }
 
     public NetconfSubsystemFactory(NetconfServerMessageListener serverMessageListener,
-                                   ServerMessageHandler serverMessageHandler, ServerCapabilityProvider
-                                           capabilityProvider,
+                                   ServerMessageHandler serverMessageHandler, ServerCapabilityProvider capabilityProvider,
                                    NetconfSessionIdProvider sessionIdProvider) {
         this(serverMessageListener, serverMessageHandler, (Set<String>) null, sessionIdProvider);
         m_capabilityProvider = capabilityProvider;
@@ -54,12 +52,10 @@ public final class NetconfSubsystemFactory implements NamedFactory<Command> {
     @Override
     public Command create() {
         if (m_capabilityProvider != null) {
-            return new NetconfSubsystem(m_netconfServerMessageListener, m_serverMessageHandler, m_capabilityProvider
-                    .getCapabilities(),
+            return new NetconfSubsystem(m_netconfServerMessageListener, m_serverMessageHandler, m_capabilityProvider.getCapabilities(),
                     m_sessionIdProvider);
         } else {
-            return new NetconfSubsystem(m_netconfServerMessageListener, m_serverMessageHandler, m_caps,
-                    m_sessionIdProvider);
+            return new NetconfSubsystem(m_netconfServerMessageListener, m_serverMessageHandler, m_caps, m_sessionIdProvider);
         }
     }
 

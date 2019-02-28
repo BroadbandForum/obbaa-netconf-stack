@@ -30,11 +30,11 @@ import java.net.SocketAddress;
 import java.security.PublicKey;
 
 /**
- * This class wraps around ssh public key authenticators supplied by the netconf server. It also provides a call back
- * to the supplied
+ * This class wraps around ssh public key authenticators supplied by the netconf server. It also provides a call back to the supplied
  * AuthenticationListener when a authenticate succeeds or fails.
+ * 
  *
- * @author keshava
+ * 
  */
 public class NetconfPublicKeyAuthenticator implements PublickeyAuthenticator {
 
@@ -44,32 +44,29 @@ public class NetconfPublicKeyAuthenticator implements PublickeyAuthenticator {
 
     /**
      * Creates a public key authenticator.
-     *
+     * 
      * @param axsNetconfAuthenticationHandler - public key authenticator.
-     * @param authenticationListener          - authentication listener, pass nulll if you dont want to listen to
-     *                                        authentication events
+     * @param authenticationListener - authentication listener, pass nulll if you dont want to listen to authentication events
      */
     public NetconfPublicKeyAuthenticator(NetconfServerAuthenticationHandler axsNetconfAuthenticationHandler,
-                                         AuthenticationListener authenticationListener) {
+            AuthenticationListener authenticationListener) {
         this.m_axsNetconfAuthenticationHandler = axsNetconfAuthenticationHandler;
         this.m_authenticationListener = authenticationListener;
     }
 
     @Override
     public boolean authenticate(String paramString, PublicKey paramPublicKey, ServerSession session) {
-        boolean authenticated = m_axsNetconfAuthenticationHandler.authenticate(paramPublicKey);
+        boolean authenticated = m_axsNetconfAuthenticationHandler.authenticate(paramPublicKey).isAuthenticated();
 
         if (m_authenticationListener != null) {
             SocketAddress remoteAddress = session.getIoSession().getRemoteAddress();
             if (remoteAddress instanceof InetSocketAddress) {
                 InetSocketAddress inetSocAddr = (InetSocketAddress) remoteAddress;
                 if (authenticated) {
-                    m_authenticationListener.authenticationSucceeded(new SuccessInfo().setIp(inetSocAddr.getAddress()
-                            .getHostAddress())
+                    m_authenticationListener.authenticationSucceeded(new SuccessInfo().setIp(inetSocAddr.getAddress().getHostAddress())
                             .setPort(inetSocAddr.getPort()));
                 } else {
-                    m_authenticationListener.authenticationFailed(new FailureInfo().setIp(inetSocAddr.getAddress()
-                            .getHostAddress())
+                    m_authenticationListener.authenticationFailed(new FailureInfo().setIp(inetSocAddr.getAddress().getHostAddress())
                             .setPort(inetSocAddr.getPort()).setPointOfFailure(PointOfFailure.client));
                 }
             } else {

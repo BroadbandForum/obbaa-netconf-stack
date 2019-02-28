@@ -36,11 +36,11 @@ import java.util.Base64;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 /**
  * This class provides the method to read the public and private keys written in PEM format.
+ * 
  *
- * @author Venkat
+ * 
  */
 public class PemReader {
 
@@ -50,12 +50,10 @@ public class PemReader {
             "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+([a-z0-9+/=\\r\\n]+)-+END\\s+.*PUBLIC\\s+KEY[^-]*-+", 2);
 
     private static final Pattern PRIV_KEY_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+([a-z0-9+/=\\r\\n]+)-+END\\s+.*PRIVATE\\s+KEY[^-]*-+",
-            2);
+            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+([a-z0-9+/=\\r\\n]+)-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", 2);
     public static final Charset US_ASCII_CHARSET = Charset.forName("US-ASCII");
 
-    public static List<PublicKey> readPublicKey(InputStream inStream) throws CertificateException,
-            NoSuchAlgorithmException,
+    public static List<PublicKey> readPublicKey(InputStream inStream) throws CertificateException, NoSuchAlgorithmException,
             InvalidKeySpecException, KeyException {
 
         String content;
@@ -95,8 +93,7 @@ public class PemReader {
 
     }
 
-    public static PrivateKey readPrivateKey(InputStream inStream) throws KeyException, NoSuchAlgorithmException,
-            InvalidKeySpecException {
+    public static PrivateKey readPrivateKey(InputStream inStream) throws KeyException, NoSuchAlgorithmException, InvalidKeySpecException {
         String content;
         try {
             content = readContent(inStream);
@@ -153,7 +150,7 @@ public class PemReader {
 
     public static String stripPKDelimiters(String pkStringWitDelimiters) {
         Matcher matcher = PRIV_KEY_PATTERN.matcher(pkStringWitDelimiters);
-        if (matcher.find()) {
+        if(matcher.find()){
             return matcher.group(1).trim();
         }
         return pkStringWitDelimiters.trim();

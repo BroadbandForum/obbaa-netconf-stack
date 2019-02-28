@@ -23,37 +23,36 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
 import java.util.Objects;
 
 @Entity
-@Table(name = "Person", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
+@Table(name="Person", uniqueConstraints = {@UniqueConstraint(columnNames = {"id"})})
 public class Person {
-
+	
     @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name="id")
+    @GeneratedValue(strategy= GenerationType.AUTO)
     private Long id;
 
-    @Column(name = "firstName")
+    @Column(name="firstName")
     private String firstName;
 
-    @Column(name = "phoneNumber")
+    @Column(name="phoneNumber")
     private String phoneNumber;
 
-    @Column(name = "favoriteColor")
+    @Column(name="favoriteColor")
     private String favoriteColor;
 
     public Long getId() {
-        return id;
-    }
+		return id;
+	}
 
-    public Person setId(Long id) {
-        this.id = id;
-        return this;
-    }
+	public Person setId(Long id) {
+		this.id = id;
+		return this;
+	}
 
-    public String getFirstName() {
+	public String getFirstName() {
         return firstName;
     }
 

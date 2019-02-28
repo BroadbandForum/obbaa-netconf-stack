@@ -24,18 +24,14 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
 import org.broadband_forum.obbaa.netconf.api.transport.ReverseTlsNetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.SSLContextUtil;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-
 import org.apache.log4j.Logger;
-
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.Callable;
@@ -43,19 +39,17 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * A reverse TLS netconf server is the one that does "call home" to a pre-configured netconf client. The netconf
- * client keeps listening on
- * incoming TCP connections on a IANA assigned port (not yet assigned). Once the client recieves a TCP connection, it
- * immediately starts TLS
+ * A reverse TLS netconf server is the one that does "call home" to a pre-configured netconf client. The netconf client keeps listening on
+ * incoming TCP connections on a IANA assigned port (not yet assigned). Once the client recieves a TCP connection, it immediately starts TLS
  * client protocol.
- * <p>
+ * 
  * On successful TCP connection the reverse TLS netconf server starts TLS server protocol.
- * <p>
+ * 
  * Once TLS protocol is done, both parties start their respective netconf protocols.
- * <p>
+ * 
  * This dispatcher provides a way to get netconf session via call-home mechanism.
+ * 
  *
- * @author Venkat
  */
 public class CallHomeTlsServerDispatcherImpl implements NetconfServerDispatcher {
     private static final Logger LOGGER = Logger.getLogger(CallHomeTlsServerDispatcherImpl.class);
@@ -71,8 +65,7 @@ public class CallHomeTlsServerDispatcherImpl implements NetconfServerDispatcher 
     }
 
     @Override
-    public Future<NetconfServerSession> createServer(final NetconfServerConfiguration config) throws
-            NetconfServerDispatcherException {
+    public Future<NetconfServerSession> createServer(final NetconfServerConfiguration config) throws NetconfServerDispatcherException {
         if (config.getNetconfTransport() instanceof ReverseTlsNetconfTransport) {
             return getExecutorService().submit(new Callable<NetconfServerSession>() {
                 @Override
@@ -84,8 +77,7 @@ public class CallHomeTlsServerDispatcherImpl implements NetconfServerDispatcher 
         return null;
     }
 
-    protected NetconfServerSession createAndReturnServerSession(NetconfServerConfiguration config) throws
-            NetconfServerDispatcherException {
+    protected NetconfServerSession createAndReturnServerSession(NetconfServerConfiguration config) throws NetconfServerDispatcherException {
         SslContext sslCtx = null;
 
         sslCtx = SSLContextUtil.getServerSSLContext(config);
@@ -107,23 +99,16 @@ public class CallHomeTlsServerDispatcherImpl implements NetconfServerDispatcher 
 
         long handshakeTimeoutMillis = transport.getTlsHandshakeTimeOutMillis();
         if (config.getCapabilityProvider() != null) {
-            handler = new SecureNetconfServerInitializer(sslCtx, config.getCapabilityProvider(), config
-                    .getNetconfServerMessageListener(),
-                    config.getServerMessageHandler(), config.getAuthenticationListener(), transport
-                    .isClientAuthenticationNeeded(),
-                    transport.isTlsKeepalive(), config.getSessionIdProvider(), config.getNetconfLogger(),
-                    handshakeTimeoutMillis);
+            handler = new SecureNetconfServerInitializer(sslCtx, config.getCapabilityProvider(), config.getNetconfServerMessageListener(),
+                    config.getServerMessageHandler(), config.getAuthenticationListener(), transport.isClientAuthenticationNeeded(),
+                    transport.isTlsKeepalive(), config.getSessionIdProvider(), config.getNetconfLogger(), handshakeTimeoutMillis);
         } else {
-            handler = new SecureNetconfServerInitializer(sslCtx, config.getCaps(), config
-                    .getNetconfServerMessageListener(),
-                    config.getServerMessageHandler(), config.getAuthenticationListener(), transport
-                    .isClientAuthenticationNeeded(),
-                    transport.isTlsKeepalive(), config.getSessionIdProvider(), config.getNetconfLogger(),
-                    handshakeTimeoutMillis);
+            handler = new SecureNetconfServerInitializer(sslCtx, config.getCaps(), config.getNetconfServerMessageListener(),
+                    config.getServerMessageHandler(), config.getAuthenticationListener(), transport.isClientAuthenticationNeeded(),
+                    transport.isTlsKeepalive(), config.getSessionIdProvider(), config.getNetconfLogger(), handshakeTimeoutMillis);
         }
 
-        b.group(bossGroup).channel(NioSocketChannel.class).option(ChannelOption.SO_KEEPALIVE, transport
-                .isTlsKeepalive()).handler(handler);
+        b.group(bossGroup).channel(NioSocketChannel.class).handler(handler);
         if (transport.getLocalAddress() != null) {
             b.localAddress(transport.getLocalAddress());
         }
@@ -131,8 +116,7 @@ public class CallHomeTlsServerDispatcherImpl implements NetconfServerDispatcher 
         Channel ch;
         try {
             if (localAddress != null) {
-                ch = b.connect(new InetSocketAddress(netconfClientIP, netconfClientTCPPort), localAddress).sync()
-                        .channel();
+                ch = b.connect(new InetSocketAddress(netconfClientIP, netconfClientTCPPort), localAddress).sync().channel();
             } else {
                 ch = b.connect(netconfClientIP, netconfClientTCPPort).sync().channel();
             }

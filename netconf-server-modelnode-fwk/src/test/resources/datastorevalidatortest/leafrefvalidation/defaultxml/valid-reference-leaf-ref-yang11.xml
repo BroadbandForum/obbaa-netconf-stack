@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-yang11 xmlns="urn:org:bbf:pma:validation-yang11">
+    <leaf-ref-yang11>
+    	<artist>
+    		<name>LENY</name>
+    	</artist>
+    	<album>
+    		<name>Album1</name>
+	    	<song>
+	    		<name>Last Christmas</name>
+	    		<artist-name>LENY</artist-name>
+                <artist-name-not-required>BOWIE</artist-name-not-required>
+	    	</song>
+			<song-count>20</song-count>
+        </album>
+    </leaf-ref-yang11>
+
+</validation-yang11>

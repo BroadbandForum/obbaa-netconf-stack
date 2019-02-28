@@ -18,6 +18,5 @@ package org.broadband_forum.obbaa.netconf.api.client;
 
 public interface TcpServerSession {
     public void stopListening(boolean waitForTermination);
-
     public void closeTcpChannel();
 }

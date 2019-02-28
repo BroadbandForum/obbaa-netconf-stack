@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
@@ -47,22 +46,30 @@ import org.broadband_forum.obbaa.netconf.api.server.notification.NotificationSer
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.server.ssh.auth.AccessDeniedException;
+import org.broadband_forum.obbaa.netconf.server.ssh.auth.SessionNotFoundException;
 
 public class RequestTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(RequestTask.class);
     public static final String CURRENT_REQ = "CURRENT_REQ";
+    public static final String CURRENT_REQ_TYPE = "CURRENT_REQ_TYPE";
+    public static final String CURRENT_REQ_MESSAGE_ID = "CURRENT_REQ_MESSAGE_ID";
+    public static final String CURRENT_REQ_START_TIME = "CURRENT_REQ_START_TIME";
+    public static final String REQ_TYPE_GET = "GET";
+    public static final String REQ_TYPE_GET_CONFIG = "GET-CONFIG";
+    public static final String CURRENT_REQ_CONTEXT = "CURRENT_REQUEST_CONTEXT";
     private NetconfClientInfo m_clientInfo;
     private AbstractNetconfRequest m_netconfRequest;
     private ResponseChannel m_channel;
     private NetconfServerMessageListener m_serverMessageListener;
     private List<RequestTaskListener> m_listeners = new ArrayList<>();
-    private List<Notification> m_netconfConfigChangeNotifications;
+    private List<Notification> m_netconfConfigChangeNotifications = new ArrayList<>();
     private NotificationService m_notificationService;
     private long m_queuedTime;
     private long m_offeredTime;
     private long m_executionStartTime;
     private long m_executionEndTime;
     private final NetconfLogger m_netconfLogger;
+    private RequestContext m_requestContext;
 
     public RequestTask(NetconfClientInfo clientInfo, AbstractNetconfRequest netconfRequest, ResponseChannel channel,
                        NetconfServerMessageListener serverMessageListener, NetconfLogger netconfLogger) {
@@ -73,12 +80,24 @@ public class RequestTask implements Runnable {
         m_netconfLogger = netconfLogger;
     }
 
+    public RequestContext getRequestContext() {
+        return m_requestContext;
+    }
+
+    public void setRequestContext(RequestContext requestContext) {
+        this.m_requestContext = requestContext;
+    }
+
     public NotificationService getNotificationService() {
         return m_notificationService;
     }
 
     public void setNotificationService(NotificationService notificationService) {
         this.m_notificationService = notificationService;
+    }
+
+    public List<Notification> getNetconfConfigChangeNotifications() {
+        return m_netconfConfigChangeNotifications;
     }
 
     public boolean isWrite() {
@@ -140,14 +159,30 @@ public class RequestTask implements Runnable {
         try {
             setExecutionStartTime(System.currentTimeMillis());
             delayRequest();
-            RequestScope.resetScope();
-            RequestScope.getCurrentScope().putInCache(CURRENT_REQ, m_netconfRequest);
-            doExecuteRequest();
+            RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
+                @Override
+                public Void execute() {
+                    RequestScope.getCurrentScope().putInCache(CURRENT_REQ, m_netconfRequest);
+                    RequestScope.getCurrentScope().putInCache(CURRENT_REQ_START_TIME, System.currentTimeMillis());
+                    RequestScope.getCurrentScope().putInCache(CURRENT_REQ_MESSAGE_ID, m_netconfRequest.getMessageId());
+                    RequestScope.getCurrentScope().putInCache(CURRENT_REQ_CONTEXT, getRequestContext());
+                    doExecuteRequest();
+                    return null;
+                }
+            });
+
         } catch (AccessDeniedException e) {
             LOGGER.error("Error when execute for request: " + m_netconfRequest.requestToString(), e);
             NetConfResponse response = new NetConfResponse();
             response.setMessageId(m_netconfRequest.getMessageId());
             response.addError(e.getRpcError());
+            sendResponseToChannel(response);
+        } catch (SessionNotFoundException e) {
+            LOGGER.error("Error when execute for request: " + m_netconfRequest.requestToString(), e);
+            NetConfResponse response = new NetConfResponse();
+            response.setMessageId(m_netconfRequest.getMessageId());
+            response.addError(e.getRpcError());
+            response.setCloseSession(true);
             sendResponseToChannel(response);
         } catch (Exception e) {
             LOGGER.error("Error when execute for request: " + m_netconfRequest.requestToString(), e);
@@ -174,8 +209,7 @@ public class RequestTask implements Runnable {
         if (m_netconfRequest instanceof CreateSubscriptionRequest) {
             // delegate to NetconfServerMessageListener to create subscription request,
             // It also takes care of sending response for request
-            m_serverMessageListener.onCreateSubscription(m_clientInfo, (CreateSubscriptionRequest) m_netconfRequest,
-                    m_channel);
+            m_serverMessageListener.onCreateSubscription(m_clientInfo, (CreateSubscriptionRequest) m_netconfRequest, m_channel);
         } else {
             // call to NetconfServerMessageListener to process request and retrieve response
             NetConfResponse response = new NetConfResponse();
@@ -187,12 +221,13 @@ public class RequestTask implements Runnable {
             } else if (m_netconfRequest instanceof DeleteConfigRequest) {
                 m_serverMessageListener.onDeleteConfig(m_clientInfo, (DeleteConfigRequest) m_netconfRequest, response);
             } else if (m_netconfRequest instanceof EditConfigRequest) {
-                m_netconfConfigChangeNotifications = (List<Notification>) m_serverMessageListener.onEditConfig
-                        (m_clientInfo,
+                m_netconfConfigChangeNotifications = (List<Notification>) m_serverMessageListener.onEditConfig(m_clientInfo,
                         (EditConfigRequest) m_netconfRequest, response);
             } else if (m_netconfRequest instanceof GetRequest) {
+                RequestScope.getCurrentScope().putInCache(CURRENT_REQ_TYPE, REQ_TYPE_GET);
                 m_serverMessageListener.onGet(m_clientInfo, (GetRequest) m_netconfRequest, response);
             } else if (m_netconfRequest instanceof GetConfigRequest) {
+                RequestScope.getCurrentScope().putInCache(CURRENT_REQ_TYPE, REQ_TYPE_GET_CONFIG);
                 m_serverMessageListener.onGetConfig(m_clientInfo, (GetConfigRequest) m_netconfRequest, response);
             } else if (m_netconfRequest instanceof KillSessionRequest) {
                 m_serverMessageListener.onKillSession(m_clientInfo, (KillSessionRequest) m_netconfRequest, response);
@@ -203,20 +238,16 @@ public class RequestTask implements Runnable {
             } else if (m_netconfRequest instanceof ActionRequest) {
                 response = new ActionResponse();
                 response.setMessageId(m_netconfRequest.getMessageId());
-                m_serverMessageListener.onAction(m_clientInfo, (ActionRequest) m_netconfRequest, (ActionResponse)
-                        response);
+                m_serverMessageListener.onAction(m_clientInfo, (ActionRequest) m_netconfRequest, (ActionResponse) response);
             } else if (m_netconfRequest instanceof NetconfRpcRequest) {
                 response = new NetconfRpcResponse();
                 response.setMessageId(m_netconfRequest.getMessageId());
-                m_netconfConfigChangeNotifications = m_serverMessageListener.onRpc(m_clientInfo, (NetconfRpcRequest)
-                                m_netconfRequest,
+                m_netconfConfigChangeNotifications = m_serverMessageListener.onRpc(m_clientInfo, (NetconfRpcRequest) m_netconfRequest,
                         (NetconfRpcResponse) response);
             }
             sendResponseToChannel(response);
-            if ((m_netconfConfigChangeNotifications != null) && (!m_netconfConfigChangeNotifications.isEmpty()) &&
-                    (m_notificationService != null)) {
-                LOGGER.debug("sending edit-config change notification on NC stream " + NetconfResources
-                        .CONFIG_CHANGE_STREAM);
+            if ((m_netconfConfigChangeNotifications != null) && (!m_netconfConfigChangeNotifications.isEmpty()) && (m_notificationService != null)) {
+                LOGGER.debug("sending edit-config change notification on NC stream " + NetconfResources.CONFIG_CHANGE_STREAM);
                 for (Notification notification : m_netconfConfigChangeNotifications) {
                     m_notificationService.sendNotification(NetconfResources.CONFIG_CHANGE_STREAM, notification);
                 }
@@ -236,17 +267,15 @@ public class RequestTask implements Runnable {
     protected void sendResponseToChannel(NetConfResponse response) {
         if (!m_channel.isSessionClosed()) {
             try {
-                m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo
-                                .getUsername(),
-                        new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument());
+                m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(),
+                        new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument(), m_netconfRequest);
                 m_channel.sendResponse(response, m_netconfRequest);
             } catch (NetconfMessageBuilderException e) {
                 LOGGER.error("Can not send response for request: " + m_netconfRequest.requestToString(), e);
             }
         } else {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("Could not log response \n %s \n as the response channel was already " +
-                        "closed", response.responseToString()));
+                LOGGER.debug(String.format("Could not log response \n %s \n as the response channel was already closed", response.responseToString()));
             }
 
         }

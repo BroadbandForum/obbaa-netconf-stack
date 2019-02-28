@@ -21,8 +21,9 @@ import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <delete-config> } operation.
+ * 
  *
- * @author keshava
+ * 
  */
 public class DeleteConfigRequest extends AbstractNetconfRequest {
 
@@ -30,14 +31,13 @@ public class DeleteConfigRequest extends AbstractNetconfRequest {
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addDeleteConfigElement
-                (m_target).build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addDeleteConfigElement(m_target).build();
         return doc;
     }
 
     /**
      * changes the target data store to the specified store.
-     *
+     * 
      * @param target
      * @return the modified instance of {@link DeleteConfigRequest}
      */
@@ -48,7 +48,7 @@ public class DeleteConfigRequest extends AbstractNetconfRequest {
 
     /**
      * Sets the target to running data store.
-     *
+     * 
      * @return the modified instance of {@link DeleteConfigRequest}
      */
     public DeleteConfigRequest setTargetRunning() {

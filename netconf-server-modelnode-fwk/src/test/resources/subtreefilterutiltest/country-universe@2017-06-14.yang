@@ -46,6 +46,50 @@ module country-universe {
       }
     }
   }
+  
+  list space-time{
+      key type;
+      leaf type{
+          type enumeration{
+              enum white-hole{
+                  value 1;
+              }
+              enum black-hole{
+                  value 2;
+              }
+              
+          }
+      }
+      
+      leaf mass{
+          type uint32;
+      }  
+      
+      leaf angular-momentum{
+          type uint32;
+      }
+      
+      container gravity{
+          
+      }
+      
+      list charge{
+          key type;
+          leaf type{
+              type enumeration{
+                  enum positive{
+                      value 1;
+                  }
+                  enum negative{
+                      value -1;
+                  }
+                  
+              }
+          }
+      }
+      
+  }
+  
   list universe {
     key "name";
     leaf name {

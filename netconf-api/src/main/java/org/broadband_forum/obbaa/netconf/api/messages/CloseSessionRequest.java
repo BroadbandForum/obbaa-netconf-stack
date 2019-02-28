@@ -15,7 +15,7 @@
  */
 
 /**
- *
+ * 
  */
 package org.broadband_forum.obbaa.netconf.api.messages;
 
@@ -24,15 +24,15 @@ import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <close-session>} operation.
+ * 
  *
- * @author keshava
+ * 
  */
 public class CloseSessionRequest extends AbstractNetconfRequest {
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addCloseSessionElement()
-                .build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addCloseSessionElement().build();
         return doc;
     }
 

@@ -16,36 +16,35 @@
 
 package org.broadband_forum.obbaa.netconf.client.tls;
 
-import io.netty.channel.Channel;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
-
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.authentication.FailureInfo;
 import org.broadband_forum.obbaa.netconf.api.authentication.PointOfFailure;
 import org.broadband_forum.obbaa.netconf.api.authentication.SuccessInfo;
 import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
-import org.broadband_forum.obbaa.netconf.api.messages.LogUtil;
 import org.broadband_forum.obbaa.netconf.api.x509certificates.CertificateUtil;
 import org.broadband_forum.obbaa.netconf.api.x509certificates.PeerCertificateException;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
+import io.netty.channel.Channel;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 public final class SslFutureChannelListener implements GenericFutureListener<Future<Channel>> {
 
-    private static final Logger LOGGER = Logger.getLogger(SslFutureChannelListener.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SslFutureChannelListener.class, LogAppNames.NETCONF_LIB);
     private SSLEngine m_sSLEngine;
     private SocketChannel m_socketChannel;
     private AuthenticationListener m_authenticationListener;
@@ -56,10 +55,8 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
     private final ExecutorService m_callHomeExecutorService;
     private CallHomeListener m_callHomeListener;
 
-    public SslFutureChannelListener(SSLEngine sSLEngine, SocketChannel channel, AuthenticationListener
-            authenticationListener,
-                                    boolean selfSigned, Set<String> capabilities, NotificationListener
-                                            notificationListener, ExecutorService executorService,
+    public SslFutureChannelListener(SSLEngine sSLEngine, SocketChannel channel, AuthenticationListener authenticationListener,
+                                    boolean selfSigned, Set<String> capabilities, NotificationListener notificationListener, ExecutorService executorService,
                                     ExecutorService callHomeExecutorService, CallHomeListener callHomeListener) {
         m_sSLEngine = sSLEngine;
         m_socketChannel = channel;
@@ -76,10 +73,10 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
     public void operationComplete(Future<Channel> future) {
         try {
             if (future.isSuccess()) {
-                LOGGER.debug(String.format("Authentication is successful on channel %s", m_socketChannel));
+                LOGGER.debug("Authentication is successful on channel {}", LOGGER.sensitiveData(m_socketChannel));
                 handleAuthenticationSuccess();
             } else {
-                LOGGER.debug(String.format("Authentication failed on channel %s", m_socketChannel));
+                LOGGER.debug("Authentication failed on channel {}", LOGGER.sensitiveData(m_socketChannel));
                 handleAuthenticationFailure(future);
             }
         } catch (Exception e) {
@@ -89,7 +86,7 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
     }
 
     private void logAndCloseChannel(Exception e) {
-        LOGGER.error(String.format("Error while handling authentication, closing the channel %s", m_socketChannel), e);
+        LOGGER.error("Error while handling authentication, closing the channel {}", LOGGER.sensitiveData(m_socketChannel), e);
         try {
             m_socketChannel.close().sync();
         } catch (InterruptedException e1) {
@@ -101,55 +98,26 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
         final X509Certificate peerX509Certificate = CertificateUtil.getPeerX509Certifcate(m_sSLEngine.getSession());
         if (m_authenticationListener != null) {
             InetSocketAddress remoteAddress = ((SocketChannel) m_socketChannel).remoteAddress();
-            SuccessInfo successInfo = new SuccessInfo().setIp(remoteAddress.getAddress().getHostAddress()).setPort
-                    (remoteAddress.getPort())
+            SuccessInfo successInfo = new SuccessInfo().setIp(remoteAddress.getAddress().getHostAddress()).setPort(remoteAddress.getPort())
                     .setPeerCertificate(peerX509Certificate);
             m_authenticationListener.authenticationSucceeded(successInfo);
         }
         // Add netconf handler to the pipeline
-        final TlsNettyChannelNetconfClientSession session = new TlsNettyChannelNetconfClientSession(m_socketChannel,
-                m_executorService);
-        SecureNetconfClientHandler clientHandler = SecureNetconfClientHandlerFactory.getInstance()
-                .getSecureNetconfClientHandler(session);
+        final TlsNettyChannelNetconfClientSession session = new TlsNettyChannelNetconfClientSession(m_socketChannel);
+        SecureNetconfClientHandler clientHandler = SecureNetconfClientHandlerFactory.getInstance().getSecureNetconfClientHandler(session, m_capabilities, 
+                m_callHomeExecutorService, m_callHomeListener, peerX509Certificate, m_selfSigned);
 
         session.addNotificationListener(m_notificationListener);
         clientHandler.setNetconfSession(session);
         session.sendHelloMessage(m_capabilities);
         m_socketChannel.pipeline().addLast(clientHandler);
-        notifyCallHomeListener(session, peerX509Certificate);
-    }
-
-    private void notifyCallHomeListener(final TlsNettyChannelNetconfClientSession session, final X509Certificate
-            peerX509Certificate) {
-        try {
-            // inform call home listeners
-            LogUtil.logDebug(LOGGER, "Calling call-home listener to inform new call home connection with " +
-                            "remote-address: %s",
-                    session.getRemoteAddress());
-
-            m_callHomeExecutorService.execute(() -> {
-                try {
-                    // Let the client know that some server called home and is ready to talk netconf
-                    m_callHomeListener.connectionEstablished(session, null, peerX509Certificate, m_selfSigned);
-                } catch (Exception e) {
-                    logAndCloseChannel(e);
-                    throw e;
-                }
-            });
-        } catch (RejectedExecutionException ree) {
-            LOGGER.warn(String.format("executor service could not notify call-home listener"
-                    + " about connection established for the session %s, closing the connection", session
-                    .getRemoteAddress().toString()));
-            logAndCloseChannel(ree);
-        }
     }
 
     private void handleAuthenticationFailure(Future<Channel> future) {
         String ip = m_socketChannel.remoteAddress().getAddress().getHostAddress();
         int port = m_socketChannel.remoteAddress().getPort();
         if (isSslHandshakeTimeException(future.cause())) {
-            LOGGER.error("Authentication failed. SSL Handshake timeout for the connection [ip:" + ip + ", port:" +
-                    port + "]");
+            LOGGER.error("Authentication failed. SSL Handshake timeout for the connection [ip: " + LOGGER.sensitiveData(ip) + ", port: " + LOGGER.sensitiveData(port) + "]");
             return;
         }
         if (m_authenticationListener != null) {
@@ -163,8 +131,7 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
             } else {
                 // if peer certificate is trusted, then extract from handshake session
                 failureInfo.setPointOfFailure(PointOfFailure.server);
-                X509Certificate peerCertificate = CertificateUtil.getPeerX509Certifcate(m_sSLEngine
-                        .getHandshakeSession());
+                X509Certificate peerCertificate = CertificateUtil.getPeerX509Certifcate(m_sSLEngine.getHandshakeSession());
                 failureInfo.setPeerCertificate(peerCertificate);
             }
             m_authenticationListener.authenticationFailed(failureInfo);
@@ -173,16 +140,14 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
     }
 
     private X509Certificate getPeerCertificateFromException(PeerCertificateException certificateException) {
-        if (certificateException.getPeerCertificates() != null && certificateException.getPeerCertificates().length >
-                0) {
+        if (certificateException.getPeerCertificates() != null && certificateException.getPeerCertificates().length > 0) {
             return certificateException.getPeerCertificates()[0];
         }
         return null;
     }
 
     /**
-     * Retrieve PeerCertificateException cause exception wrapped by {@link}SSLHandshakeException{@link} otherwise
-     * return null.
+     * Retrieve PeerCertificateException cause exception wrapped by {@link}SSLHandshakeException{@link} otherwise return null.
      *
      * @param throwable
      * @return

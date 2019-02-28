@@ -18,13 +18,13 @@ package org.broadband_forum.obbaa.netconf.api.logger;
 
 public class NetconfLoggingContext {
 
-    private static ThreadLocal<Boolean> m_enabled = new ThreadLocal<Boolean>() {
+    private static ThreadLocal<Boolean> m_enabled = new ThreadLocal<Boolean>(){
         @Override
         protected Boolean initialValue() {
             return Boolean.TRUE;
         }
     };
-
+    
     public static boolean isEnabled() {
         return m_enabled.get();
     }

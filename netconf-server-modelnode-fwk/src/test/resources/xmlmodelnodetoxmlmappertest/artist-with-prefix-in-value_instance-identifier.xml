@@ -1,0 +1,10 @@
+<artist xmlns="http://example.com/ns/example-jukebox">
+    <name>Artist1</name>
+    <album>
+        <jbox:name xmlns:jbox="http://example.com/ns/example-jukebox">album1</jbox:name>
+    </album>
+    <album>
+        <jbox:name xmlns:jbox="http://example.com/ns/example-jukebox">album2</jbox:name>
+    </album>
+    <jbox:mgmt-jukebox xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist/jbox:album/jbox:name</jbox:mgmt-jukebox>
+</artist>

@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
@@ -50,6 +34,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
+import java.util.Collections;
+
 public class CopyConfigTest {
     @SuppressWarnings("unused")
     private final static Logger LOGGER = Logger.getLogger(EditConfigDeleteTest.class);
@@ -70,28 +56,23 @@ public class CopyConfigTest {
 
     @Before
     public void initServer() throws SchemaBuildException {
-        m_schemaRegistry = new SchemaRegistryImpl(TestUtil.getJukeBoxYangs(), new NoLockService());
+        m_schemaRegistry = new SchemaRegistryImpl(TestUtil.getJukeBoxYangs(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         createServer();
     }
 
     private void setNonEmptyCandidateDS() {
         m_candidateModel = createJukeBoxModelWithYear(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
-        m_candidateRootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry,
-                m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId,
-                m_candidateModel);
-        m_server.setDataStore(StandardDataStores.CANDIDATE, new DataStore(StandardDataStores.CANDIDATE,
-                m_candidateRootModelNodeAggregator, m_subSystemRegistry));
+        m_candidateRootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, m_candidateModel);
+        m_server.setDataStore(StandardDataStores.CANDIDATE, new DataStore(StandardDataStores.CANDIDATE, m_candidateRootModelNodeAggregator, m_subSystemRegistry));
     }
 
     private void setEmptyRunningDS() {
         m_runningModel = createEmptyJukeBox(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
         m_runningRootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId,
-                m_runningModel);
-        m_server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, m_runningRootModelNodeAggregator,
-                m_subSystemRegistry));
-
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, m_runningModel);
+        m_server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, m_runningRootModelNodeAggregator, m_subSystemRegistry));
+        
     }
 
     private void createServer() {
@@ -104,103 +85,118 @@ public class CopyConfigTest {
         setNonEmptyCandidateDS();
         // do a get-config and make sure the jukebox is empty
         verifyGetConfig(null, "/empty-jukebox.xml");
-
-        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false)
-                .setTarget(StandardDataStores.RUNNING, false);
+        
+        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false).setTarget(StandardDataStores.RUNNING, false);
         copyConfigRequest.setMessageId("1");
 
         NetConfResponse response = new NetConfResponse();
         response.setMessageId("1");
         m_server.onCopyConfig(m_clientInfo, copyConfigRequest, response);
-
+        
         // assert Ok response
         assertEquals(load("/ok-response.xml"), responseToString(response));
-
+        
         // do a get-config and make sure the jukebox is not-empty
         verifyGetConfig(null, "/getconfig-unfiltered-with-year.xml");
     }
-
+    
     @Test
     public void testCopyFromNonEmptyCandidateToNonEmptyRunningWorks() {
         setNonEmptyRunningDS();
         setNonEmptyCandidateDS();
         // do a get-config and make sure the jukebox is non-empty, without year
         verifyGetConfig(null, "/getconfig-unfiltered.xml");
-
-        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false)
-                .setTarget(StandardDataStores.RUNNING, false);
+        
+        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false).setTarget(StandardDataStores.RUNNING, false);
         copyConfigRequest.setMessageId("1");
 
         NetConfResponse response = new NetConfResponse();
         response.setMessageId("1");
         m_server.onCopyConfig(m_clientInfo, copyConfigRequest, response);
-
+        
         // assert Ok response
         assertEquals(load("/ok-response.xml"), responseToString(response));
-
+        
         // do a get-config and make sure the jukebox is not-empty and has year fields
         verifyGetConfig(null, "/getconfig-unfiltered-with-year.xml");
     }
-
+    
     @Test
     public void testCopyEmptyCandidateToNonEmptyRunningWorks() {
         setNonEmptyRunningDS();
         setEmptyCandidateDS();
         // do a get-config and make sure the jukebox is non-empty
         verifyGetConfig(null, "/getconfig-unfiltered.xml");
-
-        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false)
-                .setTarget(StandardDataStores.RUNNING, false);
+        
+        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false).setTarget(StandardDataStores.RUNNING, false);
         copyConfigRequest.setMessageId("1");
 
         NetConfResponse response = new NetConfResponse();
         response.setMessageId("1");
         m_server.onCopyConfig(m_clientInfo, copyConfigRequest, response);
-
+        
         // assert Ok response
         assertEquals(load("/ok-response.xml"), responseToString(response));
-
+        
         // do a get-config and make sure the jukebox is empty
         verifyGetConfig(null, "/empty-jukebox.xml");
     }
-
+    
     @Test
     public void testCopyEmptyCandidateToEmptyRunningWorks() {
         setEmptyRunningDS();
         setEmptyCandidateDS();
         // do a get-config and make sure the jukebox is empty
         verifyGetConfig(null, "/empty-jukebox.xml");
-
-        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false)
-                .setTarget(StandardDataStores.RUNNING, false);
+        
+        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.CANDIDATE, false).setTarget(StandardDataStores.RUNNING, false);
         copyConfigRequest.setMessageId("1");
 
         NetConfResponse response = new NetConfResponse();
         response.setMessageId("1");
         m_server.onCopyConfig(m_clientInfo, copyConfigRequest, response);
-
+        
         // assert Ok response
         assertEquals(load("/ok-response.xml"), responseToString(response));
-
+        
         // do a get-config and make sure the jukebox is empty
         verifyGetConfig(null, "/empty-jukebox.xml");
     }
 
     @Test
-    public void testCopySourceConfigElementToEmptyRunningWorks() {
-        setEmptyRunningDS();
-        // do a get-config and make sure the jukebox is empty
-        verifyGetConfig(null, "/empty-jukebox.xml");
-
-        Element sourceConfigElement = loadAsXml("/copyConfigSourceConfigElement.xml");
-        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setTarget(StandardDataStores.RUNNING, false)
-                .setSourceConfigElement(sourceConfigElement);
+    public void testCopySourceConfigElementToEmptyRunningWorks(){
+    	setEmptyRunningDS();
+    	// do a get-config and make sure the jukebox is empty
+    	verifyGetConfig(null, "/empty-jukebox.xml");
+    	
+    	Element sourceConfigElement = loadAsXml("/copyConfigSourceConfigElement.xml");
+		CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setTarget(StandardDataStores.RUNNING, false).setSourceConfigElement(sourceConfigElement );
         copyConfigRequest.setMessageId("1");
 
         NetConfResponse response = new NetConfResponse();
         response.setMessageId("1");
         m_server.onCopyConfig(m_clientInfo, copyConfigRequest, response);
+        
+        // assert Ok response
+        assertEquals(load("/ok-response.xml"), responseToString(response));
+        // do a get-config and make sure the jukebox is updated
+        verifyGetConfig(null, "/getconfig-unfiltered-with-year-updated.xml");
+    }
+    
+    @Test
+    public void testCopySourceConfigElementToNonEmptyRunningWorks(){
+    	setNonEmptyRunningDSWithYear();
+    	// do a get-config and make sure the jukebox is not empty
+    	verifyGetConfig(null, "/getconfig-unfiltered-with-year.xml");
+    	
+    	Element sourceConfigElement = loadAsXml("/copyConfigSourceConfigElement.xml");
+		CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setTarget(StandardDataStores.RUNNING, false).setSourceConfigElement(sourceConfigElement );
+        copyConfigRequest.setMessageId("1");
 
+        NetConfResponse response = new NetConfResponse();
+        response.setMessageId("1");
+        m_server.onCopyConfig(m_clientInfo, copyConfigRequest, response);
+        
         // assert Ok response
         assertEquals(load("/ok-response.xml"), responseToString(response));
         // do a get-config and make sure the jukebox is updated
@@ -208,35 +204,13 @@ public class CopyConfigTest {
     }
 
     @Test
-    public void testCopySourceConfigElementToNonEmptyRunningWorks() {
-        setNonEmptyRunningDSWithYear();
-        // do a get-config and make sure the jukebox is not empty
-        verifyGetConfig(null, "/getconfig-unfiltered-with-year.xml");
-
-        Element sourceConfigElement = loadAsXml("/copyConfigSourceConfigElement.xml");
-        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setTarget(StandardDataStores.RUNNING, false)
-                .setSourceConfigElement(sourceConfigElement);
-        copyConfigRequest.setMessageId("1");
-
-        NetConfResponse response = new NetConfResponse();
-        response.setMessageId("1");
-        m_server.onCopyConfig(m_clientInfo, copyConfigRequest, response);
-
-        // assert Ok response
-        assertEquals(load("/ok-response.xml"), responseToString(response));
-        // do a get-config and make sure the jukebox is updated
-        verifyGetConfig(null, "/getconfig-unfiltered-with-year-updated.xml");
-    }
-
-    @Test
-    public void testCopySourceConfigElementToNonEmptyRunningWorks2() {
+    public void testCopySourceConfigElementToNonEmptyRunningWorks2(){
         setNonEmptyRunningDSWithYear();
         // do a get-config and make sure the jukebox is not empty
         verifyGetConfig(null, "/getconfig-unfiltered-with-year.xml");
 
         Element sourceConfigElement = loadAsXml("/copyConfigSourceConfigElement2.xml");
-        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setTarget(StandardDataStores.RUNNING, false)
-                .setSourceConfigElement(sourceConfigElement);
+        CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setTarget(StandardDataStores.RUNNING, false).setSourceConfigElement(sourceConfigElement );
         copyConfigRequest.setMessageId("1");
 
         NetConfResponse response = new NetConfResponse();
@@ -248,35 +222,28 @@ public class CopyConfigTest {
         // do a get-config and make sure the jukebox is updated
         verifyGetConfig(null, "/getconfig-unfiltered2.xml");
     }
-
+    
     private void setEmptyCandidateDS() {
         m_candidateModel = createEmptyJukeBox(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
-        m_candidateRootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry,
-                m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId,
-                m_candidateModel);
-        m_server.setDataStore(StandardDataStores.CANDIDATE, new DataStore(StandardDataStores.CANDIDATE,
-                m_candidateRootModelNodeAggregator, m_subSystemRegistry));
+        m_candidateRootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, m_candidateModel);
+        m_server.setDataStore(StandardDataStores.CANDIDATE, new DataStore(StandardDataStores.CANDIDATE, m_candidateRootModelNodeAggregator, m_subSystemRegistry));
     }
 
     private void setNonEmptyRunningDS() {
         m_runningModel = createJukeBoxModel(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
         m_runningRootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId,
-                m_runningModel);
-        m_server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, m_runningRootModelNodeAggregator,
-                m_subSystemRegistry));
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, m_runningModel);
+        m_server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, m_runningRootModelNodeAggregator, m_subSystemRegistry));
     }
-
+    
     private void setNonEmptyRunningDSWithYear() {
         m_runningModel = createJukeBoxModelWithYear(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
         m_runningRootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId,
-                m_runningModel);
-        m_server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, m_runningRootModelNodeAggregator,
-                m_subSystemRegistry));
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, m_runningModel);
+        m_server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, m_runningRootModelNodeAggregator, m_subSystemRegistry));
     }
-
+    
 
     private void verifyGetConfig(String filterInput, String expectedOutput) {
         NetconfClientInfo client = new NetconfClientInfo("test", 1);
@@ -313,17 +280,17 @@ public class CopyConfigTest {
 
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onHello(m_clientInfo, null);
-        m_server.onLock(m_clientInfo, lockRequest, response);
-        assertEquals(load("/ok-response.xml"), responseToString(response));
+        m_server.onLock(m_clientInfo,lockRequest,response);
+        assertEquals(load("/ok-response.xml"),responseToString(response));
 
         CopyConfigRequest copyConfigRequest = new CopyConfigRequest().setSource(StandardDataStores.RUNNING, false).
                 setTarget(StandardDataStores.RUNNING, false);
         copyConfigRequest.setMessageId("1");
 
-        NetconfClientInfo m_clientInfo2 = new NetconfClientInfo("unit-test2", 2);
+        NetconfClientInfo m_clientInfo2 = new NetconfClientInfo("unit-test2",2);
         response = new NetConfResponse();
         response.setMessageId("1");
-        m_server.onHello(m_clientInfo2, null);
+        m_server.onHello(m_clientInfo2,null);
         m_server.onCopyConfig(m_clientInfo2, copyConfigRequest, response);
         String errorResponse = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
                 "  <rpc-error>\n" +

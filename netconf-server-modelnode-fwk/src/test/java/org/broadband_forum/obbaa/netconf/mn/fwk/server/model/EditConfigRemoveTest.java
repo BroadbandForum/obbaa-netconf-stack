@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.load;
@@ -40,15 +24,15 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 
-public class EditConfigRemoveTest extends AbstractEditConfigTestSetup {
+public class EditConfigRemoveTest extends AbstractEditConfigTestSetup{
 
     private final static Logger LOGGER = Logger.getLogger(EditConfigRemoveTest.class);
 
     private NetconfClientInfo m_clientInfo = new NetconfClientInfo("unit-test", 1);
 
     @Before
-    public void initServer() throws SchemaBuildException {
-        super.setup();
+    public void initServer() throws SchemaBuildException{
+      super.setup();
     }
 
     @Test
@@ -67,12 +51,12 @@ public class EditConfigRemoveTest extends AbstractEditConfigTestSetup {
 
         // do a get-config to be sure
         verifyGetConfig(null, "/empty-jukebox.xml");
-
+        
         //do one more remove and make sure you get a ok response
         response = new NetConfResponse();
         m_server.onEditConfig(m_clientInfo, request, response);
         response.setMessageId("1");
-
+        
         // assert Ok response
         assertEquals(load("/ok-response.xml"), responseToString(response));
 
@@ -96,7 +80,7 @@ public class EditConfigRemoveTest extends AbstractEditConfigTestSetup {
 
         // do a get-config to be sure
         verifyGetConfig(null, "/without-circus.xml");
-
+        
         //do one more remove and make sure you get a ok response
         response = new NetConfResponse();
         m_server.onEditConfig(m_clientInfo, request, response);
@@ -107,7 +91,7 @@ public class EditConfigRemoveTest extends AbstractEditConfigTestSetup {
         // do a get-config to be sure
         verifyGetConfig(null, "/without-circus.xml");
     }
-
+    
     private void verifyGetConfig(String filterInput, String expectedOutput) {
         NetconfClientInfo client = new NetconfClientInfo("test", 1);
 
@@ -129,7 +113,7 @@ public class EditConfigRemoveTest extends AbstractEditConfigTestSetup {
         try {
             TestUtil.assertXMLEquals(expectedOutput, response);
         } catch (SAXException | IOException e) {
-            LOGGER.error("test comparison failed", e);
+            LOGGER.error("test comparison failed" , e);
             fail("test comparison failed" + e.getMessage());
         }
     }

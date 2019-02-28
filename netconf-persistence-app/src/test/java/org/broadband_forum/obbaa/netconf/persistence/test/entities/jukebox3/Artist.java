@@ -37,73 +37,73 @@ import java.util.Set;
 @Entity(name = "artist")
 @Table(name = "artist")
 @IdClass(ArtistPK.class)
-@YangList(name = "artist", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
+@YangList(name="artist", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
 public class Artist {
-    public static final String NAME = "name";
+	public static final String NAME = "name";
 
-    @Id
-    @Column(name = NAME)
-    @YangListKey(name = "name", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-    private String name;
+	@Id
+	@Column(name=NAME)
+	@YangListKey(name="name", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+	private String name;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @YangChild
-    private Set<Album> albums = new HashSet<>();
-
+	@YangChild
+	private Set<Album> albums = new HashSet<>();
+    
     @Column
     @YangOrderByUser
-    private Integer insertOrder;
+	private Integer insertOrder;
 
-    @Id
-    @YangParentId
-    String parentId;
+	@Id
+	@YangParentId
+	String parentId;
 
-    @YangSchemaPath
-    @Column(length = 1000)
-    String schemaPath;
+	@YangSchemaPath
+	@Column(length = 1000)
+	String schemaPath;
 
-    public String getSchemaPath() {
-        return schemaPath;
-    }
+	public String getSchemaPath() {
+		return schemaPath;
+	}
 
-    public void setSchemaPath(String schemaPath) {
-        this.schemaPath = schemaPath;
-    }
+	public void setSchemaPath(String schemaPath) {
+		this.schemaPath = schemaPath;
+	}
 
-    public String getParentId() {
-        return parentId;
-    }
+	public String getParentId() {
+		return parentId;
+	}
 
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
+	public void setParentId(String parentId) {
+		this.parentId = parentId;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
+	
 
+	public Set<Album> getAlbums() {
+		return albums;
+	}
 
-    public Set<Album> getAlbums() {
-        return albums;
-    }
+	public void setAlbums(Set<Album> albums) {
+		this.albums = albums;
+	}
 
-    public void setAlbums(Set<Album> albums) {
-        this.albums = albums;
-    }
+	public void addAlbums(Album album) {
+		albums.add(album);
+	}
 
-    public void addAlbums(Album album) {
-        albums.add(album);
-    }
-
-    public int getInsertOrder() {
-        return insertOrder;
-    }
-
-    public void setInsertOrder(Integer insertOrder) {
-        this.insertOrder = insertOrder;
-    }
+	public int getInsertOrder() {
+		return insertOrder;
+	}
+	
+	public void setInsertOrder(Integer insertOrder) {
+		this.insertOrder = insertOrder;
+	}
 }

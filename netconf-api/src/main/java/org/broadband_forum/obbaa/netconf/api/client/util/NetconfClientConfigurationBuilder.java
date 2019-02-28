@@ -26,7 +26,6 @@ import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportOrder;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-
 import io.netty.channel.EventLoopGroup;
 
 import java.net.InetAddress;
@@ -38,8 +37,9 @@ import java.util.Set;
 
 /**
  * A builder to build netconf client configuration.
+ * 
  *
- * @author keshava
+ * 
  */
 public class NetconfClientConfigurationBuilder {
     private Long m_connectionTimeoutMillis;
@@ -63,16 +63,14 @@ public class NetconfClientConfigurationBuilder {
         return createDefaultNcClientBuilder(NetconfResources.DEFAULT_SSH_CONNECTION_PORT);
     }
 
-    public static NetconfClientConfigurationBuilder createDefaultNcClientBuilder(int portId) throws
-            UnknownHostException,
+    public static NetconfClientConfigurationBuilder createDefaultNcClientBuilder(int portId) throws UnknownHostException,
             NetconfConfigurationBuilderException {
         InetSocketAddress defaultSocketAddress = new InetSocketAddress(InetAddress.getLocalHost(), portId);
         NetconfTransportOrder transportOrder = new NetconfTransportOrder();
         transportOrder.setTransportType(NetconfTransportProtocol.SSH.name());
         transportOrder.setServerSocketAddress(defaultSocketAddress);
 
-        NetconfClientConfigurationBuilder builder = new NetconfClientConfigurationBuilder().setTransport
-                (NetconfTransportFactory
+        NetconfClientConfigurationBuilder builder = new NetconfClientConfigurationBuilder().setTransport(NetconfTransportFactory
                 .makeNetconfTransport(transportOrder));
         return builder;
     }
@@ -124,7 +122,7 @@ public class NetconfClientConfigurationBuilder {
     }
 
     private void ensureCapsNotNull() {
-        if (m_caps == null) {
+        if(m_caps == null) {
             m_caps = new LinkedHashSet<>();
         }
     }

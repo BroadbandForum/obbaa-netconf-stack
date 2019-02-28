@@ -19,59 +19,67 @@ package org.broadband_forum.obbaa.netconf.api.logger;
 import java.util.List;
 
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ExtensionDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.UnknownSchemaNode;
 
 public enum NetconfExtensions {
-
-    IS_PASSWORD("http://bbf.org/yang-extensions", "is-password", "2016-01-07"),
-    IS_SENSITIVE("http://bbf.org/yang-extensions", "is-sensitive", "2016-01-07"),
-    IS_TREAT_AS_RELATIVE_PATH("http://bbf.org/yang-extensions",
-            "treat-as-relative-path", "2016-01-07");
+    
+    IS_PASSWORD(Constants.EXT_NS, "is-password", Constants.EXT_REV)
+    ,IS_SENSITIVE(Constants.EXT_NS, "is-sensitive", Constants.EXT_REV)
+    ,IS_TREAT_AS_RELATIVE_PATH(Constants.EXT_NS, "treat-as-relative-path", Constants.EXT_REV)
+    ;
+    
+    public static class Constants {
+        public static final String EXT_NS = "http://www.test-company.com/solutions/anv-yang-extensions";
+        public static final Revision EXT_REV = Revision.of("2016-01-07");
+    }
+    
+    
     private final String m_namespace;
-    private final String m_revision;
+    private final Revision m_revision;
     private final String m_moduleName;
-
-    private NetconfExtensions(String nameSpace, String moduleName, String revision) {
+    
+    private NetconfExtensions(String nameSpace, String moduleName, Revision revision){
         m_namespace = nameSpace;
         m_revision = revision;
         m_moduleName = moduleName;
     }
-
-    private boolean isExtensionIn(ExtensionDefinition node) {
+    
+    private boolean isExtensionIn(ExtensionDefinition node){
         QName qName = node.getQName();
         String namespace = qName.getNamespace().toString();
-        String revision = qName.getFormattedRevision();
+        Revision revision = (qName.getRevision().isPresent() ? qName.getRevision().get() : null);
         String moduleName = qName.getLocalName();
         return m_namespace.equals(namespace) && m_revision.equals(revision)
                 && m_moduleName.equals(moduleName);
     }
-
-    public boolean isExtensionIn(DataSchemaNode dataNode) {
+    
+    public boolean isExtensionIn(DataSchemaNode dataNode){
         List<UnknownSchemaNode> unknownSchemaNodes = dataNode.getUnknownSchemaNodes();
-        for (UnknownSchemaNode unKnownSchemaNode : unknownSchemaNodes) {
+        for ( UnknownSchemaNode unKnownSchemaNode : unknownSchemaNodes) {
             ExtensionDefinition extDef = unKnownSchemaNode.getExtensionDefinition();
-            if (isExtensionIn(extDef)) {
-                return true;
+            if ( isExtensionIn(extDef)){
+                return true; 
             }
         }
         return false;
     }
-
+    
     @SuppressWarnings("rawtypes")
-    public boolean isExtensionIn(TypeDefinition definition) {
-        if (definition != null) {
+    public boolean isExtensionIn(TypeDefinition definition){
+        if (definition != null){
             List<UnknownSchemaNode> unknownSchemaNodes = definition.getUnknownSchemaNodes();
-            for (UnknownSchemaNode unKnownSchemaNode : unknownSchemaNodes) {
+            for ( UnknownSchemaNode unKnownSchemaNode : unknownSchemaNodes) {
                 ExtensionDefinition extDef = unKnownSchemaNode.getExtensionDefinition();
-                if (isExtensionIn(extDef)) {
-                    return true;
+                if ( isExtensionIn(extDef)){
+                    return true; 
                 }
             }
         }
-
+        
         return false;
     }
 

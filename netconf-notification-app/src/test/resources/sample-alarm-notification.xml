@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright 2018 Broadband Forum
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+    <eventTime>2018-10-31T15:11:11+05:30</eventTime>
+    <alarms:alarm-notification xmlns:alarms="http://www.test.com/solutions/anv-alarms">
+        <alarms:alarm>
+            <alarms:resource xmlns:adh="http://www.test.com/solutions/anv-device-holders" xmlns:anv="http://www.test.com/solutions/anv">/anv:device-manager/adh:new-devices/adh:new-device[adh:identification-method='duid'][adh:identification-value='TestANV.R1.S1.LT1.PON1.ONT5']</alarms:resource>
+            <alarms:alarm-type-id xmlns:adh="http://www.test.com/solutions/anv-device-holders">adh:new-device</alarms:alarm-type-id>
+            <alarms:alarm-type-qualifier />
+            <alarms:last-status-change>2018-10-31T09:41:11.776Z</alarms:last-status-change>
+            <alarms:last-perceived-severity>major</alarms:last-perceived-severity>
+            <alarms:last-alarm-text>hostAddress: 30.1.1.20 port: 50602</alarms:last-alarm-text>
+            <alarms:last-alarm-condition>ALARM_OFF</alarms:last-alarm-condition>
+        </alarms:alarm>
+        <alarms:alarm>
+            <alarms:resource xmlns:adh="http://www.test.com/solutions/anv-device-holders" xmlns:anv="http://www.test.com/solutions/anv">/anv:device-manager/adh:new-devices/adh:new-device[adh:identification-method='duid'][adh:identification-value='TestANV.R1.S1.LT1.PON1.ONT2']</alarms:resource>
+            <alarms:alarm-type-id xmlns:adh="http://www.test.com/solutions/anv-device-holders">adh:new-device</alarms:alarm-type-id>
+            <alarms:alarm-type-qualifier />
+            <alarms:last-status-change>2018-10-31T09:41:11.776Z</alarms:last-status-change>
+            <alarms:last-perceived-severity>critical</alarms:last-perceived-severity>
+            <alarms:last-alarm-text>hostAddress: 30.1.1.20 port: 58321</alarms:last-alarm-text>
+            <alarms:last-alarm-condition>ALARM_OFF</alarms:last-alarm-condition>
+        </alarms:alarm>
+        <alarms:alarm>
+            <alarms:resource xmlns:adh="http://www.test.com/solutions/anv-device-holders" xmlns:anv="http://www.test.com/solutions/anv">/anv:device-manager/adh:device[adh:device-id='R1.S1.LT1.PON1.ONT1']</alarms:resource>
+            <alarms:alarm-type-id xmlns:adh="http://www.test.com/solutions/anv-device-holders">adh:device-unreachable</alarms:alarm-type-id>
+            <alarms:alarm-type-qualifier />
+            <alarms:last-status-change>2018-10-31T09:41:11.785Z</alarms:last-status-change>
+            <alarms:last-perceived-severity>major</alarms:last-perceived-severity>
+            <alarms:last-alarm-text />
+            <alarms:last-alarm-condition>ALARM_ON</alarms:last-alarm-condition>
+        </alarms:alarm>
+    </alarms:alarm-notification>
+</notification>

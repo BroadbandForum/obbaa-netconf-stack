@@ -28,7 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(ElementType.FIELD)
 public @interface YangXmlSubtree {
-    String name() default "";
+	String name() default "";
 
     String namespace() default "";
 

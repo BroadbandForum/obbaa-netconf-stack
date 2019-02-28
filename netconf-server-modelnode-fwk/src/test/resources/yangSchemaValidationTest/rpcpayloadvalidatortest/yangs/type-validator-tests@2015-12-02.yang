@@ -1,0 +1,370 @@
+module validation {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma";
+	
+	prefix "validation";
+	
+	import "ietf-yang-types" { 
+       prefix yang; 
+    }
+	
+	revision "2015-12-02" {
+	      description "Initial version.";
+	}
+	
+    identity french {
+        base yang:languages;
+        description "French language";
+    }
+
+    identity indian-language {
+            base yang:languages;
+            description "Indian language";
+    }
+
+    identity hindi {
+        base indian-language;
+        description "Hindi language";
+    }
+    
+    typedef enum-status {
+    	type enumeration {
+        	enum "failed" {
+        		value 0;
+        	}
+            enum "complete" {
+            	value 1;
+            }
+        }
+    }
+    
+    typedef data-uint32-test {
+    	type uint32; 
+    }
+    
+    typedef data-uint16-test {
+    	type uint16 {
+    	    range "10..10000"; // min=0 and max=65535
+        } 
+    }
+    
+    typedef data-int32-test {
+    	type int32; 
+    }
+    
+    typedef data-int16-test {
+    	type int16 {
+    	    range "10..1000";
+        } 
+    }
+    
+    typedef url {
+        type string {
+            pattern '((tftp://)|(https|http)://((\S+:\S+)@)?|((sftp|ftp)://((\S+:\S+)@)))([\S&&[^/]]+)/([\S&&[^:]]+)';
+        }
+    }
+   
+    typedef customurl {
+        type string {
+            pattern '((http|https|tftp)://|(ftp|sftp)://((\S+:\S+)@))([\S&&[^/]]+)/([\S&&[^:]]+)'{
+                error-app-tag "pattern constraint error-app-tag";
+                error-message "pattern constraint error-app-message";
+            }
+        }
+    }
+    
+    container validation {
+        list type-validation {
+            key id;
+            
+            leaf id {
+                type string;
+            }
+            
+            leaf int8-type {
+                type int8 {
+                    range "min..0 | 10..100 | 120..max"; // min=-128 and max=127
+                }
+            }
+ 
+            leaf custom-int8-type {
+                type int8 {
+                    range "min..0 | 10..100 | 120..max"{
+                        error-app-tag "range constraint error-app-tag";
+                        error-message "range constraint error-app-message";
+                    }// min=-128 and max=127
+                }
+            }
+            
+            leaf int16-type {
+                type int16 {
+                    range "10..1000"; // min=-32768 and max=32767
+                }
+            }
+ 
+            leaf custom-int16-type {
+                type int16 {
+                    range "10..1000"{
+                        error-app-tag "range constraint error-app-tag";
+                        error-message "range constraint error-app-message";
+                    }// min=-32768 and max=32767
+                }
+            }
+            
+            leaf int16-type-ref {
+                type data-int16-test;
+            }
+            
+            leaf int32-type {
+                type int32; // min=-2147483648 and max=2147483647
+            }
+            
+            leaf int32-type-ref {
+                type data-int32-test;
+            }
+            
+            leaf int64-type {
+                type int64; // min=-9223372036854775808 and max=9223372036854775807
+            }
+   
+            leaf custom-int64-type {
+                type int64; // min=-9223372036854775808 and max=9223372036854775807
+            }
+            
+            leaf uint8-type {
+                type uint8 {
+                    range "min..10 | 20..100 | 120..max"; // min=0 and max=255
+                }
+            }
+  
+            leaf custom-uint8-type {
+                type uint8 {
+                    range "min..10 | 20..100 | 120..max"{
+                        error-app-tag "range constraint error-app-tag";
+                        error-message "range constraint error-app-message";
+                    }// min=0 and max=255
+                }
+            }
+            
+            leaf uint16-type {
+                type uint16 {
+                    range "10..10000"; // min=0 and max=65535
+                }
+            }
+  
+            leaf custom-uint16-type {
+                type uint16 {
+                    range "10..10000"{
+                        error-app-tag "range constraint error-app-tag";
+                        error-message "range constraint error-app-message";
+                    }// min=0 and max=65535
+                }
+            }
+            
+            leaf uint16-type-ref {
+                type data-uint16-test;
+            }
+            
+            leaf uint32-type {
+                type uint32; // min=0 and max=4294967295
+            }
+            
+            leaf uint32-type-ref {
+            	type data-uint32-test;
+            }
+            
+            leaf uint64-type {
+                type uint64; // min=0 and max=18446744073709551615
+            }
+            
+            leaf binary-type {
+                type binary {
+                    length "1 | 3..4";
+                }
+            }
+ 
+            leaf custom-binary-type {
+                type binary {
+                    length "1 | 3..4"{
+                        error-app-tag "length constraint error-app-tag";
+                        error-message "length constraint error-app-message";
+                    }
+                }
+            }
+            
+            leaf date-and-time-type {
+                type yang:date-and-time;
+            }
+            
+            leaf string-type {
+                type string {
+                    length "1..3";
+                    pattern "[a-z]";
+                    pattern "[0-9]{2}";
+                    pattern "abc";
+                }
+            }
+            
+            leaf custom-string-type {
+                type string {
+                    length "2..255" {
+                        error-app-tag "length constraint error-app-tag";
+                        error-message "length constraint error-app-message";
+                    }
+                    pattern "[a-z]+" {
+                        error-app-tag "pattern constraint error-app-tag";
+                        error-message "pattern constraint error-app-message";
+                    }
+                }
+            }
+            leaf custom-int-type {
+                type int32 {
+                    range "1..100" {
+                        error-app-tag "range constraint error-app-tag";
+                        error-message "range constraint error-app-message";
+                    }
+                }
+            }
+            
+            leaf string-type-with-dollar {
+                type string {
+                    pattern "$\d$[a-zA-Z0-9^]+$";
+                }
+            }
+
+            leaf empty-type {
+            	type empty;
+            }
+            
+            leaf bits-type {
+            	type bits {
+            		bit bit-1 {
+            			position 0;
+            		}
+            		bit bit-2 {
+            			position 1;
+            		}
+            		bit bit-3 {
+            			position 2;
+            		}
+            	}
+            }
+            
+            leaf decimal64-fraction18-type {
+            	type decimal64 {
+            		fraction-digits 18;
+            		range "-9.223372036854775808..3.14 | 5.1..9.223372036854775807";
+            	}
+            }
+            
+            leaf custom-decimal64-fraction18-type {
+            	type decimal64 {
+            		fraction-digits 18;
+            		range "-9.223372036854775808..3.14"{
+                        error-app-tag "range constraint error-app-tag";
+                        error-message "range constraint error-app-message";
+            		}
+            	}
+            }
+            
+            leaf decimal64-fraction18-without-range-type {
+            	type decimal64 {
+            		fraction-digits 18;
+            	}
+            }
+            
+            leaf decimal64-fraction1-type {
+            	type decimal64 {
+            		fraction-digits 1;
+            		range "-922337203685477580.8..-92233720368547758.08 | 1..3.14 | 20..922337203685477580.7";
+            	}
+            }
+   
+            leaf custom-decimal64-fraction1-type {
+            	type decimal64 {
+            		fraction-digits 1;
+            		range "-922337203685477580.8..3.14"{
+                        error-app-tag "range constraint error-app-tag";
+                        error-message "range constraint error-app-message";
+            		}
+            	}
+            }
+            
+            leaf decimal64-fraction1-without-range-type {
+            	type decimal64 {
+            		fraction-digits 1;
+            	}
+            }
+            
+            leaf enum-type {
+            	type enumeration {
+            		enum "unknown" {
+            			value 0;
+            		}
+            		enum "value1" {
+            			value 1;
+            		}
+            		enum "value2";
+            	}
+            }
+            
+            leaf enum-ref-type {
+            	type enum-status;
+            }
+            
+            leaf union-type {
+            	type union {
+            		type int8 {
+                    	range "min..0 | 10..100 | 120..max"; // min=-128 and max=127
+                	}
+                	type enumeration {
+                		enum "union";
+                	}
+            	}
+            }
+  
+            leaf custom-union-type {
+            	type union {
+            		type int8 {
+                    	range "10..100"{
+                            error-app-tag "range constraint error-app-tag";
+                            error-message "range constraint error-app-message";
+                    	}
+                	}
+                	type enumeration {
+                		enum "union";
+                	}
+            	}
+            }
+            
+            leaf union-type-without-app-tag {
+                type union {
+                    type boolean;
+                }
+            }
+            
+            leaf url-type {
+            	type url;
+            }
+ 
+            leaf custom-url-type {
+            	type customurl;
+            }
+            
+            leaf identityref-type {
+                type identityref {
+                    base "yang:languages";
+                }
+            }
+            
+            leaf boolean-type {
+            	type boolean;
+            }
+     
+        }
+        
+    }
+
+}

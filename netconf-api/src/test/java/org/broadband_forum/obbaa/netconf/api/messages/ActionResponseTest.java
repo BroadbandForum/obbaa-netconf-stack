@@ -23,7 +23,6 @@ import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
@@ -31,40 +30,55 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+
 public class ActionResponseTest {
-    private ActionResponse m_response;
-    private ActionDefinition m_actionDefinition = mock(ActionDefinition.class);
-    private Element m_outputElement = mock(Element.class);
-    private List<Element> m_outputElementList;
+	private ActionResponse m_response;
+	private ActionDefinition m_actionDefinition = mock(ActionDefinition.class);
+	private Element m_outputElement = null;
+	private List<Element> m_outputElementList;
 
-    @Before
-    public void setup() {
-        m_response = new ActionResponse();
-        m_response.setMessageId("1");
-        m_response.setOk(true);
-        m_outputElementList = new ArrayList<Element>();
-        m_outputElementList.add(m_outputElement);
-        m_response.setActionOutputElements(m_outputElementList);
-        m_response.setActionDefinition(m_actionDefinition);
-    }
+	@Before
+	public void setup() throws NetconfMessageBuilderException {
+		m_response = new ActionResponse();
+		m_response.setMessageId("1");
+		m_response.setOk(true);
+		m_outputElementList = new ArrayList<Element>();
+		m_outputElement = DocumentUtils.stringToDocument("<result xmlns=\"urn:example:rock\">SUCCESS</result>").getDocumentElement();
+		m_outputElementList.add(m_outputElement);
+		m_response.setActionOutputElements(m_outputElementList);
+		m_response.setActionDefinition(m_actionDefinition);
+	}
 
-    @Test
-    public void testRpcOutputElement() {
-        List<Element> rpcOutputElements = m_response.getActionOutputElements();
-        assertEquals(1, rpcOutputElements.size());
-        assertEquals(m_outputElement, rpcOutputElements.get(0));
-        assertEquals(m_actionDefinition, m_response.getActionDefinition());
-    }
+	@Test
+	public void testRpcOutputElement() throws Exception {
+		List<Element> rpcOutputElements = m_response.getActionOutputElements();
+		assertEquals(1, rpcOutputElements.size());
+		assertEquals(m_outputElement, rpcOutputElements.get(0));
+		assertEquals(m_actionDefinition, m_response.getActionDefinition());
+		String response = DocumentUtils.prettyPrint(m_response.getResponseDocument());
+		assertEquals(getResponse(), response);
+	}
+	
+	private String getResponse(){
+		return "<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n"
+				+ "<result xmlns=\"urn:example:rock\">SUCCESS</result>\n"
+				+ "</rpc-reply>\n";
+	}
 
-    @Test
-    public void testGetActionResponseDocument() throws NetconfMessageBuilderException {
-        Document document = m_response.getResponseDocument();
-        Node node = document.getFirstChild();
-        if (node instanceof Element) {
-            Element nodeElement = (Element) node;
-            assertTrue(nodeElement.getLocalName().equals("rpc-reply"));
-            assertTrue(((Element) (node).getFirstChild()).getLocalName().equals("ok"));
-        }
-    }
+	@Test
+	public void testGetActionResponseDocument() throws NetconfMessageBuilderException {
+		m_response = new ActionResponse();
+		m_response.setMessageId("1");
+		m_response.setOk(true);
+		Document document = m_response.getResponseDocument();
+		Node node = document.getFirstChild();
+		if (node instanceof Element) {
+			Element nodeElement = (Element) node;
+			assertTrue(nodeElement.getLocalName().equals("rpc-reply"));
+			assertTrue(((Element) (node).getFirstChild()).getLocalName().equals("ok"));
+		}
+	}
 
 }

@@ -37,9 +37,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(ElementType.TYPE)
 @Retention(RUNTIME)
 public @interface YangList {
-    String name() default "";
+	String name() default "";
 
     String namespace() default "";
 
     String revision() default "";
+    
+    boolean bigListType() default false;
 }

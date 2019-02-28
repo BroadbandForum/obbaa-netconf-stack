@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
@@ -42,6 +43,11 @@ public class FileYangSource extends YangTextSchemaSource {
     @Override
     public InputStream openStream() throws IOException {
         return new FileInputStream(m_yangFile);
+    }
+    
+    @Override
+    public Optional<String> getSymbolicName() {
+        return Optional.of(m_yangFile.getAbsolutePath());
     }
 
 }

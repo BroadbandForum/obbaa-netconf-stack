@@ -41,11 +41,9 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.client.dispatcher.NetconfClientDispatcherImpl;
 import org.broadband_forum.obbaa.netconf.server.QueuingMessageHandler;
 import org.broadband_forum.obbaa.netconf.server.dispatcher.NetconfServerDispatcherImpl;
-
-import io.netty.channel.nio.NioEventLoopGroup;
-
-import org.apache.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.client.tests.server.DummyLoggingServerMessageListener;
+import io.netty.channel.nio.NioEventLoopGroup;
+import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -79,11 +77,9 @@ public class ReverseTlsTest {
     private static Integer c_testCallHomePort = 12345;
     static HashSet<String> m_caps = new HashSet<String>();
     static Set<String> m_severCaps = new HashSet<String>();
-    private static String m_ipAddress = null;
-    private NetconfServerDispatcher m_serverDispatcher = new NetconfServerDispatcherImpl(ExecutorServiceProvider
-            .getInstance()
+    private static String m_ipAddress=null;
+    private NetconfServerDispatcher m_serverDispatcher = new NetconfServerDispatcherImpl(ExecutorServiceProvider.getInstance()
             .getExecutorService());
-
     static {
         m_caps.add(NetconfResources.NETCONF_BASE_CAP_1_0);
 
@@ -114,19 +110,16 @@ public class ReverseTlsTest {
     }
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException{
         m_callhomeExecutorSpy = spy(Executors.newCachedThreadPool());
         m_executorService = Executors.newCachedThreadPool();
-        BufferedReader input = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec("hostname -i")
-                .getInputStream()));
+        BufferedReader input = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec("hostname -i").getInputStream()));
         m_ipAddress = input.readLine();
-        m_logger.info(m_ipAddress + "m_ipAddress");
+        m_logger.info(m_ipAddress+"m_ipAddress");
     }
-
     @Test
     public void testNetconfClientGetsNotifiedWhenServerCallsHome() throws NetconfClientDispatcherException,
-            NetconfConfigurationBuilderException, InterruptedException, ExecutionException,
-            NetconfServerDispatcherException,
+            NetconfConfigurationBuilderException, InterruptedException, ExecutionException, NetconfServerDispatcherException,
             UnknownHostException, NetconfMessageBuilderException {
 
         NetconfClientDispatcher dispatcher = new NetconfClientDispatcherImpl(m_executorService, m_callhomeExecutorSpy);
@@ -141,8 +134,7 @@ public class ReverseTlsTest {
         transportOrder.setCallHomeListener(new TestCallHomeLister(latch));
 
         NetconfTransport transport = NetconfTransportFactory.makeNetconfTransport(transportOrder);
-        clientConfigBuilder.setCapabilities(m_caps).setConnectionTimeout(10000L).setEventLoopGroup(new
-                NioEventLoopGroup(10))
+        clientConfigBuilder.setCapabilities(m_caps).setConnectionTimeout(10000L).setEventLoopGroup(new NioEventLoopGroup(10))
                 .setTransport(transport);
         NetconfClientConfiguration config = clientConfigBuilder.build();
 
@@ -157,8 +149,7 @@ public class ReverseTlsTest {
 
     @Test
     public void testNetconfClientGetsNotifiedWhenManyServersCallHome() throws NetconfClientDispatcherException,
-            NetconfConfigurationBuilderException, InterruptedException, ExecutionException,
-            NetconfServerDispatcherException,
+            NetconfConfigurationBuilderException, InterruptedException, ExecutionException, NetconfServerDispatcherException,
             UnknownHostException, NetconfMessageBuilderException {
 
         NetconfClientDispatcher dispatcher = new NetconfClientDispatcherImpl(m_executorService, m_callhomeExecutorSpy);
@@ -172,8 +163,7 @@ public class ReverseTlsTest {
         transportOrder.setCallHomeListener(new TestCallHomeLister(latch));
 
         NetconfTransport transport = NetconfTransportFactory.makeNetconfTransport(transportOrder);
-        clientConfigBuilder.setCapabilities(m_caps).setConnectionTimeout(10000L).setEventLoopGroup(new
-                NioEventLoopGroup(10))
+        clientConfigBuilder.setCapabilities(m_caps).setConnectionTimeout(10000L).setEventLoopGroup(new NioEventLoopGroup(10))
                 .setTransport(transport);
         NetconfClientConfiguration config = clientConfigBuilder.build();
 
@@ -187,16 +177,15 @@ public class ReverseTlsTest {
     }
 
     @After
-    public void tearDown() {
-        if (m_session != null) {
+    public void tearDown(){
+        if(m_session != null){
             m_session.stopListening(true);
         }
         m_callhomeExecutorSpy.shutdownNow();
         m_executorService.shutdownNow();
     }
 
-    private void startManyCallHomeServers() throws UnknownHostException, NetconfConfigurationBuilderException,
-            InterruptedException,
+    private void startManyCallHomeServers() throws UnknownHostException, NetconfConfigurationBuilderException, InterruptedException,
             ExecutionException, NetconfServerDispatcherException {
         for (int i = 0; i < 10; i++) {
             startCallHomeServer();
@@ -204,8 +193,7 @@ public class ReverseTlsTest {
 
     }
 
-    private void startCallHomeServer() throws NetconfConfigurationBuilderException, InterruptedException,
-            ExecutionException,
+    private void startCallHomeServer() throws NetconfConfigurationBuilderException, InterruptedException, ExecutionException,
             NetconfServerDispatcherException, UnknownHostException {
         NetconfServerConfigurationBuilder builder = new NetconfServerConfigurationBuilder();
         NetconfTransportOrder transportOrder = new NetconfTransportOrder();
@@ -215,8 +203,7 @@ public class ReverseTlsTest {
         transportOrder.setCallHomePort(c_testCallHomePort);
         NetconfTransport transport = NetconfTransportFactory.makeNetconfTransport(transportOrder);
         NetconfServerMessageListener netconfServerMessageListener = new DummyLoggingServerMessageListener();
-        builder.setCapabilities(m_severCaps).setTransport(transport).setNetconfServerMessageListener
-                (netconfServerMessageListener)
+        builder.setCapabilities(m_severCaps).setTransport(transport).setNetconfServerMessageListener(netconfServerMessageListener)
                 .setServerMessageHandler(new QueuingMessageHandler(netconfServerMessageListener));
         NetconfLogger logger = mock(NetconfLogger.class);
         builder.setLogger(logger);
@@ -234,10 +221,9 @@ public class ReverseTlsTest {
         }
 
         @Override
-        public void connectionEstablished(NetconfClientSession clientSession, NetconfLoginProvider
-                netconfLoginProvider, X509Certificate
+        public void connectionEstablished(NetconfClientSession clientSession, NetconfLoginProvider netconfLoginProvider, X509Certificate
                 peerX509Certificate, boolean isSelfSigned) {
-            LOGGER.info("Got a call back for a session with id : " + clientSession.getSessionId());
+            LOGGER.info("Got a call back for a session with id : "+clientSession.getSessionId());
             m_latch.countDown();
         }
     }

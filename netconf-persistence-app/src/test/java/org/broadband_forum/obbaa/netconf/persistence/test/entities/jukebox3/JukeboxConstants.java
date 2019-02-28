@@ -61,8 +61,7 @@ public class JukeboxConstants {
     public static final String OFFICE_CELL = "+91 944 955 4002";
     public static final String HOME_LAND_LINE = "080 1234 5678";
     public static final String HOME_CELL = "+91 944 955 4003";
-    public static final String CHENNAI_OFFICE_ADDRESS = "TVH Agnitio Park, 4th Floor, Door No. 141, Kandanchavady Old" +
-            " Mahabalipuram, Road, Chennai, Tamil Nadu 600096";
+    public static final String CHENNAI_OFFICE_ADDRESS = "TVH Agnitio Park, 4th Floor, Door No. 141, Kandanchavady Old Mahabalipuram, Road, Chennai, Tamil Nadu 600096";
     public static final String OFFICE_ADDRESS = "Office Address";
 
     public static final QName JUKEBOX_QNAME = QName.create(JB_NS, JB_REVISION, JUKEBOX_LOCAL_NAME);
@@ -89,66 +88,44 @@ public class JukeboxConstants {
     public static final QName QNAME_CERTIFICATE_ID = QName.create(CERT_NS, REVISION, "id");
     public static final QName ADDRESS_NAME_Q_NAME = QName.create(ADDR_NS, REVISION, ADDRESS_NAME_LOCAL_NAME);
     public static final QName ADDRESS_Q_NAME = QName.create(ADDR_NS, REVISION, "address");
-    public static final QName SINGER_QNAME = QName.create(JB_NS, JB_REVISION, SINGER_LOCAL_NAME);
+    public static final QName SINGER_QNAME = QName.create(JB_NS,JB_REVISION,SINGER_LOCAL_NAME);
 
-    public static final SchemaPath JUKEBOX_SCHEMA_PATH = SchemaPath.create(true, QName.create(JB_NS, JB_REVISION,
-            JUKEBOX_LOCAL_NAME));
-    public static final SchemaPath LIBRARY_SCHEMA_PATH = new SchemaPathBuilder().withParent(JUKEBOX_SCHEMA_PATH)
-            .appendLocalName(LIBRARY_LOCAL_NAME).build();
-    public static final SchemaPath ARTIST_SCHEMA_PATH = new SchemaPathBuilder().withParent(LIBRARY_SCHEMA_PATH)
-            .appendLocalName(ARTIST_LOCAL_NAME).build();
-    public static final SchemaPath ALBUM_SCHEMA_PATH = new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH)
-            .appendLocalName(ALBUM_LOCAL_NAME).build();
-    public static final SchemaPath ALBUM_NAME_SCHEMA_PATH = new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH)
-            .appendQName(NAME_QNAME).build();
-    public static final SchemaPath SONG_SCHEMA_PATH = new SchemaPathBuilder().withParent(ALBUM_SCHEMA_PATH)
-            .appendLocalName(SONG_LOCAL_NAME).build();
-    public static final SchemaPath CD_SCHEMA_PATH = new SchemaPathBuilder().withParent(SONG_SCHEMA_PATH)
-            .appendLocalName(RELEASE_TYPE_LOCAL_NAME).appendLocalName(CD_TYPE_LOCAL_NAME).appendLocalName
-                    (CD_LOCAL_NAME).build();
-    public static final SchemaPath SINGER_SCHEMA_PATH = new SchemaPathBuilder().withParent(SONG_SCHEMA_PATH)
-            .appendLocalName(SINGER_LOCAL_NAME).build();
+    public static final SchemaPath JUKEBOX_SCHEMA_PATH = SchemaPath.create(true, QName.create(JB_NS, JB_REVISION, JUKEBOX_LOCAL_NAME));
+    public static final SchemaPath LIBRARY_SCHEMA_PATH = new SchemaPathBuilder().withParent(JUKEBOX_SCHEMA_PATH).appendLocalName(LIBRARY_LOCAL_NAME).build();
+    public static final SchemaPath ARTIST_SCHEMA_PATH = new SchemaPathBuilder().withParent(LIBRARY_SCHEMA_PATH).appendLocalName(ARTIST_LOCAL_NAME).build();
+    public static final SchemaPath ALBUM_SCHEMA_PATH = new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH).appendLocalName(ALBUM_LOCAL_NAME).build();
+    public static final SchemaPath ALBUM_NAME_SCHEMA_PATH = new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH).appendQName(NAME_QNAME).build();
+    public static final SchemaPath SONG_SCHEMA_PATH = new SchemaPathBuilder().withParent(ALBUM_SCHEMA_PATH).appendLocalName(SONG_LOCAL_NAME).build();
+    public static final SchemaPath CD_SCHEMA_PATH = new SchemaPathBuilder().withParent(SONG_SCHEMA_PATH).appendLocalName(RELEASE_TYPE_LOCAL_NAME).appendLocalName(CD_TYPE_LOCAL_NAME).appendLocalName(CD_LOCAL_NAME).build();
+    public static final SchemaPath SINGER_SCHEMA_PATH = new SchemaPathBuilder().withParent(SONG_SCHEMA_PATH).appendLocalName(SINGER_LOCAL_NAME).build();
 
     private static final QName CERT_MGMT_QNAME = QName.create(CERT_NS, REVISION, CERT_MGMT_LOCAL_NAME);
-    public static final SchemaPath CA_CERT_CONTAINER_SCHEMA_PATH = SchemaPath.create(true, CERT_MGMT_QNAME, QName
-            .create(CERT_NS,
+    public static final SchemaPath CA_CERT_CONTAINER_SCHEMA_PATH = SchemaPath.create(true, CERT_MGMT_QNAME,QName.create(CERT_NS,
             REVISION, TRUSTED_CA_CERTS_LOCAL_NAME));
 
-    public static final SchemaPath PMA_CERT_CONTAINER_SCHEMA_PATH = SchemaPath.create(true, CERT_MGMT_QNAME, QName
-            .create(CERT_NS,
+    public static final SchemaPath PMA_CERT_CONTAINER_SCHEMA_PATH = SchemaPath.create(true, CERT_MGMT_QNAME, QName.create(CERT_NS,
             REVISION, PMA_CERTS_LOCAL_NAME));
-    public static final SchemaPath PMA_CERT_SCHEMA_PATH = new SchemaPathBuilder().withParent
-            (PMA_CERT_CONTAINER_SCHEMA_PATH).appendLocalName(CERTIFICATE_LOCAL_NAME).build();
-    public static final SchemaPath CA_CERT_SCHEMA_PATH = new SchemaPathBuilder().withParent
-            (CA_CERT_CONTAINER_SCHEMA_PATH).appendLocalName(CERTIFICATE_LOCAL_NAME).build();
-    public static final SchemaPath HOME_ADDRESSES_SCHEMA_PATH = SchemaPath.create(true, QName.create(ADDR_NS,
-            REVISION, HOME_ADDRESS_LOCAL_NAME));
-    public static final SchemaPath OFFICE_ADDRESSES_SCHEMA_PATH = SchemaPath.create(true, QName.create(ADDR_NS,
-            REVISION, OFFICE_ADDRESS_LOCAL_NAME));
-    public static final SchemaPath HOME_TELPHONE_SCHEMA_PATH = new SchemaPathBuilder().withParent
-            (HOME_ADDRESSES_SCHEMA_PATH).appendLocalName(TELEPHONE_NUMBER_LOCAL_NAME).build();
-    public static final SchemaPath OFFICE_TELPHONE_SCHEMA_PATH = new SchemaPathBuilder().withParent
-            (OFFICE_ADDRESSES_SCHEMA_PATH).appendLocalName(TELEPHONE_NUMBER_LOCAL_NAME).build();
+    public static final SchemaPath PMA_CERT_SCHEMA_PATH = new SchemaPathBuilder().withParent(PMA_CERT_CONTAINER_SCHEMA_PATH).appendLocalName(CERTIFICATE_LOCAL_NAME).build();
+    public static final SchemaPath CA_CERT_SCHEMA_PATH = new SchemaPathBuilder().withParent(CA_CERT_CONTAINER_SCHEMA_PATH).appendLocalName(CERTIFICATE_LOCAL_NAME).build();
+    public static final SchemaPath HOME_ADDRESSES_SCHEMA_PATH = SchemaPath.create(true, QName.create(ADDR_NS, REVISION, HOME_ADDRESS_LOCAL_NAME));
+    public static final SchemaPath OFFICE_ADDRESSES_SCHEMA_PATH = SchemaPath.create(true, QName.create(ADDR_NS, REVISION, OFFICE_ADDRESS_LOCAL_NAME));
+    public static final SchemaPath HOME_TELPHONE_SCHEMA_PATH = new SchemaPathBuilder().withParent(HOME_ADDRESSES_SCHEMA_PATH).appendLocalName(TELEPHONE_NUMBER_LOCAL_NAME).build();
+    public static final SchemaPath OFFICE_TELPHONE_SCHEMA_PATH = new SchemaPathBuilder().withParent(OFFICE_ADDRESSES_SCHEMA_PATH).appendLocalName(TELEPHONE_NUMBER_LOCAL_NAME).build();
 
     public static final String V3_PMA_CERT_NS = "test:v3-pma-certificates";
     public static final String V3_CERT_REVISION = REVISION;
     public static final String V3_CERT_NS = "test:v3-certificates";
     public static final SchemaPath V3_PMA_CERT_CONTAINER_SCHEMA_PATH = SchemaPathUtil.fromString(new StringBuilder()
-            .append(V3_CERT_NS + DELIMITER).append(V3_CERT_REVISION + DELIMITER).append(CERT_MGMT_LOCAL_NAME +
-                    DELIMITER)
-            .append(V3_PMA_CERT_NS + DELIMITER).append(V3_CERT_REVISION + DELIMITER).append(PMA_CERTS_LOCAL_NAME +
-                    DELIMITER)
+            .append(V3_CERT_NS +DELIMITER).append(V3_CERT_REVISION +DELIMITER).append(CERT_MGMT_LOCAL_NAME +DELIMITER)
+            .append(V3_PMA_CERT_NS +DELIMITER).append(V3_CERT_REVISION +DELIMITER).append(PMA_CERTS_LOCAL_NAME+DELIMITER)
             .toString());
 
     public static final SchemaPath V3_CERT_SCHEMA_PATH = SchemaPathUtil.fromString(new StringBuilder()
-            .append(V3_CERT_NS + DELIMITER).append(V3_CERT_REVISION + DELIMITER).append(CERT_MGMT_LOCAL_NAME +
-                    DELIMITER)
-            .append(V3_PMA_CERT_NS + DELIMITER).append(V3_CERT_REVISION + DELIMITER).append(PMA_CERTS_LOCAL_NAME +
-                    DELIMITER)
-            .append(V3_PMA_CERT_NS + DELIMITER).append(V3_CERT_REVISION + DELIMITER).append(CERTIFICATE_LOCAL_NAME +
-                    DELIMITER)
+            .append(V3_CERT_NS +DELIMITER).append(V3_CERT_REVISION +DELIMITER).append(CERT_MGMT_LOCAL_NAME +DELIMITER)
+            .append(V3_PMA_CERT_NS +DELIMITER).append(V3_CERT_REVISION +DELIMITER).append(PMA_CERTS_LOCAL_NAME+DELIMITER)
+            .append(V3_PMA_CERT_NS+DELIMITER).append(V3_CERT_REVISION +DELIMITER).append(CERTIFICATE_LOCAL_NAME+DELIMITER)
             .toString());
     public static final QName V3_CERT_BINARY_QNAME = QName.create(V3_PMA_CERT_NS, V3_CERT_REVISION, "cert-binary");
     public static final QName V3_CERT_ID_QNAME = QName.create(V3_PMA_CERT_NS, V3_CERT_REVISION, "id");
-
-}
+    
+    }

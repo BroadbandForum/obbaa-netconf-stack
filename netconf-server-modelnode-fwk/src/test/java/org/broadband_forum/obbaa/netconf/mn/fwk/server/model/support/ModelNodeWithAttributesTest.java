@@ -1,50 +1,44 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
 import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-
-import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 public class ModelNodeWithAttributesTest {
 
@@ -64,28 +58,26 @@ public class ModelNodeWithAttributesTest {
     private ModelNodeId m_numberModelNodeId = new ModelNodeId(Arrays.asList(
             new ModelNodeRdn("container", TestConstants.ANV_NAMESPACE,
                     "device-manager"), new ModelNodeRdn("container",
-                    TestConstants.DEVICE_HOLDER_NAMESPACE,
+                            TestConstants.DEVICE_HOLDER_NAMESPACE,
                     "device-holder"), new ModelNodeRdn("name",
-                    TestConstants.DEVICE_HOLDER_NAMESPACE, "100")));
+                            TestConstants.DEVICE_HOLDER_NAMESPACE, "100")));
     private ModelNodeId m_stringModelNodeId = new ModelNodeId(Arrays.asList(
             new ModelNodeRdn("container", TestConstants.ANV_NAMESPACE,
                     "device-manager"), new ModelNodeRdn("container",
-                    TestConstants.DEVICE_HOLDER_NAMESPACE,
+                            TestConstants.DEVICE_HOLDER_NAMESPACE,
                     "device-holder"), new ModelNodeRdn("name",
-                    TestConstants.DEVICE_HOLDER_NAMESPACE, "OLT1")));
+                            TestConstants.DEVICE_HOLDER_NAMESPACE, "OLT1")));
 
     @Before
     public void setUp() throws Exception {
 
-        m_schemaPath = SchemaPathBuilder.fromString("(http://example.com/ns/example-jukebox?revision=2015-02-27) , " +
-                "jukebox,"
+        m_schemaPath = SchemaPathBuilder.fromString("(http://example.com/ns/example-jukebox?revision=2015-02-27) , jukebox,"
                 + "library ,artist  ");
         m_modelNodeHelperRegistry = mock(ModelNodeHelperRegistry.class);
         m_subsystemRegistry = mock(SubSystemRegistry.class);
         m_schemaRegistry = mock(SchemaRegistry.class);
         m_modelNodeDSM = mock(ModelNodeDataStoreManager.class);
-        m_modelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath, m_numberModelNodeId,
-                m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
+        m_modelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath, m_numberModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
     }
 
     @Test
@@ -96,9 +88,7 @@ public class ModelNodeWithAttributesTest {
                         TestConstants.DEVICE_HOLDER_NAMESPACE,
                         "device-holder"), new ModelNodeRdn("name",
                         TestConstants.DEVICE_HOLDER_NAMESPACE, "100")));
-        ModelNodeWithAttributes m_otherModelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath,
-                m_otherNumberModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry,
-                m_modelNodeDSM);
+        ModelNodeWithAttributes m_otherModelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath, m_otherNumberModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
         int actual = m_modelNodeWithAttributes.compareTo(m_otherModelNodeWithAttributes);
         assertTrue(actual == 0);
     }
@@ -111,9 +101,7 @@ public class ModelNodeWithAttributesTest {
                         TestConstants.DEVICE_HOLDER_NAMESPACE,
                         "device-holder"), new ModelNodeRdn("name",
                         TestConstants.DEVICE_HOLDER_NAMESPACE, "artist")));
-        ModelNodeWithAttributes m_otherModelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath,
-                m_otherStringModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry,
-                m_modelNodeDSM);
+        ModelNodeWithAttributes m_otherModelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath, m_otherStringModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
         int actual = m_modelNodeWithAttributes.compareTo(m_otherModelNodeWithAttributes);
         assertTrue(actual < 0);
     }
@@ -126,19 +114,16 @@ public class ModelNodeWithAttributesTest {
                         TestConstants.DEVICE_HOLDER_NAMESPACE,
                         "device-holder"), new ModelNodeRdn("name",
                         TestConstants.DEVICE_HOLDER_NAMESPACE, "90")));
-        ModelNodeWithAttributes m_otherModelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath,
-                m_otherNumberModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry,
-                m_modelNodeDSM);
+        ModelNodeWithAttributes m_otherModelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath, m_otherNumberModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
         int actual = m_modelNodeWithAttributes.compareTo(m_otherModelNodeWithAttributes);
         assertTrue(actual > 0);
     }
 
     @Test
-    public void testListKeyOrder() {
+    public void testListKeyOrder(){
 
         // Case 1 : While setting the attributes in case of a list
-        ModelNodeId modelNodeId = new ModelNodeId("/container=device-manager/container=device-holder", TestConstants
-                .ANV_NAMESPACE);
+        ModelNodeId modelNodeId = new ModelNodeId("/container=device-manager/container=device-holder", TestConstants.ANV_NAMESPACE);
         DataSchemaNode listSchemaNode = mock(ListSchemaNode.class);
         when(m_schemaRegistry.getDataSchemaNode(m_schemaPath)).thenReturn(listSchemaNode);
 
@@ -152,7 +137,7 @@ public class ModelNodeWithAttributesTest {
         when(((ListSchemaNode)listSchemaNode).getKeyDefinition()).thenReturn(keyDefinition);
 
         ModelNodeWithAttributes modelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath,modelNodeId,
-            m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
+                m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
 
         Map<QName, ConfigLeafAttribute> unorderedAttributes = new HashMap<>();
         unorderedAttributes.put(leaf1QName, new GenericConfigAttribute(LEAF_1, TestConstants.ANV_NAMESPACE, "leaf1-value"));
@@ -189,7 +174,7 @@ public class ModelNodeWithAttributesTest {
         SchemaPath containerSchemaPath = mock(SchemaPath.class);
         when(m_schemaRegistry.getDataSchemaNode(containerSchemaPath)).thenReturn(containerSchemaNode);
         modelNodeWithAttributes = new ModelNodeWithAttributes(containerSchemaPath,modelNodeId,
-            m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
+                m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
         modelNodeWithAttributes.setAttributes(unorderedAttributes);
         assertArrayEquals(unorderedAttributes.keySet().toArray(), modelNodeWithAttributes.getAttributes().keySet().toArray());
 
@@ -203,5 +188,45 @@ public class ModelNodeWithAttributesTest {
         updatedAttributes.put(leaf3QName, new GenericConfigAttribute(LEAF_3, TestConstants.ANV_NAMESPACE, "leaf3-value"));
 
         assertEquals(updatedAttributes.keySet(), modelNodeWithAttributes.getAttributes().keySet());
+    }
+
+    @Test
+    public void testGetLastNodeDocWithKeys_EmptyDifferenceNodeID() throws ParserConfigurationException {
+
+        ModelNodeWithAttributes modelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath,null,
+                m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
+
+        assertNull(modelNodeWithAttributes.getLastNodeDocWithKeys(DocumentUtils.getNewDocument(), new ModelNodeId()));
+
+    }
+
+    @Test
+    public void testGetLastNodeDocWithKeys_ValidDepth() throws ParserConfigurationException, IOException, SAXException {
+
+        ModelNodeId listModelNodeId = new ModelNodeId("/container=abc/container=xyz/name=qwerty", "testns");
+
+        SchemaPath xyzListSchemaPath = SchemaPathBuilder.fromString("(testns?revision=2014-07-03)abc,xyz");
+        ListSchemaNode listSchemaNode = mock(ListSchemaNode.class);
+        when(m_schemaRegistry.getDataSchemaNode(xyzListSchemaPath)).thenReturn(listSchemaNode);
+        List<QName> keyQNames = new ArrayList<>();
+        keyQNames.add(QName.create("testns","name"));
+        when(listSchemaNode.getKeyDefinition()).thenReturn(keyQNames);
+        ModelNodeWithAttributes xyzListModelNode = new ModelNodeWithAttributes(xyzListSchemaPath,listModelNodeId,
+                m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
+        xyzListModelNode.setAttributes(Collections.singletonMap(keyQNames.get(0), new GenericConfigAttribute("name","testns","qwerty")));
+
+        SchemaPath abcContainerSchemaPath = SchemaPathBuilder.fromString("(testns?revision=2014-07-03)abc");
+        ModelNodeWithAttributes abcContainerModelNode = new ModelNodeWithAttributes(abcContainerSchemaPath,new ModelNodeId("/container=abc", "testns"),
+                m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
+
+        when(m_modelNodeDSM.findNode(Mockito.any(SchemaPath.class), Mockito.any(ModelNodeKey.class),Mockito.any(ModelNodeId.class))).thenReturn(abcContainerModelNode);
+        String expectedDom = "<abc xmlns=\"testns\">\n" +
+                                "<xyz>\n" +
+                                    "<name>qwerty</name>\n" +
+                                "</xyz>\n" +
+                            "</abc>\n";
+        assertXMLEquals(DocumentUtils.getDocumentElement(expectedDom), (Element) xyzListModelNode.getLastNodeDocWithKeys(DocumentUtils.getNewDocument(), listModelNodeId).getParentNode());
+
+
     }
 }

@@ -19,22 +19,22 @@ package org.broadband_forum.obbaa.netconf.persistence.jpa.query;
 public class QueryCondition {
 
     private String m_attributeName;
-
+    
     private QueryConditionOperator m_operator;
-
+    
     private Object m_value;
-
+    
     private Query m_query;
-
+    
     public QueryCondition() {
-
+        
     }
-
+    
     public QueryCondition(Query query) {
         m_query = query;
     }
-
-    public QueryCondition(String attributeName, QueryConditionOperator operator, Object value) {
+    
+    public QueryCondition (String attributeName, QueryConditionOperator operator, Object value) {
         this.m_attributeName = attributeName;
         this.m_operator = operator;
         this.m_value = value;
@@ -71,9 +71,9 @@ public class QueryCondition {
     public void setQuery(Query query) {
         m_query = query;
     }
-
+    
     @Override
-    public String toString() {
+    public String toString () {
         StringBuilder str = new StringBuilder();
         if (m_attributeName != null && m_operator != null && m_value != null) {
             str.append(QueryBuilder.getConditionQueryString(m_operator, m_attributeName, m_value, true));

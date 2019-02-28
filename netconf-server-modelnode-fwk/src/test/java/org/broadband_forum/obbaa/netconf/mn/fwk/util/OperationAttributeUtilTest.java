@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.util;
 
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
@@ -102,70 +86,60 @@ public class OperationAttributeUtilTest {
     @Test
     public void testGetOperation() throws NetconfMessageBuilderException {
         Document document = DocumentUtils.stringToDocument(DOC);
-        Element element = DocumentUtils.getChildElements(document.getDocumentElement(), "if:interfaces").get(0);
+        Element element = DocumentUtils.getChildElements(document.getDocumentElement(), "if:interfaces").get(0) ;
         assertEquals("merge", OperationAttributeUtil.getOperationAttribute(element));
 
-        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:tag").get(0);
+        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:tag").get(0) ;
         assertEquals("remove", OperationAttributeUtil.getOperationAttribute(element));
 
-        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:match-all").get(0);
+        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:match-all").get(0) ;
         assertEquals("merge", OperationAttributeUtil.getOperationAttribute(element));
 
         document = DocumentUtils.stringToDocument(DOC2);
-        element = DocumentUtils.getChildElements(document.getDocumentElement(), "if:interfaces").get(0);
+        element = DocumentUtils.getChildElements(document.getDocumentElement(), "if:interfaces").get(0) ;
         assertEquals("merge", OperationAttributeUtil.getOperationAttribute(element));
 
-        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:tag").get(0);
+        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:tag").get(0) ;
         assertEquals("create", OperationAttributeUtil.getOperationAttribute(element));
 
-        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:match-all").get(0);
+        element = DocumentUtils.getChildElements(document.getDocumentElement(), "bbf-subif-tag:match-all").get(0) ;
         assertEquals("merge", OperationAttributeUtil.getOperationAttribute(element));
     }
 
     @Test
-    public void testIsOppositeOperation() {
+    public void testIsOppositeOperation(){
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, EditConfigOperations.DELETE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, EditConfigOperations.REMOVE));
-        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, EditConfigOperations
-                .REPLACE));
+        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, EditConfigOperations.REPLACE));
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, EditConfigOperations.MERGE));
-        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, EditConfigOperations
-                .CREATE));
+        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, EditConfigOperations.CREATE));
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.CREATE, "blah"));
 
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.DELETE, EditConfigOperations.CREATE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.DELETE, EditConfigOperations.MERGE));
-        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.DELETE, EditConfigOperations
-                .REPLACE));
+        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.DELETE, EditConfigOperations.REPLACE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.DELETE, EditConfigOperations.REMOVE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.DELETE, EditConfigOperations.DELETE));
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.DELETE, "blah"));
 
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REMOVE, EditConfigOperations.CREATE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REMOVE, EditConfigOperations.MERGE));
-        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REMOVE, EditConfigOperations
-                .REPLACE));
+        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REMOVE, EditConfigOperations.REPLACE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REMOVE, EditConfigOperations.DELETE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REMOVE, EditConfigOperations.REMOVE));
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REMOVE, "blah"));
 
-        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations
-                .CREATE));
-        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations
-                .MERGE));
-        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations
-                .DELETE));
-        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations
-                .REMOVE));
-        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations
-                .REPLACE));
+        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations.CREATE));
+        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations.MERGE));
+        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations.DELETE));
+        assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations.REMOVE));
+        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, EditConfigOperations.REPLACE));
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.REPLACE, "blah"));
 
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.MERGE, EditConfigOperations.CREATE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.MERGE, EditConfigOperations.REMOVE));
         assertTrue(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.MERGE, EditConfigOperations.DELETE));
-        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.MERGE, EditConfigOperations
-                .REPLACE));
+        assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.MERGE, EditConfigOperations.REPLACE));
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.MERGE, EditConfigOperations.MERGE));
         assertFalse(OperationAttributeUtil.isAllowedOperation(EditConfigOperations.MERGE, "blah"));
 

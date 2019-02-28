@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.SchemaPathRegistrarTest.REF_SCHEMAPATH;
@@ -22,15 +6,11 @@ import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.Sche
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
 import static org.mockito.Mockito.mock;
 
 import org.apache.commons.jxpath.ri.compiler.Expression;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.AbstractDataStoreValidatorTest;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang.AbstractValidationTestSetup;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -40,21 +20,22 @@ import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.AbstractDataStoreValidatorTest;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 
 public class SchemaChildPathRegistrarTest extends AbstractDataStoreValidatorTest {
 
     protected static final String NAMESPACE = "urn:org:bbf:pma:extension:test";
 
     private static final QName SOME_CONTAINER_REF_LEAF = createQName("someContainerRefLeaf");
-    private static final SchemaPath SOME_CONTAINER_REF_LEAF_PATH = AbstractValidationTestSetup.buildSchemaPath(VALIDATION_SCHEMAPATH,
-            SOME_CONTAINER_REF_LEAF);
-
+    private static final SchemaPath SOME_CONTAINER_REF_LEAF_PATH = buildSchemaPath(VALIDATION_SCHEMAPATH, SOME_CONTAINER_REF_LEAF);
+    
 
     protected SchemaRegistry getSchemaRegistry() throws SchemaBuildException {
 
-        SchemaRegistry schemaRegistry = new SchemaRegistryImpl(TestUtil.getByteSources(getYang()), new NoLockService
-                ()) {
+        SchemaRegistry schemaRegistry =  new SchemaRegistryImpl(TestUtil.getByteSources(getYang()), Collections.emptySet(), Collections.emptyMap(), new NoLockService()) {
             @Override
             public String getMatchingPath(String path) {
                 String returnValue = null;
@@ -71,8 +52,8 @@ public class SchemaChildPathRegistrarTest extends AbstractDataStoreValidatorTest
             }
         };
         schemaRegistry.registerAppAllowedAugmentedPath("Module1", "/someAbs/validation", mock(SchemaPath.class));
-        schemaRegistry.registerAppAllowedAugmentedPath("Module1", "/someAbs", mock(SchemaPath.class));
-        schemaRegistry.registerAppAllowedAugmentedPath("Module1", "/extTest:someAbs", mock(SchemaPath.class));
+        schemaRegistry.registerAppAllowedAugmentedPath("Module1","/someAbs", mock(SchemaPath.class));
+        schemaRegistry.registerAppAllowedAugmentedPath("Module1","/extTest:someAbs", mock(SchemaPath.class));
         return schemaRegistry;
 
     }
@@ -87,8 +68,7 @@ public class SchemaChildPathRegistrarTest extends AbstractDataStoreValidatorTest
     }
 
     @Override
-    protected void loadDefaultXml() {
-    }
+    protected void loadDefaultXml() {}
 
     @Before
     public void setUp() throws ModelNodeInitException, SchemaBuildException {

@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.server.ssh.auth;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -33,6 +34,7 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
+import org.broadband_forum.obbaa.netconf.api.server.auth.AuthenticationResult;
 import org.broadband_forum.obbaa.netconf.api.server.auth.ClientAuthenticationInfo;
 import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
 
@@ -45,31 +47,30 @@ public class NetconfPasswordAuthenticatorTest {
 
     @Before
     public void setUp() {
-        SocketAddress inetSourceAddress = new InetSocketAddress("192.168.95.15", 9995);
-        SocketAddress inetDestinationAddress = new InetSocketAddress("192.168.95.16", 9996);
-        m_session = mock(ServerSession.class);
-        IoSession ioSession = mock(IoSession.class);
+        SocketAddress inetSourceAddress=new InetSocketAddress("192.168.95.15", 9995);
+        SocketAddress inetDestinationAddress=new InetSocketAddress("192.168.95.16", 9996);
+        m_session=mock(ServerSession.class);
+        IoSession ioSession=mock(IoSession.class);
         when(ioSession.getRemoteAddress()).thenReturn(inetSourceAddress);
         when(ioSession.getLocalAddress()).thenReturn(inetDestinationAddress);
         when(m_session.getIoSession()).thenReturn(ioSession);
         m_axsNetconfAuthenticationHandler = mock(NetconfServerAuthenticationHandler.class);
+        when(m_axsNetconfAuthenticationHandler .authenticate((ClientAuthenticationInfo) anyObject())).thenReturn(AuthenticationResult.failedAuthResult());
         m_authenticationListener = mock(AuthenticationListener.class);
-        m_netconfPasswordAuthenticator = new NetconfPasswordAuthenticator(m_axsNetconfAuthenticationHandler,
-                m_authenticationListener);
+        m_netconfPasswordAuthenticator = new NetconfPasswordAuthenticator(m_axsNetconfAuthenticationHandler, m_authenticationListener);
     }
 
     @Test
     public void testAuthenticate() {
         m_netconfPasswordAuthenticator.authenticate("admin", "admin", m_session);
-        verify(m_axsNetconfAuthenticationHandler, times(1)).authenticate((ClientAuthenticationInfo) argThat(new
-                ClientAuthenticationInfoArgumentMatcher()));
+        verify(m_axsNetconfAuthenticationHandler,times(1)).authenticate((ClientAuthenticationInfo) argThat(new ClientAuthenticationInfoArgumentMatcher()));
     }
-
+    
     @SuppressWarnings("rawtypes")
     class ClientAuthenticationInfoArgumentMatcher extends ArgumentMatcher {
-
+        
         public boolean matches(Object argument) {
-            ClientAuthenticationInfo clientAuthInfo = (ClientAuthenticationInfo) argument;
+            ClientAuthenticationInfo clientAuthInfo = (ClientAuthenticationInfo)argument;
             assertTrue(clientAuthInfo.getDestinationAddress().equals("192.168.95.16"));
             assertTrue(String.valueOf(clientAuthInfo.getDestinationPort()).equals("9996"));
             assertTrue(clientAuthInfo.getSourceAddress().equals("192.168.95.15"));
@@ -78,7 +79,7 @@ public class NetconfPasswordAuthenticatorTest {
             assertTrue(clientAuthInfo.getPassword().equals("admin"));
             return true;
         }
-
+        
     }
 
 }

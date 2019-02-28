@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><module xmlns="urn:ietf:params:xml:ns:yang:yin:1" xmlns:xdsl="urn:broadband-forum-org:yang:bbf-xdsl" xmlns:if="urn:ietf:params:xml:ns:yang:ietf-interfaces" xmlns:bbfift="urn:broadband-forum-org:yang:bbf-if-type" name="bbf-xdsl">
+    <yang-version value="1"/>
+    <namespace uri="urn:broadband-forum-org:yang:bbf-xdsl"/>
+    <prefix value="xdsl"/>
+    <import module="bbf-if-type">
+        <prefix value="bbfift"/>
+        <revision-date date="2015-12-22"/>
+    </import>
+    <import module="ietf-interfaces">
+        <prefix value="if"/>
+        <revision-date date="2014-05-08"/>
+    </import>
+    <organization>
+        <text>TBD</text>
+    </organization>
+    <contact>
+        <text>TBD</text>
+    </contact>
+    <description>
+        <text>A YANG module which defines management objects related to
+an interface which may support one or more DSL or G.fast
+technologies</text>
+    </description>
+    <revision date="2016-01-25"/>
+    <identity name="mode-fast">
+        <base name="xdsl-mode"/>
+        <description>
+            <text>ITU-T G.9701 G.fast</text>
+        </description>
+    </identity>
+    <identity name="mode-vdsl">
+        <base name="xdsl-mode"/>
+        <description>
+            <text>ITU-T G.993.2 VDSL2 or derived technology</text>
+        </description>
+    </identity>
+    <identity name="xdsl-mode">
+        <description>
+            <text>Base identity for xDSL modes</text>
+        </description>
+    </identity>
+    <typedef name="xdsl-mode-ref">
+        <type name="identityref">
+            <base name="xdsl-mode"/>
+        </type>
+        <description>
+            <text>Reference to an xDSL mode of operation</text>
+        </description>
+    </typedef>
+    <augment target-node="/if:interfaces/if:interface">
+        <when condition="if:type = 'bbfift:xdsl'"/>
+        <description>
+            <text>Data nodes for the configuration of xDSL lines.</text>
+        </description>
+        <container name="line">
+            <presence value="true"/>
+            <description>
+                <text>Line configuration data for xDSL interfaces.</text>
+            </description>
+            <leaf-list name="supported-mode">
+                <must condition="(count(../configured-mode) = 0) or (../configured-mode = ../supported-mode)">
+                    <description>
+                        <text>If configured modes of operation are specified, each
+mode must be part of the supported modes</text>
+                    </description>
+                </must>
+                <min-elements value="1"/>
+                <type name="xdsl-mode-ref"/>
+                <config value="false"/>
+                <description>
+                    <text>Supported mode(s) of operation</text>
+                </description>
+            </leaf-list>
+            <leaf-list name="configured-mode">
+                <type name="xdsl-mode-ref"/>
+                <description>
+                    <text>Configured mode(s) of operation. An empty list indicates
+that the configured mode is undetermined</text>
+                </description>
+            </leaf-list>
+        </container>
+    </augment>
+    <augment target-node="/if:interfaces-state/if:interface">
+        <when condition="if:type = 'bbfift:xdsl'"/>
+        <description>
+            <text>Data nodes for the operational state of xDSL lines.</text>
+        </description>
+        <container name="line">
+            <presence value="true"/>
+            <description>
+                <text>Line state data for FAST interfaces.</text>
+            </description>
+            <leaf name="operational-mode">
+                <type name="union">
+                    <type name="enumeration">
+                        <enum name="undetermined">
+                            <description>
+                                <text>The current mode of operation is undetermined. This
+is most likely due to the fact that G.hs has not
+completed the first time</text>
+                            </description>
+                        </enum>
+                    </type>
+                    <type name="xdsl-mode-ref"/>
+                </type>
+                <description>
+                    <text>Current mode of operation. Upon initialization, the mode
+will be undetermined until G.hs successfully completes
+for the first time.</text>
+                </description>
+            </leaf>
+        </container>
+    </augment>
+</module>

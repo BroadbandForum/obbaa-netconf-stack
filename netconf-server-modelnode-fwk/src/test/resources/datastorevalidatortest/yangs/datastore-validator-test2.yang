@@ -8,6 +8,8 @@ module datastore-validator-test {
 	
 	import dummy-extensions { prefix "anvext"; }
 	
+	import ietf-yang-schema-mount { prefix "yangmnt"; }
+	
 	revision "2015-12-14" {
 	      description "Initial version.";
 	}
@@ -29,10 +31,46 @@ module datastore-validator-test {
         container groupContainer1 {
             leaf groupContainerLeaf1 {
                type leafref {
-                   path "validation:validation/validation:validation";
+                   path "/validation:validation/validation:validation";
                 }
             }
         }
+    }
+    
+    grouping group2 {
+    	container container1 {
+    		leaf leaf1 {
+    			type leafref {
+    				path "/validation/xml-subtree/leaf1";
+    			}
+    		}
+    		
+    		leaf leaf2 {
+    			type string;
+    			must "count(current()/../leaf1) > 0";
+    		}
+    	}
+    }
+    
+    grouping group3 {
+        container groupContainer2 {
+        	leaf groupContainerLeaf2 {
+        		type leafref {
+        			path "/validation/validation";
+        		}
+        	}
+        	
+        	leaf groupContainerLeaf3 {
+        		must "number(.) > 0";
+        		type string;
+        	}
+        	
+        	leaf groupContainerLeaf4 {
+        		must "count(../groupContainerLeaf3) > 0";
+        		type string;
+        	}
+        }
+    	
     }
     
     grouping group-ref {
@@ -52,8 +90,89 @@ module datastore-validator-test {
     		type string;
     	}
     	
-		container xml-subtree {
+		list xml-subtree {
+			key plugType;
+			leaf plugType {
+				type string;
+			}
 			
+			leaf someString {
+				type string;
+			}
+			
+			leaf someString1 {
+				must "number(substring-after(current(),'.')) > 0 and number(substring-before(current(),'.')) > 5 and number(substring-before(substring-after(current()/../someString,'.'),'.')) < 10";
+				type string;
+			}
+
+			container testCurrentOnNonExistant {
+				must "current()/container1/leaf1 = 'test'";
+				
+				leaf leaf1 {
+					type string;
+				}
+				
+				container container1 {
+					leaf leaf1 {
+						type string;
+					}
+				}
+			}
+			container testRefLeafRemove {
+				presence "yes";
+				list list1 {
+					key name;
+					leaf name {type string;}
+					leaf type {type string;}
+
+					container ref {
+						leaf refType{
+							type string;
+							must "../../../list1[current()]/type = 'group'";
+						}
+						
+						leaf refType1 {
+							type string;
+							must "../../../list1[current()]/type = 'partition' and ../../../list1[current()]/ref/refType = ../refType"{
+						           error-message "must reference a partition and associated with same group";								
+							}
+						}
+						
+					}
+				}
+			}
+			
+			container schemaMountPoint {
+				yangmnt:mount-point mountPoint;
+			}
+			
+			container currentChildTest {
+				must "current()/leaf1 = 'leaf1' and current()/leaflist1 = 'a' and ../currentChildTest/leaflist1 = 'a'";
+				
+				leaf leaf1 {
+					type string;
+				}
+				
+				leaf-list leaflist1 {
+					type string;
+				}
+			}
+			
+			list dummyList {
+				key name;
+				
+				leaf name {
+					type string;
+				}
+				
+				container innerContainer{
+					config false;
+					leaf state {
+						type string;
+					}
+				}
+			}
+			                           
 	    	list orderByUser {
 	    		ordered-by user;
 	    		key key;
@@ -85,6 +204,7 @@ module datastore-validator-test {
 					max-elements 2;
 				}
 			}
+			
 			container multiContainer {
 				
 				leaf listKeyName {
@@ -124,7 +244,7 @@ module datastore-validator-test {
 					
 					choice choice-leaf {
 						case choice-leaf1 {
-							when "../../key1 < 10 ";
+							when "key1 < 10 ";
 							leaf choiceLeaf1 {
 								type int8;
 							}
@@ -137,7 +257,7 @@ module datastore-validator-test {
 							}
 						}
 						case choice-leaf2 {
-							when "../../key1 > 10 ";
+							when "key1 > 10 ";
 							leaf choiceLeaf2 {
 								type int8;
 							}
@@ -155,6 +275,31 @@ module datastore-validator-test {
 				}
 				
 			}
+	        
+	        container test-internal-request {
+	            
+	            list interface {
+	                key name;
+	                leaf name {
+	                    type string;
+	                }
+	                leaf type {
+	                    type string;
+	                }
+	                
+	                container traps {
+	                    leaf linkup-trap {
+	                        when "../../type = 'trapitf'";
+	                        type boolean;
+	                        default false;
+	                    }
+                        leaf other-trap {
+                            type boolean;
+                            default false;
+                        }
+	                }
+	            }
+	        }
 		}
 		list someList { //entity
 			
@@ -171,6 +316,12 @@ module datastore-validator-test {
 					type string;
 				}
 				
+				leaf someLeafrefKey {
+				    type leafref {
+                        path "/validation/someList/someKey";
+				    }
+				    
+				}
 				container childContainer { //xml tree
 					container stateCheck {
 						config false;
@@ -309,6 +460,14 @@ module datastore-validator-test {
 		}
     }
      
-    
+    rpc leafRefTest {
+        input {
+            leaf leaf1 {
+                type leafref {
+                    path "/validation:validation/validation:someList/validation:someKey";
+                }
+            }
+        }
+    }
 
 }

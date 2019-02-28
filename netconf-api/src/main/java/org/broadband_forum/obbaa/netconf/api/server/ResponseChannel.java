@@ -16,10 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.api.server;
 
+import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
+
+import java.util.concurrent.CompletableFuture;
 
 public interface ResponseChannel {
     void sendResponse(NetConfResponse response, AbstractNetconfRequest request) throws NetconfMessageBuilderException;
@@ -29,4 +31,6 @@ public interface ResponseChannel {
     boolean isSessionClosed();
 
     void markSessionClosed();
+
+    CompletableFuture<Boolean> getCloseFuture();
 }

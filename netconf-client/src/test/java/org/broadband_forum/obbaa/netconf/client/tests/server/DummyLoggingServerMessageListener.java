@@ -77,7 +77,7 @@ public class DummyLoggingServerMessageListener implements NetconfServerMessageLi
     }
 
     @Override
-    public List<Notification> onEditConfig(NetconfClientInfo info, EditConfigRequest req, NetConfResponse resp) {
+    public List<Notification>  onEditConfig(NetconfClientInfo info, EditConfigRequest req, NetConfResponse resp) {
         logRpc(info, req);
         getDummyOkResponse(req, resp);
         return null;
@@ -144,10 +144,10 @@ public class DummyLoggingServerMessageListener implements NetconfServerMessageLi
 
     }
 
-    @Override
-    public void onAction(NetconfClientInfo info, ActionRequest req, ActionResponse resp) {
+	@Override
+	public void onAction(NetconfClientInfo info, ActionRequest req, ActionResponse resp) {
         logRpc(info, req);
-        getDummyOkResponse(req, resp);
-    }
+        getDummyOkResponse(req, resp);		
+	}
 
 }

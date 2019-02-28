@@ -1,27 +1,9 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryVisitor;
+import java.util.Map;
 
 import org.opendaylight.yangtools.yang.model.api.AnyXmlSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ChoiceCaseNode;
+import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
@@ -31,7 +13,11 @@ import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
-import java.util.Map;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryVisitor;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 
 /**
  * Created by keshava on 12/9/15.
@@ -39,7 +25,6 @@ import java.util.Map;
 public class SubsystemDeployer implements SchemaRegistryVisitor {
     private final Map<SchemaPath, SubSystem> m_subSystems;
     private final SubSystemRegistry m_subsystemRegistry;
-
     public SubsystemDeployer(SubSystemRegistry subsystemRegistry, Map<SchemaPath, SubSystem> subSystems) {
         m_subsystemRegistry = subsystemRegistry;
         m_subSystems = subSystems;
@@ -47,22 +32,29 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
 
     @Override
     public void visitLeafListNode(String componentId, SchemaPath parentSchemaPath, LeafListSchemaNode leafListNode) {
-        registerSubsystem(leafListNode, componentId);
+        registerSubsystem(leafListNode,componentId);
     }
 
-    private void registerSubsystem(DataSchemaNode dataSchemaNode, String componentId) {
+    private void registerSubsystem(DataSchemaNode dataSchemaNode,String componentId) {
         SubSystem subSystem = getSubsystem(dataSchemaNode.getPath());
-        if (subSystem != null) {
+		if (subSystem == null && SchemaRegistryUtil.isMountPointEnabled()) {
+			SchemaPath parentPath = (SchemaPath) RequestScope.getCurrentScope()
+					.getFromCache(SchemaRegistryUtil.MOUNT_PATH);
+			if (parentPath != null) {
+				subSystem = m_subSystems.get(parentPath);
+			}
+		}
+        if(subSystem != null){
             m_subsystemRegistry.register(componentId, dataSchemaNode.getPath(), subSystem);
         }
     }
 
     private SubSystem getSubsystem(SchemaPath dataSchemaPath) {
         SubSystem subSystem = m_subSystems.get(dataSchemaPath);
-        if (subSystem != null) {
+        if(subSystem != null){
             return subSystem;
-        } else {
-            if (dataSchemaPath == null) {
+        }else{
+            if(dataSchemaPath == null){
                 return null;
             }
             return getSubsystem(dataSchemaPath.getParent());
@@ -82,17 +74,17 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
 */
     @Override
     public void visitLeafNode(String componentId, SchemaPath parentSchemaPath, LeafSchemaNode leafSchemaNode) {
-        registerSubsystem(leafSchemaNode, componentId);
+        registerSubsystem(leafSchemaNode,componentId);
     }
 
     @Override
-    public void visitChoiceCaseNode(String componentId, SchemaPath parentPath, ChoiceCaseNode choiceCaseNode) {
-        registerSubsystem(choiceCaseNode, componentId);
+    public void visitChoiceCaseNode(String componentId, SchemaPath parentPath, CaseSchemaNode choiceCaseNode) {
+        registerSubsystem(choiceCaseNode,componentId);
     }
 
     @Override
     public void visitChoiceNode(String componentId, SchemaPath parentPath, ChoiceSchemaNode choiceSchemaNode) {
-        for (ChoiceCaseNode caseNode : choiceSchemaNode.getCases()) {
+        for(CaseSchemaNode caseNode : choiceSchemaNode.getCases().values()){
             //let the helper be registered at the grand-parent level
             visitChoiceCaseNode(componentId, parentPath, caseNode);
         }
@@ -100,7 +92,7 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
 
     @Override
     public void visitAnyXmlNode(String componentId, SchemaPath parentPath, AnyXmlSchemaNode anyXmlSchemaNode) {
-        registerSubsystem(anyXmlSchemaNode, componentId);
+        registerSubsystem(anyXmlSchemaNode,componentId);
     }
 
     @Override
@@ -109,8 +101,7 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
     }
 
     @Override
-    public void visitContainerNode(String componentId, SchemaPath parentSchemaPath, ContainerSchemaNode
-            containerSchemaNode) {
+    public void visitContainerNode(String componentId, SchemaPath parentSchemaPath, ContainerSchemaNode containerSchemaNode) {
         registerSubsystem(containerSchemaNode, componentId);
     }
 

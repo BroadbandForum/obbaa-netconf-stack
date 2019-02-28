@@ -28,8 +28,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <pre>
  * Example:-
  * {@code
- *  {@literal @}YangContainer(name="jukebox", namespace = "http://example.com/ns/example-jukebox",
- *  revision="2014-07-03")
+ *  {@literal @}YangContainer(name="jukebox", namespace = "http://example.com/ns/example-jukebox", revision="2014-07-03")
  *  public class Jukebox  {
  *  ...
  *  }}
@@ -39,7 +38,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(TYPE)
 @Retention(RUNTIME)
 public @interface YangContainer {
-    String name() default "";
+	String name() default "";
 
     String namespace() default "";
 

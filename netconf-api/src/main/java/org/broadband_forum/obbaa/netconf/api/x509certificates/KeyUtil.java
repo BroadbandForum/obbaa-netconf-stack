@@ -23,7 +23,6 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.xml.bind.DatatypeConverter;
-
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
@@ -36,27 +35,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Utility class that helps prepare a Private Keys.
+ * Utility class that helps prepare a Private Keys. 
  * Created by keshava on 4/29/15.
  */
 public class KeyUtil {
-    private static final Pattern PRIVATE_KEY_PATTERN_WITH_DELIMITER = Pattern.compile("-+BEGIN\\s+" +
-            ".*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+"
+    private static final Pattern PRIVATE_KEY_PATTERN_WITH_DELIMITER = Pattern.compile("-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+"
             + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern PRIVATE_KEY_BINARY_PATTERN = Pattern.compile("([a-z0-9+/=\\r\\n]+)", Pattern
-            .CASE_INSENSITIVE);
+    private static final Pattern PRIVATE_KEY_BINARY_PATTERN = Pattern.compile("([a-z0-9+/=\\r\\n]+)", Pattern.CASE_INSENSITIVE);
 
     /**
      * Convert a private key from base 64 encoded string to A PrivateKey object.
-     *
+     * 
      * @param encryptedPrivateKeyString
      * @param privateKeyPassword
      * @return
      * @throws KeyException
      */
-    public static PrivateKey getPrivateKey(String encryptedPrivateKeyString, String privateKeyPassword) throws
-            KeyException {
+    public static PrivateKey getPrivateKey(String encryptedPrivateKeyString, String privateKeyPassword) throws KeyException {
         ByteArrayPrivateKey byteArrayPrivateKey = getByteArrayPrivateKeyFromBase64String(encryptedPrivateKeyString);
         PKCS8EncodedKeySpec pkcs8EncodedKeySpec = getPkcs8EncodedKeySpec(byteArrayPrivateKey, privateKeyPassword);
         PrivateKey privateKey = getPrivateKeyFromKeySpec(pkcs8EncodedKeySpec);
@@ -66,14 +62,13 @@ public class KeyUtil {
 
     /**
      * Convert a private key from Delimited Certificate String to A PrivateKey object. FOR UT purpose
-     *
+     * 
      * @param encryptedPrivateKeyString
      * @param privateKeyPassword
      * @return
      * @throws KeyException
      */
-    public static PrivateKey getPrivateKeyWithDelimiter(String encryptedPrivateKeyString, String privateKeyPassword)
-            throws KeyException {
+    public static PrivateKey getPrivateKeyWithDelimiter(String encryptedPrivateKeyString, String privateKeyPassword) throws KeyException {
         ByteArrayPrivateKey byteArrayPrivateKey = getByteArrayPrivateKeyFromDelimitedString(encryptedPrivateKeyString);
         PKCS8EncodedKeySpec pkcs8EncodedKeySpec = getPkcs8EncodedKeySpec(byteArrayPrivateKey, privateKeyPassword);
         PrivateKey privateKey = getPrivateKeyFromKeySpec(pkcs8EncodedKeySpec);
@@ -103,8 +98,7 @@ public class KeyUtil {
         return privateKey;
     }
 
-    private static PKCS8EncodedKeySpec getPkcs8EncodedKeySpec(ByteArrayPrivateKey byteArrayPrivateKey, String
-            privateKeyPassword)
+    private static PKCS8EncodedKeySpec getPkcs8EncodedKeySpec(ByteArrayPrivateKey byteArrayPrivateKey, String privateKeyPassword)
             throws KeyException {
         PKCS8EncodedKeySpec pkcs8EncodedKeySpec = null;
         if (privateKeyPassword == null || privateKeyPassword.isEmpty()) {
@@ -113,8 +107,7 @@ public class KeyUtil {
         }
 
         try {
-            EncryptedPrivateKeyInfo encryptedPrivateKeyInfo = new EncryptedPrivateKeyInfo(byteArrayPrivateKey
-                    .getBytes());
+            EncryptedPrivateKeyInfo encryptedPrivateKeyInfo = new EncryptedPrivateKeyInfo(byteArrayPrivateKey.getBytes());
 
             SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(encryptedPrivateKeyInfo.getAlgName());
             char[] privateKeyPasswordChars = privateKeyPassword.toCharArray();
@@ -134,7 +127,7 @@ public class KeyUtil {
 
     /**
      * Convert a private key from base 64 encoded string to A PrivateKey object.
-     *
+     * 
      * @param privateKey
      * @return
      * @throws KeyException
@@ -148,8 +141,7 @@ public class KeyUtil {
         return getByteArrayPrivateKeyFromBase64String(matcher.group(1));
     }
 
-    public static ByteArrayPrivateKey getByteArrayPrivateKeyFromBase64String(String privateKeyBase64String) throws
-            KeyException {
+    public static ByteArrayPrivateKey getByteArrayPrivateKeyFromBase64String(String privateKeyBase64String) throws KeyException {
         Matcher matcher = PRIVATE_KEY_BINARY_PATTERN.matcher(privateKeyBase64String.trim());
         if (!matcher.matches()) {
             throw new KeyException("Invalid private key found " + privateKeyBase64String);

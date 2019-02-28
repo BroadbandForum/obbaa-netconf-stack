@@ -119,6 +119,15 @@ module datastore-derived-from {
 						type string;
 					}
 				}
+				
+				leaf type {
+					type string;
+				}
+			}
+		
+			container non-prefix-group-from-other-yang {
+				presence "yes";
+				uses validation:group2;
 			}
 		}
 	}
@@ -180,4 +189,32 @@ module datastore-derived-from {
 			}
     	}
     }
+	
+    augment "/validation:validation/validation:xml-subtree/augmentTest/list1" {
+    	
+    	when "validation:type='dsl'";
+    	
+        container test-dsl {
+        }
+    }
+    
+    augment "/validation:validation/validation:xml-subtree/augmentTest/list1" {
+    	
+    	when "validation:type='vlan'";
+    	
+        container test-vlan {
+        	must "../validation:type !='vlan'";
+        	leaf a{
+        		type int32;
+        		default 1;
+        	}
+        	
+        }
+    }
+    
+    rpc ImportGroupingTest {
+        input {
+         uses validation:group3;  
+        }
+       }
 }

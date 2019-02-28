@@ -27,8 +27,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 public @interface RpcArg {
-    //Java 8 seems to have a method named getParameter, if that is the case we can try to get the parameter name and
-    // use that as default
+    //Java 8 seems to have a method named getParameter, if that is the case we can try to get the parameter name and use that as default
     // RPC Arg name, but even there, there is a method isNamePresent() wgich makes me think its not always available.
     String value();
 

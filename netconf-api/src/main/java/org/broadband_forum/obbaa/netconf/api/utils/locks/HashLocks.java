@@ -23,6 +23,7 @@ import java.util.Set;
  * Multi-lock based on Object Hash. "Generics" just to have compile-time safety
  * when multiple instances of this class are in use to protect different
  * contexts.
+ *
  */
 public class HashLocks<T> {
 
@@ -33,7 +34,8 @@ public class HashLocks<T> {
      * Grants lock if the {@code object} is not already present in locked
      * Objects list.
      *
-     * @param object Object on which the lock is sought
+     * @param object
+     *            Object on which the lock is sought
      */
     public void lockOn(T object) {
         synchronized (this) {
@@ -51,7 +53,8 @@ public class HashLocks<T> {
     /**
      * Revokes the lock, if it was granted in past.
      *
-     * @param object Object on which the lock was acquired.
+     * @param object
+     *            Object on which the lock was acquired.
      */
     public void unlock(T object) {
         synchronized (this) {

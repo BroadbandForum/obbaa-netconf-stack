@@ -1,0 +1,19 @@
+module test-pattern {
+    yang-version "1.1";
+
+    namespace "urn:opendaylight:test-pattern";
+
+    prefix "test-pattern";
+
+    revision "2018-02-06";
+
+    container test-pattern-container {
+        leaf test-pattern-leaf {
+            type string {
+                length "0..2147483647";
+
+                pattern '(\S+)';
+            }
+        }
+    }
+}

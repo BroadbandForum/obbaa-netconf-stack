@@ -20,9 +20,9 @@ import java.io.Serializable;
 
 public class SingerPK implements Serializable {
 
-    private static final long serialVersionUID = -1590041170827389396L;
-    String singer;
-    String parentId;
+	private static final long serialVersionUID = -1590041170827389396L;
+	String singer;
+	String parentId;
 
     @Override
     public boolean equals(Object o) {

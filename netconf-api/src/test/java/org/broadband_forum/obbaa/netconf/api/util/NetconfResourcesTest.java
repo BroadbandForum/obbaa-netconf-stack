@@ -26,18 +26,15 @@ public class NetconfResourcesTest {
 
     @Test
     @Ignore("this is time zon dependent")
-    public void testDateTmeFormatter() {
-        assertEquals("1970-01-03T19:52:14.783Z", NetconfResources.parseDateTime("1970-01-03T19:52:14.783117+00:00")
-                .toString());
-        assertEquals("1970-01-03T14:22:14.003Z", NetconfResources.parseDateTime("1970-01-03T19:52:14.003117+05:30")
-                .toString());
-        assertEquals("2005-01-03T19:03:09.000Z", NetconfResources.parseDateTime("2005-01-03T19:03:09+00:00").toString
-                ());
+    public void testDateTmeFormatter(){
+        assertEquals("1970-01-03T19:52:14.783Z", NetconfResources.parseDateTime("1970-01-03T19:52:14.783117+00:00").toString());
+        assertEquals("1970-01-03T14:22:14.003Z", NetconfResources.parseDateTime("1970-01-03T19:52:14.003117+05:30").toString());
+        assertEquals("2005-01-03T19:03:09.000Z", NetconfResources.parseDateTime("2005-01-03T19:03:09+00:00").toString());
     }
 
     @Test
     @Ignore("this is time zon dependent")
-    public void testPrint() {
+    public void testPrint(){
         DateTime dateTime = NetconfResources.parseDateTime("1970-01-03T19:52:14.783117+00:00");
         assertEquals("1970-01-03T19:52:14.783+00:00", NetconfResources.printWithMillis(dateTime));
         assertEquals("1970-01-03T19:52:14+00:00", NetconfResources.printWithoutMillis(dateTime));

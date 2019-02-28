@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="0">
+    <edit-config>
+        <target>
+            <running/>
+        </target>
+        <config>
+            <policy-2:policy-engine-2 xmlns:policy-2="http://www.test-company.com/solutions/policy-engine-2">
+                <policy-2:policy-2 xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+                    <policy-2:name>test123</policy-2:name>
+                    <policy-2:status>active</policy-2:status>
+                </policy-2:policy-2>
+            </policy-2:policy-engine-2>
+        </config>
+    </edit-config>
+</rpc>

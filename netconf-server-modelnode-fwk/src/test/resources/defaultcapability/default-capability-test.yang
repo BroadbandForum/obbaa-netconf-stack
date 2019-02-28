@@ -1,6 +1,6 @@
 module default-capability-test {
 
-    namespace "urn:com:test:pma:caps";
+    namespace "urn:org:bbf:pma:caps";
     prefix "caps";
     
     import yang-file {

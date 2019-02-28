@@ -1,26 +1,10 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import static org.broadband_forum.obbaa.netconf.api.messages.PojoToDocumentTransformer.XMLNS;
 import static org.broadband_forum.obbaa.netconf.api.messages.PojoToDocumentTransformer.XMLNS_NAMESPACE;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 
 public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparable<IdentityRefConfigAttribute> {
@@ -32,11 +16,9 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
     private final String m_identityRefNS;
     private final String m_identityRefPrefix;
 
-    public IdentityRefConfigAttribute(String identityRefNs, String identityRefPrefix, String attributeLocalName,
-                                      String attributeValue,
+    public IdentityRefConfigAttribute(String identityRefNs, String identityRefPrefix, String attributeLocalName, String attributeValue,
                                       String attributeNamespace) {
-        m_domValue = constructIdentityRefElement(identityRefNs, identityRefPrefix, attributeLocalName,
-                attributeValue, attributeNamespace);
+        m_domValue = constructIdentityRefElement(identityRefNs, identityRefPrefix, attributeLocalName, attributeValue, attributeNamespace);
 
         m_attributeLocalName = attributeLocalName;
         m_attributeValue = attributeValue;
@@ -46,12 +28,10 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
     }
 
     public IdentityRefConfigAttribute(String identityRefNs, String identityRefPrefix, Element element) {
-        this(identityRefNs, identityRefPrefix, element.getLocalName(), element.getTextContent(), element
-                .getNamespaceURI());
+        this(identityRefNs, identityRefPrefix, element.getLocalName(), element.getTextContent(), element.getNamespaceURI());
     }
 
-    private Element constructIdentityRefElement(String identityRefNs, String identityRefPrefix, String
-            attributeLocalName, String
+    private Element constructIdentityRefElement(String identityRefNs, String identityRefPrefix, String attributeLocalName, String
             attributeValue, String attributeNamespace) {
         Document document = ConfigAttributeFactory.getDocument();
         if (attributeNamespace != null) {
@@ -72,6 +52,18 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
     }
 
     @Override
+    public Element getDOMValue(final String namespace, final String prefix) {
+        if (m_attributeNS.equals(namespace)) {
+            if (m_identityRefNS.equals(namespace)) {
+                m_domValue.setPrefix(prefix);
+            } else {
+                m_domValue.setPrefix("");
+            }
+        }
+        return m_domValue;
+    }
+
+    @Override
     public String getStringValue() {
         return m_domValue.getTextContent().trim();
     }
@@ -79,6 +71,10 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
     @Override
     public String getNamespace() {
         return m_identityRefNS;
+    }
+
+    public String getNamespacePrefix() {
+        return m_identityRefPrefix;
     }
 
     @Override

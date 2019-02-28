@@ -20,41 +20,41 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.Notification;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.opendaylight.yangtools.yang.common.QName;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
+import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 /**
  * NotificationService represents Central Notification Processor
- * <p>
+ * 
  * <pre>
- * NotificationService is responsible for
+ * NotificationService is responsible for 
  *  1. Validating the create-subscription request  such as start, stop time and active Subscription already exists
  *  2. Delegate valid subscription request to a NotificationStream
  *  3. Forwarding the notification to the specified NotificationStream and also to the default NETCONF Stream
  *  4. Logging Notifications to Notification Log Service
  * </pre>
- * <p>
+ * 
  * Created by pregunat on 12/14/15.
  */
 public interface NotificationService {
-
+    
     public static final String SEND_NOTIFICATION_METHOD = "sendNotification";
 
     public boolean isActiveSubscription(NetconfClientInfo clientInfo);
 
     public void createSubscription(NetconfClientInfo clientInfo, CreateSubscriptionRequest createSubscriptionRequest,
-                                   ResponseChannel responseChannel);
+            ResponseChannel responseChannel);
 
     public void sendNotification(String streamName, Notification notification);
-
+    
     public NotificationStream getDefaultNotificationStream();
 
     public NotificationStream getNotificationStream(String streamName);
@@ -63,7 +63,7 @@ public interface NotificationService {
 
     /**
      * It is called when session is closed or notification is failed to send to a specific client
-     *
+     * 
      * @param clientInfo
      */
     public void closeSubscription(NetconfClientInfo clientInfo);
@@ -72,29 +72,29 @@ public interface NotificationService {
 
     public void unregisterCallBack(Set<QName> notificationTypes);
 
-    public void executeCallBack(Notification notification, Object synchronizedId);
-
+    public void executeCallBack(Notification notification, NotificationContext context);
+    
     public boolean isNotificationCallbackRegistered(QName qname, String moduleCapString);
 
-    public NetConfResponse createSubscriptionWithCallback(NetconfClientSession clientSession, String
-            timeOfLastSentEvent,
-                                                          NotificationListener subscriber, Object synchronizedId);
+    public NetConfResponse createSubscriptionWithCallback(NetconfClientSession clientSession, String timeOfLastSentEvent,
+            NotificationListener subscriber, Object synchronizedId);
 
-    public NetConfResponse createSubscriptionWithCallback(NetconfClientSession clientSession, String
-            timeOfLastSentEvent,
-                                                          NotificationListener subscriber, Object synchronizedId,
-                                                          boolean isReplaySupported);
+    public NetConfResponse createSubscriptionWithCallback(NetconfClientSession clientSession, String timeOfLastSentEvent,
+            NotificationListener subscriber, Object synchronizedId, boolean isReplaySupported);
 
     public boolean isNotificationSupported(NetconfClientSession clientSession);
 
-    public boolean isReplaySupported(NetconfClientSession clientSession) throws NetconfMessageBuilderException,
-            InterruptedException,
+    public boolean isReplaySupported(NetconfClientSession clientSession) throws NetconfMessageBuilderException, InterruptedException,
             ExecutionException;
-
+    
     public int getThresholdForPersistTimeLastSentEvent();
-
+    
     public boolean isSynchronizingId(Object synchronizedId);
-
+    
     public boolean isReplayPossible(NetconfClientSession clientSession, String startTime);
+
+	public List<NotificationCallBackInfo> getNotificationCallBacks();
+
+	public void unregisterCallBackInfo(NotificationCallBackInfo notificationCallBackInfo);
 
 }

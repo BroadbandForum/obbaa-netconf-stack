@@ -17,11 +17,9 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 public enum NetconfRpcErrorInfo {
-    BadAttribute("bad-attribute"), BadElement("bad-element"), BadNamespace("bad-namespace"), SessionId("session-id"),
-    OkElement(
-            "ok-element"), ErrElement("err-element"), NoopElement("noop-element"), MissingLeaf("missing-leaf"),
-    MissingChoice(
-            "missing-choice"), MissingAnyxml("any-xml"),;
+    BadAttribute("bad-attribute"), BadElement("bad-element"), BadNamespace("bad-namespace"), SessionId("session-id"), OkElement(
+            "ok-element"), ErrElement("err-element"), NoopElement("noop-element"), MissingLeaf("missing-leaf"), MissingChoice(
+            "missing-choice"), MissingAnyxml("any-xml"), ;
     private String m_value;
 
     private NetconfRpcErrorInfo(String value) {

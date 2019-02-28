@@ -19,13 +19,15 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Element;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 /**
  * Inner {@code<config>} content of a Netconf {@code<edit-config>} request.
+ * 
  *
- * @author keshava
+ * 
  */
 public class EditConfigElement {
 

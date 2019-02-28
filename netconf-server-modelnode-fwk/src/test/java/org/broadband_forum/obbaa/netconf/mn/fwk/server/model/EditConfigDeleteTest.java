@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
@@ -25,7 +9,6 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2.Jukebox;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -43,39 +26,40 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorSeverity;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2.Jukebox;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 
 public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
 
-    private final static Logger LOGGER = Logger.getLogger(EditConfigDeleteTest.class);
+	private final static Logger LOGGER = Logger.getLogger(EditConfigDeleteTest.class);
 
-    private NetconfClientInfo m_clientInfo = new NetconfClientInfo("unit-test", 1);
-
+	private NetconfClientInfo m_clientInfo = new NetconfClientInfo("unit-test", 1);
+	
     @Before
-    public void initServer() throws SchemaBuildException {
+	public void initServer() throws SchemaBuildException {
         super.setup();
-        Jukebox.EMPTY_LIBRARY_NOT_ALLOWED = false;
-    }
+		Jukebox.EMPTY_LIBRARY_NOT_ALLOWED = false;
+	}
 
 
-    @Test
-    public void testDeleteLibrary() {
-        EditConfigRequest request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(loadAsXml("/delete-config-delete-library.xml")));
-        request.setMessageId("1");
-        NetConfResponse response = new NetConfResponse().setMessageId("1");
-        m_server.onEditConfig(m_clientInfo, request, response);
-        //assert Ok response
+	@Test
+	public void testDeleteLibrary(){
+		EditConfigRequest request = new EditConfigRequest()
+											.setTargetRunning()
+											.setTestOption(EditConfigTestOptions.SET)
+											.setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+											.setConfigElement(new EditConfigElement()
+																		.addConfigElementContent(loadAsXml("/delete-config-delete-library.xml")));
+		request.setMessageId("1");
+		NetConfResponse response = new NetConfResponse().setMessageId("1");
+		m_server.onEditConfig(m_clientInfo, request, response);
+		//assert Ok response
         assertOkResponse(response);
-
-        //do a get-config to be sure
-        verifyGetConfig(null, "/empty-jukebox.xml");
-    }
-
+		
+		//do a get-config to be sure
+		verifyGetConfig(null, "/empty-jukebox.xml");
+	}
+	
 	/*@Test
     public void testDeleteLibraryRollsback(){
 	    //make the delete fail
@@ -85,8 +69,7 @@ public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
                                             .setTestOption(EditConfigTestOptions.SET)
                                             .setErrorOption(AxsEditConfigErrorOptions.ROLLBACK_ON_ERROR)
                                             .setConfigElement(new AxsEditConfigElement()
-                                                                        .setConfigElementContent(loadAsXml
-                                                                        ("/delete-config-delete-library.xml")));
+                                                                        .setConfigElementContent(loadAsXml("/delete-config-delete-library.xml")));
 		request.setMessageId("1");
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
@@ -98,22 +81,22 @@ public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
     }*/
 
     @Test
-    public void testDeleteLibraryGivesRpcError() {
+    public void testDeleteLibraryGivesRpcError(){
         EditConfigRequest request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(loadAsXml("/delete-config-delete-library.xml")));
+                                            .setTargetRunning()
+                                            .setTestOption(EditConfigTestOptions.SET)
+                                            .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+                                            .setConfigElement(new EditConfigElement()
+                                                                        .addConfigElementContent(loadAsXml("/delete-config-delete-library.xml")));
         request.setMessageId("1");
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
         //assert Ok response
         assertOkResponse(response);
-
+        
         //do a get-config to be sure
         verifyGetConfig(null, "/empty-jukebox.xml");
-
+        
         response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
         //assert not Ok response
@@ -123,34 +106,34 @@ public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
         assertEquals(NetconfRpcErrorTag.DATA_MISSING, rpcError.getErrorTag());
         assertEquals(NetconfRpcErrorType.Application, rpcError.getErrorType());
         assertEquals(NetconfRpcErrorSeverity.Error, rpcError.getErrorSeverity());
-
+        
     }
-
-    @Test
-    public void testDeleteAlbumCircus() {
-        EditConfigRequest request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(loadAsXml("/delete-album-circus.xml")));
-        request.setMessageId("1");
-        NetConfResponse response = new NetConfResponse().setMessageId("1");
-        m_server.onEditConfig(m_clientInfo, request, response);
-        //assert Ok response
+	
+	@Test
+	public void testDeleteAlbumCircus(){
+		EditConfigRequest request = new EditConfigRequest()
+											.setTargetRunning()
+											.setTestOption(EditConfigTestOptions.SET)
+											.setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+											.setConfigElement(new EditConfigElement()
+																		.addConfigElementContent(loadAsXml("/delete-album-circus.xml")));
+		request.setMessageId("1");
+		NetConfResponse response = new NetConfResponse().setMessageId("1");
+		m_server.onEditConfig(m_clientInfo, request, response);
+		//assert Ok response
         assertOkResponse(response);
 
         //do a get-config to be sure
-        verifyGetConfig(null, "/without-circus.xml");
-
-
-    }
+		verifyGetConfig(null, "/without-circus.xml");
+		
+		
+	}
 
     private void assertOkResponse(NetConfResponse response) {
         try {
             TestUtil.assertXMLEquals("/ok-response.xml", response);
         } catch (SAXException | IOException e) {
-            LOGGER.error("test comparison failed", e);
+            LOGGER.error("test comparison failed" , e);
             fail("test comparison failed" + e.getMessage());
         }
     }
@@ -163,8 +146,7 @@ public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
                                             .setTestOption(EditConfigTestOptions.SET)
                                             .setErrorOption(AxsEditConfigErrorOptions.STOP_ON_ERROR)
                                             .setConfigElement(new AxsEditConfigElement()
-                                                                        .setConfigElementContent(loadAsXml
-                                                                        ("/delete-album-circus.xml")));
+                                                                        .setConfigElementContent(loadAsXml("/delete-album-circus.xml")));
 		request.setMessageId("1");
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
@@ -176,15 +158,15 @@ public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
         
         
     }*/
-
-    @Test
-    public void testDeleteAlbumCircusGivesRpcError() {
+	
+	@Test
+    public void testDeleteAlbumCircusGivesRpcError(){
         EditConfigRequest request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(loadAsXml("/delete-album-circus.xml")));
+                                            .setTargetRunning()
+                                            .setTestOption(EditConfigTestOptions.SET)
+                                            .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+                                            .setConfigElement(new EditConfigElement()
+                                                                        .addConfigElementContent(loadAsXml("/delete-album-circus.xml")));
         request.setMessageId("1");
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
@@ -193,7 +175,7 @@ public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
 
         //do a get-config to be sure
         verifyGetConfig(null, "/without-circus.xml");
-
+        
         response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
         //assert not Ok response
@@ -206,30 +188,30 @@ public class EditConfigDeleteTest extends AbstractEditConfigTestSetup {
     }
 
     private void verifyGetConfig(String filterInput, String expectedOutput) {
-        NetconfClientInfo client = new NetconfClientInfo("test", 1);
+		NetconfClientInfo client = new NetconfClientInfo("test", 1);
 
-        GetConfigRequest request = new GetConfigRequest();
-        request.setMessageId("1");
-        request.setSource("running");
-        if (filterInput != null) {
-            NetconfFilter filter = new NetconfFilter();
-            // we have two variants for the select node in here
-            filter.addXmlFilter(loadAsXml(filterInput));
-            request.setFilter(filter);
-        }
+		GetConfigRequest request = new GetConfigRequest();
+		request.setMessageId("1");
+		request.setSource("running");
+		if (filterInput != null) {
+			NetconfFilter filter = new NetconfFilter();
+			// we have two variants for the select node in here
+			filter.addXmlFilter(loadAsXml(filterInput));
+			request.setFilter(filter);
+		}
 
-        NetConfResponse response = new NetConfResponse();
-        response.setMessageId("1");
+		NetConfResponse response = new NetConfResponse();
+		response.setMessageId("1");
 
-        m_server.onGetConfig(client, request, response);
+		m_server.onGetConfig(client, request, response);
 
-        LOGGER.info("Actual:: " + responseToString(response));
+		LOGGER.info("Actual:: "+responseToString(response));
         try {
             TestUtil.assertXMLEquals(expectedOutput, response);
         } catch (SAXException | IOException e) {
-            LOGGER.error("test comparison failed", e);
+            LOGGER.error("test comparison failed" , e);
             fail("test comparison failed" + e.getMessage());
         }
-    }
+	}
 
 }

@@ -28,7 +28,14 @@ module bbf-xdsl {
     reference
       "TBD";
   }
-  
+
+  typedef data-rate {
+    type uint32;
+    units "1000 bit/second";
+    description
+      "Data rate in kbps.";
+  }
+
   identity xdsl-mode {
     description
       "Base identity for xDSL modes";
@@ -89,6 +96,26 @@ module bbf-xdsl {
         description
           "Configured mode(s) of operation. An empty list indicates
            that the configured mode is undetermined";
+      }
+
+      leaf minimum-expected-throughput {
+        type data-rate;
+        default 0;
+        description
+          "Defines the value of the minimum expected throughput (see
+           clause 11.4.2.1/G.9701).";
+        reference
+          "ITU-T G.997.2 clause 7.2.1.2 (MINETR).";
+      }
+
+      leaf maximum-expected-throughput {
+        type bbfift:data-rate;
+        default 0;
+        description
+          "Defines the value of the minimum expected throughput (see
+           clause 11.4.2.1/G.9701).";
+        reference
+          "ITU-T G.997.2 clause 7.2.1.2 (MINETR).";
       }
     }
   }

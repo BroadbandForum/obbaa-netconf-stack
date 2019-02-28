@@ -22,8 +22,7 @@ import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
 
 public interface CreateSubscriptionRpcHandler extends RpcRequestHandler {
 
-    public void processRequest(final NetconfClientInfo clientInfo, final NetconfRpcRequest request, final
-    ResponseChannel responseChannel)
+    public void processRequest(final NetconfClientInfo clientInfo, final NetconfRpcRequest request, final ResponseChannel responseChannel)
             throws RpcProcessException;
 
 }

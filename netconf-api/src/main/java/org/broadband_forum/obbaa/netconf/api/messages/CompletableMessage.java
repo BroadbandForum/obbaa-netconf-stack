@@ -19,7 +19,7 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import java.util.concurrent.CompletableFuture;
 
 public interface CompletableMessage {
-
+    
     public CompletableFuture<String> getMessageSentFuture();
 
 }

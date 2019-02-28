@@ -17,13 +17,12 @@
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
 import javax.net.ssl.X509TrustManager;
-
 import java.util.List;
 
 /**
  * Created by keshava on 2/16/16.
  */
-public interface DynamicX509TrustManager extends X509TrustManager {
+public interface DynamicX509TrustManager extends X509TrustManager{
     void initTrustManager(List<String> trustedCaCertificates) throws TrustManagerInitException;
 
     void initTrustManager(String caCertificateFilePath) throws TrustManagerInitException;

@@ -18,9 +18,9 @@ package org.broadband_forum.obbaa.netconf.stack.api.annotations;
 
 /**
  * GENERIC_CONFIG_ATTRIBUTE → this is to be used for all types except IdentityRef OR Instance identifier
- * <p>
+ *
  * IDENTITY_REF_CONFIG_ATTRIBUTE → this is to be used for IdentityRef
- * <p>
+ *
  * INSTANCE_IDENTIFIER_CONFIG_ATTRIBUTE -> This is to be used for Instance identifier
  */
 public enum AttributeType {

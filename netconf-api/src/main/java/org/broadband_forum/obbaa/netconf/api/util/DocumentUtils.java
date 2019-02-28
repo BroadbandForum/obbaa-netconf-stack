@@ -45,6 +45,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -56,18 +57,20 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
-
 import com.sun.org.apache.xml.internal.serialize.OutputFormat;
 import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 
 /**
  * Utility class to work with {@link Document}
+ * 
  *
- * @author keshava
+ * 
  */
 public class DocumentUtils {
     private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
+    public static final String NAME_NODE = "name";
+    public static final String COLON = ":";
+    public static final String SEPARATED = "/";
     private static DocumentUtils c_instance = new DocumentUtils();
     private static final Logger LOGGER = Logger.getLogger(DocumentUtils.class);
 
@@ -99,7 +102,10 @@ public class DocumentUtils {
             return getChildNodeByName(request, NetconfResources.RPC, NetconfResources.NETCONF_RPC_NS_1_0)
                     .getAttributes().getNamedItem(NetconfResources.MESSAGE_ID).getNodeValue();
         } catch (Exception e) {
-            LOGGER.error("Error while parsing messageId from Rpc Document");
+//            Changed logger to debug.
+//            If messageId is not set here, it will be set in InternalNetconfClientImpl::assignIdAndSend.
+//            There is no functional impact.
+            LOGGER.debug("Error while parsing messageId from Rpc Document");
             return null;
         }
     }
@@ -138,40 +144,40 @@ public class DocumentUtils {
 
     public Set<String> getCapsFromHelloMessage(Document responseDoc) {
         Set<String> capsSet = new HashSet<String>();
-        Node caps = getChildNodeByName(responseDoc.getDocumentElement(), NetconfResources.CAPABILITIES,
-                NetconfResources.NETCONF_RPC_NS_1_0);
+        Node caps = getChildNodeByName(responseDoc.getDocumentElement(), NetconfResources.CAPABILITIES, NetconfResources.NETCONF_RPC_NS_1_0);
         for (int i = 0; i < caps.getChildNodes().getLength(); i++) {
             Node cap = caps.getChildNodes().item(i);
             if (cap.getNodeType() == Node.ELEMENT_NODE) {
-                capsSet.add(cap.getTextContent().trim());
+                String capability = cap.getTextContent().trim();
+                //reuse capability string object using String.intern
+                capsSet.add(capability.intern());
             }
         }
         return capsSet;
     }
-
-    public List<Element> getDataElementsFromRpcReply(Document responseDoc) {
+    
+    public List<Element> getDataElementsFromRpcReply(Document responseDoc){
         List<Element> returnValue = new ArrayList<Element>();
         Element rpcReplyNode = responseDoc.getDocumentElement();
         if (rpcReplyNode != null && NetconfResources.RPC_REPLY.equals(rpcReplyNode.getLocalName())) {
-            NodeList nodes = rpcReplyNode.getChildNodes();
-            for (int i = 0; i < nodes.getLength(); i++) {
-                if (nodes.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                    Element dataNode = (Element) nodes.item(i);
-                    if (NetconfResources.RPC_ERROR.equals(dataNode.getLocalName()) || NetconfResources.OK.equals
-                            (dataNode.getLocalName())) {
-                        return null;
-                    } else {
-                        returnValue.add(dataNode);
-                    }
-
-                }
-            }
-        }
-
+        	NodeList nodes = rpcReplyNode.getChildNodes();
+        	for (int i=0;i<nodes.getLength();i++){
+        		if (nodes.item(i).getNodeType() == Node.ELEMENT_NODE){
+        			Element dataNode = (Element) nodes.item(i);
+    	    		if (NetconfResources.RPC_ERROR.equals(dataNode.getLocalName()) || NetconfResources.OK.equals(dataNode.getLocalName())) {
+    	    			return null;
+    	    		} else {
+    	    			returnValue.add(dataNode);
+    	    		}
+        			
+        		}
+        	}
+    	}
+    	    
         return returnValue;
-
+    	    
     }
-
+    	    
     public String getEventTimeFromNotification(Document notificationDoc) {
         Element notificationElement = notificationDoc.getDocumentElement();
         Element eventTimeElement = getChildElement(notificationElement, NetconfResources.EVENT_TIME);
@@ -198,8 +204,7 @@ public class DocumentUtils {
         return null;
     }
 
-    public CreateSubscriptionRequest getSubscriptionRequest(NetconfRpcRequest request) throws DOMException,
-            ParseException {
+    public CreateSubscriptionRequest getSubscriptionRequest(NetconfRpcRequest request) throws DOMException, ParseException {
 
         Element rpcInput = request.getRpcInput();
         Node streamNode = getDescendant(rpcInput, CreateSubscriptionRequest.STREAM, NetconfResources.NETCONF_NOTIFICATION_NS);
@@ -213,7 +218,9 @@ public class DocumentUtils {
         subscriptionRequest.setMessageId(request.getMessageId());
         if (streamNode != null) {
             String stream = streamNode.getTextContent().trim();
-            subscriptionRequest.setStream(stream);
+            if (!stream.isEmpty()) {
+                subscriptionRequest.setStream(stream);
+            }
         }
 
         if (filterNode != null) {
@@ -248,6 +255,9 @@ public class DocumentUtils {
         return null;
     }
 
+    // this is a very bad method, because it will traverse the entire subtree if 
+    // the child is not there!
+    @Deprecated
     public Node getChildNodeByName(Node parent, String expectedChildName) {
         NodeList childNodes = parent.getChildNodes();
         if (childNodes != null) {
@@ -266,8 +276,11 @@ public class DocumentUtils {
         return null;
     }
 
-    public static List<Element> getChildElements(List<Element> parentElements, String expectedChildName, String
-            namespace) {
+    // We should avoid using this method, because it does not do what it says.
+    // It does not return elements with name expectedChildName, but children of those
+    // Also, it will traverse the entire subtree if the child is not there!
+    @Deprecated
+    public static List<Element> getChildElements(List<Element> parentElements, String expectedChildName, String namespace) {
         List<Element> elements = new ArrayList<>();
         for (Element element : parentElements) {
             if (element.getLocalName().equals(expectedChildName) && element.getNamespaceURI().equals(namespace)) {
@@ -291,6 +304,9 @@ public class DocumentUtils {
         return elements;
     }
 
+    // this is a very bad method, because it will traverse the entire subtree if 
+    // the child is not there!
+    @Deprecated
     public static Node getChildNodeByName(Node parent, String expectedChildName, String namespace) {
         NodeList childNodes = parent.getChildNodes();
         if (childNodes != null) {
@@ -298,8 +314,7 @@ public class DocumentUtils {
                 Node child = childNodes.item(i);
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
                     String namespaceURI = child.getNamespaceURI();
-                    if (child.getLocalName().equals(expectedChildName) && namespaceURI != null && namespaceURI.equals
-                            (namespace)) {
+                    if (child.getLocalName().equals(expectedChildName) && namespaceURI != null && namespaceURI.equals(namespace)) {
                         return child;
                     } else {
                         Node candidate = getChildNodeByName(child, expectedChildName, namespace);
@@ -313,6 +328,9 @@ public class DocumentUtils {
         return null;
     }
 
+    // this is a very bad method, because it will traverse the entire subtree if 
+    // the child is not there!
+    @Deprecated
     public static Element getElement(Element rpcInput, String tagName) {
         if (rpcInput.getNodeName().equals(tagName)) {
             return rpcInput;
@@ -321,6 +339,9 @@ public class DocumentUtils {
         }
     }
 
+    // this is a very bad method, because it will traverse the entire subtree if 
+    // the child is not there!
+    @Deprecated
     public static Element getChildElement(Element parent, String childName) {
         Element element = null;
         if (parent != null) {
@@ -344,6 +365,9 @@ public class DocumentUtils {
         return element;
     }
 
+    // this is a very bad method, because it will traverse the entire subtree if 
+    // the child is not there!
+    @Deprecated
     public static Element getDescendant(Element parent, String childName, String namespace) {
         Element element = null;
         if (parent != null) {
@@ -365,6 +389,42 @@ public class DocumentUtils {
             }
         }
         return element;
+    }
+
+    public static Element getDirectChildElement(Element parent, String childName) {
+        Element element = null;
+        if (parent != null) {
+            NodeList childNodes = parent.getChildNodes();
+            if (childNodes != null) {
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node child = childNodes.item(i);
+                    if (child instanceof Element) {
+                        if (child.getNodeName().equals(childName)) {
+                            return (Element) child;
+                        }
+                    }
+                }
+            }
+        }
+        return element;
+    }
+    
+    public static Element getDirectChildElement(Element parent, String childName, String namespace) {
+        if (parent != null) {
+            NodeList childNodes = parent.getChildNodes();
+            if (childNodes != null) {
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node child = childNodes.item(i);
+                    if (child instanceof Element) {
+                        if (child.getLocalName().equals(childName) && child.getNamespaceURI() != null 
+                        		&& child.getNamespaceURI().equals(namespace)) {
+                            return (Element) child;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public static String getLocalName(Node node) {
@@ -389,6 +449,9 @@ public class DocumentUtils {
         return null;
     }
 
+    // this is a very bad method, because it will traverse the entire subtree if 
+    // the child is not there!
+    @Deprecated
     public static List<Element> getChildElements(Node parent, String childName) {
         List<Element> elementList = new ArrayList<Element>();
         if (parent != null) {
@@ -409,6 +472,9 @@ public class DocumentUtils {
         return elementList;
     }
 
+    // this is a very bad method, because it will traverse the entire subtree if 
+    // the child is not there!
+    @Deprecated
     public static List<Element> getChildElements(Node parent, String childName, String namespace) {
         List<Element> elementList = new ArrayList<Element>();
         if (parent != null) {
@@ -417,8 +483,7 @@ public class DocumentUtils {
                 for (int i = 0; i < childNodes.getLength(); i++) {
                     Node child = childNodes.item(i);
                     String namespaceURI = child.getNamespaceURI();
-                    if (getLocalName(child).equals(childName) && namespaceURI != null && namespaceURI.equals
-                            (namespace)) {
+                    if (getLocalName(child).equals(childName) && namespaceURI != null && namespaceURI.equals(namespace)) {
                         if (child instanceof Element) {
                             elementList.add((Element) child);
                         }
@@ -438,6 +503,42 @@ public class DocumentUtils {
                     Node child = childNodes.item(i);
                     if (child instanceof Element) {
                         elementList.add((Element) child);
+                    }
+                }
+            }
+        }
+        return elementList;
+    }
+
+    public static List<Element> getDirectChildElements(Node parent, String childName) {
+        List<Element> elementList = new ArrayList<Element>();
+        if (parent != null) {
+            NodeList childNodes = parent.getChildNodes();
+            if (childNodes != null) {
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node child = childNodes.item(i);
+                    if (child instanceof Element) {
+                        if (child.getLocalName().equals(childName)) {
+                            elementList.add((Element) child);
+                        }
+                    }
+                }
+            }
+        }
+        return elementList;
+    }
+
+    public static List<Element> getDirectChildElements(Node parent, String childName, String namespace) {
+        List<Element> elementList = new ArrayList<Element>();
+        if (parent != null) {
+            NodeList childNodes = parent.getChildNodes();
+            if (childNodes != null) {
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node child = childNodes.item(i);
+                    if (child instanceof Element) {
+                        if (child.getLocalName().equals(childName) && child.getNamespaceURI().equals(namespace)) {
+                            elementList.add((Element) child);
+                        }
                     }
                 }
             }
@@ -473,7 +574,7 @@ public class DocumentUtils {
 
     public String getSourceFromRpcDocument(Document request) throws NetconfMessageBuilderException {
         Node source = getChildNodeByName(request, NetconfResources.DATA_SOURCE, NetconfResources.NETCONF_RPC_NS_1_0);
-        if (source == null) {
+        if(source == null){
             throw new NetconfMessageBuilderException("<source> cannot be null/empty");
         }
         return getFirstElementChildNode(source).getLocalName();
@@ -550,7 +651,7 @@ public class DocumentUtils {
             throw new NetconfMessageBuilderException(PARSE_ERROR, e);
         }
     }
-
+    
     public static String format(String unformattedXml) {
         try {
             final Document document = parseXmlFile(unformattedXml);
@@ -694,15 +795,13 @@ public class DocumentUtils {
         return null;
     }
 
-    public static Element getElement(Document document, String parentName, List<Pair<String, Object>> childs, String
-            namespace,
-                                     String prefix) {
+    public static Element getElement(Document document, String parentName, List<Pair<String, Object>> childs, String namespace,
+            String prefix) {
         Element element = document.createElementNS(namespace, getPrefixedLocalName(prefix, parentName));
         for (Pair<String, Object> child : childs) {
             Object value = child.getSecond();
             if (value != null) {
-                Element childElement = document.createElementNS(namespace, getPrefixedLocalName(prefix, child
-                        .getFirst()));
+                Element childElement = document.createElementNS(namespace, getPrefixedLocalName(prefix, child.getFirst()));
                 if (value instanceof Node) {
                     Node importNode = document.importNode((Node) value, true);
                     childElement.appendChild(importNode);
@@ -715,9 +814,8 @@ public class DocumentUtils {
 
         return element;
     }
-
-    public static Element getElement(Document document, String localName, String namespace, String prefix, Object
-            value) {
+    
+    public static Element getElement(Document document, String localName, String namespace, String prefix, Object value) {
         Element element = null;
         if (value != null) {
             element = document.createElementNS(namespace, getPrefixedLocalName(prefix, localName));
@@ -735,8 +833,7 @@ public class DocumentUtils {
         return prefix + ":" + localname;
     }
 
-    public static Element getDocumentElement(String string) throws IOException, SAXException,
-            ParserConfigurationException {
+    public static Element getDocumentElement(String string) throws IOException, SAXException, ParserConfigurationException {
         try (ByteArrayInputStream input = new ByteArrayInputStream(string.getBytes())) {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
@@ -745,4 +842,34 @@ public class DocumentUtils {
         }
     }
 
+    public static String getChildNodeValue(Element parentNode, String parentTagName, String childTagName) {
+        Element parentElement = DocumentUtils.getChildElement(parentNode, parentTagName);
+        Element childNameElement = DocumentUtils.getChildElement(parentElement, childTagName);
+        return childNameElement.getFirstChild().getNodeValue();
+    }
+
+    public static boolean isChildNodeExists(Node parent, Node child) {
+        for (Element childElement : DocumentUtils.getChildElements(parent)) {
+            if (childElement.isEqualNode(child)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean matchingXmlNotification(String xpathExpression, Document notification) {
+        boolean matches = false;
+        NodeList entries = notification.getElementsByTagName("*");
+        String xpath = "";
+        for (int i = 0; i < entries.getLength(); i++) {
+            Element element = (Element) entries.item(i);
+            String nodeName = element.getNodeName();
+            if (!nodeName.contains(NAME_NODE)) {
+                String nodeNameAfterRemovingPrefix = nodeName.contains(COLON) ? nodeName.split(COLON)[1] : nodeName;
+                xpath += SEPARATED + nodeNameAfterRemovingPrefix;
+            }
+        }
+        matches = xpath.contains(xpathExpression);
+        return matches;
+    }
 }

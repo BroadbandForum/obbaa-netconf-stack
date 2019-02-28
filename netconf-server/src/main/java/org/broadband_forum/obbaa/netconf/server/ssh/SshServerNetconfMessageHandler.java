@@ -16,15 +16,15 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh;
 
+import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodec;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 import java.util.Set;
 
-public interface SshServerNetconfMessageHandler {
+public interface SshServerNetconfMessageHandler extends FrameAwareNetconfMessageCodec{
 
     public void onHello(NetconfClientInfo clientInfo, Set<String> clientCaps);
 
     public void processRequest(String rpcMessage) throws NetconfMessageBuilderException;
-
 }

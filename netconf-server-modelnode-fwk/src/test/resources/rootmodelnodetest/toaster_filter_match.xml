@@ -1,0 +1,3 @@
+<toast:toaster xmlns:toast="http://netconfcentral.org/ns/toaster" >
+  <toast:toasterManufacturer>toasterManufacturer</toast:toasterManufacturer>
+</toast:toaster>

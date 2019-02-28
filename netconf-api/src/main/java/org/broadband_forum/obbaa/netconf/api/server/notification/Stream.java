@@ -16,22 +16,23 @@
 
 package org.broadband_forum.obbaa.netconf.api.server.notification;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.DATE_TIME_WITH_TZ;
+
 import java.text.ParseException;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.joda.time.DateTime;
 
 /**
- * A POJO containing various attributes of an Notification Event Stream This is mainly useful during <get/> and
- * notification logging
+ * A POJO containing various attributes of an Notification Event Stream This is mainly useful during <get/> and notification logging
+ * 
  *
- * @author pregunat
+ * 
  */
-@XmlType(propOrder = {"name", "description", "replaySupport"})
+@XmlType(propOrder = { "name", "description", "replaySupport" })
 @XmlRootElement(name = "stream")
 public class Stream {
 
@@ -72,6 +73,7 @@ public class Stream {
         return this;
     }
 
+   
 
     public String getReplayLogCreationTime() {
         return m_replayLogCreationTime;
@@ -80,7 +82,7 @@ public class Stream {
     @XmlElement(name = "replayLogCreationTime")
     public Stream setReplayLogCreationTime(long replayLogCreationTime) throws ParseException {
         if (this.m_replaySupport) {
-            this.m_replayLogCreationTime = NetconfResources.DATE_TIME_WITH_TZ.print(new DateTime(replayLogCreationTime));
+            this.m_replayLogCreationTime = DATE_TIME_WITH_TZ.print(new DateTime(replayLogCreationTime));
         }
         return this;
     }
@@ -92,7 +94,7 @@ public class Stream {
     @XmlElement(name = "replayLogAgedTime")
     public Stream setReplayLogAgedTime(long replayLogAgedTime) throws ParseException {
         if (this.m_replaySupport) {
-            this.m_replayLogAgedTime = NetconfResources.DATE_TIME_WITH_TZ.print(new DateTime(replayLogAgedTime));
+            this.m_replayLogAgedTime = DATE_TIME_WITH_TZ.print(new DateTime(replayLogAgedTime));
         }
         return this;
     }
@@ -149,7 +151,6 @@ public class Stream {
     @Override
     public String toString() {
         return "Stream [name=" + m_name + ", description=" + m_description + ", replaySupport=" + m_replaySupport
-                + ", replayLogCreationTime=" + m_replayLogCreationTime + ", replayLogAgedTime=" + m_replayLogAgedTime
-                + "]";
+                + ", replayLogCreationTime=" + m_replayLogCreationTime + ", replayLogAgedTime=" + m_replayLogAgedTime + "]";
     }
 }

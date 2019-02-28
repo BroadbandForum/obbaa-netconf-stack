@@ -16,10 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.api.util;
 
+import org.broadband_forum.obbaa.netconf.api.util.CryptHashUtil;
+import org.broadband_forum.obbaa.netconf.api.util.HashAlgorithm;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
-import org.junit.Test;
 
 public class CryptHashUtilTest {
 
@@ -27,10 +29,8 @@ public class CryptHashUtilTest {
     private static final String SALT = "[B@7a808c1f";
     private static final String ENCRYPTED_STRING = "e7214595124ba2cb09b983da434a9353d3e6f12bb82b1973c0fb4669090d77d5";
 
-    private static final String SHA256_FULLY_ENCRYPTED_STRING =
-            "$5$[B@7a808c1f$e7214595124ba2cb09b983da434a9353d3e6f12bb82b1973c0fb4669090d77d5";
-    private static final String MD5_FULLY_ENCRYPTED_STRING =
-            "$1$[B@7a808c1f$e7214595124ba2cb09b983da434a9353d3e6f12bb82b1973c0fb4669090d77d5";
+    private static final String SHA256_FULLY_ENCRYPTED_STRING = "$5$[B@7a808c1f$e7214595124ba2cb09b983da434a9353d3e6f12bb82b1973c0fb4669090d77d5";
+    private static final String MD5_FULLY_ENCRYPTED_STRING = "$1$[B@7a808c1f$e7214595124ba2cb09b983da434a9353d3e6f12bb82b1973c0fb4669090d77d5";
 
     @Test
     public void testBuildEncryptedString() {
@@ -40,8 +40,7 @@ public class CryptHashUtilTest {
 
     @Test
     public void testBuildFullyEncryptedString() {
-        String fullyEncryptedString = CryptHashUtil.buildFullyEncryptedString(HashAlgorithm.SHA_256, SALT,
-                ENCRYPTED_STRING);
+        String fullyEncryptedString = CryptHashUtil.buildFullyEncryptedString(HashAlgorithm.SHA_256, SALT, ENCRYPTED_STRING);
         assertEquals(SHA256_FULLY_ENCRYPTED_STRING, fullyEncryptedString);
 
         fullyEncryptedString = CryptHashUtil.buildFullyEncryptedString(HashAlgorithm.MD5, SALT, ENCRYPTED_STRING);
@@ -60,7 +59,7 @@ public class CryptHashUtilTest {
         String actualSalt = CryptHashUtil.getSalt(SHA256_FULLY_ENCRYPTED_STRING);
         assertEquals(SALT, actualSalt);
     }
-
+    
     @Test
     public void testGetNewSalt() {
         String newSalt = CryptHashUtil.getNewSalt();

@@ -11,6 +11,10 @@ module example-jukebox {
       prefix rc;
     }
 
+    import genre2 {
+      prefix gn;
+    }
+
     organization "Example, Inc.";
 
     contact "support at example.com";
@@ -25,6 +29,12 @@ module example-jukebox {
 
     }
 
+
+
+    identity genre2 {
+      description "Base for all genre types";
+       base gn:base-genre2;
+    }
 
     identity genre {
       description "Base for all genre types";
@@ -63,7 +73,7 @@ module example-jukebox {
       description
         "For UT";
     }
- 
+
     container jukebox {
       presence
         "An empty container indicates that the jukebox
@@ -87,6 +97,14 @@ module example-jukebox {
               "The name of the artist.";
           }
 
+          leaf mgmt-jukebox {
+                type instance-identifier;
+          }
+
+          leaf mgmt-jukebox-1 {
+                type instance-identifier;
+          }
+
           list album {
             key "name";
             description
@@ -98,6 +116,15 @@ module example-jukebox {
               }
               description
                 "The name of the album.";
+            }
+
+            leaf genre2 {
+              type identityref {
+                base genre2;
+              }
+              description
+                "The genre identifying the type of music on
+                the album.";
             }
 
             leaf genre {

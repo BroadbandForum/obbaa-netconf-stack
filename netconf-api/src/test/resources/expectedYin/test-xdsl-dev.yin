@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><module xmlns="urn:ietf:params:xml:ns:yang:yin:1" xmlns:xdsl-dev="urn:xxxxx-org:yang:test-xdsl-dev" xmlns:xdsl="urn:broadband-forum-org:yang:bbf-xdsl" xmlns:if="urn:ietf:params:xml:ns:yang:ietf-interfaces" name="test-xdsl-dev">
+    <yang-version value="1"/>
+    <namespace uri="urn:xxxxx-org:yang:test-xdsl-dev"/>
+    <prefix value="xdsl-dev"/>
+    <import module="bbf-xdsl">
+        <prefix value="xdsl"/>
+        <revision-date date="2016-01-25"/>
+    </import>
+    <import module="ietf-interfaces">
+        <prefix value="if"/>
+        <revision-date date="2014-05-08"/>
+    </import>
+    <organization>
+        <text>TBD</text>
+    </organization>
+    <contact>
+        <text>TBD</text>
+    </contact>
+    <description>
+        <text>Dummy deviation module to test NAV support of deviations
+Primarily uses 'legal' deviations as defined in bbf2016.707.00
+A few 'illegal' deviations are added for cmpleteness.
+Focus: augment &amp; grouping</text>
+    </description>
+    <revision date="2017-07-05"/>
+    <deviation target-node="/if:interfaces/if:interface/xdsl:line/xdsl:supported-mode">
+        <deviate value="replace">
+            <min-elements value="2"/>
+        </deviate>
+    </deviation>
+</module>

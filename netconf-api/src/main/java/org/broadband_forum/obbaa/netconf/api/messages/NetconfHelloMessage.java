@@ -16,15 +16,20 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import java.util.Set;
+
 import org.w3c.dom.Document;
 
-import java.util.Set;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class NetconfHelloMessage {
 
     private int m_sessionId;
     private Set<String> m_caps;
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfHelloMessage.class, LogAppNames.NETCONF_LIB);
 
     public NetconfHelloMessage setSessionId(int sessionId) {
         this.m_sessionId = sessionId;
@@ -46,12 +51,11 @@ public class NetconfHelloMessage {
 
     @Override
     public String toString() {
-        return "NetconfHelloMessage [sessionId=" + m_sessionId + ", caps=" + m_caps + "]";
+        return "NetconfHelloMessage [sessionId=" + LOGGER.sensitiveData(m_sessionId) + ", caps=" + m_caps + "]";
     }
 
     public Document getRequestDocument() throws NetconfMessageBuilderException {
-        PojoToDocumentTransformer responseBuilder = new PojoToDocumentTransformer().newServerHelloMessage
-                (getCapabilities(), getSessionId());
+        PojoToDocumentTransformer responseBuilder = new PojoToDocumentTransformer().newServerHelloMessage(getCapabilities(), getSessionId());
         return responseBuilder.build();
     }
 }

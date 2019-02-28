@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
+import static org.junit.Assert.assertEquals;
 
 public class DefaultLoggerTest {
     private AdvancedLogger m_wrapper;
@@ -34,14 +35,13 @@ public class DefaultLoggerTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        m_wrapper = new LoggerFactory.DefaultLoggerFactoryImpl().getLogger(DefaultLoggerTest.class.getName(), "ut",
-                "debug", "global");
+        m_wrapper = new LoggerFactory.DefaultLoggerFactoryImpl().getLogger(DefaultLoggerTest.class.getName(), "ut", "debug", "global");
         DefaultLogger wrapper = (DefaultLogger) Proxy.getInvocationHandler(m_wrapper);
         wrapper.setSlf4jLogger(m_slf4jLogger);
     }
 
     @Test
-    public void testWrapperDelegatesOnAllMethods() {
+    public void testWrapperDelegatesOnAllMethods(){
         String param1 = "param1";
         String param2 = "param2";
         String param3 = "param3";
@@ -56,8 +56,7 @@ public class DefaultLoggerTest {
         m_wrapper.trace("trace message with 3 params {} {} {}", param1, param2, param3);
         verify(m_slf4jLogger).trace("trace message with 3 params {} {} {}", param1, param2, param3);
         m_wrapper.trace("trace message with 3 params {} {} {} and exception", param1, param2, param3, exception);
-        verify(m_slf4jLogger).trace("trace message with 3 params {} {} {} and exception", param1, param2, param3,
-                exception);
+        verify(m_slf4jLogger).trace("trace message with 3 params {} {} {} and exception", param1, param2, param3, exception);
         m_wrapper.trace("trace message", exception);
         verify(m_slf4jLogger).trace("trace message", exception);
         m_wrapper.isTraceEnabled();
@@ -90,5 +89,8 @@ public class DefaultLoggerTest {
         verify(m_slf4jLogger).error("error message", exception);
         m_wrapper.isErrorEnabled();
         verify(m_slf4jLogger).isErrorEnabled();
+
+        SensitiveObjectWrapper data = m_wrapper.sensitiveData("sensitive data");
+        assertEquals("sensitive data", data.toString());
     }
 }

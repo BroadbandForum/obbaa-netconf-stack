@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-yang11 xmlns="urn:org:bbf:pma:validation-yang11">
+<parent >
+<parent-list xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="remove">
+<name>key</name>
+</parent-list>   
+</parent>
+</validation-yang11>

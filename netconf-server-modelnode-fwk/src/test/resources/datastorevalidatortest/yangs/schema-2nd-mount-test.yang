@@ -1,0 +1,21 @@
+module shcema-2nd-mount-test {
+	
+	yang-version 1;    
+	namespace "schema-2nd-mount-test";	
+	prefix "smt2";
+	
+	revision "2018-01-03" {
+		description "Initial version.";
+	}
+	
+	container schemaMount2nd {
+    	
+    	leaf leaf1 {
+    		type string;
+    	}
+    	
+    	leaf leaf2 {
+    	    type boolean;
+    	}
+    }
+}

@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.util;
 
 import java.util.Arrays;
@@ -26,15 +10,15 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigDefaultOperations;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * Created by sgs on 4/20/17.
@@ -47,8 +31,7 @@ public class OperationAttributeUtil {
         c_map.put("nc", NetconfResources.NETCONF_RPC_NS_1_0);
     }
 
-    private static final AdvancedLogger LOGGER = LoggerFactory.getLogger(OperationAttributeUtil.class,
-            "netconf-stack", "DEBUG", "GLOBAL");
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(OperationAttributeUtil.class, LogAppNames.NETCONF_STACK);
     ;
     public static final String NC_DEFAULT_OPERATION_XPATH_STR = "/nc:rpc/nc:edit-config/nc:default-operation";
 
@@ -89,75 +72,50 @@ public class OperationAttributeUtil {
     }
 
     public static boolean isAllowedOperation(String choiceCaseOper1, String choiceCaseOper2) {
-        switch (choiceCaseOper1) {
+        switch (choiceCaseOper1){
             case EditConfigOperations.CREATE:
-                switch (choiceCaseOper2) {
-                    case EditConfigOperations.CREATE:
-                        return false;
-                    case EditConfigOperations.REPLACE:
-                        return false;
-                    case EditConfigOperations.DELETE:
-                        return true;
-                    case EditConfigOperations.REMOVE:
-                        return true;
-                    case EditConfigOperations.MERGE:
-                        return false;
+                switch (choiceCaseOper2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return false;
+                    case EditConfigOperations.DELETE: return true;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return false;
                 }
                 break;
             case EditConfigOperations.REPLACE:
-                switch (choiceCaseOper2) {
-                    case EditConfigOperations.CREATE:
-                        return false;
-                    case EditConfigOperations.REPLACE:
-                        return false;
-                    case EditConfigOperations.DELETE:
-                        return true;
-                    case EditConfigOperations.REMOVE:
-                        return true;
-                    case EditConfigOperations.MERGE:
-                        return false;
+                switch (choiceCaseOper2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return false;
+                    case EditConfigOperations.DELETE: return true;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return false;
                 }
                 break;
             case EditConfigOperations.DELETE:
-                switch (choiceCaseOper2) {
-                    case EditConfigOperations.CREATE:
-                        return true;
-                    case EditConfigOperations.REPLACE:
-                        return true;
-                    case EditConfigOperations.DELETE:
-                        return true;
-                    case EditConfigOperations.REMOVE:
-                        return true;
-                    case EditConfigOperations.MERGE:
-                        return true;
+                switch (choiceCaseOper2){
+                    case EditConfigOperations.CREATE: return true;
+                    case EditConfigOperations.REPLACE: return true;
+                    case EditConfigOperations.DELETE: return true;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return true;
                 }
                 break;
             case EditConfigOperations.REMOVE:
-                switch (choiceCaseOper2) {
-                    case EditConfigOperations.CREATE:
-                        return true;
-                    case EditConfigOperations.REPLACE:
-                        return true;
-                    case EditConfigOperations.DELETE:
-                        return true;
-                    case EditConfigOperations.REMOVE:
-                        return true;
-                    case EditConfigOperations.MERGE:
-                        return true;
+                switch (choiceCaseOper2){
+                    case EditConfigOperations.CREATE: return true;
+                    case EditConfigOperations.REPLACE: return true;
+                    case EditConfigOperations.DELETE: return true;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return true;
                 }
                 break;
             case EditConfigOperations.MERGE:
-                switch (choiceCaseOper2) {
-                    case EditConfigOperations.CREATE:
-                        return false;
-                    case EditConfigOperations.REPLACE:
-                        return false;
-                    case EditConfigOperations.DELETE:
-                        return true;
-                    case EditConfigOperations.REMOVE:
-                        return true;
-                    case EditConfigOperations.MERGE:
-                        return false;
+                switch (choiceCaseOper2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return false;
+                    case EditConfigOperations.DELETE: return true;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return false;
                 }
                 break;
         }

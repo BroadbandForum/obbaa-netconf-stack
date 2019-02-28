@@ -34,18 +34,15 @@ public class SettableSchemaProvider<T extends SchemaSourceRepresentation> implem
     private final T m_schemaSourceRepresentation;
     private final PotentialSchemaSource<T> m_potentialSchemaSource;
 
-    SettableSchemaProvider(final T schemaSourceRepresentation, final SourceIdentifier sourceIdentifier, final
-    Class<T> representation,
-                           final int cost) {
+    SettableSchemaProvider(final T schemaSourceRepresentation, final SourceIdentifier sourceIdentifier, final Class<T> representation,
+            final int cost) {
         this.m_schemaSourceRepresentation = schemaSourceRepresentation;
         this.m_potentialSchemaSource = PotentialSchemaSource.create(sourceIdentifier, representation, cost);
     }
 
     public static <T extends SchemaSourceRepresentation> SettableSchemaProvider<T> createImmediate(final T schemaSourceRepresentation,
-                                                                                                   final Class<T>
-                                                                                                           representation) {
-        return new SettableSchemaProvider<>(schemaSourceRepresentation, schemaSourceRepresentation.getIdentifier(),
-                representation,
+            final Class<T> representation) {
+        return new SettableSchemaProvider<>(schemaSourceRepresentation, schemaSourceRepresentation.getIdentifier(), representation,
                 PotentialSchemaSource.Costs.IMMEDIATE.getValue());
     }
 

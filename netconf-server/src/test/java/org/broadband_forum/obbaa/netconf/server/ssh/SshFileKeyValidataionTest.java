@@ -17,12 +17,10 @@
 package org.broadband_forum.obbaa.netconf.server.ssh;
 
 import org.broadband_forum.obbaa.netconf.server.ssh.auth.SshFileKeyValidataion;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.base64.Base64;
 import io.netty.util.CharsetUtil;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,14 +43,10 @@ public class SshFileKeyValidataionTest {
     @Test
     public void testisValidPublicKey() throws Exception {
 
-        String pubKeyStr = "MIIBuDCCASwGByqGSM44BAEwggEfAoGBAOg5MOEOL1Lwe8/38+illEM7LSnDbMbztQj" +
-                "/h7T0tgQixxebT6S2jcpLouZEYDOTDAuMb8UKhbxZ7+f+8xdTMhw4elpC/3LWs+WwncZM7LaxWtg66l74R4pp"
-                + "WmIIsU1RaXOAgXoThNGr6IsDLaGiv7LQIbh8vzzMzl6lrlDjCcj7AhUAsty8KhNivqCqcCH/kbp+Aj" +
-                "+Vwj8CgYEAmytCjwTBuc84G/ibRV2J8QP0NDJ2VDRyJnkPjic4v/HCKbSL/nKjE2E2LlUC36mV"
-                +
-                "VhQYvCcLp92vnXVlxijOldZxceOAK79dFfbjbwIE4YVeAg4DQnMhcXaKOLAAAHpOvnLbiTgq4JF5kYmo2b63738nZRQmy3CiU5PfDFG5aV8DgYUAAoGBAI9jP8uaqHTJWj4ntCP9s56aF38vea4YkZPa"
-                + "tOJPqxg3ZbttTI8Y1QWXabjPyY1c/YWdd/GasegQKrgMGM7ufGhWaNcllI0cC6o0J5K2zacGUufxSWeFZ9Unx2vCKYhIMKR66J" +
-                "+aHo5Wq9VF0UmsDKtoCGXFRVqVHFsM+6i8YfBD";
+        String pubKeyStr = "MIIBuDCCASwGByqGSM44BAEwggEfAoGBAOg5MOEOL1Lwe8/38+illEM7LSnDbMbztQj/h7T0tgQixxebT6S2jcpLouZEYDOTDAuMb8UKhbxZ7+f+8xdTMhw4elpC/3LWs+WwncZM7LaxWtg66l74R4pp"
+                + "WmIIsU1RaXOAgXoThNGr6IsDLaGiv7LQIbh8vzzMzl6lrlDjCcj7AhUAsty8KhNivqCqcCH/kbp+Aj+Vwj8CgYEAmytCjwTBuc84G/ibRV2J8QP0NDJ2VDRyJnkPjic4v/HCKbSL/nKjE2E2LlUC36mV"
+                + "VhQYvCcLp92vnXVlxijOldZxceOAK79dFfbjbwIE4YVeAg4DQnMhcXaKOLAAAHpOvnLbiTgq4JF5kYmo2b63738nZRQmy3CiU5PfDFG5aV8DgYUAAoGBAI9jP8uaqHTJWj4ntCP9s56aF38vea4YkZPa"
+                + "tOJPqxg3ZbttTI8Y1QWXabjPyY1c/YWdd/GasegQKrgMGM7ufGhWaNcllI0cC6o0J5K2zacGUufxSWeFZ9Unx2vCKYhIMKR66J+aHo5Wq9VF0UmsDKtoCGXFRVqVHFsM+6i8YfBD";
 
         ByteBuf base64 = Unpooled.copiedBuffer(pubKeyStr, CharsetUtil.US_ASCII);
         ByteBuf der = Base64.decode(base64);
@@ -73,8 +67,7 @@ public class SshFileKeyValidataionTest {
             pubKey = dsaKF.generatePublic(encodedKeySpec);
         }
 
-        String filePathAuthKey = Thread.currentThread().getContextClassLoader().getResource("authorized_keys")
-                .getPath();
+        String filePathAuthKey = Thread.currentThread().getContextClassLoader().getResource("authorized_keys").getPath();
 
         boolean auth = m_authenticator.isValidPublicKey(filePathAuthKey, pubKey);
 

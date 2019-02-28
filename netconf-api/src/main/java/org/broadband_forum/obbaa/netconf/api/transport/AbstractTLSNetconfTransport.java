@@ -17,12 +17,10 @@
 package org.broadband_forum.obbaa.netconf.api.transport;
 
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
-
 import io.netty.handler.ssl.SslProvider;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
-
 import java.io.File;
 
 /**
@@ -41,11 +39,9 @@ public abstract class AbstractTLSNetconfTransport extends NetconfTransport {
     private KeyManager m_keyManager;
     private long m_tlsHandshakeTimeOutMillis;
 
-    public AbstractTLSNetconfTransport(boolean clientAuthenticationNeeded, boolean tlsKeepAlive, File
-            certificateChain, File privateKey,
+    public AbstractTLSNetconfTransport(boolean clientAuthenticationNeeded, boolean tlsKeepAlive, File certificateChain, File privateKey,
                                        TrustManager trustManager, String privateKeyPassword, boolean selfSigned,
-                                       KeyManager keyManager, File trustChain, SslProvider sslProvider, long
-                                               tlsHandshaketimeoutMillis) {
+                                       KeyManager keyManager, File trustChain, SslProvider sslProvider, long tlsHandshaketimeoutMillis) {
         this.m_clientAuthenticationNeeded = clientAuthenticationNeeded;
         this.m_tlsKeepAlive = tlsKeepAlive;
         this.m_certificateChain = certificateChain;

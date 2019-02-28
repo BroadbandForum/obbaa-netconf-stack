@@ -18,12 +18,12 @@ package org.broadband_forum.obbaa.netconf.driver.client;
 
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class FutureNetconfReponse implements Future<NetConfResponse> {
+public final class FutureNetconfReponse extends CompletableFuture<NetConfResponse> {
     private final NetConfResponse m_testReponse;
 
     public FutureNetconfReponse(NetConfResponse testReponse) {
@@ -51,8 +51,7 @@ public final class FutureNetconfReponse implements Future<NetConfResponse> {
     }
 
     @Override
-    public NetConfResponse get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
-            TimeoutException {
+    public NetConfResponse get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         return m_testReponse;
     }
 }

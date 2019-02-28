@@ -16,6 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.client.dispatcher;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
 import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcherException;
@@ -34,15 +38,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslContext;
 
-import org.apache.log4j.Logger;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
 /**
- * A reverse TLS netconf client is the one that does listens to netconf servers that might "call home" on a IANA
- * assigned TCP port (not yet
+ * A reverse TLS netconf client is the one that does listens to netconf servers that might "call home" on a IANA assigned TCP port (not yet
  * assigned). Once the client recieves a TCP connection, it immediately starts TLS client protocol.
  * <p>
  * On successful TCP connection the reverse TLS netconf server starts TLS server protocol.
@@ -51,11 +48,10 @@ import java.util.concurrent.Future;
  * <p>
  * This dispatcher provides a way to get netconf session via call-home mechanism.
  *
- * @author Venkat
+ *
  */
 public class CallhomeTlsClientDispatcherImpl extends AbstractNetconfClientDispatcher {
 
-    private static final Logger LOGGER = Logger.getLogger(CallhomeTlsClientDispatcherImpl.class);
     private final ExecutorService m_callHomeExecutorService;
 
     @Deprecated
@@ -67,15 +63,13 @@ public class CallhomeTlsClientDispatcherImpl extends AbstractNetconfClientDispat
         this(executorService, executorService);
     }
 
-    public CallhomeTlsClientDispatcherImpl(ExecutorService executorService, ExecutorService callHomeExecutorService)
-    {// NOSONAR
+    public CallhomeTlsClientDispatcherImpl(ExecutorService executorService, ExecutorService callHomeExecutorService) {// NOSONAR
         super(executorService);
         m_callHomeExecutorService = callHomeExecutorService;
     }
 
     @Override
-    public Future<TcpServerSession> createReverseClient(final NetconfClientConfiguration config) throws
-            NetconfClientDispatcherException {
+    public Future<TcpServerSession> createReverseClient(final NetconfClientConfiguration config) throws NetconfClientDispatcherException {
         return getExecutorService().submit(new Callable<TcpServerSession>() {
             @Override
             public TcpServerSession call() throws Exception {
@@ -85,8 +79,7 @@ public class CallhomeTlsClientDispatcherImpl extends AbstractNetconfClientDispat
 
     }
 
-    protected TcpServerSession startListening(NetconfClientConfiguration config) throws
-            NetconfClientDispatcherException {
+    protected TcpServerSession startListening(NetconfClientConfiguration config) throws NetconfClientDispatcherException {
         // Configure SSL.
         SslContext sslCtx = SSLContextUtil.getClientSSLContext(config);
         try {
@@ -104,14 +97,11 @@ public class CallhomeTlsClientDispatcherImpl extends AbstractNetconfClientDispat
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .childHandler(
-                            new CallhomeTlsNetconfClientInitializer(sslCtx, listener, config.getCaps(), config
-                                    .getAuthenticationListener(),
-                                    config.getNotificationListener(), transport.isTlsKeepalive(), transport
-                                    .isSelfSigned(),
+                            new CallhomeTlsNetconfClientInitializer(sslCtx, listener, config.getCaps(), config.getAuthenticationListener(),
+                                    config.getNotificationListener(), transport.isTlsKeepalive(), transport.isSelfSigned(),
                                     getExecutorService(), getCallHomeExecutorService(), handshakeTimeoutMillis));
 
-            Channel channel = b.bind(transport.getCallHomeIp(), Integer.valueOf(transport.getCallHomePort())).sync()
-                    .channel();
+            Channel channel = b.bind(transport.getCallHomeIp(), Integer.valueOf(transport.getCallHomePort())).sync().channel();
             TcpServerSession tcpSession = new NettyTcpServerSession(bossGroup, workerGroup, channel);
             return tcpSession;
         } catch (Exception e) {
@@ -125,8 +115,7 @@ public class CallhomeTlsClientDispatcherImpl extends AbstractNetconfClientDispat
     }
 
     @Override
-    protected NetconfClientSession createFutureSession(NetconfClientConfiguration config) throws
-            NetconfClientDispatcherException {
+    protected NetconfClientSession createFutureSession(NetconfClientConfiguration config) throws NetconfClientDispatcherException {
         throw new NetconfClientDispatcherException("This client dispatacher supports only reverse TLS connnection");
     }
 

@@ -29,9 +29,10 @@ public class AccessDeniedException extends RuntimeException {
     }
 
     public AccessDeniedException(NetconfRpcError rpcError) {
+        super(rpcError.getErrorMessage());
         this.m_rpcError = rpcError;
     }
-
+    
     public AccessDeniedException(String message, Throwable cause) {
         super(message, cause);
     }

@@ -17,10 +17,10 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 public class StateChangeInfo extends EditInfo {
-
+    
     @Override
     public String getOperation() {
         return null;
     }
-
+    
 }

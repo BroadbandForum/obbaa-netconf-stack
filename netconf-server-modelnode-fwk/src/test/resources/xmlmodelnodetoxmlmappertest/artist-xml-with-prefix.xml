@@ -1,0 +1,7 @@
+<jb:artist xmlns:jb="http://example.com/ns/example-jukebox">
+    <jb:name xmlns:jb="http://example.com/ns/example-jukebox">Artist1</jb:name>
+    <jb:album xmlns:jb="http://example.com/ns/example-jukebox">
+        <jb:name xmlns:jb="http://example.com/ns/example-jukebox">album11</jb:name>
+        <jb:year xmlns:jb="http://example.com/ns/example-jukebox">2016</jb:year>
+    </jb:album>
+</jb:artist>

@@ -21,56 +21,55 @@ import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
-
 import org.apache.log4j.Logger;
 
 
 @Deprecated
-public class JPAEntityDataStoreManager extends AbstractEntityDataStoreManager {
-    protected EntityManager m_manager;
+public class JPAEntityDataStoreManager extends AbstractEntityDataStoreManager{
+	protected EntityManager m_manager;
     private static final Logger LOGGER = Logger.getLogger(JPAEntityDataStoreManager.class);
 
 
-    public JPAEntityDataStoreManager(EMFactory factory) {
+	public JPAEntityDataStoreManager(EMFactory factory) {
         this();
-        m_manager = factory.createNewEntityManager();
-    }
+		m_manager = factory.createNewEntityManager();
+	}
 
     public JPAEntityDataStoreManager() {
-    }
+	}
 
     @Override
     public <E> E findById(Class<E> entityClass, Object primaryKey) {
-        return getEntityManager().find(entityClass, primaryKey);
+    	return  getEntityManager().find(entityClass, primaryKey);
     }
 
-    @Override
-    public EntityManager getEntityManager() {
-        return m_manager;
-    }
+	@Override
+	public EntityManager getEntityManager() {
+		return m_manager;
+	}
 
-    public void beginTransaction() {
+	public void beginTransaction() {
         m_manager.getTransaction().begin();
-    }
+	}
 
-    public void commitTransaction() {
-        if (m_manager.getTransaction().isActive()) {
+	public void commitTransaction() {
+        if (m_manager.getTransaction().isActive()){
             m_manager.getTransaction().commit();
         }
-    }
+	}
 
-    public void rollbackTransaction() {
-        if (m_manager.getTransaction().isActive()) {
+	public void rollbackTransaction() {
+        if(m_manager.getTransaction().isActive()){
             m_manager.getTransaction().rollback();
         }
-    }
-
-    public void close() {
-        if (m_manager != null && m_manager.isOpen()) {
-            m_manager.close();
-        }
-    }
-
+	}
+	
+	public void close() {
+		if(m_manager != null && m_manager.isOpen()) {
+			m_manager.close();
+		}
+	}
+	
     @Override
     public <E> E findById(Class<E> entityClass, Object primaryKey, LockModeType lockMode) {
         E entity = getEntityManager().find(entityClass, primaryKey);

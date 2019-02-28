@@ -22,18 +22,18 @@ import java.util.List;
 import com.google.common.base.Joiner;
 
 public class Query {
-
+    
     public static final String EMPTY = "";
 
     private List<QueryCondition> m_queryConditions = new ArrayList<>();
-
+    
     private LogicOperator m_logicOperator;
-
+    
     public Query() {
-
+        
     }
-
-    public Query(List<QueryCondition> queryConditions, LogicOperator logicOperator) {
+    
+    public Query (List<QueryCondition> queryConditions, LogicOperator logicOperator) {
         this.m_queryConditions = queryConditions;
         this.m_logicOperator = logicOperator;
     }
@@ -53,15 +53,15 @@ public class Query {
     public void setLogicOperator(LogicOperator logicOperator) {
         m_logicOperator = logicOperator;
     }
-
+    
     public void addQueryCondition(QueryCondition qCondition) {
         m_queryConditions.add(qCondition);
     }
-
-    public void addQueryConditions(List<QueryCondition> qConditions) {
+    
+    public void addQueryConditions(List<QueryCondition>  qConditions) {
         m_queryConditions.addAll(qConditions);
     }
-
+    
     @Override
     public String toString() {
         if (m_queryConditions == null || m_queryConditions.isEmpty()) {

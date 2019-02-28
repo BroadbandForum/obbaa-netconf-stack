@@ -16,6 +16,9 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getDocFromFile;
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -33,10 +36,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.Difference;
 import org.custommonkey.xmlunit.DifferenceConstants;
@@ -51,6 +50,11 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class NetconfMessageBuilderTest extends XMLTestCase {
 
@@ -72,7 +76,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     }
 
     public void testGetConfigRpcDocumentBuild() throws Exception {
-        Document tempDoc = DocumentUtils.getNewDocument();
+        Document tempDoc = getNewDocument();
         Element topElement = tempDoc.createElement("top");
         topElement.setAttribute("xmlns", "http://example.com/schema/1.2/config");
         Element users = tempDoc.createElement("users");
@@ -81,10 +85,9 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         NetconfFilter axsFilter = new NetconfFilter().setType(NetconfResources.SUBTREE_FILTER).addXmlFilter(topElement);
         axsFilter.toString();// make sure this does not fail
         Map<String, List<QName>> fieldValues = new HashMap<>();
-        fieldValues.put("user", Arrays.asList(QName.create("www.test-company.com", "userName")));
+        fieldValues.put("user", Arrays.asList(QName.create("www.test.com", "userName")));
         Document actualDoc = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addGetConfigElement(StandardDataStores.RUNNING, axsFilter, null, 0, NetconfQueryParams.UNBOUNDED,
-                        fieldValues).build();
+                .addGetConfigElement(StandardDataStores.RUNNING, axsFilter, null, 0, NetconfQueryParams.UNBOUNDED, fieldValues).build();
         verifyFields(actualDoc.getDocumentElement());
 
         Node rpc = actualDoc.getChildNodes().item(0);
@@ -117,22 +120,18 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     }
 
     public void testEditConfigRpcDocumentBuild() throws Exception {
-        Document tempDoc = DocumentUtils.getNewDocument();
+        Document tempDoc = getNewDocument();
         Element topElement = tempDoc.createElement("top");
         topElement.setAttribute("xmlns", "http://example.com/schema/1.2/config");
         Element users = tempDoc.createElement("users");
-        topElement.setAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG_OPERATION,
-                EditConfigOperations.DELETE);
+        topElement.setAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG_OPERATION, EditConfigOperations.DELETE);
         topElement.appendChild(users);
 
-        EditConfigElement editConfigElement = new EditConfigElement().setConfigElementContents(Collections
-                .singletonList(topElement));
+        EditConfigElement editConfigElement = new EditConfigElement().setConfigElementContents(Collections.singletonList(topElement));
         editConfigElement.toString();
 
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addEditConfigElement("backup",
-                EditConfigDefaultOperations.MERGE, EditConfigTestOptions.TEST_THEN_SET, EditConfigErrorOptions
-                                .CONTINUE_ON_ERROR, 0,
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addEditConfigElement("backup",
+                EditConfigDefaultOperations.MERGE, EditConfigTestOptions.TEST_THEN_SET, EditConfigErrorOptions.CONTINUE_ON_ERROR, 0,
                 editConfigElement);
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
@@ -161,15 +160,13 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
         assertEquals(NetconfResources.EDIT_CONFIG_OPERATION,
                 topUsersElement.getAttributes().getNamedItem(NetconfResources.EDIT_CONFIG_OPERATION).getNodeName());
-        assertEquals(EditConfigOperations.DELETE, topUsersElement.getAttributes().getNamedItem(NetconfResources
-                .EDIT_CONFIG_OPERATION)
+        assertEquals(EditConfigOperations.DELETE, topUsersElement.getAttributes().getNamedItem(NetconfResources.EDIT_CONFIG_OPERATION)
                 .getNodeValue());
     }
 
     @Test
     public void testCopyConfigRpcDocumentBuild() throws Exception {
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addCopyConfigElement(
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addCopyConfigElement(
                 "https://user:password@example.com/cfg/backup.txt", true, StandardDataStores.RUNNING, false, null);
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
@@ -178,7 +175,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         assertEquals(NetconfResources.COPY_CONFIG, copyConfig.getNodeName());
 
         targetAssert(copyConfig);
-
+        
         Node source = copyConfig.getChildNodes().item(1);
         assertEquals(NetconfResources.DATA_SOURCE, source.getNodeName());
         Node src = source.getChildNodes().item(0);
@@ -209,8 +206,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     @Test
     public void testDeleteConfigRpcDocumentBuild() throws Exception {
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addDeleteConfigElement(
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addDeleteConfigElement(
                 StandardDataStores.RUNNING);
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
@@ -223,8 +219,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     @Test
     public void testLockRpcDocumentBuild() throws Exception {
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addLockElement(
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addLockElement(
                 StandardDataStores.RUNNING);
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
@@ -237,8 +232,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     @Test
     public void testUnLockRpcDocumentBuild() throws Exception {
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addUnLockElement(
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addUnLockElement(
                 StandardDataStores.RUNNING);
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
@@ -250,7 +244,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     }
 
     public void testGetRpcDocumentBuild() throws Exception {
-        Document tempDoc = DocumentUtils.getNewDocument();
+        Document tempDoc = getNewDocument();
         Element topElement = tempDoc.createElement("top");
         topElement.setAttribute("xmlns", "http://example.com/schema/1.2/config");
         Element users = tempDoc.createElement("users");
@@ -258,8 +252,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         DocumentUtils.prettyPrint(tempDoc);
         NetconfFilter axsFilter = new NetconfFilter().setType(NetconfResources.SUBTREE_FILTER).addXmlFilter(topElement);
         axsFilter.toString();// to make sure this does not end up failing..
-        Document actualDoc = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addGetElement(axsFilter,
-                null, 0, NetconfQueryParams.UNBOUNDED, Collections.<String, List<QName>>emptyMap()).build();
+        Document actualDoc = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addGetElement(axsFilter, null, 0, NetconfQueryParams.UNBOUNDED, Collections.<String, List<QName>>emptyMap()).build();
 
         Node rpc = actualDoc.getChildNodes().item(0);
         assertNotNull(rpc);
@@ -280,8 +273,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     @Test
     public void testCloseSessionRpcDocumentBuild() throws Exception {
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addCloseSessionElement();
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addCloseSessionElement();
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
         Node closeSession = rpc.getChildNodes().item(0);
@@ -307,7 +299,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     private Document getDocumentFile(String inputFile) {
         URL url = Thread.currentThread().getContextClassLoader().getResource(inputFile);
         File file = new File(url.getPath());
-        return DocumentUtils.getDocFromFile(file);
+        return getDocFromFile(file);
     }
 
     @Test
@@ -326,13 +318,13 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         String inputFile = "copyConfigSourceIsConfigElement.xml";
         URL url = Thread.currentThread().getContextClassLoader().getResource(inputFile);
         File file = new File(url.getPath());
-        Document document = DocumentUtils.getDocFromFile(file);
+        Document document = getDocFromFile(file);
         CopyConfigRequest request = DocumentToPojoTransformer.getCopyConfig(document);
 
         String inputFile2 = "copyConfigSourceConfigElement.xml";
         url = Thread.currentThread().getContextClassLoader().getResource(inputFile2);
         file = new File(url.getPath());
-        document = DocumentUtils.getDocFromFile(file);
+        document = getDocFromFile(file);
 
         assertEquals("101", request.getMessageId());
         assertXMLEquals(document.getDocumentElement(), request.getSourceConfigElement());
@@ -421,8 +413,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     /*
      * @Test public void testGetBytesFromDocument() throws Exception{ URL url =
-     * Thread.currentThread().getContextClassLoader().getResource("invalidXmlFile.xml"); File file = new File(url
-     * .getPath()); Document
+     * Thread.currentThread().getContextClassLoader().getResource("invalidXmlFile.xml"); File file = new File(url.getPath()); Document
      * document = getDocFromFile(file); try{ DocumentToPojoTransformer.getBytesFromDocument(document);
      * fail("Expected exception did not occur"); }catch(NetconfMessageBuilderException e){ //ok } }
      */
@@ -508,8 +499,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     @Test
     public void testKillSessionRpcDocumentBuild() throws Exception {
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101")
-                .addKillSessionElement(23);
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addKillSessionElement(23);
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
         Node killSession = rpc.getChildNodes().item(0);
@@ -557,7 +547,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     @Test
     public void testRpcReplyBuild() throws Exception {
 
-        Document tempDoc = DocumentUtils.getNewDocument();
+        Document tempDoc = getNewDocument();
         Element dataElement = tempDoc.createElement(NetconfResources.RPC_REPLY_DATA);
         Element users = tempDoc.createElement("users");
         dataElement.appendChild(users);
@@ -568,12 +558,10 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         Map<String, String> nsByPrefix = new HashMap<>();
         nsByPrefix.put("prefix", "http://some.namespace");
         NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.IN_USE, NetconfRpcErrorType.Transport,
-                NetconfRpcErrorSeverity.Error, "error-message").setErrorAppTag("app-tag").setErrorPath
-                ("prefix:rootObject/prefix:subObject", nsByPrefix)
+                NetconfRpcErrorSeverity.Error, "error-message").setErrorAppTag("app-tag").setErrorPath("prefix:rootObject/prefix:subObject", nsByPrefix)
                 .addErrorInfoElement(NetconfRpcErrorInfo.ErrElement, "info1Content");
         // .addErrorInfoElement("info1", "info1Content");
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcReplyDocument("1",
-                additionalAttributes)
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcReplyDocument("1", additionalAttributes)
                 .addData(dataElement).addRpcError(error).addOk();
         Document actualDoc = docBuilder.build();
 
@@ -601,7 +589,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         assertEquals(NetconfResources.RPC_ERROR_APP_TAG, rpcError.getChildNodes().item(3).getNodeName());
         assertEquals("app-tag", rpcError.getChildNodes().item(3).getTextContent());
 
-        Element errorPathElement = (Element) rpcError.getChildNodes().item(4);
+        Element errorPathElement = (Element)rpcError.getChildNodes().item(4);
         assertEquals(NetconfResources.RPC_ERROR_PATH, errorPathElement.getNodeName());
         assertEquals("prefix:rootObject/prefix:subObject", errorPathElement.getTextContent());
         assertEquals("http://some.namespace", errorPathElement.lookupNamespaceURI("prefix"));
@@ -618,7 +606,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     @Test
     public void testErrorRpcReplyBuild() throws Exception {
 
-        Document tempDoc = DocumentUtils.getNewDocument();
+        Document tempDoc = getNewDocument();
         Element dataElement = tempDoc.createElement(NetconfResources.RPC_REPLY_DATA);
         Element users = tempDoc.createElement("users");
         dataElement.appendChild(users);
@@ -637,8 +625,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     public static String load(String name) {
         StringBuffer sb = new StringBuffer();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(NetconfMessageBuilderTest.class
-                .getResourceAsStream(name)))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(NetconfMessageBuilderTest.class.getResourceAsStream(name)))) {
             String line = null;
             while ((line = reader.readLine()) != null) {
                 sb.append(line);
@@ -663,8 +650,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     public void testAddNetcofnNamespace() {
         Document document = getDocumentFile("copyConfig.xml");
         DocumentToPojoTransformer.addNetconfNamespace(document, NetconfResources.NETCONF_RPC_NS_1_0);
-        assertEquals(NetconfResources.NETCONF_RPC_NS_1_0, document.getDocumentElement().getAttribute(NetconfResources
-                .XMLNS));
+        assertEquals(NetconfResources.NETCONF_RPC_NS_1_0, document.getDocumentElement().getAttribute(NetconfResources.XMLNS));
     }
 
     @Test
@@ -700,10 +686,8 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     }
 
     @Test
-    public void testProcessChunkedMessageSingleChunk_multipleChunksWithNewLinetxt() throws IOException,
-            NetconfMessageBuilderException {
-        isProcessedChunkedMesageEqual("sampleChunkedMessage_multipleChunksWithNewLine.txt",
-                "expectedMessage_multipleChunksWithNewLinetxt");
+    public void testProcessChunkedMessageSingleChunk_multipleChunksWithNewLinetxt() throws IOException, NetconfMessageBuilderException {
+        isProcessedChunkedMesageEqual("sampleChunkedMessage_multipleChunksWithNewLine.txt", "expectedMessage_multipleChunksWithNewLinetxt");
 
     }
 
@@ -729,26 +713,6 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     }
 
     @Test
-    public void testProcessChunkedMessageThrowsException2() throws IOException, NetconfMessageBuilderException {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        URL url = Thread.currentThread().getContextClassLoader().getResource("sampleChunkedMessageInvalid2.txt");
-        File file = new File(url.getPath());
-        byte[] fileData = new byte[(int) file.length()];
-        DataInputStream dis = new DataInputStream(new FileInputStream(file));
-        dis.readFully(fileData);
-        dis.close();
-        stream.write(fileData);
-
-        try {
-            DocumentToPojoTransformer.processChunkedMessage(stream.toString());
-            fail("Did not get exception");
-
-        } catch (NetconfMessageBuilderException e) {
-            // fine
-        }
-    }
-
-    @Test
     public void testProcessChunkedMessageThrowsException3() throws IOException, NetconfMessageBuilderException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         URL url = Thread.currentThread().getContextClassLoader().getResource("sampleChunkedMessageInvalid3.txt");
@@ -764,6 +728,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
             fail("Did not get exception");
 
         } catch (NetconfMessageBuilderException e) {
+            assertEquals("java.lang.StringIndexOutOfBoundsException: String index out of range: 587", e.getCause().toString());
             // fine
         }
     }
@@ -782,8 +747,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         isProcessedChunkedMesageEqual(inputFile, outputFile);
     }
 
-    private void isProcessedChunkedMesageEqual(String inputFile, String outputFile) throws IOException,
-            NetconfMessageBuilderException {
+    private void isProcessedChunkedMesageEqual(String inputFile, String outputFile) throws IOException, NetconfMessageBuilderException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         URL url = Thread.currentThread().getContextClassLoader().getResource(inputFile);
         File file = new File(url.getPath());
@@ -817,8 +781,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
 
     }
 
-    private void isProcessedChunkedMesageEqual(String inputFile, String outputFile, int chunkSize) throws
-            IOException, NetconfMessageBuilderException {
+    private void isProcessedChunkedMesageEqual(String inputFile, String outputFile, int chunkSize) throws IOException, NetconfMessageBuilderException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         URL url = Thread.currentThread().getContextClassLoader().getResource(outputFile);
@@ -880,8 +843,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         assertEquals(StandardDataStores.RUNNING, editConfigReq.getTarget());
 
         assertNotNull(editConfigReq.getConfigElement());
-        assertEquals("configuration", editConfigReq.getConfigElement().getConfigElementContents().get(0).getLocalName
-                ());
+        assertEquals("configuration", editConfigReq.getConfigElement().getConfigElementContents().get(0).getLocalName());
         assertTrue(editConfigReq.getConfigElement().getConfigElementContents().get(0).getChildNodes().getLength() > 0);
 
         LOGGER.debug(DocumentUtils.documentToString(editConfigReq.getRequestDocument()));
@@ -900,8 +862,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         assertEquals(StandardDataStores.RUNNING, editConfigReq.getTarget());
 
         assertNotNull(editConfigReq.getConfigElement());
-        assertEquals("configuration", editConfigReq.getConfigElement().getConfigElementContents().get(0).getLocalName
-                ());
+        assertEquals("configuration", editConfigReq.getConfigElement().getConfigElementContents().get(0).getLocalName());
         assertTrue(editConfigReq.getConfigElement().getConfigElementContents().get(0).getChildNodes().getLength() > 0);
 
         LOGGER.debug(DocumentUtils.documentToString(editConfigReq.getRequestDocument()));

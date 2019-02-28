@@ -1,0 +1,43 @@
+module childImpactValidation{
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/childImpactValidation";
+
+    prefix "chImp";
+    
+
+    revision "2018-10-29" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+    
+    container parent{
+        list parent-list{
+            key name;
+            leaf name{
+                type string;
+            }
+            
+            list inner-list1{
+                key listName;
+                leaf listName{
+                    type string;
+                }
+                leaf type{
+                    type string;
+                }
+              
+            }
+        }  
+        
+        leaf when-leaf{
+          when "../parent-list[current()]/inner-list1[current()]/type = 'test'";
+            type string;
+        }       
+        
+    }
+    
+}

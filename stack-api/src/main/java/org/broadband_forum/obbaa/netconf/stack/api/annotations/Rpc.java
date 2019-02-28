@@ -32,7 +32,6 @@ public @interface Rpc {
     /**
      * Override XML namespace where the RPC is defined, by default the namespace is the namespace of the YANG module of
      * the {@link NcSubsystem}
-     *
      * @return
      */
     String namespace() default "";

@@ -1,28 +1,15 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
@@ -30,27 +17,34 @@ import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.w3c.dom.Document;
 
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDynaBeanFactory;
 
 public class DSValidationContext {
 
-    private Map<SchemaPath, Map<String, ModelNode>> m_modelNodeCache = new HashMap<SchemaPath, Map<String,
-            ModelNode>>();
+    private Map<SchemaPath, Map<String,ModelNode>> m_modelNodeCache = new HashMap<SchemaPath, Map<String,ModelNode>>();
     private Map<ModelNode, Collection<QName>> m_nodesToDelete = new HashMap<ModelNode, Collection<QName>>();
     private Set<SchemaPath> m_schemaPathToDelete = new HashSet<SchemaPath>();
     private Map<ModelNode, Collection<QName>> m_nodesToCreate = new HashMap<ModelNode, Collection<QName>>();
     private Set<SchemaPath> m_schemaPathToCreate = new HashSet<SchemaPath>();
-    private Map<SchemaPath, Object> m_whenDefaultValues = new HashMap<SchemaPath, Object>();
+    private Map<SchemaPath, Map<String, Object>> m_whenDefaultValues = new HashMap<>();
     private Map<ModelNode, Collection<QName>> m_nodesToMerge = new HashMap<ModelNode, Collection<QName>>();
     private Map<String, EditContainmentNode> m_deletedChangeNodes = new HashMap<String, EditContainmentNode>();
     private Map<String, QName> m_deletedChangeAttributes = new HashMap<String, QName>();
-    private Collection<ModelNode> m_rootNodes;
+    private Map<Pair<String,String>, List<ModelNode>> m_rootNodes = new HashMap<>();
     private Document m_document = DocumentUtils.createDocument();
+    private Map<SchemaPath, String> m_mountPathModelNodeIdCache = new HashMap<>();
+    private HashMap<Pair<ModelNode, DataSchemaNode>, Boolean> m_validatedChilds = new HashMap<>();
 
     private SchemaNode m_validationNode;
     private DataSchemaNode m_childOfChoiceCase;
     private DataSchemaNode m_augmentChildNode;
+    private boolean m_impactValidation;
+    private RootModelNodeAggregator m_rootNodeAggregator;
+    private boolean m_isMandatoryNodeCheck;
 
     public Integer nodesToCreateCount() {
         return m_nodesToCreate.size();
@@ -60,7 +54,7 @@ public class DSValidationContext {
     public void addToModelNodeCache(SchemaPath schemaPath, ModelNode modelNode) {
         Map<String, ModelNode> valueMap = m_modelNodeCache.get(schemaPath);
         if (valueMap == null) {
-            valueMap = new HashMap<String, ModelNode>(200);
+            valueMap = new HashMap<String,ModelNode>(200);
             m_modelNodeCache.put(schemaPath, valueMap);
         }
 
@@ -109,11 +103,17 @@ public class DSValidationContext {
         m_schemaPathToCreate.add(schemaPath);
     }
 
-    public void recordDefaultValue(SchemaPath schemaPath, Object object) {
-        m_whenDefaultValues.put(schemaPath, object);
+    public void recordDefaultValue(SchemaPath schemaPath, ModelNode modelNode, Object object) {
+        Map<String, Object> valueMap = m_whenDefaultValues.get(schemaPath);
+        if (valueMap == null) {
+            valueMap = new HashMap<String,Object>();
+            m_whenDefaultValues.put(schemaPath, valueMap);
+        }
+
+        valueMap.put(modelNode.getModelNodeId().xPathString(), object);
     }
 
-    public void recordDeletedChangeNode(String string, EditContainmentNode editContainmentNode) {
+    public void recordDeletedChangeNode(String string, EditContainmentNode editContainmentNode){
         m_deletedChangeNodes.put(string, editContainmentNode);
     }
 
@@ -125,11 +125,11 @@ public class DSValidationContext {
         return m_modelNodeCache.get(schemaPath);
     }
 
-    public Map<SchemaPath, Object> getDefaultValues() {
+    public Map<SchemaPath,Map<String, Object>> getDefaultValues() {
         return m_whenDefaultValues;
     }
 
-    public Collection<SchemaPath> getSchemaPathsToCreate() {
+    public Collection<SchemaPath> getSchemaPathsToCreate(){
         return m_schemaPathToCreate;
     }
 
@@ -140,11 +140,9 @@ public class DSValidationContext {
     public Collection<SchemaPath> getSchemaPathsToDelete() {
         return m_schemaPathToDelete;
     }
-
     public boolean isNodeForCreate(ModelNode modelNode) {
         return m_nodesToCreate.containsKey(modelNode);
     }
-
     public boolean isNodeForCreate(SchemaPath schemaPath) {
         return m_schemaPathToCreate.contains(schemaPath);
     }
@@ -165,6 +163,14 @@ public class DSValidationContext {
         return m_deletedChangeAttributes.get(modelNodePathString);
     }
 
+    public Map<Pair<ModelNode, DataSchemaNode>, Boolean> getValidatedChilds() {
+        return m_validatedChilds;
+    }
+
+    public void setValidatedChilds(Pair<ModelNode, DataSchemaNode> validatedChilds, Boolean value) {
+        this.m_validatedChilds.put(validatedChilds, value);
+    }
+
     public SchemaNode getValidationNode() {
         return m_validationNode;
     }
@@ -173,12 +179,9 @@ public class DSValidationContext {
         this.m_validationNode = validationNode;
     }
 
-    public void cacheRootNodes(Collection<ModelNode> rootNodes) {
-        m_rootNodes = rootNodes;
-    }
-
-    public Collection<ModelNode> getRootNodes() {
-        return m_rootNodes;
+    public void cacheRootNodes(String namespace, String localName, Collection<ModelNode> rootNodes) {
+        Pair<String, String> qnameKey = new Pair<>(namespace, localName);
+        m_rootNodes.put(qnameKey, new ArrayList(rootNodes));
     }
 
     public Map<ModelNode, Collection<QName>> getDeleteList() {
@@ -203,12 +206,73 @@ public class DSValidationContext {
         this.m_childOfChoiceCase = childOfChoiceCase;
     }
 
-    public DataSchemaNode getAugmentChildNode() {
+    public DataSchemaNode getAugmentChildNode(){
         return m_augmentChildNode;
     }
 
-    public void setAugmentChildNode(DataSchemaNode augmentChildNode) {
+    public void setAugmentChildNode(DataSchemaNode augmentChildNode){
         this.m_augmentChildNode = augmentChildNode;
     }
 
+    public boolean getImpactValidation() {
+        return m_impactValidation;
+    }
+
+    public void setImpactValidation(boolean impactValidation) {
+        this.m_impactValidation = impactValidation;
+    }
+
+    public void setRootNodeAggregator(RootModelNodeAggregator rootNodeAggregator) {
+        this.m_rootNodeAggregator = rootNodeAggregator;
+    }
+
+    public List<ModelNode> getRootNodesOfType(String namespace, String localName) {
+        Pair<String, String> qnameKey = new Pair<>(namespace, ModelNodeDynaBeanFactory.getModelNodeAttributeName(localName));
+        if (m_rootNodes.containsKey(qnameKey)) {
+            return m_rootNodes.get(qnameKey);
+        }
+        List<ModelNode> nodes = m_rootNodeAggregator.getModuleRootFromHelpers(namespace, localName);
+        cacheRootNodes(namespace, localName, nodes);
+        return nodes;
+    }
+
+    public List<Pair<String, String>> getRootNodeLocalNameNsPairs() {
+        return m_rootNodeAggregator.getRootNodeNsLocalNamePairs();
+    }
+
+    public <T> T withRootNodeAggregator(RootNodeAggregatorTemplate<T> template, RootModelNodeAggregator
+            rootModelNodeAggregator) {
+        RootModelNodeAggregator old = m_rootNodeAggregator;
+        try {
+            setRootNodeAggregator(rootModelNodeAggregator);
+            return template.execute();
+        } finally {
+            setRootNodeAggregator(old);
+        }
+    }
+
+    public interface RootNodeAggregatorTemplate<T> {
+        <T> T execute();
+    }
+
+    //Only for UT
+    public void setModeNodeCache(SchemaPath schemaPath, Map<String, ModelNode> valueMap){
+        m_modelNodeCache.put(schemaPath, valueMap);
+    }
+
+    public Map<SchemaPath, String> getMountPathModelNodeIdCache() {
+        return m_mountPathModelNodeIdCache;
+    }
+
+    public void addToMountPathModelNodeIdCache(SchemaPath schemaPath, ModelNodeId modelNodeId) {
+        m_mountPathModelNodeIdCache.put(schemaPath, modelNodeId.xPathString());
+    }
+
+    public boolean isThisMandatoryNodesCheck() {
+        return m_isMandatoryNodeCheck;
+    }
+
+    public void setAsMandatoryNodesCheck(boolean isMandatoryNodeCheck) {
+        this.m_isMandatoryNodeCheck = isMandatoryNodeCheck;
+    }
 }

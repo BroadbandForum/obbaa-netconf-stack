@@ -1,12 +1,14 @@
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util;
 
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
 import org.w3c.dom.Node;
+
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
+
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
 
 public class IdentityRefUtil {
 
@@ -53,7 +55,7 @@ public class IdentityRefUtil {
         } else {
             namespace = NamespaceUtil.getAttributeNameSpace(node, null);
         }
-        return namespace;
+       return namespace;
     }
 
     public static String getIdentityValue(String stringValue) {
@@ -69,7 +71,7 @@ public class IdentityRefUtil {
 
     public static NetconfRpcError getInvalidIdentityRefRpcError(String value) {
         NetconfRpcError rpcError = NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.INVALID_VALUE,
-            "Value \"" + value + "\" is not a valid identityref value.");
+                "Value \"" + value + "\" is not a valid identityref value.");
         return rpcError;
     }
 }

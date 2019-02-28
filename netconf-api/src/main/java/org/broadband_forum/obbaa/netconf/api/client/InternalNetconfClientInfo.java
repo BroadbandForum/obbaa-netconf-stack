@@ -20,17 +20,19 @@ import java.io.Serializable;
 
 public class InternalNetconfClientInfo extends NetconfClientInfo {
 
-    public InternalNetconfClientInfo(String username, int sessionId) {
-        this(username, sessionId, null);
-    }
+	public static class InternalClientSessionId implements Serializable{
+	}
+	public InternalNetconfClientInfo(String username, int sessionId) {
+		this(username, sessionId, new InternalClientSessionId());
+	}
 
-    public InternalNetconfClientInfo(String username, int sessionId, Serializable clientSessionId) {
-        super(username, sessionId, clientSessionId);
-    }
+	public InternalNetconfClientInfo(String username, int sessionId, Serializable clientSessionId) {
+		super(username, sessionId, clientSessionId);
+	}
 
-    @Override
-    public boolean isInternalUser() {
-        return true;
-    }
+	@Override
+	public boolean isInternalUser() {
+		return true;
+	}
 
 }

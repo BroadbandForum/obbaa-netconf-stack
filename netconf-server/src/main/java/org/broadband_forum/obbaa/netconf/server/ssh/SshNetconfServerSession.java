@@ -50,9 +50,8 @@ public class SshNetconfServerSession implements NetconfServerSession {
     }
 
     public void setAuthenticationHandler(NetconfServerAuthenticationHandler authenticationHandler,
-                                         AuthenticationListener authenticationListener) {
-        m_sshd.setPasswordAuthenticator(new NetconfPasswordAuthenticator(authenticationHandler,
-                authenticationListener));
+            AuthenticationListener authenticationListener) {
+        m_sshd.setPasswordAuthenticator(new NetconfPasswordAuthenticator(authenticationHandler, authenticationListener));
         m_sshd.setPublickeyAuthenticator(new NetconfPublicKeyAuthenticator(authenticationHandler, authenticationListener));
     }
 }

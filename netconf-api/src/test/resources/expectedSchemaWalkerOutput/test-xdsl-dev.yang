@@ -1,0 +1,37 @@
+module test-xdsl-dev {
+    yang-version "1";
+
+    namespace "urn:xxxxx-org:yang:test-xdsl-dev";
+
+    prefix "xdsl-dev";
+
+    import "bbf-xdsl" {
+        prefix "xdsl";
+
+        revision-date "2016-01-25";
+    }
+
+    import "ietf-interfaces" {
+        prefix "if";
+
+        revision-date "2014-05-08";
+    }
+
+    organization "TBD";
+
+    contact "TBD";
+
+    description
+      "Dummy deviation module to test NAV support of deviations
+       Primarily uses 'legal' deviations as defined in bbf2016.707.00
+       A few 'illegal' deviations are added for cmpleteness.
+       Focus: augment & grouping";
+
+    revision "2017-07-05";
+
+    deviation "/if:interfaces/if:interface/xdsl:line/xdsl:supported-mode" {
+        deviate replace {
+            min-elements "2";
+        }
+    }
+}

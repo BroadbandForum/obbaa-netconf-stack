@@ -1,0 +1,11 @@
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<capabilities>
+<capability>urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults?module=ietf-netconf-with-defaults&amp;revision=2011-06-01</capability>
+<capability>urn:ietf:params:xml:ns:yang:ietf-routing?module=ietf-routing&amp;revision=2015-10-16</capability>
+<capability>urn:ieee:params:xml:ns:yang:testa-dot1x?module=testa-dot1x&amp;revision=2015-09-10</capability>
+<capability>http://tail-f.com/yang/common-monitoring?module=tailf-common-monitoring&amp;revision=2013-06-14</capability>
+<capability>urn:ietf:params:xml:ns:yang:ietf-yang-library?module=ietf-yang-library&amp;revision=2016-06-21</capability>
+</capabilities>
+<session-id>101</session-id>
+</hello>
+]]>]]>

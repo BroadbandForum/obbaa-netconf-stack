@@ -21,7 +21,6 @@ import org.broadband_forum.obbaa.netconf.api.client.util.NetconfClientConfigurat
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportFactory;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportOrder;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
-
 import io.netty.channel.EventLoopGroup;
 
 import java.nio.channels.AsynchronousChannelGroup;
@@ -29,8 +28,9 @@ import java.util.Set;
 
 /**
  * Netconf client configuration. Use {@link NetconfClientConfigurationBuilder} to build a configuration object.
+ * 
  *
- * @author keshava
+ * 
  */
 public class NetconfClientConfiguration {
 
@@ -44,11 +44,9 @@ public class NetconfClientConfiguration {
     private AsynchronousChannelGroup m_asynChannelGroup;
     private AuthenticationListener m_authenticationListener;
 
-    public NetconfClientConfiguration(Long connectionTimeoutMillis, NetconfLoginProvider loginProvider, Set<String>
-            caps,
+    public NetconfClientConfiguration(Long connectionTimeoutMillis, NetconfLoginProvider loginProvider, Set<String> caps,
                                       NetconfTransport transport, EventLoopGroup eventLoopGroup,
-                                      AsynchronousChannelGroup asynChannelGroup, AuthenticationListener
-                                              authenticationListener) {
+                                      AsynchronousChannelGroup asynChannelGroup, AuthenticationListener authenticationListener) {
         this.m_connectionTimeoutMillis = connectionTimeoutMillis;
         this.m_loginProvider = loginProvider;
         this.m_caps = caps;
@@ -69,7 +67,7 @@ public class NetconfClientConfiguration {
 
     /**
      * This provider will be used for login to the remote netconf server.
-     *
+     * 
      * @return
      */
     public NetconfLoginProvider getNetconfLoginProvider() {
@@ -78,7 +76,7 @@ public class NetconfClientConfiguration {
 
     /**
      * Client's capabilities. These will be used during netconf {@code<hello>} message exchange.
-     *
+     * 
      * @return
      */
     public Set<String> getCaps() {
@@ -94,20 +92,18 @@ public class NetconfClientConfiguration {
     }
 
     /**
-     * The transport to be used for the netconf connection. Following is an example to create a transport using the
-     * factory
+     * The transport to be used for the netconf connection. Following is an example to create a transport using the factory
      * {@link NetconfTransportFactory} and {@link NetconfTransportOrder}.
      * <p>
-     * <p>
+     * 
      * <pre>
      * {
      *     &#064;code
-     *     NetconfTransportOrder transportOder = new NetconfTransportOrder().setServerSocketAddress(expectedSockAddr)
-     *     .setTransportType(
+     *     NetconfTransportOrder transportOder = new NetconfTransportOrder().setServerSocketAddress(expectedSockAddr).setTransportType(
      *             NetconfTransportProtocol.SSH.name());
      * }
      * </pre>
-     *
+     * 
      * @return
      */
     public NetconfTransport getTransport() {
@@ -132,17 +128,6 @@ public class NetconfClientConfiguration {
 
     public void setAsynchronousChannelGroup(AsynchronousChannelGroup asynChannelGroup) {
         this.m_asynChannelGroup = asynChannelGroup;
-    }
-
-    @Override
-    public String toString() {
-        return "NetconfClientConfiguration{" + "m_connectionTimeoutMillis=" + m_connectionTimeoutMillis +
-                ", m_loginProvider=" + m_loginProvider + ", m_caps=" + m_caps + ", m_notificationListener="
-                + m_notificationListener + ", m_transport=" + m_transport + ", m_clientSessionListener=" +
-                m_clientSessionListener
-                + ", m_eventLoopGroup=" + m_eventLoopGroup + ", m_asynChannelGroup=" + m_asynChannelGroup + ", " +
-                "m_authenticationListener="
-                + m_authenticationListener + '}';
     }
 
 }

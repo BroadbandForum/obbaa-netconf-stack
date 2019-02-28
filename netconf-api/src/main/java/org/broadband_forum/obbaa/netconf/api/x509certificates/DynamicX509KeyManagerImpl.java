@@ -17,13 +17,14 @@
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
 import org.broadband_forum.obbaa.netconf.api.utils.PemReader;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509KeyManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
@@ -40,9 +41,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
- * DynamicX509KeyManagerImpl is a X509ExtendedKeyManager that has capability of reloading the private keys.
- * One can call DynamicX509KeyManagerImpl#initKeyManager() with the new List of certificates and private key to
- * re-align the key manager.
+ * DynamicX509KeyManagerImpl is a X509ExtendedKeyManager that has capability of reloading the private keys. 
+ * One can call DynamicX509KeyManagerImpl#initKeyManager() with the new List of certificates and private key to re-align the key manager. 
  * Created by keshava on 4/29/15.
  */
 public class DynamicX509KeyManagerImpl extends DynamicX509KeyManager {
@@ -53,9 +53,9 @@ public class DynamicX509KeyManagerImpl extends DynamicX509KeyManager {
     private X509KeyManager m_innerKeyManager = null;
 
     private static final Logger LOGGER = Logger.getLogger(DynamicX509KeyManagerImpl.class);
+    public static final AdvancedLogger CUSTOMER_LOGGER = LoggerFactory.getLogger(DynamicX509TrustManagerImpl.class,  "netconf-lib", "CUSTOMER", "GLOBAL");
 
-    public DynamicX509KeyManagerImpl(List<String> keyCertificateChain, PrivateKeyInfo privateKeyInfo) throws
-            KeyManagerInitException {
+    public DynamicX509KeyManagerImpl(List<String> keyCertificateChain, PrivateKeyInfo privateKeyInfo) throws KeyManagerInitException {
         initKeyManager(keyCertificateChain, privateKeyInfo);
     }
 
@@ -79,8 +79,7 @@ public class DynamicX509KeyManagerImpl extends DynamicX509KeyManager {
     }
 
     @Override
-    public synchronized void initKeyManager(List<String> certificateChain, PrivateKeyInfo privateKeyInfo) throws
-            KeyManagerInitException {
+    public synchronized void initKeyManager(List<String> certificateChain, PrivateKeyInfo privateKeyInfo) throws KeyManagerInitException {
         if (privateKeyInfo != null && !certificateChain.isEmpty()) {
             KeyStore ks = null;
             try {
@@ -91,8 +90,7 @@ public class DynamicX509KeyManagerImpl extends DynamicX509KeyManager {
                 m_innerKeyManagerFactory = KeyManagerFactory.getInstance(algorithm);
                 ks = KeyStore.getInstance(JKS);
                 ks.load(null, null);
-                PrivateKey key = KeyUtil.getPrivateKey(PemReader.stripPKDelimiters(privateKeyInfo.getPrivateKeyString
-                        ()), privateKeyInfo
+                PrivateKey key = KeyUtil.getPrivateKey(PemReader.stripPKDelimiters(privateKeyInfo.getPrivateKeyString()), privateKeyInfo
                         .getPrivateKeyPassword());
                 List<X509Certificate> certChain = CertificateUtil.getX509Certificates(CertificateUtil
                         .getByteArrayCertificates(CertificateUtil.stripDelimiters(certificateChain)));
@@ -100,11 +98,10 @@ public class DynamicX509KeyManagerImpl extends DynamicX509KeyManager {
                         certChain.toArray(new java.security.cert.Certificate[certChain.size()]));
                 m_innerKeyManagerFactory.init(ks, privateKeyInfo.getPrivateKeyPasswordChars());
                 m_innerKeyManager = (X509KeyManager) m_innerKeyManagerFactory.getKeyManagers()[0];
-            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException |
-                    UnrecoverableKeyException e) {
+            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException | UnrecoverableKeyException e) {
                 throw new KeyManagerInitException(e);
             } catch (KeyException e) {
-                throw new KeyManagerInitException(KeyManagerInitException.INVALID_PRIVATE_KEY, e);
+                CUSTOMER_LOGGER.error(KeyManagerInitException.INVALID_PRIVATE_KEY, e);
             }
         } else {
             m_innerKeyManager = null;
@@ -124,8 +121,7 @@ public class DynamicX509KeyManagerImpl extends DynamicX509KeyManager {
                 PrivateKeyInfo privateKeyInfo = new PrivateKeyInfo(privateKeyString, privateKeyPassWord);
                 initKeyManager(certificates, privateKeyInfo);
             } else {
-                LOGGER.error("CertificateChain file or PrivateKey file not found " + certificateChainFilePath + " - "
-                        + privateKeyFilePath);
+                CUSTOMER_LOGGER.error("CertificateChain file or PrivateKey file not found " + certificateChainFilePath + " - " + privateKeyFilePath);
             }
         } catch (CertificateException | IOException e) {
             throw new KeyManagerInitException(e);
@@ -171,8 +167,7 @@ public class DynamicX509KeyManagerImpl extends DynamicX509KeyManager {
     @Override
     public X509Certificate[] getCertificateChain(String alias) {
         if (m_innerKeyManager == null) {
-            // If the key manager is not initialised with key and OR certificates, then we don't have a certificate
-            // chain
+            // If the key manager is not initialised with key and OR certificates, then we don't have a certificate chain
             return null;
         }
         return m_innerKeyManager.getCertificateChain(alias);

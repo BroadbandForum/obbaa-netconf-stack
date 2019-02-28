@@ -1,0 +1,20 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Greatest hits</name>
+                <admins>
+                   <admin>
+                       <label>admin8</label>
+                   </admin>
+                </admins>
+                <sponsors>
+                    <sponsor>
+                        <name>BDog</name>
+                    </sponsor>
+                </sponsors>
+            </album>
+        </artist>
+    </library>
+</jukebox>

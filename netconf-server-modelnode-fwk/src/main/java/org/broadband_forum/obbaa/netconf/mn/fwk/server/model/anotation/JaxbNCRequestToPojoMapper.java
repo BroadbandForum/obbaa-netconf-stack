@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.anotation;
 
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
@@ -30,7 +14,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,8 +21,8 @@ import java.util.List;
  * Created by vishal on 18/8/16.
  */
 public class JaxbNCRequestToPojoMapper implements NCRequestToPojoMapper {
-    public static Object getPojoObject(Node node, Class classType) throws NCRequestToPojoMapperException {
-        try {
+	public static Object getPojoObject(Node node, Class classType) throws NCRequestToPojoMapperException {
+        try{
             JAXBContext jaxbContext = JAXBContext.newInstance(classType);
             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
             JAXBElement jaxbElement = jaxbUnmarshaller.unmarshal(node, classType);
@@ -54,10 +37,9 @@ public class JaxbNCRequestToPojoMapper implements NCRequestToPojoMapper {
     }
 
     @Override
-    public List<Object> getRpcArguments(NetconfRpcRequest request, RpcArgsInfo rpcArgsInfo) throws
-            NCRequestToPojoMapperException {
+    public List<Object> getRpcArguments(NetconfRpcRequest request, RpcArgsInfo rpcArgsInfo) throws NCRequestToPojoMapperException {
         List<Object> arguments = new ArrayList<>();
-        try {
+        try{
             Document requestDocument = request.getRequestDocument();
             Element docElement = requestDocument.getDocumentElement();
             List<RpcArgumentInfo> rpcArguments = rpcArgsInfo.getRpcArguments();
@@ -68,12 +50,12 @@ public class JaxbNCRequestToPojoMapper implements NCRequestToPojoMapper {
                 String argNamespace = rpcArgument.getNamespace();
                 if (DataType.isSingleValueType(classType)) {
                     Node singeValueNode = DocumentUtils.getDescendant(docElement, argumentName, argNamespace);
-                    if (singeValueNode != null) {
+                    if (singeValueNode!= null) {
                         String argumentValue = singeValueNode.getTextContent().trim();
                         Object value = DataType.createInstanceFrom(classType, argumentValue);
                         arguments.add(value);
                     }
-                } else {//not a simple type so should be a pojo
+                }else{//not a simple type so should be a pojo
                     Node argumentNode = DocumentUtils.getDescendant(docElement, argumentName, argNamespace);
                     if (argumentNode != null) {
                         Object argumentValue = JaxbNCRequestToPojoMapper.getPojoObject(argumentNode, classType);

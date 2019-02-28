@@ -25,17 +25,17 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
 class SecureChannelFutureListener implements ChannelFutureListener {
-
+    
     private static final Logger LOGGER = Logger.getLogger(SecureChannelFutureListener.class);
-
+    
     private CompletableMessage m_message;
     private NetconfClientInfo m_clientInfo;
-
+    
     public SecureChannelFutureListener(CompletableMessage message, NetconfClientInfo clientInfo) {
         m_message = message;
         m_clientInfo = clientInfo;
     }
-
+    
     @Override
     public void operationComplete(ChannelFuture future) throws Exception {
         if (future.isSuccess()) {

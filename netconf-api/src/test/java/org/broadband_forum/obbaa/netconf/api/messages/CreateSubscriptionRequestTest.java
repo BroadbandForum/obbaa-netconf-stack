@@ -22,12 +22,10 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
 import java.text.ParseException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.joda.time.DateTime;
 import org.junit.Test;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class CreateSubscriptionRequestTest {
@@ -86,8 +84,7 @@ public class CreateSubscriptionRequestTest {
         m_createSubscriptionRequest.setStopTime(STOP_TIME);
         m_createSubscriptionRequest.getRequestDocument();
         assertNotNull(m_createSubscriptionRequest.getRequestDocument());
-        assertTrue(m_createSubscriptionRequest.getRequestDocument().getElementsByTagName("create-subscription")
-                .getLength() == 1);
+        assertTrue(m_createSubscriptionRequest.getRequestDocument().getElementsByTagName("create-subscription").getLength() == 1);
 
     }
 

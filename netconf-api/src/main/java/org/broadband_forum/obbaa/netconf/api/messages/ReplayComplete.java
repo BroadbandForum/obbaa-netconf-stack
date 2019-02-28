@@ -15,23 +15,24 @@
  */
 
 /**
- *
+ * 
  */
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Element;
 
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+
 /**
- * ReplayComplete is a notification message used to inform netconf client that streaming of replay notification is
- * completed.
+ * ReplayComplete is a notification message used to inform netconf client that streaming of replay notification is completed.
+ * 
  *
- * @author gnanavek
+ * 
  */
 public class ReplayComplete extends NetconfNotification {
-
+    
     public static final QName TYPE = QName.create(NetconfResources.NC_NOTIFICATION_NS, "replayComplete");
 
     /**
@@ -45,7 +46,7 @@ public class ReplayComplete extends NetconfNotification {
         Element replayComplete = new PojoToDocumentTransformer().newReplayCompleteElement();
         setNotificationElement(replayComplete);
     }
-
+    
     @Override
     public QName getType() {
         return TYPE;

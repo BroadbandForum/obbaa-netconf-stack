@@ -1,10 +1,10 @@
 <rpc message-id="101" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
 	<get>
-		<depth xmlns="http://bbf.org/netconf-extensions">1</depth>
+		<depth xmlns="http://www.test-company.com/solutions/netconf-extensions">1</depth>
 		<filter type="subtree" />
 		<with-defaults
 			xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults">report-all</with-defaults>
 		<with-delay
-			xmlns="http://bbf.org/netconf-extensions">1</with-delay>
+			xmlns="http://www.test-company.com/solutions/anv-test-netconf-extensions">1</with-delay>
 	</get>
 </rpc>

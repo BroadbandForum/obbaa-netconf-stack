@@ -1,0 +1,9 @@
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<rpc-error>
+  <error-message>'location' already exists with same Value. Create request Failed.</error-message>
+  <error-path xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Circus']</error-path>
+  <error-severity>error</error-severity>
+  <error-tag>data-exists</error-tag>
+  <error-type>application</error-type>
+</rpc-error>
+</rpc-reply>

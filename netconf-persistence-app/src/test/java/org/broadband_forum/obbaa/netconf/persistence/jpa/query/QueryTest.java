@@ -167,70 +167,68 @@ public class QueryTest {
         qCon3QQCon2QQCons.add(qCon3QQCon2QQCon1);
         QueryCondition qCon3QQCon2QQCon2 = new QueryCondition(username, QueryConditionOperator.EQUALS, "Robin");
         qCon3QQCon2QQCons.add(qCon3QQCon2QQCon2);
-
+        
         QueryCondition qCon4 = new QueryCondition("attribute1", QueryConditionOperator.EQUALS, "");
         qCons.add(qCon4);
-
+        
         QueryCondition qCon5 = new QueryCondition("attribute2", QueryConditionOperator.GREATER_THAN, 10);
         qCons.add(qCon5);
-
+        
         QueryCondition qCon6 = new QueryCondition("attribute3", QueryConditionOperator.LESS_THAN, 5);
         qCons.add(qCon6);
-
+        
         QueryCondition qCon7 = new QueryCondition("attribute4", QueryConditionOperator.NOT_EQUALS, "");
         qCons.add(qCon7);
-
+        
         QueryCondition qCon8 = new QueryCondition("attribute5", QueryConditionOperator.NOT_EQUALS, "attVal5");
         qCons.add(qCon8);
-
+        
         QueryCondition qCon9 = new QueryCondition("attribute6", QueryConditionOperator.LESS_THAN_OR_EQUALS, 2);
         qCons.add(qCon9);
-
+        
         QueryCondition qCon10 = new QueryCondition("attribute7", QueryConditionOperator.GREATER_THAN_OR_EQUALS, 3);
         qCons.add(qCon10);
-
+        
         QueryCondition qCon11 = new QueryCondition("attribute8", QueryConditionOperator.IS_NULL, "");
         qCons.add(qCon11);
-
+        
         QueryCondition qCon12 = new QueryCondition("attribute9", QueryConditionOperator.IS_NOT_NULL, "");
         qCons.add(qCon12);
-
+        
         QueryCondition qCon13 = new QueryCondition("attribute10", QueryConditionOperator.LIKE, "*attVal*10*");
         qCons.add(qCon13);
-
+        
         QueryCondition qCon14 = new QueryCondition("attribute11", QueryConditionOperator.CONTAINS, "attVal11");
         qCons.add(qCon14);
-
+        
         QueryCondition qCon15 = new QueryCondition("attribute12", QueryConditionOperator.BEGIN_WITH, "attVal12");
         qCons.add(qCon15);
-
+        
         QueryCondition qCon16 = new QueryCondition("attribute13", QueryConditionOperator.END_WITH, "attVal13");
         qCons.add(qCon16);
-
+        
         QueryCondition qCon17 = new QueryCondition("attribute14", QueryConditionOperator.NOT_CONTAINS, "attVal14");
         qCons.add(qCon17);
-
+        
         QueryCondition qCon18 = new QueryCondition("attribute15", QueryConditionOperator.NOT_BEGIN_WITH, "attVal15");
         qCons.add(qCon18);
-
+        
         QueryCondition qCon19 = new QueryCondition("attribute16", QueryConditionOperator.NOT_END_WITH, "attVal16");
         qCons.add(qCon19);
-
+        
         QueryCondition qCon20 = new QueryCondition("attribute17", QueryConditionOperator.IN, Arrays.asList(1, 4, 9));
         qCons.add(qCon20);
-
-        QueryCondition qCon21 = new QueryCondition("attribute18", QueryConditionOperator.NOT_IN, Arrays.asList("a",
-                "b", "c"));
+        
+        QueryCondition qCon21 = new QueryCondition("attribute18", QueryConditionOperator.NOT_IN, Arrays.asList("a", "b", "c"));
         qCons.add(qCon21);
-
+        
         Calendar calendar = Calendar.getInstance();
         calendar.set(1988, 3, 18, 11, 50, 20);
         Date date = calendar.getTime();
         QueryCondition qCon22 = new QueryCondition("attribute19", QueryConditionOperator.EQUALS, date);
         qCons.add(qCon22);
 
-        String expected = "device_holder_name = 'OLT-1' AND device_id = 'device1' AND ((version = 1 AND username = " +
-                "'admin') OR (version = 2 AND username = 'Robin'))"
+        String expected = "device_holder_name = 'OLT-1' AND device_id = 'device1' AND ((version = 1 AND username = 'admin') OR (version = 2 AND username = 'Robin'))"
                 + " AND (attribute1 IS null OR attribute1 = '')"
                 + " AND attribute2 > 10"
                 + " AND attribute3 < 5"
@@ -252,14 +250,11 @@ public class QueryTest {
                 + " AND attribute19 = '1988-04-18 11:50:20'";
         assertEquals(expected, root.toString());
     }
-
+    
     @Test
     public void testGetConditionQueryString() {
-        assertEquals("attribute1 LIKE '%value%1%'", QueryBuilder.getConditionQueryString(QueryConditionOperator.LIKE,
-                "attribute1", "*value*1*", false));
-        assertEquals("attribute2 LIKE '%value2%'", QueryBuilder.getConditionQueryString(QueryConditionOperator
-                .CONTAINS, "attribute2", "value2", false));
-        assertEquals("attribute3 NOT LIKE 'value3%'", QueryBuilder.getConditionQueryString(QueryConditionOperator
-                .NOT_BEGIN_WITH, "attribute3", "value3", false));
+        assertEquals("attribute1 LIKE '%value%1%'", QueryBuilder.getConditionQueryString(QueryConditionOperator.LIKE, "attribute1", "*value*1*", false));
+        assertEquals("attribute2 LIKE '%value2%'", QueryBuilder.getConditionQueryString(QueryConditionOperator.CONTAINS, "attribute2", "value2", false));
+        assertEquals("attribute3 NOT LIKE 'value3%'", QueryBuilder.getConditionQueryString(QueryConditionOperator.NOT_BEGIN_WITH, "attribute3", "value3", false));
     }
 }

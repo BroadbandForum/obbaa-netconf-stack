@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.nc.stack.examples;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashSet;
@@ -46,59 +47,42 @@ import io.netty.handler.ssl.SslProvider;
  */
 public class TlsCallhomeServer {
     private static final Logger LOGGER = Logger.getLogger(TlsCallhomeServer.class);
+    protected final String m_certChain;
+    protected final String m_privateKey;
+    protected final String m_trustChain;
     private NetconfServerMessageListener m_listener = new LoggingServerMessageListener();
+    public TlsCallhomeServer() {
+        this("tlscertificates/client/netconfPeerCert.crt", "tlscertificates/client/netconfPeerPK.pem","tlscertificates/rootCA.pem");
+    }
 
-    private NetconfServerSession runTlsServer() throws NetconfConfigurationBuilderException,
-            NetconfServerDispatcherException,
+    public TlsCallhomeServer(String certChain, String privateKey, String trustChain) {
+        m_certChain = certChain;
+        m_privateKey = privateKey;
+        m_trustChain = trustChain;
+    }
+    protected NetconfServerSession runTlsServer() throws NetconfConfigurationBuilderException, NetconfServerDispatcherException,
             InterruptedException, ExecutionException, UnknownHostException {
 
         NetconfServerSession serverSession = null;
-        NetconfServerDispatcher serverDispatcher = new NetconfServerDispatcherImpl(ExecutorServiceProvider
-                .getInstance().getExecutorService());
+        NetconfServerDispatcher serverDispatcher = new NetconfServerDispatcherImpl(ExecutorServiceProvider.getInstance().getExecutorService());
         HashSet<String> caps = new HashSet<>();
         caps.add("urn:ietf:params:netconf:base:1.0");
-
-        //trust store for the server
-        URL serverTrustStore = Thread.currentThread().getContextClassLoader().getResource("tlscertificates/rootCA.pem");
-        File serverTrustStoreFile = new File(serverTrustStore.getPath());
-
-        //private key of the netconf server
-        URL privKey = Thread.currentThread().getContextClassLoader().getResource
-                ("tlscertificates/server/netconfPeerPK.pem");
-        File privKeyFile = new File(privKey.getPath());
-
-        //signed certificate of the netconf server
-        URL certificate = Thread.currentThread().getContextClassLoader().getResource
-                ("tlscertificates/server/netconfPeerCert.crt");
-        File certificateFile = new File(certificate.getPath());
+        NetconfTransportOrder transportOrder = getNetconfTransportOrder();
 
         NetconfServerConfigurationBuilder builder = new NetconfServerConfigurationBuilder();
-        NetconfTransportOrder transportOrder = new NetconfTransportOrder();
-        transportOrder.setTransportType(NetconfTransportProtocol.REVERSE_TLS.name());
-        transportOrder.setCallHomeIp("10.131.206.28");
-        transportOrder.setTlsKeepalive(true);
-        transportOrder.setCallHomePort(Integer.valueOf(3536));
-        transportOrder.setSslProvider(SslProvider.OPENSSL);
-        transportOrder.setAllowSelfSigned(false);
-        transportOrder.setCertificateChain(certificateFile);
-        transportOrder.setTrustChain(serverTrustStoreFile);
-        transportOrder.setPrivateKey(privKeyFile);
-        transportOrder.setClientAuthenticationNeeded();
-
         NetconfTransport transport;
         try {
             transport = NetconfTransportFactory.makeNetconfTransport(transportOrder);
 
             builder.setCapabilities(caps).setTransport(transport)
                     .setNetconfServerMessageListener(m_listener) //Callback interface for handling netconf RPCs
-                    .setServerMessageHandler(new QueuingMessageHandler(m_listener)); // Message handler to handle rpc
-            // queuing/scheduling
+                    .setServerMessageHandler(new QueuingMessageHandler(m_listener)); // Message handler to handle rpc queuing/scheduling
             NetconfServerConfiguration config = builder.build();
 
             try {
                 serverSession = serverDispatcher.createServer(config).get();
             } catch (Exception e) {
-                LOGGER.debug(String.format("Error while connecting to callhome client"), e);
+                LOGGER.debug(String.format("Error while connecting to callhome client"),e);
             }
         } catch (NetconfConfigurationBuilderException e1) {
             LOGGER.error(String.format("Could not create reverse tls transport", e1));
@@ -106,12 +90,42 @@ public class TlsCallhomeServer {
         return serverSession;
     }
 
+    protected NetconfTransportOrder getNetconfTransportOrder() {
+        //trust store for the server
+        URL serverTrustStore = getClass().getResource(m_trustChain);
+        File serverTrustStoreFile = new File(serverTrustStore.getPath());
+
+        //private key of the netconf server
+        URL privKey = getClass().getResource(m_privateKey);
+        File privKeyFile = new File(privKey.getPath());
+
+        //signed certificate of the netconf server
+        URL certificate = getClass().getResource(m_certChain);
+        File certificateFile = new File(certificate.getPath());
+
+        NetconfTransportOrder transportOrder = new NetconfTransportOrder();
+        transportOrder.setTransportType(NetconfTransportProtocol.REVERSE_TLS.name());
+        try {
+            transportOrder.setCallHomeIp(InetAddress.getLocalHost().getHostAddress());
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+        transportOrder.setTlsKeepalive(true);
+        transportOrder.setCallHomePort(Integer.valueOf(8282));
+        transportOrder.setSslProvider(SslProvider.OPENSSL);
+        transportOrder.setAllowSelfSigned(false);
+        transportOrder.setCertificateChain(certificateFile);
+        transportOrder.setTrustChain(serverTrustStoreFile);
+        transportOrder.setPrivateKey(privKeyFile);
+        transportOrder.setClientAuthenticationNeeded();
+        return transportOrder;
+    }
+
     public static void main(String[] args) {
         TlsCallhomeServer server = new TlsCallhomeServer();
         try {
             server.runTlsServer();
-        } catch (NetconfConfigurationBuilderException | NetconfServerDispatcherException | InterruptedException |
-                ExecutionException
+        } catch (NetconfConfigurationBuilderException | NetconfServerDispatcherException | InterruptedException | ExecutionException
                 | UnknownHostException e) {
             LOGGER.error("Error while running server", e);
         }

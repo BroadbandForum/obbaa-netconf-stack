@@ -21,6 +21,5 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 
 public interface RpcPayloadConstraintParser {
     void validate(AbstractNetconfRequest request, RequestType requestType) throws RpcValidationException;
-
     void validate(NetConfResponse reponse, RequestType requestType) throws RpcValidationException;
 }

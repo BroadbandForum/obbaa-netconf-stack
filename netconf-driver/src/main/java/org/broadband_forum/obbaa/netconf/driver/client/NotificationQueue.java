@@ -27,7 +27,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * This class as a buffer to provides the methods to handle the received notifications from netconf server
+ * This class as a buffer to provides the methods to handle the received notifications from netconf server 
  * Created by nhtoan on 3/9/16.
  */
 public class NotificationQueue implements NotificationListener {
@@ -46,7 +46,7 @@ public class NotificationQueue implements NotificationListener {
 
     /**
      * Retrieves and removes the head notification of this queue,
-     *
+     * 
      * @return the retrieved notification as a string
      */
     public String retrieveNotification() {

@@ -1,29 +1,13 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.dsm;
 
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeCreateException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
+
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKeyBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContainerHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.HelperDrivenModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDeleteException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeSetException;
@@ -42,12 +26,11 @@ import java.util.Map;
 public class DsmContainerModelNodeHelper extends YangConstraintHelper implements ChildContainerHelper {
     protected final ContainerSchemaNode m_schemaNode;
     protected final ModelNodeDataStoreManager m_modelNodeDSM;
-
     /**
      * @param schemaNode
      * @param modelNodeDSM
      */
-    public DsmContainerModelNodeHelper(ContainerSchemaNode schemaNode, ModelNodeDataStoreManager modelNodeDSM) {
+    public DsmContainerModelNodeHelper(ContainerSchemaNode schemaNode,ModelNodeDataStoreManager modelNodeDSM) {
         super(schemaNode);
         m_schemaNode = schemaNode;
         m_modelNodeDSM = modelNodeDSM;
@@ -55,11 +38,11 @@ public class DsmContainerModelNodeHelper extends YangConstraintHelper implements
 
     @Override
     public ModelNode getValue(ModelNode node) throws ModelNodeGetException {
-        if (m_schemaNode != null) {
+        if (m_schemaNode != null){
             ModelNodeId parentNodeId;
-            if (node != null) {
+            if(node != null) {
                 parentNodeId = node.getModelNodeId();
-            } else {
+            }else {
                 parentNodeId = new ModelNodeId();
             }
             return m_modelNodeDSM.findNode(m_schemaNode.getPath(), new ModelNodeKeyBuilder().build(), parentNodeId);
@@ -73,18 +56,13 @@ public class DsmContainerModelNodeHelper extends YangConstraintHelper implements
     }
 
     @Override
-    public DataSchemaNode getSchemaNode() {
-        return (DataSchemaNode) m_schemaNode;
+    public DataSchemaNode getSchemaNode(){
+    	return (DataSchemaNode)m_schemaNode;
     }
 
     @Override
-    public ModelNode createChild(ModelNode parentNode, Map<QName, ConfigLeafAttribute> keyAttrs) throws
-            ModelNodeCreateException {
-        ModelNodeWithAttributes newNode = new ModelNodeWithAttributes(m_schemaNode.getPath(), parentNode
-                .getModelNodeId(),
-                ((HelperDrivenModelNode) parentNode).getModelNodeHelperRegistry(), ((HelperDrivenModelNode)
-                parentNode).getSubSystemRegistry(),
-                ((HelperDrivenModelNode) parentNode).getSchemaRegistry(), m_modelNodeDSM);
+    public ModelNode createChild(ModelNode parentNode, Map<QName, ConfigLeafAttribute> keyAttrs) throws ModelNodeCreateException {
+        ModelNodeWithAttributes newNode = getNewModelNode(parentNode, m_modelNodeDSM);
         newNode.setAttributes(keyAttrs);
         m_modelNodeDSM.createNode(newNode, parentNode.getModelNodeId());
         return newNode;
@@ -93,9 +71,9 @@ public class DsmContainerModelNodeHelper extends YangConstraintHelper implements
     @Override
     public ModelNode setValue(ModelNode parentNode, ModelNode childNode) throws ModelNodeSetException {
         ModelNodeId parentNodeId = null;
-        if (parentNode != null) {
+        if(parentNode != null) {
             parentNodeId = parentNode.getModelNodeId();
-        } else {
+        }else {
             parentNodeId = new ModelNodeId();
         }
         m_modelNodeDSM.createNode(childNode, parentNodeId);
@@ -104,10 +82,10 @@ public class DsmContainerModelNodeHelper extends YangConstraintHelper implements
 
     @Override
     public void deleteChild(ModelNode parentNode) throws ModelNodeDeleteException {
-        try {
-            if (parentNode != null) {
+        try{
+            if(parentNode !=null){
                 ModelNode value = getValue(parentNode);
-                if (value != null) {
+                if(value != null) {
                     m_modelNodeDSM.removeNode(value, parentNode.getModelNodeId());
                 }
             }

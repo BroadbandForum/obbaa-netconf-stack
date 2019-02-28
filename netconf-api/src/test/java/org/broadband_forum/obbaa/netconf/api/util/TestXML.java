@@ -17,7 +17,7 @@
 package org.broadband_forum.obbaa.netconf.api.util;
 
 import static org.junit.Assert.assertTrue;
-
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getDocFromFile;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -43,8 +43,7 @@ public class TestXML {
 
     private static final Logger LOGGER = Logger.getLogger(TestXML.class);
 
-    public static boolean assertXMLEquals(Element expectedElement, Element actualElement) throws SAXException,
-            IOException {
+    public static boolean assertXMLEquals(Element expectedElement, Element actualElement) throws SAXException, IOException {
         return assertXMLEquals(expectedElement, actualElement, Collections.EMPTY_LIST);
     }
 
@@ -59,16 +58,8 @@ public class TestXML {
         try {
             URL url = Thread.currentThread().getContextClassLoader().getResource(name);
             File file = new File(url.getPath());
-            Document doc = DocumentUtils.getDocFromFile(file);
-            Element xml = null;
-            NodeList childNodes = doc.getChildNodes();
-            for(int i=0; i< childNodes.getLength(); i++) {
-                if(childNodes.item(i) instanceof Element){
-                    xml = (Element) childNodes.item(i);
-                    break;
-                }
-            }
-            return xml;
+            Document doc = getDocFromFile(file);
+            return (Element) doc.getChildNodes().item(0);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -117,18 +108,15 @@ public class TestXML {
                 }
                 if (difference.getTestNodeDetail().getNode().getNodeType() == Node.TEXT_NODE
                         && difference.getTestNodeDetail().getValue().startsWith("$")
-                        && difference.getTestNodeDetail().getNode().getParentNode().getNodeName().equalsIgnoreCase
-                        ("pma:password")) {
+                        && difference.getTestNodeDetail().getNode().getParentNode().getNodeName().equalsIgnoreCase("pma:password")) {
                     LOGGER.info("Skipping Password Comparison due to Dynamic Salt generation");
                     return RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
                 } else if (difference.getTestNodeDetail().getNode().getParentNode().getNodeName()
                         .equalsIgnoreCase("pma:reachable-last-change")) {
                     LOGGER.info("Skipping reachable-last-change Comparison due to current time changing");
                     return RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
-                } else if (ignoreElements.contains(difference.getTestNodeDetail().getNode().getParentNode()
-                        .getNodeName())) {
-                    LOGGER.info("Skipping comparison for " + difference.getTestNodeDetail().getNode().getParentNode()
-                            .getNodeName()
+                } else if (ignoreElements.contains(difference.getTestNodeDetail().getNode().getParentNode().getNodeName())) {
+                    LOGGER.info("Skipping comparison for " + difference.getTestNodeDetail().getNode().getParentNode().getNodeName()
                             + " as requested");
                     return RETURN_IGNORE_DIFFERENCE_NODES_IDENTICAL;
                 }

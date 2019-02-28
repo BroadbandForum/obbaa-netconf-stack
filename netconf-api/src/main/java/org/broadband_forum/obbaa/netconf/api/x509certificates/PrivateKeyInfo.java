@@ -17,7 +17,7 @@
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
 /**
- * A POJO class to store private key info such as the base 64 encoded string and the private key password.
+ * A POJO class to store private key info such as the base 64 encoded string and the private key password. 
  * Created by keshava on 5/4/15.
  */
 public class PrivateKeyInfo {

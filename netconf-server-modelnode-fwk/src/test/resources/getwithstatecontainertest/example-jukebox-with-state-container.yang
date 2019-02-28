@@ -131,6 +131,27 @@ module example-jukebox-with-state-container {
               } //list admin
             }  // container admins
 
+            container sponsors {
+             config false;
+              description
+                "Sponsors for the album.";
+
+              list sponsor {
+                key "name";
+                leaf name {
+                  type string;
+                  description
+                    "The name of the sponsor";
+                }
+
+                leaf type {
+                  type string;
+                  description
+                    "The type of sponsor";
+                }
+              } //list sponsor
+            }  // container sponsors
+
             list song {
               key "name";
               description

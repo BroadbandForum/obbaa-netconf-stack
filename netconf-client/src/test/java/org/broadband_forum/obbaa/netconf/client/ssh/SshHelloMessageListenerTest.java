@@ -58,7 +58,7 @@ public class SshHelloMessageListenerTest extends XMLTestCase {
     private IoInputStream m_mockStream = mock(IoInputStream.class);
     private SshFutureListener<IoReadFuture> m_futureListener;
     private TestIoReadFuture m_mockReadFuture = new TestIoReadFuture();
-    private static final Logger LOGGER = Logger.getLogger(SshNetconfEOMClientSessionListenerTest.class);
+    private static final Logger LOGGER = Logger.getLogger(SshNetconfClientSessionListenerTest.class);
 
     @Override
     protected void setUp() throws Exception {
@@ -98,7 +98,7 @@ public class SshHelloMessageListenerTest extends XMLTestCase {
         Document expectedDoc = getDocFromFile(file);
 
         assertXMLEqual(expectedDoc, TestSshNetconfClientSession.c_lastRecievedMessage);
-        assertTrue(m_futureListener instanceof SshNetconfEOMClientSessionListener);
+        assertTrue(m_futureListener instanceof SshNetconfClientSessionListener);
     }
 
     public void testListenerSendsMessageToSessionAndSetsChunkedListener() {
@@ -124,7 +124,7 @@ public class SshHelloMessageListenerTest extends XMLTestCase {
         Document expectedDoc = getDocFromFile(file);
 
         assertXMLEqual(expectedDoc, TestSshNetconfClientSession.c_lastRecievedMessage);
-        assertTrue(m_futureListener instanceof SshNetconfChunkedClientSessionListener);
+        assertTrue(m_futureListener instanceof SshNetconfClientSessionListener);
     }
 
     public void testIfListenerClosesChannelIfNonHelloMessageIsRecieved() {
@@ -148,8 +148,7 @@ public class SshHelloMessageListenerTest extends XMLTestCase {
         StringBuilder fileContents = new StringBuilder();
         BufferedReader in;
         try {
-            in = new BufferedReader(new FileReader(Thread.currentThread().getContextClassLoader().getResource(file)
-                    .getFile()));
+            in = new BufferedReader(new FileReader(Thread.currentThread().getContextClassLoader().getResource(file).getFile()));
             String line = "";
             while ((line = in.readLine()) != null) {
                 fileContents.append(line).append("\n");

@@ -307,6 +307,46 @@
       "RFC 4291: IP Version 6 Addressing Architecture";
    }
 
+      typedef ip-address-no-zone {
+	   	    type union {
+	   	      type inet:ipv4-address-no-zone;
+	   	      type inet:ipv6-address-no-zone;
+	   	    }
+	   	    description
+	   	     "The ip-address-no-zone type represents an IP address and is
+	   	      IP version neutral.  The format of the textual representation
+	   	      implies the IP version.  This type does not support scoped
+	   	      addresses since it does not allow zone identifiers in the
+	   	      address format.";
+	   	    reference
+	   	     "RFC 4007: IPv6 Scoped Address Architecture";
+	   	  }
+	   
+	   	  typedef ipv4-address-no-zone {
+	   	    type inet:ipv4-address {
+	   	      pattern '[0-9\.]*';
+	   	    }
+	   	    description
+	   	      "An IPv4 address without a zone index.  This type, derived from
+	   	       ipv4-address, may be used in situations where the zone is
+	   	       known from the context and hence no zone index is needed.";
+	   	  }
+	   
+	   	  typedef ipv6-address-no-zone {
+	   	    type inet:ipv6-address {
+	   	      pattern '[0-9a-fA-F:\.]*';
+	   	    }
+	   	    description
+	   	      "An IPv6 address without a zone index.  This type, derived from
+	   	       ipv6-address, may be used in situations where the zone is
+	   	       known from the context and hence no zone index is needed.";
+	   	    reference
+	   	     "RFC 4291: IP Version 6 Addressing Architecture
+	   	      RFC 4007: IPv6 Scoped Address Architecture
+	   	      RFC 5952: A Recommendation for IPv6 Address Text
+	   	                Representation";
+	   	  }
+	   
    /*** collection of domain name and URI types ***/
 
    typedef domain-name {

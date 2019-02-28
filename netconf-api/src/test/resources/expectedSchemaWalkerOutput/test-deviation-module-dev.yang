@@ -1,0 +1,49 @@
+module test-deviation-module-dev {
+    yang-version "1";
+
+    namespace "urn:opendaylight:test-deviation-module-dev";
+
+    prefix "test-deviation-module-dev";
+
+    import "test-deviation-module" {
+        prefix "test-deviation-module";
+
+        revision-date "2017-10-11";
+    }
+
+    revision "2017-10-11";
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-add" {
+        deviate add {
+            default "defaultValue";
+        }
+    }
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-delete" {
+        deviate delete {
+            default "1";
+        }
+    }
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-not-supported" {
+        deviate not-supported;
+    }
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-replace" {
+        deviate replace {
+            mandatory false;
+
+            type int64 {
+                range "0..1000";
+            }
+        }
+    }
+
+    deviation "/test-deviation-module:top-test-container/test-deviation-module:test-leaflist-for-add" {
+        deviate add {
+            max-elements "2";
+
+            min-elements "1";
+        }
+    }
+}

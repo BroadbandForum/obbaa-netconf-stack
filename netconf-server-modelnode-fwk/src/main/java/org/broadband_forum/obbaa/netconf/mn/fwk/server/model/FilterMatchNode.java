@@ -1,55 +1,28 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import org.opendaylight.yangtools.yang.common.QName;
 
-public class FilterMatchNode {
+public class FilterMatchNode extends AbstractFilterNode {
 
-    private String m_nodeName;
-    private String m_filter;
-    private String m_namespace;
+	private String m_filter;
 
-    public FilterMatchNode(String nodeName, String namespace, String filter) {
-        m_nodeName = nodeName;
-        m_filter = filter;
-        m_namespace = namespace;
-    }
+	public FilterMatchNode(String nodeName, String namespace, String filter) {
+	    super(nodeName,namespace);
+		m_filter = filter;
+	}
 
-    public String getNodeName() {
-        return m_nodeName;
-    }
+	public String getFilter() {
+		return m_filter;
+	}
 
-    public String getFilter() {
-        return m_filter;
-    }
-
-    public String getNamespace() {
-        return m_namespace;
-    }
-
-    public void setNamespace(String namespace) {
-        m_namespace = namespace;
-    }
-
-    @Override
-    public String toString() {
-        return "FilterMatchNode [" + m_nodeName + "=" + m_filter + ", namespace=" + m_namespace + "]";
-    }
+	@Override
+	public String toString() {
+	    if(m_attributes.isEmpty()){
+            return "FilterMatchNode [" + m_nodeName + "=" + m_filter + ", namespace=" + m_namespace + "]";
+        }else {
+            return "FilterMatchNode [" + m_nodeName + "=" + m_filter + ", namespace=" + m_namespace + ", attributes=" + m_attributes + "]";
+        }
+	}
 
     @Override
     public int hashCode() {
@@ -58,6 +31,7 @@ public class FilterMatchNode {
         result = prime * result + ((m_filter == null) ? 0 : m_filter.hashCode());
         result = prime * result + ((m_namespace == null) ? 0 : m_namespace.hashCode());
         result = prime * result + ((m_nodeName == null) ? 0 : m_nodeName.hashCode());
+        result = prime * result + ((m_attributes == null) ? 0 : m_attributes.hashCode());
         return result;
     }
 
@@ -85,13 +59,18 @@ public class FilterMatchNode {
                 return false;
         } else if (!m_nodeName.equals(other.m_nodeName))
             return false;
+        if (m_attributes == null) {
+            if (other.m_attributes != null)
+                return false;
+        } else if (!m_attributes.equals(other.m_attributes))
+            return false;
         return true;
     }
 
 
     public boolean isSameQName(QName qName) {
-        if (qName.getNamespace().toString().equals(m_namespace) && qName.getLocalName().equals(m_nodeName)) {
-            return true;
+	    if(qName.getNamespace().toString().equals(m_namespace) && qName.getLocalName().equals(m_nodeName)){
+	        return true;
         }
         return false;
     }

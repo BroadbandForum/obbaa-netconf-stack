@@ -15,7 +15,7 @@
  */
 
 /**
- *
+ * 
  */
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
@@ -24,6 +24,7 @@ import java.security.cert.X509Certificate;
 
 /**
  * {@link PeerCertificateException} wraps untrusted certificates with {@link CertificateException}
+ *
  */
 public class PeerCertificateException extends CertificateException {
 

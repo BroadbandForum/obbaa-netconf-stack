@@ -26,6 +26,12 @@
       <bean class="org.broadband_forum.obbaa.netconf.server.util.TestUtil" factory-method="getJukeBoxYangs">
       </bean>
     </constructor-arg>
+    <constructor-arg>
+      <set/>
+    </constructor-arg>
+    <constructor-arg>
+      <map/>
+    </constructor-arg>
     <constructor-arg ref="noLockService"/>
   </bean>
 

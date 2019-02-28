@@ -23,7 +23,7 @@ public class FailureInfo {
     private String m_ip;
     private int m_port;
     private PointOfFailure m_pointOfFailure;
-
+    
     private X509Certificate m_peerCertificate;
 
     public String getIp() {
@@ -88,17 +88,6 @@ public class FailureInfo {
         if (m_port != other.m_port)
             return false;
         return true;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("FailureInfo{");
-        sb.append("m_ip='").append(m_ip).append('\'');
-        sb.append(", m_port=").append(m_port);
-        sb.append(", m_pointOfFailure=").append(m_pointOfFailure);
-        sb.append(", m_peerCertificate=").append(m_peerCertificate);
-        sb.append('}');
-        return sb.toString();
     }
 
     public X509Certificate getPeerCertificate() {

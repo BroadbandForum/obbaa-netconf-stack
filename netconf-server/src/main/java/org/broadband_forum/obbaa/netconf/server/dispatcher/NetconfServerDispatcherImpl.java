@@ -27,13 +27,14 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
-import org.broadband_forum.obbaa.netconf.server.tls.CallHomeTlsServerDispatcherImpl;
 import org.broadband_forum.obbaa.netconf.server.ssh.SshServerDispatcherImpl;
+import org.broadband_forum.obbaa.netconf.server.tls.CallHomeTlsServerDispatcherImpl;
 
 /**
  * A dispatcher that runs a netconf server all supported transport types.
+ * 
  *
- * @author keshava
+ * 
  */
 public class NetconfServerDispatcherImpl implements NetconfServerDispatcher {
 
@@ -53,45 +54,41 @@ public class NetconfServerDispatcherImpl implements NetconfServerDispatcher {
     }
 
     /**
-     * Use this method to connect to a netconf server. The following example shows how to run a SSH based netconf
-     * server.
-     * <p>
+     * Use this method to connect to a netconf server. The following example shows how to run a SSH based netconf server.
+     * 
      * <pre>
      * {
      *     &#064;code
      *     HashSet&lt;String&gt; serverCaps = new HashSet&lt;String&gt;();
      *     serverCaps.add(NetconfResources.NETCONF_BASE_CAP_1_0);
      *     NetconfTransportOrder transportOder = new NetconfTransportOrder()
-     *             .setServerSocketAddress(new InetSocketAddress(InetAddress.getLocalHost(), 1212))
-     *             .setServerSshHostKeyPath(&quot;hostkey.ser&quot;)
+     *             .setServerSocketAddress(new InetSocketAddress(InetAddress.getLocalHost(), 1212)).setServerSshHostKeyPath(&quot;hostkey.ser&quot;)
      *             .setTransportType(NetconfTransportProtocol.SSH.name());
-     *     NetconfServerConfigurationBuilder builder = new NetconfServerConfigurationBuilder()
-     *     .setAuthenticationHandler(new UTAuthHandler())
+     *     NetconfServerConfigurationBuilder builder = new NetconfServerConfigurationBuilder().setAuthenticationHandler(new UTAuthHandler())
      *             .setNetconfServerMessageListener(new UTServerMessageListener()).setCapabilities(serverCaps)
      *             .setTransport(NetconfTransportFactory.makeNetconfTransport(transportOder));
-     *
+     * 
      *     SshServerDispatcherImpl dispatcher = new SshServerDispatcherImpl();
      *     NetconfServerSession serverSession = dispatcher.createServer(builder.build()).get();
-     *
+     * 
      *     // when you are done, shutdown the server
      *     serverSession.killServer(true);
      * }
      * </pre>
-     * <p>
+     * 
      * See SshNetconfServer for more concrete example.
-     *
+     * 
      * @param config server configuration.
-     *               <p>
-     *               See {@link NetconfServerConfigurationBuilder} to see how to build a configuration with different
-     *               transport options.
+     *            <p>
+     *            See {@link NetconfServerConfigurationBuilder} to see how to build a configuration with different transport options.
+     * 
      */
     @Override
-    public Future<NetconfServerSession> createServer(NetconfServerConfiguration config) throws
-            NetconfServerDispatcherException {
+    public Future<NetconfServerSession> createServer(NetconfServerConfiguration config) throws NetconfServerDispatcherException {
         NetconfTransport transport = config.getNetconfTransport();
         if (transport.getTranportProtocol().equals(NetconfTransportProtocol.SSH.name())) {
             return m_sshDispatcher.createServer(config);
-        } else if (transport.getTranportProtocol().equals(NetconfTransportProtocol.REVERSE_TLS.name())) {
+        }  else if (transport.getTranportProtocol().equals(NetconfTransportProtocol.REVERSE_TLS.name())) {
             return m_reverseTlsDispatcher.createServer(config);
         }
         return null;

@@ -16,18 +16,19 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import org.w3c.dom.Document;
+
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-import org.w3c.dom.Document;
-
 /**
  * An abstract class providing implementation for netconf message-id and reply timeout.
+ * 
  *
- * @author keshava
+ * 
  */
 public abstract class AbstractNetconfRequest {
-    private static final long DEFAULT_REPLY_TIMEOUT = 30000L;
+    private static final long DEFAULT_REPLY_TIMEOUT = 60000L;
     protected String m_messageId;
     protected String m_netconfNamespace;
     protected long m_replyTimeout = DEFAULT_REPLY_TIMEOUT;
@@ -35,7 +36,7 @@ public abstract class AbstractNetconfRequest {
     private NetconfClientInfo m_clientInfo;
 
     public Document getRequestDocument() throws NetconfMessageBuilderException {
-        synchronized (this) {
+        synchronized (this){
             return getRequestDocumentInternal();
         }
     }
@@ -77,7 +78,7 @@ public abstract class AbstractNetconfRequest {
     }
 
     public String requestToString() {
-        synchronized (this) {
+        synchronized (this){
             try {
                 return PojoToDocumentTransformer.requestToString(getRequestDocument());
             } catch (NetconfMessageBuilderException e) {
@@ -86,9 +87,9 @@ public abstract class AbstractNetconfRequest {
         }
     }
 
-    @Override
-    public String toString() {
-        return "NetconfRequest [m_messageId=" + m_messageId + ", m_clientInfo=" + m_clientInfo + "]";
-    }
+	@Override
+	public String toString() {
+		return "NetconfRequest [m_messageId=" + m_messageId + ", m_clientInfo=" + m_clientInfo + "]";
+	}
 
 }

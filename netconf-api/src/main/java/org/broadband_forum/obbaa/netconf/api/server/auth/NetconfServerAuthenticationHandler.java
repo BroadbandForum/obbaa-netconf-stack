@@ -20,38 +20,29 @@ import java.io.Serializable;
 import java.security.PublicKey;
 
 import org.apache.log4j.Logger;
+
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfigurationBuilder;
 
 /**
- * An interface to authenticate netconf client logins. A Netconf server should provide an implementation of this
- * interface via
- * {@link NetconfServerConfigurationBuilder#setAuthenticationHandler(NetconfServerAuthenticationHandler)} to
- * authenticate client logins.
+ * An interface to authenticate netconf client logins. A Netconf server should provide an implementation of this interface via
+ * {@link NetconfServerConfigurationBuilder#setAuthenticationHandler(NetconfServerAuthenticationHandler)} to authenticate client logins.
+ * 
  *
- * @author keshava
+ * 
  */
 public interface NetconfServerAuthenticationHandler {
     Logger LOGGER = Logger.getLogger(NetconfServerAuthenticationHandler.class);
 
-    boolean authenticate(ClientAuthenticationInfo clientAuthInfo);
+    AuthenticationResult authenticate(ClientAuthenticationInfo clientAuthInfo);
 
-    boolean authenticate(PublicKey pubKey);
+    AuthenticationResult authenticate(PublicKey pubKey);
 
-    void logout(Serializable clientSessionId);
+    void logout(Serializable sessionId);
 
-    default void registerServerSessionListener(Serializable clientSessionId, NetconfServerSessionListener
-            sessionListener) {
-    }
-
-    ;
-
-    default void unregisterServerSessionListener(Serializable clientSessionId) {
-    }
-
-    default NetconfServerSessionListener getServerSessionListener(Serializable clientSessionId) {
-        return () -> LOGGER.info(String.format("Session with id %s expired", clientSessionId));
-    }
-
-    ;
+    void registerServerSessionListener(Serializable sessionId, NetconfServerSessionListener sessionListener);
+    
+    void unregisterServerSessionListener(Serializable sessionId);
+    
+    NetconfServerSessionListener getServerSessionListener(Serializable sessionId);
 }
 

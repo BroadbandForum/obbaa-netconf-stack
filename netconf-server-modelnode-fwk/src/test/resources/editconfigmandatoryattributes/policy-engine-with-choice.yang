@@ -1,0 +1,119 @@
+module policy-engine-with-choice {
+    namespace "http://www.test-company.com/solutions/policy-engine-2";
+    prefix "policy-2";
+
+    organization "test-company";
+    contact "";
+
+    description "Yang Module for managing policies to automate network operations in AC.";
+
+	import ietf-yang-types { prefix yang; }
+
+    revision "2018-01-04" {
+        description "Initial version.";
+    }
+
+    container policy-engine-2 {
+        list policy-2 {
+            key "name";
+
+            leaf name {
+                mandatory true;
+                type string {
+                    length "1..40";
+                }
+                description "Name of the Policy";
+            }
+
+            leaf description {
+                type string {
+                    length "0..300";
+                }
+                description "A free format description of the Policy";
+            }
+
+            leaf status {
+               type enumeration {
+                 enum active;
+                 enum suspended;
+               }
+               default active;
+               description "Indicates whether the policy is applicable or not, whether it can be executed or not.
+                            Note that if a policy is suspended, the ongoing operations are not stopped";
+            }
+
+            leaf last-triggered {
+                config false;
+                type yang:date-and-time;
+                description "The last time the policy was triggered, in ISO-8601 format";
+            }
+
+            container schedule {
+
+               leaf schedule-start-time {
+                   type yang:date-and-time;
+                   description "The start time of the schedule, in ISO-8601 format";
+               }
+
+               leaf schedule-end-time {
+                   when "../schedule-cron";
+                   type yang:date-and-time;
+                   description "The end time of the schedule, in ISO-8601 format";
+               }
+
+               leaf schedule-cron {
+                   type string;
+                   description "The cron expression of the schedule, compatible with the Quartz scheduler.";
+                   reference "http://www.quartz-scheduler.org/documentation/quartz-2.2.x/tutorials/crontrigger.html#format";
+               }
+            }
+
+            container alarm {
+            	list alarm {
+
+            	   key "type condition";
+
+                   leaf type {
+                       type string {
+                           length "1..200";
+                       }
+                       description "the alarm type as stored in ES";
+                   }
+
+                   leaf condition {
+                       type enumeration {
+                           enum ALARM_ON;
+                           enum ALARM_OFF;
+                       }
+                       description "Indicates whether the alarm must be raised or cleared to trigger the policy";
+                   }
+            	}
+                choice alarm-addresses {
+                          description
+                            "A choice on the value of the addresses.";
+                        mandatory true;
+                          case address-1 {
+                            description
+                              "test1";
+                            leaf testleaf-1 {
+                              type empty;
+                              description
+                                "testleaf1";
+                            }
+                          }
+
+                          case address-2 {
+                            description
+                              "test2";
+
+                            leaf testleaf-2 {
+                              type empty;
+                              description
+                                "testleaf2";
+                            }
+                          }
+                }
+            }
+        }
+    }
+}

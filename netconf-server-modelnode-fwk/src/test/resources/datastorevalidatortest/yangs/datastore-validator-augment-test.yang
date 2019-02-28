@@ -1,0 +1,37 @@
+// Contents of "datastore-validator-augment-test"
+module datastore-validator-augment-test {
+    yang-version 1;
+
+    namespace "urn:opendaylight:datastore-validator-augment-test";
+    prefix "validation-augment";
+
+    import datastore-validator-test { prefix "validation"; }
+
+    revision 2018-03-07 {
+        description "Initial revision";
+    }
+
+    augment "/validation:validation/validation:test-interfaces" {
+        container use-test-interface {
+            leaf channel-leaf {
+                type string;
+            }
+
+            leaf sample-leaf {
+                type validation:test-interface-ref;
+                must "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()]/validation:type='sampleType1'" {
+                    error-message "must reference a channel-leaf";
+                }
+            }
+        }
+    }
+
+    augment "/validation:testNotification/validation:notif-container" {
+        leaf sample-leaf {
+            type validation:test-interface-ref;
+            must "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()]/validation:type='sampleType1'" {
+               error-message "must reference a channel-leaf";
+            }
+        }
+    }
+}

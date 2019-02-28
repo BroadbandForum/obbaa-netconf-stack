@@ -22,7 +22,7 @@ import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
 /**
  * Created by keshava on 2/19/16.
  */
-public class OsgiPersistenceManagerUtil implements PersistenceManagerUtil {
+public class OsgiPersistenceManagerUtil implements PersistenceManagerUtil{
 
     private EntityDataStoreManager m_entityDataStoreManager;
 

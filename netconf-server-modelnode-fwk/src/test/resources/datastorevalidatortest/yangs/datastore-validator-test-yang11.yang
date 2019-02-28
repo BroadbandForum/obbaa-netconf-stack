@@ -1,0 +1,163 @@
+module datastore-validator-test-yang11 {
+	
+	yang-version 1.1;
+    
+	namespace "urn:org:bbf:pma:validation-yang11";
+	
+	prefix "validation11";
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+	
+	import datastore-validator-test { prefix "validation"; }
+	
+	identity identity3{
+		base validation:identity2;
+	}
+	
+    container validation-yang11 {
+    	 
+        container parent{
+            list parent-list{
+                key name;
+                leaf name{
+                    type string;
+                }
+                
+                leaf type{
+                    type string;
+                }
+                
+                list inner-list1{
+                    key name;
+                    leaf name{
+                        type string;
+                    }
+                    leaf type{
+                        type string;
+                    }
+                  list inner-list2{
+                      key name;
+                      leaf name{
+                          type string;
+                      }
+                      leaf type{
+                          type string;
+                      }
+                      container inner-container1{
+                          container inner-container2{
+                              leaf last-leaf{
+                                  type string;
+                              }
+                          }
+                      }
+                  }
+                }
+            }
+            
+            container child-container1{
+                container child-container2{
+                    leaf type{
+                        type string;
+                    }
+                }
+            }
+            
+            leaf when-leaf{
+              when "../parent-list[current()]/inner-list1[current()]/inner-list2[current()]/type = 'test'";
+                type string;
+            }
+            
+            container child-container12{
+                leaf when-leaf2{
+                    when "../../child-container1/child-container2/type = 'test'";
+                    type string;
+                    }                
+            }
+            
+            leaf when-leaf4{
+                when "../parent-list[current()]/inner-list1[current()]/inner-list2[current()]/inner-container1/inner-container2/last-leaf = 'last'";
+                type string;
+              }
+        }
+        
+        
+        leaf identity-leaf {
+              type identityref {
+                  base validation:identity2;
+              }
+          }
+        container leaf-ref-yang11 {
+            
+            leaf identity-leaf {
+                  type identityref {
+                      base validation:identity2;
+                  }
+              }
+        	list artist {
+        		key "name";
+        		leaf name {
+        			type string {
+        				length "1 .. max";
+        			}
+        			description
+        			"the artist of certain song";
+        		}
+        	}
+        	list album {
+        		key "name";
+        		leaf name {
+        			type string {
+        				length "1 .. max";
+        			}
+        			description
+        			"the artist of certain song";
+        		}
+	        	list song {
+	        		key "name";
+	        		leaf name {
+		              type string {
+		                length "1 .. max";
+		              }
+	              	}
+	              	leaf artist-name {
+		               type leafref {
+		                   path "../../../artist/name";
+		                }
+	            	}
+                    leaf artist-name-not-required {
+                        type leafref {
+                            path "../../../artist/name";
+                            require-instance false;
+                         }
+                     }
+	        	}
+	        	leaf song-count {
+	        		type int32;
+	        	}
+        	}
+                
+        	
+        }
+        }
+    grouping augmentedWhen{
+        leaf default-leaf {
+              type uint8 {
+                range "0..2";
+              }
+   
+            default "0";            
+            }
+      }
+      
+      augment 'validation11:validation-yang11/validation11:leaf-ref-yang11' {
+        
+          when 'derived-from-or-self(../validation11:identity-leaf,
+              "validation11:identity3")' {
+          }
+          
+       uses augmentedWhen;
+    }
+
+}

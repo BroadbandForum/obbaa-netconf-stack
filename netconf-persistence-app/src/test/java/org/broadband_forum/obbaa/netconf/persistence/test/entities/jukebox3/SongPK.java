@@ -22,17 +22,17 @@ import java.io.Serializable;
  * Created by keshava on 5/1/16.
  */
 public class SongPK implements Serializable {
-
-    private static final long serialVersionUID = -5778512365055298893L;
-    String name;
+   
+	private static final long serialVersionUID = -5778512365055298893L;
+	String name;
     String parentId;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
+        if (this == o){
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass()){
             return false;
         }
 

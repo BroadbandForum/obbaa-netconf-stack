@@ -25,5 +25,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(ElementType.FIELD)
 public @interface YangParentId {
-    public static final String PARENT_ID_FIELD_NAME = "parentId";
+    public static final String PARENT_ID_FIELD_NAME ="parentId";
 }

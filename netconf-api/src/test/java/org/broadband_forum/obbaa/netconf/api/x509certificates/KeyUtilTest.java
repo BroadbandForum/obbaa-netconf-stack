@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
+import org.broadband_forum.obbaa.netconf.api.x509certificates.KeyUtil;
 import org.junit.Test;
 
 import java.security.KeyException;
@@ -78,8 +79,7 @@ public class KeyUtilTest {
             + "NqtT4nCwkGlXdvDcgjiUi+zKged7/rDZnl8+FT/PSeECgYEAx08ZS4fcYHmpFXqJ\n"
             + "06nMWvm39ien4GD8/YKl2DCNOlgHkeHqVlAtR+d3CwrLIH7tt+W48hEFkP6RVHnB\n"
             + "Ac+vm2DUbyvv/kVS+pnlWU5vAUVAeOE1yDV7mqEdmR0YYFc+wOBk6Iic/9rE6x4i\n" + "MJ99bBNs2Ja7d1AfgStJRTuyHvs=\n";
-    private static final String RSA_PRIVATE_KEY_WITHOUT_NEWLINE =
-            "MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQDSnMtftTnT3wzG"
+    private static final String RSA_PRIVATE_KEY_WITHOUT_NEWLINE = "MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQDSnMtftTnT3wzG"
             + "2Vr8rySgmlVlT03n4jnEObuaU4wnOWJiVFStwl8XhS5Eo8xrYyRFnR4Y+iMeQ7e8"
             + "1RjPvzeg99NJKiDlgBVtaf/Yxw4+A4eGaq9QPZALVdXNk1mHYXzusn3+7BWn2Qnu"
             + "TXhynuC2iSSUk1N+SXbSQdWnSc2AwPKJeWPM2MjddPnaaqXFh+oRgfNdC1/lvsxW"
@@ -104,8 +104,7 @@ public class KeyUtilTest {
             + "NqtT4nCwkGlXdvDcgjiUi+zKged7/rDZnl8+FT/PSeECgYEAx08ZS4fcYHmpFXqJ"
             + "06nMWvm39ien4GD8/YKl2DCNOlgHkeHqVlAtR+d3CwrLIH7tt+W48hEFkP6RVHnB"
             + "Ac+vm2DUbyvv/kVS+pnlWU5vAUVAeOE1yDV7mqEdmR0YYFc+wOBk6Iic/9rE6x4i" + "MJ99bBNs2Ja7d1AfgStJRTuyHvs=";
-    private static final String RSA_PRIVATE_KEY_WITH_NEWLINE_AT_END =
-            "MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQDSnMtftTnT3wzG\n"
+    private static final String RSA_PRIVATE_KEY_WITH_NEWLINE_AT_END = "MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQDSnMtftTnT3wzG\n"
             + "2Vr8rySgmlVlT03n4jnEObuaU4wnOWJiVFStwl8XhS5Eo8xrYyRFnR4Y+iMeQ7e8\n"
             + "1RjPvzeg99NJKiDlgBVtaf/Yxw4+A4eGaq9QPZALVdXNk1mHYXzusn3+7BWn2Qnu\n"
             + "TXhynuC2iSSUk1N+SXbSQdWnSc2AwPKJeWPM2MjddPnaaqXFh+oRgfNdC1/lvsxW\n"
@@ -143,8 +142,7 @@ public class KeyUtilTest {
             + "TYqpnihkwWOfEBKIwYkfI9WH1Kg6L0CksMoJhjS3WXgJ34Qt6YCvPQdM3pHUtO1m\n"
             + "zlKdJR7+rmBE+7KVFpFdWa4ed4OQ7BrVFx02YYVXll1EraD6Pcy9xy46mcqHyxJE\n"
             + "tFdU4AQjAiEAncfjnOvkORnGSfE0Mn6OLUQcSupOy3PnCT3TVN1dTKE=\n";
-    private static final String RSA_ENCRYPTED_PRIVATE_KEY =
-            "MIIE6TAbBgkqhkiG9w0BBQMwDgQIiUVmbHmyy2oCAggABIIEyL7bCrUEOC3fkVx0\n"
+    private static final String RSA_ENCRYPTED_PRIVATE_KEY = "MIIE6TAbBgkqhkiG9w0BBQMwDgQIiUVmbHmyy2oCAggABIIEyL7bCrUEOC3fkVx0\n"
             + "idR34r3bsqeYJ5J+FNI7SHXCEqFiKJ3S/54eMPlZ1NpL96lERYiZzA208F+r11ux\n"
             + "GZHgZNyaT5W7MRwlQk6ni7HoxJWuMgqU9Mg+5op50CEBIX7QxhPd3mllyGWZ/QCp\n"
             + "J4X2HSBku7mcX83vJdg2izdRI7gUY9CraHR530jB7duNnBO6Lq4ndwD0owXAdQXz\n"
@@ -171,8 +169,7 @@ public class KeyUtilTest {
             + "sJc/BcQtqXrC5t33IrGlHEvQgPbzS/AZyEgtvVp/j7znR/0nkWwnkezLY/dfV6V1\n"
             + "VokfZ9/++T7p5PsNkktSNR2Z2pSMT/4ZWQK+AMbsxUpklEoG5S3O4zOxLJC+NkQC\n" + "c3ew0ZRhYn6XZcg+Hg==\n";
     private static final String RSA_ENCRYPTED_PRIVATE_KEY_PASS = "rsapass";
-    private static final String DSA_ENCRYPTED_PRIVATE_KEY =
-            "MIICkTAbBgkqhkiG9w0BBQMwDgQIf9X4Kbyfqc4CAggABIICcPY0xoeInBPUopv+\n"
+    private static final String DSA_ENCRYPTED_PRIVATE_KEY = "MIICkTAbBgkqhkiG9w0BBQMwDgQIf9X4Kbyfqc4CAggABIICcPY0xoeInBPUopv+\n"
             + "DHYslG7tBFWMildMoBykW5gQAhfWuI6Q27JKowa57R5MmexXfykPMouqklBMNR6x\n"
             + "v3Oh+hooQNPpISHcmeXKes+TC0FlTHnrIfGbvlgrxaq0sdxWRE2xjOgyc/uiuGFJ\n"
             + "lzp8hLltAZwihU4HlhPn85gqdgPI8hMH1VBn4BNyt23eiOOIo/SHipPpLt1NE4Q7\n"
@@ -244,7 +241,7 @@ public class KeyUtilTest {
             "-----END RSA PRIVATE KEY-----";
 
     @Test
-    public void testIsDelimited() {
+    public void testIsDelimited(){
         assertTrue(KeyUtil.isDelimited(DELIMITED_RSA_PRIVATE_KEY));
         assertTrue(KeyUtil.isDelimited(DELIMITED_RSA_PRIVATE_KEY2));
         assertFalse(KeyUtil.isDelimited(RSA_ENCRYPTED_PRIVATE_KEY));

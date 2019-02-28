@@ -23,19 +23,19 @@ import java.util.Map;
 import org.broadband_forum.obbaa.netconf.persistence.PagingInput;
 
 public interface EntityDAO<E, PK extends Serializable> {
-
-    @Deprecated
-    /**
-     * Use findByWithWriteLock() or findByWithReadLock()
-     * @param primaryKey
-     * @return
-     */
-    E findById(PK primaryKey);
-
-    boolean merge(E entity);
+	
+	@Deprecated
+	/**
+	 * Use findByWithWriteLock() or findByWithReadLock()
+	 * @param primaryKey
+	 * @return
+	 */
+	E findById(PK primaryKey);
+	
+	boolean merge(E entity);
 
     E findByIdWithWriteLock(PK primaryKey);
-
+    
     E findByIdWithReadLock(PK primaryKey);
 
     public List<E> findAll();
@@ -43,13 +43,13 @@ public interface EntityDAO<E, PK extends Serializable> {
     public void create(E entity);
 
     public void delete(E entity);
-
+    
     public int deleteAll();
-
+    
     boolean deleteById(PK id);
-
+    
     List<E> findWithPaging(PagingInput pagingInput);
-
+    
     public List<E> findWithPagingAndOrderByColumn(PagingInput pagingInput, Map<String, Object> matchValues,
-                                                  String orderByColumn, Boolean isDesc);
+            String orderByColumn, Boolean isDesc);
 }

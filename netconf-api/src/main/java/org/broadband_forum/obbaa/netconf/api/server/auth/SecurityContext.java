@@ -18,15 +18,15 @@ package org.broadband_forum.obbaa.netconf.api.server.auth;
 
 public class SecurityContext {
     private static ThreadLocal<String> m_userName = new ThreadLocal<>();
-
+    
     public static String getCurrentUser() {
         return m_userName.get();
     }
-
+    
     public static void setCurrentUser(String info) {
         m_userName.set(info);
     }
-
+    
     public static void clear() {
         m_userName.remove();
     }

@@ -21,12 +21,10 @@ import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-
 import java.io.IOException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class GetConfigRequestTest {
 
@@ -77,8 +75,7 @@ public class GetConfigRequestTest {
         m_getConfigRequest.setMessageId(m_messageId);
         m_getConfigRequest.setSource(m_source);
         assertNotNull(m_getConfigRequest.getRequestDocument());
-        assertXMLEquals(loadAsXml("TestXMLResources/getConfigTest.xml"), m_getConfigRequest.getRequestDocument()
-                .getDocumentElement());
+        assertXMLEquals(loadAsXml("TestXMLResources/getConfigTest.xml"), m_getConfigRequest.getRequestDocument().getDocumentElement());
 
     }
 }

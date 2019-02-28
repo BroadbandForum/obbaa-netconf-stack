@@ -35,7 +35,6 @@ import org.broadband_forum.obbaa.netconf.api.client.util.NetconfClientConfigurat
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportFactory;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportOrder;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
-
 import org.broadband_forum.obbaa.netconf.client.dispatcher.SshClientDispatcherImpl;
 import org.broadband_forum.obbaa.netconf.client.ssh.auth.KeyLoginProvider;
 import org.broadband_forum.obbaa.netconf.client.ssh.auth.PasswordLoginProvider;
@@ -44,26 +43,20 @@ import org.apache.log4j.Logger;
 public class NetconfClientSessionFactory {
 
     private static final Logger LOGGER = Logger.getLogger(NetconfClientSessionFactory.class);
-    private static NetconfClientDispatcher c_dispatcher = new SshClientDispatcherImpl(Executors
-            .newSingleThreadExecutor());
+    private static NetconfClientDispatcher c_dispatcher = new SshClientDispatcherImpl(Executors.newSingleThreadExecutor());
 
-    public static NetconfClientSession createSSHClientSession(String ip, int port, int heartbeatInterval, String
-            username, String password,
-                                                              Set<String> clientCaps) throws UnknownHostException,
-            NetconfConfigurationBuilderException, NetconfClientDispatcherException,
+    public static NetconfClientSession createSSHClientSession(String ip, int port, int heartbeatInterval, String username, String password,
+            Set<String> clientCaps) throws UnknownHostException, NetconfConfigurationBuilderException, NetconfClientDispatcherException,
             InterruptedException, ExecutionException {
         NetconfClientConfiguration clientConfig = null;
         NetconfTransportOrder clientTransportOder;
         clientTransportOder = getSshTrasnsportOrder(ip, port, heartbeatInterval);
 
         try {
-            clientConfig = new NetconfClientConfigurationBuilder().setNetconfLoginProvider(new PasswordLoginProvider
-                    (username, password))
-                    .setTransport(NetconfTransportFactory.makeNetconfTransport(clientTransportOder)).setCapabilities
-                            (clientCaps)
+            clientConfig = new NetconfClientConfigurationBuilder().setNetconfLoginProvider(new PasswordLoginProvider(username, password))
+                    .setTransport(NetconfTransportFactory.makeNetconfTransport(clientTransportOder)).setCapabilities(clientCaps)
                     .setConnectionTimeout(Long.MAX_VALUE)
-                    .setAsynchronousChannelGroup(AsynchronousChannelGroup.withThreadPool(Executors
-                            .newCachedThreadPool())).build();
+                    .setAsynchronousChannelGroup(AsynchronousChannelGroup.withThreadPool(Executors.newCachedThreadPool())).build();
         } catch (IOException e) {
             LOGGER.error("Error while building NetconfClientConfiguration", e);
             throw new RuntimeException(e);
@@ -73,26 +66,21 @@ public class NetconfClientSessionFactory {
         return session;
     }
 
-    public static NetconfClientSession createSSHClientSession(String ip, int port, int heartbeatInterval, String
-            username,
-                                                              String publickey, String privateKey, Set<String>
-                                                                      clientCaps) throws UnknownHostException,
-            NetconfConfigurationBuilderException,
+    public static NetconfClientSession createSSHClientSession(String ip, int port, int heartbeatInterval, String username,
+            String publickey, String privateKey, Set<String> clientCaps) throws UnknownHostException, NetconfConfigurationBuilderException,
             NetconfClientDispatcherException, InterruptedException, ExecutionException {
         NetconfClientConfiguration clientConfig = null;
         NetconfTransportOrder clientTransportOder = getSshTrasnsportOrder(ip, port, heartbeatInterval);
         clientConfig = new NetconfClientConfigurationBuilder()
                 .setNetconfLoginProvider(new KeyLoginProvider(username, publickey, privateKey))
-                .setTransport(NetconfTransportFactory.makeNetconfTransport(clientTransportOder)).setCapabilities
-                        (clientCaps)
+                .setTransport(NetconfTransportFactory.makeNetconfTransport(clientTransportOder)).setCapabilities(clientCaps)
                 .setConnectionTimeout(Long.MAX_VALUE).build();
         Future<NetconfClientSession> futureSession = c_dispatcher.createClient(clientConfig);
         NetconfClientSession session = futureSession.get();
         return session;
     }
 
-    private static NetconfTransportOrder getSshTrasnsportOrder(String ip, int port, int heartbeatInterval) throws
-            UnknownHostException {
+    private static NetconfTransportOrder getSshTrasnsportOrder(String ip, int port, int heartbeatInterval) throws UnknownHostException {
         NetconfTransportOrder clientTransportOder = new NetconfTransportOrder();
         clientTransportOder.setServerSocketAddress(new InetSocketAddress(InetAddress.getByName(ip), port));
         clientTransportOder.setTransportType(NetconfTransportProtocol.SSH.name());

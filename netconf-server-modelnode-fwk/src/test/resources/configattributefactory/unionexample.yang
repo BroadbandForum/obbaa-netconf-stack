@@ -6,12 +6,12 @@ module union-test {
 	 import parents {
         prefix dactp;
       }
-
+	
     revision 2017-06-07 {
         description
         "Initial Revision";
     }
-
+ 
     identity id-ref-type {
         description
         "This identity is used as a base for this example.";
@@ -31,7 +31,7 @@ module union-test {
         description
         "example test-type3.";
     }
-
+    
     container test-container {
         description
         "This container describes the syslog filter parameters.";

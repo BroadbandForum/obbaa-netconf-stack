@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service;
 
 import static junit.framework.TestCase.fail;
@@ -21,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.isNotNull;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -31,6 +16,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,25 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigTestFailedException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetconfServer;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContainerHelper;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.ModelNodeHelperDeployer;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.LockedByOtherSessionException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.PersistenceException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildListHelper;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.LockServiceException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.ReadWriteLockServiceImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.WriteLockTemplate;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -78,11 +45,29 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigTestFailedException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.LockedByOtherSessionException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetconfServer;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.RpcRequestHandlerRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.PersistenceException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContainerHelper;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildListHelper;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistry;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.ModelNodeHelperDeployer;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.LockServiceException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.ReadWriteLockServiceImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.WriteLockTemplate;
 import org.broadband_forum.obbaa.netconf.persistence.DataStoreMetaProvider;
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants;
 
@@ -126,10 +111,10 @@ public class ModelServiceDeployerTest {
     public void setUp() throws SchemaBuildException, ModelServiceDeployerException {
         MockitoAnnotations.initMocks(this);
         m_modelNodeHelperDeployer = mock(ModelNodeHelperDeployer.class);
-        m_schemaRegistry = spy(new SchemaRegistryImpl(TestUtil.getJukeBoxYangs(), new NoLockService()));
+        m_schemaRegistry = spy(new SchemaRegistryImpl(TestUtil.getJukeBoxYangs(), Collections.emptySet(), Collections.emptyMap(), new NoLockService()));
         Map<String, SchemaPath> abspath = new HashMap<String, SchemaPath>();
         abspath.put("/absPath", mock(SchemaPath.class));
-
+        
         Map<SchemaPath, SubSystem> ms1Subsystems = new HashMap<>();
         ms1Subsystems.put(mock(SchemaPath.class), m_ss1);
         ms1Subsystems.put(mock(SchemaPath.class), m_ss2);
@@ -140,14 +125,12 @@ public class ModelServiceDeployerTest {
         when(m_modelService.getModuleName()).thenReturn(MODULE_NAME);
         when(m_modelService.getModuleRevision()).thenReturn(MODULE_REVISION);
         when(m_modelService.getAppAugmentedPaths()).thenReturn(abspath);
-        m_modelServiceDeployer = Mockito.spy(new ModelServiceDeployerImpl(m_modelNodeDSMRegistry,
-                m_modelNodeHelperRegistry,
-                m_subSystemRegistry, m_rpcRequestHandlerRegistry, m_modelNodeHelperDeployer, m_schemaRegistry, spy
-                (new ReadWriteLockServiceImpl())));
+        m_modelServiceDeployer = Mockito.spy(new ModelServiceDeployerImpl(m_modelNodeDSMRegistry, m_modelNodeHelperRegistry,
+                m_subSystemRegistry, m_rpcRequestHandlerRegistry, m_modelNodeHelperDeployer, m_schemaRegistry, spy(new ReadWriteLockServiceImpl())));
         ((ModelServiceDeployerImpl) m_modelServiceDeployer).setEntityRegistry(m_entityRegistry);
         ((ModelServiceDeployerImpl) m_modelServiceDeployer).setRootModelNodeAggregator(m_rootModelNodeAggregator);
-        ((ModelServiceDeployerImpl) m_modelServiceDeployer).setDataStoreMetadataProvider(m_dataStoreMetaProvider);
-        ((ModelServiceDeployerImpl) m_modelServiceDeployer).setNetconfServer(m_netconfServer);
+        ((ModelServiceDeployerImpl)m_modelServiceDeployer).setDataStoreMetadataProvider(m_dataStoreMetaProvider);
+        ((ModelServiceDeployerImpl)m_modelServiceDeployer).setNetconfServer(m_netconfServer);
     }
 
     @Test
@@ -155,27 +138,27 @@ public class ModelServiceDeployerTest {
         m_modelServiceDeployer.deploy(Arrays.asList(m_modelService));
         assertEquals("/absPath", m_schemaRegistry.getMatchingPath("/absPath/something"));
         assertEquals(null, m_schemaRegistry.getMatchingPath("/something"));
-        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate
-                .class));
+        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate.class));
     }
 
 
     @SuppressWarnings("unchecked")
-    @Test
+	@Test
     public void testUndeploy() throws ModelServiceDeployerException, SchemaBuildException {
 
         m_modelServiceDeployer.undeploy(Arrays.asList(m_modelService));
 
         verify(m_modelNodeDSMRegistry, never()).register((String) anyObject(), (SchemaPath) anyObject(),
-                (ModelNodeDataStoreManager) anyObject());
+               (ModelNodeDataStoreManager) anyObject());
         verify(m_modelNodeDSMRegistry, times(1)).undeploy(COMPONENT_ID);
-        verify(m_modelNodeHelperRegistry, times(1)).undeploy(COMPONENT_ID);
-        verify(m_subSystemRegistry, times(1)).undeploy(COMPONENT_ID);
-        verify(m_rpcRequestHandlerRegistry, times(1)).undeploy(COMPONENT_ID);
+        verify(m_modelNodeHelperRegistry,times(1)).undeploy(COMPONENT_ID);
+        verify(m_subSystemRegistry,times(1)).undeploy(COMPONENT_ID);
+        verify(m_rpcRequestHandlerRegistry,times(1)).undeploy(COMPONENT_ID);
         verify(m_entityRegistry, times(1)).undeploy(COMPONENT_ID);
-        verify(m_schemaRegistry, times(1)).unloadSchemaContext(COMPONENT_ID, Collections.emptyMap());
+        verify(m_schemaRegistry,times(1)).unloadSchemaContext(COMPONENT_ID, Collections.emptySet(), Collections.emptyMap());
         verify(m_rootModelNodeAggregator, times(1)).removeModelServiceRootHelpers(JukeboxConstants.JUKEBOX_SCHEMA_PATH);
-
+        verify(m_schemaRegistry).unregisterMountPointSchemaPath(COMPONENT_ID);
+        
         //verify undeploy notifications
         verify(m_ss1).appUndeployed();
         verify(m_ss2).appUndeployed();
@@ -189,22 +172,18 @@ public class ModelServiceDeployerTest {
 
         when(m_schemaRegistry.getDataSchemaNode(JukeboxConstants.JUKEBOX_SCHEMA_PATH)).thenReturn(mockStateSchemaNode);
         m_modelServiceDeployer.addRootNodeHelpers(m_modelService);
-        verify(m_rootModelNodeAggregator).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH),
-                (ChildContainerHelper) anyObject());
-        verify(m_rootModelNodeAggregator, never()).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH)
-                , (ChildListHelper) anyObject());
+        verify(m_rootModelNodeAggregator).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH), (ChildContainerHelper) anyObject());
+        verify(m_rootModelNodeAggregator, never()).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH), (ChildListHelper) anyObject());
 
         when(mockStateSchemaNode.isConfiguration()).thenReturn(true);
         when(m_schemaRegistry.getDataSchemaNode(JukeboxConstants.JUKEBOX_SCHEMA_PATH)).thenReturn(mockStateSchemaNode);
         m_modelServiceDeployer.addRootNodeHelpers(m_modelService);
-        verify(m_rootModelNodeAggregator, times(2)).addModelServiceRootHelper(eq(JukeboxConstants
-                .JUKEBOX_SCHEMA_PATH), (ChildContainerHelper) anyObject());
-        verify(m_rootModelNodeAggregator, never()).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH)
-                , (ChildListHelper) anyObject());
+        verify(m_rootModelNodeAggregator, times(2)).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH), (ChildContainerHelper) anyObject());
+        verify(m_rootModelNodeAggregator, never()).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH), (ChildListHelper) anyObject());
     }
 
     @Test
-    public void testOnlyRootNodeHelpersAreAdded() {
+    public void testOnlyRootNodeHelpersAreAdded(){
         ContainerSchemaNode mockStateSchemaNode = mock(ContainerSchemaNode.class);
         when(mockStateSchemaNode.isConfiguration()).thenReturn(true);
 
@@ -236,11 +215,9 @@ public class ModelServiceDeployerTest {
         when(mockStateSchemaNode.isConfiguration()).thenReturn(true);
         when(m_schemaRegistry.getDataSchemaNode(JukeboxConstants.JUKEBOX_SCHEMA_PATH)).thenReturn(mockStateSchemaNode);
         m_modelServiceDeployer.addRootNodeHelpers(m_modelService);
-        verify(m_rootModelNodeAggregator, never()).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH)
-                , (ChildContainerHelper)
+        verify(m_rootModelNodeAggregator, never()).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH), (ChildContainerHelper)
                 anyObject());
-        verify(m_rootModelNodeAggregator).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH),
-                (ChildListHelper) anyObject());
+        verify(m_rootModelNodeAggregator).addModelServiceRootHelper(eq(JukeboxConstants.JUKEBOX_SCHEMA_PATH), (ChildListHelper) anyObject());
     }
 
     @Test
@@ -249,17 +226,15 @@ public class ModelServiceDeployerTest {
         service.setModuleName("noname");
         service.setModuleRevision("2016-07-01");
         m_modelServiceDeployer.deploy(Arrays.asList(service));
-        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate
-                .class));
+        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate.class));
     }
 
     @Test
     public void testDeployLoadsDefaulXml() throws Exception {
-        ModelService service = Mockito.spy(new ModelService());
+        ModelService service = spy(new ModelService());
         service.setModuleName("noname");
         service.setModuleRevision("2016-07-01");
-        List<Element> rootElements = Collections.singletonList(TestUtil.transformToElement("<some-root-node " +
-                "xmlns=\"some-namespace\">"
+        List<Element> rootElements = Collections.singletonList(TestUtil.transformToElement("<some-root-node xmlns=\"some-namespace\">"
                 + "</some-root-node>"));
         doReturn(rootElements).when(service).getDefaultSubtreeRootNodes();
         when(service.getName()).thenReturn("ms-name");
@@ -270,9 +245,8 @@ public class ModelServiceDeployerTest {
         m_modelServiceDeployer.deploy(Arrays.asList(service));
 
         EditConfigRequest expectedEdit = new EditConfigRequest().setConfigElement(new EditConfigElement()
-                .addConfigElementContent(TestUtil.parseXml("<some-root-node " +
-                        "xmlns=\"some-namespace\"></some-root-node>")));
-        verify(mockDs).edit(eq(expectedEdit), (NetconfClientInfo) anyObject());
+                .addConfigElementContent(TestUtil.parseXml("<some-root-node xmlns=\"some-namespace\"></some-root-node>")));
+        verify(mockDs).edit(eq(expectedEdit), isNotNull(NetconfClientInfo.class));
 
         //make sure when meta is greater than 0, datastore edit is not called
         mockDs = mock(DataStore.class);
@@ -280,20 +254,19 @@ public class ModelServiceDeployerTest {
         when(m_dataStoreMetaProvider.getDataStoreVersion("ms-name")).thenReturn(1L);
         m_modelServiceDeployer.deploy(Arrays.asList(service));
 
-        verify(mockDs, never()).edit(eq(expectedEdit), (NetconfClientInfo) anyObject());
+        verify(mockDs, never()).edit(eq(expectedEdit), isNotNull(NetconfClientInfo.class));
 
         //make sure when there si no default xml DS edit is not called
         doReturn(null).when(service).getDefaultSubtreeRootNodes();
         m_modelServiceDeployer.deploy(Arrays.asList(service));
-        verify(mockDs, never()).edit(eq(expectedEdit), (NetconfClientInfo) anyObject());
-        verify(m_modelServiceDeployer.getReadWriteLockService(), times(3)).executeWithWriteLock(Mockito.any
-                (WriteLockTemplate.class));
+        verify(mockDs, never()).edit(eq(expectedEdit), isNotNull(NetconfClientInfo.class));
+        verify(m_modelServiceDeployer.getReadWriteLockService(),times(3)).executeWithWriteLock(Mockito.any(WriteLockTemplate.class));
     }
 
 
     @Test
     public void testDeployWithMultipleRootsDefaultXml() throws Exception {
-        ModelService service = Mockito.spy(new ModelService());
+        ModelService service = spy(new ModelService());
         service.setModuleName("noname");
         service.setModuleRevision("2016-07-01");
 
@@ -316,14 +289,12 @@ public class ModelServiceDeployerTest {
 
         EditConfigRequest expectedEdit = new EditConfigRequest().setConfigElement(
                 new EditConfigElement().setConfigElementContents(rootElements));
-        verify(mockDs).edit(eq(expectedEdit), (NetconfClientInfo) anyObject());
-        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate
-                .class));
+        verify(mockDs).edit(eq(expectedEdit), isNotNull(NetconfClientInfo.class));
+        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate.class));
     }
 
     @Test
-    public void testSubsystemDeploy_WithSpecificSubsystems() throws ModelServiceDeployerException,
-            LockServiceException {
+    public void testSubsystemDeploy_WithSpecificSubsystems() throws ModelServiceDeployerException, LockServiceException {
         Map<SchemaPath, SubSystem> specificSubsystems = new HashedMap();
         SubSystem libSubsytem = mock(SubSystem.class);
         SubSystem artistSubsystem = mock(SubSystem.class);
@@ -336,10 +307,8 @@ public class ModelServiceDeployerTest {
         verify(m_subSystemRegistry).register(COMPONENT_ID, JukeboxConstants.ARTIST_SCHEMA_PATH, artistSubsystem);
         //song takes parent's subsystem
         verify(m_subSystemRegistry).register(COMPONENT_ID, JukeboxConstants.SONG_SCHEMA_PATH, artistSubsystem);
-        verify(m_subSystemRegistry, never()).register(COMPONENT_ID, JukeboxConstants.JUKEBOX_SCHEMA_PATH,
-                artistSubsystem);
-        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate
-                .class));
+        verify(m_subSystemRegistry, never()).register(COMPONENT_ID, JukeboxConstants.JUKEBOX_SCHEMA_PATH, artistSubsystem);
+        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate.class));
 
     }
 
@@ -353,13 +322,11 @@ public class ModelServiceDeployerTest {
         verify(m_subSystemRegistry).register(COMPONENT_ID, JukeboxConstants.LIBRARY_SCHEMA_PATH, defaultSubsystem);
         verify(m_subSystemRegistry).register(COMPONENT_ID, JukeboxConstants.ARTIST_SCHEMA_PATH, defaultSubsystem);
         verify(m_subSystemRegistry).register(COMPONENT_ID, JukeboxConstants.JUKEBOX_SCHEMA_PATH, defaultSubsystem);
-        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate
-                .class));
+        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate.class));
     }
 
     @Test
-    public void testSubsystemDeploy_WithDefaultAndSpecificSubsystems() throws ModelServiceDeployerException,
-            LockServiceException {
+    public void testSubsystemDeploy_WithDefaultAndSpecificSubsystems() throws ModelServiceDeployerException, LockServiceException {
         Map<SchemaPath, SubSystem> specificSubsystems = new HashedMap();
         SubSystem artistSubsystem = mock(SubSystem.class);
         specificSubsystems.put(JukeboxConstants.ARTIST_SCHEMA_PATH, artistSubsystem);
@@ -377,18 +344,16 @@ public class ModelServiceDeployerTest {
         //verify deploy notification
         verify(artistSubsystem).appDeployed();
         verify(defaultSubsystem).appDeployed();
-        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate
-                .class));
+        verify(m_modelServiceDeployer.getReadWriteLockService()).executeWithWriteLock(Mockito.any(WriteLockTemplate.class));
     }
 
     @Test
     public void testPostStartupWithException() throws Exception {
-        ModelService service = Mockito.spy(new ModelService());
+        ModelService service = spy(new ModelService());
         service.setModuleName("noname");
         service.setModuleRevision("2016-07-01");
         List<Element> rootElements = Collections
-                .singletonList(TestUtil.transformToElement("<some-root-node xmlns=\"some-namespace\">" +
-                        "</some-root-node>"));
+                .singletonList(TestUtil.transformToElement("<some-root-node xmlns=\"some-namespace\">" + "</some-root-node>"));
         doReturn(rootElements).when(service).getDefaultSubtreeRootNodes();
         when(service.getName()).thenReturn("ms-name");
         when(m_dataStoreMetaProvider.getDataStoreVersion("ms-name")).thenReturn(0L);
@@ -397,8 +362,7 @@ public class ModelServiceDeployerTest {
         when(m_netconfServer.getDataStore(StandardDataStores.RUNNING)).thenReturn(mockDs);
 
         when(mockDs.edit(any(EditConfigRequest.class), any(NetconfClientInfo.class)))
-                .thenThrow(new EditConfigException(NetconfRpcError.getBadElementError("test", NetconfRpcErrorType
-                        .Application)));
+                .thenThrow(new EditConfigException(NetconfRpcError.getBadElementError("test", NetconfRpcErrorType.Application)));
         try {
             m_modelServiceDeployer.postStartup(service);
             fail("ModelServiceDeployerException expected");
@@ -410,8 +374,7 @@ public class ModelServiceDeployerTest {
         mockDs = mock(DataStore.class);
         when(m_netconfServer.getDataStore(StandardDataStores.RUNNING)).thenReturn(mockDs);
         when(mockDs.edit(any(EditConfigRequest.class), any(NetconfClientInfo.class)))
-                .thenThrow(new EditConfigTestFailedException(NetconfRpcError.getBadElementError("test",
-                        NetconfRpcErrorType.Application)));
+                .thenThrow(new EditConfigTestFailedException(NetconfRpcError.getBadElementError("test", NetconfRpcErrorType.Application)));
         try {
             m_modelServiceDeployer.postStartup(service);
             fail("ModelServiceDeployerException expected");
@@ -423,8 +386,7 @@ public class ModelServiceDeployerTest {
         mockDs = mock(DataStore.class);
         when(m_netconfServer.getDataStore(StandardDataStores.RUNNING)).thenReturn(mockDs);
         when(mockDs.edit(any(EditConfigRequest.class), any(NetconfClientInfo.class)))
-                .thenThrow(new PersistenceException(NetconfRpcError.getBadElementError("test", NetconfRpcErrorType
-                        .Application)));
+                .thenThrow(new PersistenceException(NetconfRpcError.getBadElementError("test", NetconfRpcErrorType.Application)));
         try {
             m_modelServiceDeployer.postStartup(service);
             fail("ModelServiceDeployerException expected");
@@ -435,8 +397,7 @@ public class ModelServiceDeployerTest {
 
         mockDs = mock(DataStore.class);
         when(m_netconfServer.getDataStore(StandardDataStores.RUNNING)).thenReturn(mockDs);
-        when(mockDs.edit(any(EditConfigRequest.class), any(NetconfClientInfo.class))).thenThrow(new
-                LockedByOtherSessionException(1));
+        when(mockDs.edit(any(EditConfigRequest.class), any(NetconfClientInfo.class))).thenThrow(new LockedByOtherSessionException(1));
         try {
             m_modelServiceDeployer.postStartup(service);
             fail("ModelServiceDeployerException expected");
@@ -447,16 +408,15 @@ public class ModelServiceDeployerTest {
 
     @Test
     public void testDeployServicesWithException() throws SchemaBuildException {
-        doThrow(new SchemaBuildException("deploy exception")).when(m_schemaRegistry).loadSchemaContext(Mockito
-                .anyString(), Mockito.anyList(), Mockito.anySet(), Mockito.anyMap());
+        doThrow(new SchemaBuildException("deploy exception")).when(m_schemaRegistry).loadSchemaContext(Mockito.anyString(), Mockito.anyList(), Mockito.anySet(),Mockito.anyMap());
 
         ModelService service = mock(ModelService.class);
-        try {
+        try{
             m_modelServiceDeployer.deploy(Arrays.asList(service));
             fail("ModelServiceDeployerException expected");
-        } catch (Exception e) {
+        }catch (Exception e){
             assertTrue(e instanceof ModelServiceDeployerException);
-            assertEquals("org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException: deploy exception", e.getMessage());
+            assertEquals("org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException: deploy exception",e.getMessage());
         }
     }
 

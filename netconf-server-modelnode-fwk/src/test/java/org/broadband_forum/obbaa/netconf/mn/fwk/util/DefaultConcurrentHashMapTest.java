@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.util;
 
 import static org.junit.Assert.assertEquals;
@@ -54,24 +38,19 @@ public class DefaultConcurrentHashMapTest {
         Map<String, String> mapB = map2.get("b");
         assertTrue(mapB.size() == 0);
     }
-
+    
     @Test
     public void testCustomObject() {
         Map<String, TestClass> testObjectMap = new DefaultConcurrentHashMap<>(new TestClass());
         assertNotNull(testObjectMap.get("oneString"));
         assertNull(testObjectMap.get(null));
     }
-
+    
     static class TestClass {
         private String m_oneString;
-
-        public String getOneString() {
-            return m_oneString;
-        }
-
-        public void setOneString(String oneString) {
-            m_oneString = oneString;
-        }
+        
+        public String getOneString() { return m_oneString;}
+        public void setOneString(String oneString) { m_oneString = oneString;}
     }
 
     @Test
@@ -92,11 +71,10 @@ public class DefaultConcurrentHashMapTest {
         Object object2 = map1.get("1");
         assertEquals(object1, object2);
     }
-
+    
     @Test
     public void testNotSynchornizedMap() {
-        Map<String, HashMap<String, String>> map1 = new DefaultConcurrentHashMap<>(new HashMap<String, String>(),
-                false);
+        Map<String, HashMap<String, String>> map1 = new DefaultConcurrentHashMap<>(new HashMap<String, String>(), false);
         Map<String, String> object1 = map1.get("1");
         assertNotNull(object1);
         assertFalse(object1.getClass().getName().equals("java.util.Collections$SynchronizedMap"));
@@ -105,7 +83,7 @@ public class DefaultConcurrentHashMapTest {
         Object object2 = map1.get("1");
         assertEquals(object1, object2);
         Object object3 = map1.get("2");
-        assertNotEquals(object1, object3);
+        assertNotEquals(object1,object3);
     }
 
     @Test
@@ -131,7 +109,7 @@ public class DefaultConcurrentHashMapTest {
         assertEquals(list1, list2);
 
     }
-
+    
     @Test
     public void testNotSynchornizedCollection() {
         // set

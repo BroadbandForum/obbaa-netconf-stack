@@ -30,9 +30,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * {@code
  *  {@literal @}@YangList(name="album", namespace = JukeboxConstants.JB_NS, revision=JukeboxConstants.JB_REVISION)
  *  public class Album  {
- *
- * 	   @Column(name=NAME)
- * 	   @YangListKey(name="name", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+ *      
+ *	   @Column(name=NAME)
+ *	   @YangListKey(name="name", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
  *     private String name;
  *  }}
  * </pre>
@@ -41,7 +41,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(ElementType.FIELD)
 public @interface YangListKey {
-    String name() default "";
+	String name() default "";
 
     String namespace() default "";
 

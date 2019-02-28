@@ -1,23 +1,8 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -27,8 +12,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtreewithartist.Library;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,9 +25,9 @@ import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Juke
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Song;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistry;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
-
 /**
  * Created by pgorai on 2/8/16.
  */
@@ -84,13 +67,16 @@ public class EntityRegistryTest {
     public void undeployTest() throws NoSuchFieldException, NoSuchMethodException {
         m_entityRegistry.addComponentClass(m_componentId1, m_klass);
         m_entityRegistry.addConfigAttributeGetters(m_klass, m_configAttributeGetters, m_fieldNames);
+        m_entityRegistry.addClassWithYangParentSchemaPathAnnotation(m_componentId1, m_klass);
         assertEquals(m_configAttributeGetters, m_entityRegistry.getAttributeGetters(m_klass));
+        assertTrue(m_entityRegistry.classHasYangParentSchemaPathAnnotation(m_klass));
+
         m_entityRegistry.undeploy(m_componentId1);
         assertNull(m_entityRegistry.getAttributeGetters(m_klass));
+        assertFalse(m_entityRegistry.classHasYangParentSchemaPathAnnotation(m_klass));
 
         m_entityRegistry.addComponentClass(m_componentId2, m_klass);
-        m_entityRegistry.addConfigAttributeSetters(m_klass, m_configAttributeSetters, m_klass.getDeclaredMethod
-                ("getParentId"));
+        m_entityRegistry.addConfigAttributeSetters(m_klass, m_configAttributeSetters, m_klass.getDeclaredMethod("getParentId"));
         assertEquals(m_configAttributeSetters, m_entityRegistry.getAttributeSetters(m_klass));
         m_entityRegistry.undeploy(m_componentId2);
         assertNull(m_entityRegistry.getAttributeSetters(m_klass));
@@ -123,67 +109,64 @@ public class EntityRegistryTest {
 
         // Adding dummy method
         m_entityRegistry.addComponentClass(m_componentId1, m_klass);
-        m_entityRegistry.addYangSchemaPathSetter(m_klass, m_klass.getDeclaredMethod("getParentId"));
-        assertEquals("getParentId", m_entityRegistry.getSchemaPathSetter(m_klass).getName());
+        m_entityRegistry.addYangSchemaPathSetter(m_klass,m_klass.getDeclaredMethod("getParentId"));
+        assertEquals("getParentId",m_entityRegistry.getSchemaPathSetter(m_klass).getName());
         m_entityRegistry.undeploy(m_componentId1);
         assertNull(m_entityRegistry.getSchemaPathSetter(m_klass));
-
+        
         // Adding dummy method
         m_entityRegistry.addComponentClass(m_componentId1, m_klass);
-        m_entityRegistry.addOrderByUserGetter(m_klass, m_klass.getDeclaredMethod("getParentId"));
-        assertEquals("getParentId", m_entityRegistry.getOrderByUserGetter(m_klass).getName());
+        m_entityRegistry.addOrderByUserGetter(m_klass,m_klass.getDeclaredMethod("getParentId"));
+        assertEquals("getParentId",m_entityRegistry.getOrderByUserGetter(m_klass).getName());
         m_entityRegistry.undeploy(m_componentId1);
         assertNull(m_entityRegistry.getOrderByUserGetter(m_klass));
-
+        
         // Adding dummy method
         m_entityRegistry.addComponentClass(m_componentId1, m_klass);
-        m_entityRegistry.addOrderByUserSetter(m_klass, m_klass.getDeclaredMethod("getParentId"));
-        assertEquals("getParentId", m_entityRegistry.getOrderByUserSetter(m_klass).getName());
+        m_entityRegistry.addOrderByUserSetter(m_klass,m_klass.getDeclaredMethod("getParentId"));
+        assertEquals("getParentId",m_entityRegistry.getOrderByUserSetter(m_klass).getName());
         m_entityRegistry.undeploy(m_componentId1);
         assertNull(m_entityRegistry.getOrderByUserSetter(m_klass));
     }
 
     @Test
     public void testDeploy() throws AnnotationAnalysisException {
-        Class<org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtreewithartist.Jukebox>
-                jukeboxClass = org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtreewithartist
-                .Jukebox.class;
+        Class<org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtreewithartist.Jukebox> jukeboxClass = org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtreewithartist.Jukebox.class;
         Class<Library> libraryClass = Library.class;
         Class<Artist> artistClass = Artist.class;
         Class<Album> albumClass = Album.class;
         Class<Song> songClass = Song.class;
         SchemaRegistry schemaRegistry = mock(SchemaRegistry.class);
-        m_entityRegistry.updateRegistry("Jukebox", Collections.<Class>singletonList(jukeboxClass), schemaRegistry,
-                mock(EntityDataStoreManager.class), m_modelNodeDSMRegistry);
+        m_entityRegistry.updateRegistry("Jukebox", Collections.<Class>singletonList(jukeboxClass), schemaRegistry, mock(EntityDataStoreManager.class), m_modelNodeDSMRegistry);
 
         assertTrue(m_entityRegistry.getAttributeGetters(jukeboxClass).isEmpty());
-        assertEquals("getParentId", m_entityRegistry.getParentIdGetter(jukeboxClass).getName());
-        assertEquals("getSchemaPath", m_entityRegistry.getSchemaPathGetter(jukeboxClass).getName());
+        assertEquals("getParentId",m_entityRegistry.getParentIdGetter(jukeboxClass).getName());
+        assertEquals("getSchemaPath",m_entityRegistry.getSchemaPathGetter(jukeboxClass).getName());
         assertEquals(1, m_entityRegistry.getYangChildGetters(jukeboxClass).size());
 
         assertTrue(m_entityRegistry.getAttributeGetters(libraryClass).isEmpty());
-        assertEquals("getParentId", m_entityRegistry.getParentIdGetter(libraryClass).getName());
-        assertEquals("getSchemaPath", m_entityRegistry.getSchemaPathGetter(libraryClass).getName());
+        assertEquals("getParentId",m_entityRegistry.getParentIdGetter(libraryClass).getName());
+        assertEquals("getSchemaPath",m_entityRegistry.getSchemaPathGetter(libraryClass).getName());
         assertNotNull(m_entityRegistry.getYangXmlSubtreeGetter(libraryClass));
-
-        assertEquals("getInsertOrder", m_entityRegistry.getOrderByUserGetter(artistClass).getName());
-        assertEquals("setInsertOrder", m_entityRegistry.getOrderByUserSetter(artistClass).getName());
-        assertEquals("insertOrder", m_entityRegistry.getOrderByFieldName(artistClass));
-
-        assertEquals("getInsertOrder", m_entityRegistry.getOrderByUserGetter(albumClass).getName());
-        assertEquals("setInsertOrder", m_entityRegistry.getOrderByUserSetter(albumClass).getName());
-        assertEquals("insertOrder", m_entityRegistry.getOrderByFieldName(albumClass));
-
-        assertEquals("getInsertOrder", m_entityRegistry.getOrderByUserGetter(songClass).getName());
-        assertEquals("setInsertOrder", m_entityRegistry.getOrderByUserSetter(songClass).getName());
-        assertEquals("insertOrder", m_entityRegistry.getOrderByFieldName(songClass));
-        Map<QName, Method> yangLeafListGetter = m_entityRegistry.getYangLeafListGetters(songClass);
+        
+        assertEquals("getInsertOrder",m_entityRegistry.getOrderByUserGetter(artistClass).getName());
+        assertEquals("setInsertOrder",m_entityRegistry.getOrderByUserSetter(artistClass).getName());
+        assertEquals("insertOrder",m_entityRegistry.getOrderByFieldName(artistClass));
+        
+        assertEquals("getInsertOrder",m_entityRegistry.getOrderByUserGetter(albumClass).getName());
+        assertEquals("setInsertOrder",m_entityRegistry.getOrderByUserSetter(albumClass).getName());
+        assertEquals("insertOrder",m_entityRegistry.getOrderByFieldName(albumClass));
+        
+        assertEquals("getInsertOrder",m_entityRegistry.getOrderByUserGetter(songClass).getName());
+        assertEquals("setInsertOrder",m_entityRegistry.getOrderByUserSetter(songClass).getName());
+        assertEquals("insertOrder",m_entityRegistry.getOrderByFieldName(songClass));
+        Map<QName, Method> yangLeafListGetter = m_entityRegistry.getYangLeafListGetters(songClass); 
         for (QName qname : yangLeafListGetter.keySet()) {
-            assertEquals("getSingers", yangLeafListGetter.get(qname).getName());
+        	assertEquals("getSingers", yangLeafListGetter.get(qname).getName());
         }
-        Map<QName, Method> yangLeafListSetter = m_entityRegistry.getYangLeafListSetters(songClass);
+        Map<QName, Method> yangLeafListSetter = m_entityRegistry.getYangLeafListSetters(songClass); 
         for (QName qname : yangLeafListSetter.keySet()) {
-            assertEquals("setSingers", yangLeafListSetter.get(qname).getName());
+        	assertEquals("setSingers", yangLeafListSetter.get(qname).getName());
         }
 
         m_entityRegistry.undeploy("Jukebox");
@@ -194,13 +177,13 @@ public class EntityRegistryTest {
         assertNull(m_entityRegistry.getParentIdGetter(libraryClass));
         assertNull(m_entityRegistry.getSchemaPathGetter(libraryClass));
         assertNull(m_entityRegistry.getYangXmlSubtreeGetter(libraryClass));
-
+        
         assertNull(m_entityRegistry.getOrderByUserGetter(artistClass));
         assertNull(m_entityRegistry.getOrderByUserSetter(artistClass));
-
+        
         assertNull(m_entityRegistry.getOrderByUserGetter(albumClass));
         assertNull(m_entityRegistry.getOrderByUserSetter(albumClass));
-
+        
         assertNull(m_entityRegistry.getOrderByUserGetter(songClass));
         assertNull(m_entityRegistry.getOrderByUserSetter(songClass));
         assertNull(m_entityRegistry.getYangLeafListGetters(songClass));

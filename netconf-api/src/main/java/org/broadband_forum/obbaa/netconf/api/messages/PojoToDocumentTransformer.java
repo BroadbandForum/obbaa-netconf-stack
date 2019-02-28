@@ -35,27 +35,29 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.NetconfMessage;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
 import org.joda.time.DateTime;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
+
 /**
  * A utility class to transform a {@link NetconfMessage} to netconf {@link Document}.
+ * 
  *
- * @author keshava
+ * 
  */
 public class PojoToDocumentTransformer {
 
     private static final Logger LOGGER = Logger.getLogger(PojoToDocumentTransformer.class);
 
-    private static final String RPC_ELEMENT_IS_NULL_CREATE_THE_RPC_ELEMENT_FIRST = "<rpc> Element is null, create the" +
-            " rpc element first";
+    private static final String RPC_ELEMENT_IS_NULL_CREATE_THE_RPC_ELEMENT_FIRST = "<rpc> Element is null, create the rpc element first";
 
     protected static final String ERROR_WHILE_BUILDING_DOCUMENT = "Error while building document ";
 
@@ -73,7 +75,7 @@ public class PojoToDocumentTransformer {
 
     public PojoToDocumentTransformer newNetconfRpcDocument(String messageId) throws NetconfMessageBuilderException {
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
 
             // create the root element rpc
             Element element = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC);
@@ -99,8 +101,7 @@ public class PojoToDocumentTransformer {
 
     private void addWithDelayElement(Element element, int withDelay) {
         if (withDelay > 0) {
-            Element withDelayElement = m_doc.createElementNS(NetconfResources.WITH_DELAY_NS, NetconfResources
-                    .WITH_DELAY);
+            Element withDelayElement = m_doc.createElementNS(NetconfResources.WITH_DELAY_NS, NetconfResources.WITH_DELAY);
             withDelayElement.setTextContent(String.valueOf(withDelay));
             element.appendChild(withDelayElement);
         }
@@ -113,57 +114,51 @@ public class PojoToDocumentTransformer {
             element.appendChild(depthElement);
         }
     }
-
+    
     private void addFieldElements(Element element, Map<String, List<QName>> fieldValues) {
-        for (Entry<String, List<QName>> entry : fieldValues.entrySet()) {
+        for ( Entry<String, List<QName>> entry : fieldValues.entrySet()){
             Element fieldsElement = m_doc.createElementNS(NetconfResources.EXTENSION_NS, NetconfResources.FIELDS);
             element.appendChild(fieldsElement);
             Element dataNodeElement = m_doc.createElementNS(NetconfResources.EXTENSION_NS, NetconfResources.DATA_NODE);
             dataNodeElement.setTextContent(entry.getKey());
             fieldsElement.appendChild(dataNodeElement);
-            for (QName attribute : entry.getValue()) {
-                Element attributeElement = m_doc.createElementNS(NetconfResources.EXTENSION_NS, NetconfResources
-                        .ATTRIBUTE);
+            for ( QName attribute : entry.getValue()){
+                Element attributeElement = m_doc.createElementNS(NetconfResources.EXTENSION_NS, NetconfResources.ATTRIBUTE);
                 attributeElement.setTextContent(attribute.getLocalName());
                 fieldsElement.appendChild(attributeElement);
             }
         }
     }
 
-    public PojoToDocumentTransformer addGetConfigElement(String source, NetconfFilter netconfFilter, WithDefaults
-            withDefaults, int withDelay, int depth, Map<String, List<QName>> fieldValues)
+    public PojoToDocumentTransformer addGetConfigElement(String source, NetconfFilter netconfFilter, WithDefaults withDefaults, int withDelay, int depth, Map<String, List<QName>> fieldValues)
             throws NetconfMessageBuilderException {
         // Add it right after "<rpc>"
         Node rpcNode = m_doc.getFirstChild();
         if (rpcNode == null) {
             throw new NetconfMessageBuilderException(RPC_ELEMENT_IS_NULL_CREATE_THE_RPC_ELEMENT_FIRST);
         }
-        Element getConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .GET_CONFIG);
+        Element getConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.GET_CONFIG);
         rpcNode.appendChild(getConfigElement);
         addSource(source, getConfigElement);
         if (netconfFilter != null) {
             addFilter(netconfFilter, getConfigElement);
         }
         if (withDefaults != null) {
-            Element withDefaultElement = m_doc.createElementNS(NetconfResources.WITH_DEFAULTS_NS, NetconfResources
-                    .WITH_DEFAULTS);
+            Element withDefaultElement = m_doc.createElementNS(NetconfResources.WITH_DEFAULTS_NS, NetconfResources.WITH_DEFAULTS);
             withDefaultElement.setTextContent(withDefaults.getValue());
             getConfigElement.appendChild(withDefaultElement);
         }
 
         addWithDelayElement(getConfigElement, withDelay);
-
+        
         addDepthElement(getConfigElement, depth);
         addFieldElements(getConfigElement, fieldValues);
 
         return this;
     }
 
-    public PojoToDocumentTransformer addCreateSubscriptionElement(String stream, NetconfFilter netconfFilter,
-                                                                  DateTime startTime,
-                                                                  DateTime stopTime) throws
-            NetconfMessageBuilderException {
+    public PojoToDocumentTransformer addCreateSubscriptionElement(String stream, NetconfFilter netconfFilter, DateTime startTime,
+            DateTime stopTime) throws NetconfMessageBuilderException {
         // Add it right after "<rpc>"
         Node rpcNode = m_doc.getFirstChild();
         if (rpcNode == null) {
@@ -181,8 +176,7 @@ public class PojoToDocumentTransformer {
 
     private void addStream(String stream, Element createSubscriptionElement) throws NetconfMessageBuilderException {
         if (stream != null) {
-            Element streamElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS,
-                    NetconfResources.STREAM);
+            Element streamElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources.STREAM);
             if (stream != null && !stream.isEmpty()) {
                 streamElementWrapper.setTextContent(stream);
             } else {
@@ -190,21 +184,16 @@ public class PojoToDocumentTransformer {
             }
 
             /*
-             * arg1 should be Stream to enable this code if (stream.getDescription() != null && !stream
-             * .getDescription().isEmpty()) {
-             * Element description = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources
-             * .DESCRIPTION);
+             * arg1 should be Stream to enable this code if (stream.getDescription() != null && !stream.getDescription().isEmpty()) {
+             * Element description = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources.DESCRIPTION);
              * description.setTextContent(stream.getDescription()); streamElementWrapper.appendChild(description); }
              * 
-             * if (stream.getReplaySupport()) { Element replaySupport = m_doc.createElementNS(NetconfResources
-             * .NETCONF_NOTIFICATION_NS,
-             * NetconfResources.REPLAY_SUPPORT); replaySupport.setTextContent(Boolean.toString(stream
-             * .getReplaySupport()));
+             * if (stream.getReplaySupport()) { Element replaySupport = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS,
+             * NetconfResources.REPLAY_SUPPORT); replaySupport.setTextContent(Boolean.toString(stream.getReplaySupport()));
              * streamElementWrapper.appendChild(replaySupport); }
              * 
              * if (stream.getReplayLogCreationTime() != null) { Element replayLogCreationTime =
-             * m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources
-             * .REPLAY_LOG_CREATION_TIME);
+             * m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources.REPLAY_LOG_CREATION_TIME);
              * replayLogCreationTime.setTextContent(stream.getReplayLogCreationTime().toString());
              * streamElementWrapper.appendChild(replayLogCreationTime); }
              */
@@ -215,8 +204,7 @@ public class PojoToDocumentTransformer {
 
     private void addStartTime(DateTime startTime, Element createSubscriptionElement) {
         if (startTime != null) {
-            Element startTimeElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS,
-                    NetconfResources.START_TIME);
+            Element startTimeElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources.START_TIME);
             startTimeElement.setTextContent(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.print(startTime));
             createSubscriptionElement.appendChild(startTimeElement);
         }
@@ -224,8 +212,7 @@ public class PojoToDocumentTransformer {
 
     private void addStopTime(DateTime stopTime, Element createSubscriptionElement) {
         if (stopTime != null) {
-            Element stopTimeElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS,
-                    NetconfResources.STOP_TIME);
+            Element stopTimeElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources.STOP_TIME);
             stopTimeElement.setTextContent(NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.print(stopTime));
             createSubscriptionElement.appendChild(stopTimeElement);
         }
@@ -233,8 +220,7 @@ public class PojoToDocumentTransformer {
 
     private void addFilter(NetconfFilter netconfFilter, Element getConfigElement) {
         if (netconfFilter != null) {
-            Element filterElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0,
-                    NetconfResources.FILTER);
+            Element filterElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.FILTER);
             if (netconfFilter.getType() != null && !netconfFilter.getType().isEmpty()) {
                 filterElementWrapper.setAttribute(NetconfResources.TYPE, netconfFilter.getType());
             }
@@ -250,8 +236,7 @@ public class PojoToDocumentTransformer {
 
     private void addSource(String source, Element getConfigElement) {
         if (source != null) {
-            Element sourceElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0,
-                    NetconfResources.DATA_SOURCE);
+            Element sourceElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_SOURCE);
             getConfigElement.appendChild(sourceElementWrapper);
 
             Element sourceElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, source);
@@ -259,18 +244,14 @@ public class PojoToDocumentTransformer {
         }
     }
 
-    public PojoToDocumentTransformer addEditConfigElement(String source, String defaultOperation, String testOption,
-                                                          String errorOption,
-                                                          int withDelay, EditConfigElement configElement) throws
-            NetconfMessageBuilderException {
+    public PojoToDocumentTransformer addEditConfigElement(String source, String defaultOperation, String testOption, String errorOption,
+            int withDelay, EditConfigElement configElement) throws NetconfMessageBuilderException {
 
         Node rpcNode = m_doc.getFirstChild();
-        Element editConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .EDIT_CONFIG);
+        Element editConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG);
         rpcNode.appendChild(editConfigElement);
         if (source != null) {
-            Element sourceElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0,
-                    NetconfResources.DATA_TARGET);
+            Element sourceElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_TARGET);
             editConfigElement.appendChild(sourceElementWrapper);
 
             Element sourceElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, source);
@@ -284,15 +265,13 @@ public class PojoToDocumentTransformer {
         }
 
         if (testOption != null) {
-            Element testOptionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                    .TEST_OPTION);
+            Element testOptionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.TEST_OPTION);
             testOptionElement.setTextContent(testOption);
             editConfigElement.appendChild(testOptionElement);
         }
 
         if (errorOption != null) {
-            Element errorOptionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                    .ERROR_OPTION);
+            Element errorOptionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.ERROR_OPTION);
             errorOptionElement.setTextContent(errorOption);
             editConfigElement.appendChild(errorOptionElement);
         }
@@ -305,8 +284,7 @@ public class PojoToDocumentTransformer {
             if (!validateEditConfigElement(configElement)) {
                 editConfigElement.appendChild(m_doc.importNode(configElement.getXmlElement(), true));
             } else {
-                throw new NetconfMessageBuilderException("<config> element in <edit-config> is invalid :" +
-                        configElement);
+                throw new NetconfMessageBuilderException("<config> element in <edit-config> is invalid :" + configElement);
             }
         }
         return this;
@@ -315,12 +293,10 @@ public class PojoToDocumentTransformer {
     private boolean validateEditConfigElement(EditConfigElement configElement) throws NetconfMessageBuilderException {
         if (configElement != null) {
             if (configElement.getConfigElementContents() == null) {
-                throw new NetconfMessageBuilderException("One or more <config> elements in <edit-config> request are " +
-                        "null ");
+                throw new NetconfMessageBuilderException("One or more <config> elements in <edit-config> request are null ");
             }
         } else {
-            throw new NetconfMessageBuilderException("One or more <config> elements in <edit-config> request are null" +
-                    " ");
+            throw new NetconfMessageBuilderException("One or more <config> elements in <edit-config> request are null ");
         }
         return false;
     }
@@ -364,16 +340,14 @@ public class PojoToDocumentTransformer {
         return false;
     }
 
-    public Element newEditconfigElement(Collection<Element> configElementContents) throws
-            NetconfMessageBuilderException {
+    public Element newEditconfigElement(Collection<Element> configElementContents) throws NetconfMessageBuilderException {
         Document newDocument;
         try {
-            newDocument = DocumentUtils.getNewDocument();
+            newDocument = getNewDocument();
         } catch (ParserConfigurationException e) {
             throw new NetconfMessageBuilderException(ERROR_WHILE_BUILDING_DOCUMENT, e);
         }
-        Element configElement = newDocument.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .EDIT_CONFIG_CONFIG);
+        Element configElement = newDocument.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG_CONFIG);
         newDocument.appendChild(configElement);
 
         for (Element configElementContent : configElementContents) {
@@ -382,9 +356,8 @@ public class PojoToDocumentTransformer {
         return configElement;
     }
 
-    public PojoToDocumentTransformer addCopyConfigElement(String source, boolean srcIsUrl, String target, boolean
-            targetIsUrl,
-                                                          Element config) throws NetconfMessageBuilderException {
+    public PojoToDocumentTransformer addCopyConfigElement(String source, boolean srcIsUrl, String target, boolean targetIsUrl,
+            Element config) throws NetconfMessageBuilderException {
         if (source == null || source.isEmpty()) {
             if (config == null) {
                 throw new NetconfMessageBuilderException("<source> element not set for <copy-config>");
@@ -395,12 +368,10 @@ public class PojoToDocumentTransformer {
         }
 
         Node rpcNode = m_doc.getFirstChild();
-        Element copyConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .COPY_CONFIG);
+        Element copyConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.COPY_CONFIG);
         rpcNode.appendChild(copyConfigElement);
 
-        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .DATA_TARGET);
+        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_TARGET);
         Element targetContentElement = null;
         if (targetIsUrl) {
             targetContentElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.URL);
@@ -410,9 +381,8 @@ public class PojoToDocumentTransformer {
             targetElement.appendChild(targetContentElement);
         }
         copyConfigElement.appendChild(targetElement);
-
-        Element sourceElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .DATA_SOURCE);
+        
+        Element sourceElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_SOURCE);
         Element sourceContentElement = null;
         if (srcIsUrl) {
             sourceContentElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.URL);
@@ -424,7 +394,7 @@ public class PojoToDocumentTransformer {
                 sourceContentElement = (Element) m_doc.importNode(config, true);
             }
         }
-        sourceElement.appendChild(sourceContentElement);
+        sourceElement.appendChild(sourceContentElement);        
         copyConfigElement.appendChild(sourceElement);
 
         return this;
@@ -440,10 +410,8 @@ public class PojoToDocumentTransformer {
             throw new NetconfMessageBuilderException("<target> element not set for <delete-config>");
         }
         Node rpcNode = m_doc.getFirstChild();
-        Element deleteConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .DELETE_CONFIG);
-        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .DATA_TARGET);
+        Element deleteConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DELETE_CONFIG);
+        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_TARGET);
         Element targetContent = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, target);
         targetElement.appendChild(targetContent);
         deleteConfigElement.appendChild(targetElement);
@@ -452,7 +420,7 @@ public class PojoToDocumentTransformer {
         return this;
     }
 
-    public PojoToDocumentTransformer addActionElement(Element actionTreeElement) throws NetconfMessageBuilderException {
+    public PojoToDocumentTransformer addActionElement(Element actionTreeElement) throws NetconfMessageBuilderException{
         if (actionTreeElement == null) {
             throw new NetconfMessageBuilderException("actionTargetElement element can not be null");
         }
@@ -463,7 +431,6 @@ public class PojoToDocumentTransformer {
 
         return this;
     }
-
     /**
      * @param target
      * @return
@@ -475,8 +442,7 @@ public class PojoToDocumentTransformer {
         }
         Node rpcNode = m_doc.getFirstChild();
         Element lockElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.LOCK);
-        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .DATA_TARGET);
+        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_TARGET);
         Element targetContent = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, target);
         targetElement.appendChild(targetContent);
         lockElement.appendChild(targetElement);
@@ -495,8 +461,7 @@ public class PojoToDocumentTransformer {
         }
         Node rpcNode = m_doc.getFirstChild();
         Element unlockElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.UNLOCK);
-        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .DATA_TARGET);
+        Element targetElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_TARGET);
         Element targetContent = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, target);
         targetElement.appendChild(targetContent);
         unlockElement.appendChild(targetElement);
@@ -509,8 +474,7 @@ public class PojoToDocumentTransformer {
      * @return
      * @throws NetconfMessageBuilderException
      */
-    public PojoToDocumentTransformer addGetElement(NetconfFilter filter, WithDefaults withDefaults, int withDelay,
-                                                   int depth, Map<String, List<QName>> fieldValues)
+    public PojoToDocumentTransformer addGetElement(NetconfFilter filter, WithDefaults withDefaults, int withDelay, int depth, Map<String, List<QName>> fieldValues)
             throws NetconfMessageBuilderException {
         // Add it right after "<rpc>"
         Node rpcNode = m_doc.getFirstChild();
@@ -520,8 +484,7 @@ public class PojoToDocumentTransformer {
         Element getElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.GET);
         rpcNode.appendChild(getElement);
         if (filter != null) {
-            Element filterElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0,
-                    NetconfResources.FILTER);
+            Element filterElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.FILTER);
             if (filter.getType() != null && !filter.getType().isEmpty()) {
                 filterElementWrapper.setAttribute(NetconfResources.TYPE, filter.getType());
             }
@@ -534,14 +497,13 @@ public class PojoToDocumentTransformer {
             getElement.appendChild(filterElementWrapper);
         }
         if (withDefaults != null) {
-            Element withDefaultElement = m_doc.createElementNS(NetconfResources.WITH_DEFAULTS_NS, NetconfResources
-                    .WITH_DEFAULTS);
+            Element withDefaultElement = m_doc.createElementNS(NetconfResources.WITH_DEFAULTS_NS, NetconfResources.WITH_DEFAULTS);
             withDefaultElement.setTextContent(withDefaults.getValue());
             getElement.appendChild(withDefaultElement);
         }
 
         addWithDelayElement(getElement, withDelay);
-
+        
         addDepthElement(getElement, depth);
         addFieldElements(getElement, fieldValues);
         return this;
@@ -562,6 +524,7 @@ public class PojoToDocumentTransformer {
     }
 
     /**
+     * 
      * @return
      * @throws NetconfMessageBuilderException
      */
@@ -571,8 +534,7 @@ public class PojoToDocumentTransformer {
         if (rpcNode == null) {
             throw new NetconfMessageBuilderException(RPC_ELEMENT_IS_NULL_CREATE_THE_RPC_ELEMENT_FIRST);
         }
-        Element closeSessionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .CLOSE_SESSION);
+        Element closeSessionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.CLOSE_SESSION);
         rpcNode.appendChild(closeSessionElement);
         return this;
     }
@@ -582,15 +544,13 @@ public class PojoToDocumentTransformer {
         if (rpcNode == null) {
             throw new NetconfMessageBuilderException(RPC_ELEMENT_IS_NULL_CREATE_THE_RPC_ELEMENT_FIRST);
         }
-        Element killSessionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .KILL_SESSION);
+        Element killSessionElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.KILL_SESSION);
         addSessionId(sessionId, killSessionElement);
         rpcNode.appendChild(killSessionElement);
         return this;
     }
 
-    public PojoToDocumentTransformer newServerHelloMessage(Set<String> caps, Integer i) throws
-            NetconfMessageBuilderException {
+    public PojoToDocumentTransformer newServerHelloMessage(Set<String> caps, Integer i) throws NetconfMessageBuilderException {
         createDocument();
         Element helloElement = createHelloElement();
         addCapabilities(helloElement, caps);
@@ -598,7 +558,7 @@ public class PojoToDocumentTransformer {
         m_doc.appendChild(helloElement);
         return this;
     }
-
+    
     public PojoToDocumentTransformer newClientHelloMessage(Set<String> caps) throws NetconfMessageBuilderException {
         createDocument();
         Element helloElement = createHelloElement();
@@ -613,7 +573,7 @@ public class PojoToDocumentTransformer {
 
     private void createDocument() throws NetconfMessageBuilderException {
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
         } catch (ParserConfigurationException e) {
             throw new NetconfMessageBuilderException("Errow while building hello message", e);
         }
@@ -627,22 +587,19 @@ public class PojoToDocumentTransformer {
     }
 
     private void addCapabilities(Element helloElement, Set<String> caps) {
-        Element capabilitesWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .CAPABILITIES);
+        Element capabilitesWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.CAPABILITIES);
         helloElement.appendChild(capabilitesWrapper);
 
         for (String capability : caps) {
-            Element capabilityElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                    .CAPABILITY);
+            Element capabilityElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.CAPABILITY);
             capabilityElement.setTextContent(capability);
             capabilitesWrapper.appendChild(capabilityElement);
         }
     }
 
-    public PojoToDocumentTransformer newNetconfRpcReplyDocument(String messageId, Map<String, String>
-            additionalAttributes) {
+    public PojoToDocumentTransformer newNetconfRpcReplyDocument(String messageId, Map<String, String> additionalAttributes) {
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
             // create the root element rpc-reply
             Element rpcReply = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_REPLY);
             for (String key : additionalAttributes.keySet()) {
@@ -653,7 +610,7 @@ public class PojoToDocumentTransformer {
             } else {
                 try {
                     throw new Exception("message-id is not set ");
-                } catch (Exception e) {
+                }catch (Exception e) {
                     LOGGER.warn("", e);
                 }
             }
@@ -686,8 +643,7 @@ public class PojoToDocumentTransformer {
         return this;
     }
 
-    public PojoToDocumentTransformer addRpcErrors(List<NetconfRpcError> rpcErrors) throws
-            NetconfMessageBuilderException {
+    public PojoToDocumentTransformer addRpcErrors(List<NetconfRpcError> rpcErrors) throws NetconfMessageBuilderException {
         for (NetconfRpcError rpcError : rpcErrors) {
             addRpcError(rpcError);
         }
@@ -700,38 +656,33 @@ public class PojoToDocumentTransformer {
             throw new NetconfMessageBuilderException("<rpc-reply> Element is null, create the rpc element first");
         }
         if (rpcError != null) {
-            Element rpcErrorElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                    .RPC_ERROR);
+            Element rpcErrorElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR);
             if (rpcError.getErrorType() != null) {
-                Element errorType = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                        .RPC_ERROR_TYPE);
+                Element errorType = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR_TYPE);
                 errorType.setTextContent(rpcError.getErrorType().value());
                 rpcErrorElement.appendChild(errorType);
             }
             if (rpcError.getErrorTag() != null) {
-                Element errorTag = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                        .RPC_ERROR_TAG);
+                Element errorTag = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR_TAG);
                 errorTag.setTextContent(rpcError.getErrorTag().value());
                 rpcErrorElement.appendChild(errorTag);
             }
             if (rpcError.getErrorSeverity() != null) {
-                Element errorSeverity = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                        .RPC_ERROR_SEVERITY);
+                Element errorSeverity = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR_SEVERITY);
                 errorSeverity.setTextContent(rpcError.getErrorSeverity().value());
                 rpcErrorElement.appendChild(errorSeverity);
             }
             if (rpcError.getErrorAppTag() != null) {
-                Element errorAppTag = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                        .RPC_ERROR_APP_TAG);
+                Element errorAppTag = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR_APP_TAG);
                 errorAppTag.setTextContent(rpcError.getErrorAppTag());
                 rpcErrorElement.appendChild(errorAppTag);
             }
             if (rpcError.getErrorPathElement() != null) {
                 Node errorPathNode = m_doc.importNode(rpcError.getErrorPathElement(), true);
                 rpcErrorElement.appendChild(errorPathNode);
-            } else if (rpcError.getErrorPath() != null) {
-                Element errorPath = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                        .RPC_ERROR_PATH);
+            }
+            else if (rpcError.getErrorPath() != null) {
+                Element errorPath = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR_PATH);
                 errorPath.setTextContent(rpcError.getErrorPath());
                 Map<String, String> errorPathNsByPrefix = rpcError.getErrorPathNsByPrefix();
                 if (errorPathNsByPrefix != null) {
@@ -742,8 +693,7 @@ public class PojoToDocumentTransformer {
                 rpcErrorElement.appendChild(errorPath);
             }
             if (rpcError.getErrorMessage() != null) {
-                Element errorMessage = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                        .RPC_ERROR_MESSAGE);
+                Element errorMessage = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR_MESSAGE);
                 errorMessage.setTextContent(rpcError.getErrorMessage());
                 rpcErrorElement.appendChild(errorMessage);
             }
@@ -819,13 +769,11 @@ public class PojoToDocumentTransformer {
     public PojoToDocumentTransformer newNetconfNotificationDocument(String eventTime, Element notificationContent)
             throws NetconfMessageBuilderException {
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
 
             // create the root element notification
-            Element notificationElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS,
-                    NetconfResources.NOTIFICATION);
-            Element eventTimeElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS,
-                    NetconfResources.EVENT_TIME);
+            Element notificationElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources.NOTIFICATION);
+            Element eventTimeElement = m_doc.createElementNS(NetconfResources.NETCONF_NOTIFICATION_NS, NetconfResources.EVENT_TIME);
             eventTimeElement.setTextContent(eventTime);
             notificationElement.appendChild(eventTimeElement);
             if (notificationContent != null) {
@@ -838,36 +786,30 @@ public class PojoToDocumentTransformer {
         }
     }
 
-    public Element getConfigChangeNotificationElement(String datastore, List<EditInfo> editList, ChangedByParams
-            changedByParams)
+    public Element getConfigChangeNotificationElement(String datastore, List<EditInfo> editList, ChangedByParams changedByParams)
             throws NetconfMessageBuilderException {
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
 
             Element netconfConfigChangeElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
                     NetconfResources.CONFIG_CHANGE_NOTIFICATION);
 
-            Element dataStoreElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources
-                    .DATA_STORE);
+            Element dataStoreElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.DATA_STORE);
             dataStoreElement.setTextContent(datastore);
             netconfConfigChangeElement.appendChild(dataStoreElement);
 
             if (changedByParams != null) {
                 SessionInfo sessionInfo = changedByParams.getCommonSessionParams();
-                Element changeBy = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources
-                        .CHANGED_BY);
-                Element userNameElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
-                        NetconfResources.USER_NAME);
+                Element changeBy = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.CHANGED_BY);
+                Element userNameElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.USER_NAME);
                 userNameElement.setTextContent(sessionInfo.getUserName());
                 changeBy.appendChild(userNameElement);
 
-                Element sessionIdElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
-                        NetconfResources.SESSION_ID);
+                Element sessionIdElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.SESSION_ID);
                 sessionIdElement.setTextContent(String.valueOf(sessionInfo.getSessionId()));
                 changeBy.appendChild(sessionIdElement);
 
-                Element sourcehostElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
-                        NetconfResources.SOURCE_HOST);
+                Element sourcehostElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.SOURCE_HOST);
                 sourcehostElement.setTextContent(sessionInfo.getSourceHostIpAddress());
                 changeBy.appendChild(sourcehostElement);
 
@@ -875,15 +817,12 @@ public class PojoToDocumentTransformer {
             }
 
             for (EditInfo editInfo : editList) {
-                Element editInfoElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
-                        NetconfResources.EDIT);
-                if (editInfo.isImplied()) {
-                    Element impliedElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
-                            NetconfResources.IMPLIED);
+                Element editInfoElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.EDIT);
+                if(editInfo.isImplied()){
+                    Element impliedElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.IMPLIED);
                     editInfoElement.appendChild(impliedElement);
                 }
-                Element targetElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources
-                        .TARGET);
+                Element targetElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.TARGET);
                 Map<String, String> namespaceDeclareMap = editInfo.getNamespaceDeclareMap();
                 if (namespaceDeclareMap != null) {
                     for (String prefix : namespaceDeclareMap.keySet()) {
@@ -893,17 +832,15 @@ public class PojoToDocumentTransformer {
                 targetElement.setTextContent(editInfo.getTarget());
                 editInfoElement.appendChild(targetElement);
 
-                Element operationElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
-                        NetconfResources.OPERATION);
+                Element operationElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.OPERATION);
                 operationElement.setTextContent(editInfo.getOperation());
                 editInfoElement.appendChild(operationElement);
-
+                
                 List<ChangedLeafInfo> changedLeafInfos = editInfo.getChangedLeafInfos();
                 for (ChangedLeafInfo changedLeafInfo : changedLeafInfos) {
                     Element changedLeafElement = m_doc
                             .createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.CHANGED_LEAF);
-                    Element leafElement = m_doc.createElementNS(changedLeafInfo.getNamespace(), changedLeafInfo
-                            .getName());
+                    Element leafElement = m_doc.createElementNS(changedLeafInfo.getNamespace(), changedLeafInfo.getName());
                     leafElement.setPrefix(changedLeafInfo.getPrefix());
                     leafElement.setTextContent(changedLeafInfo.getChangedValue());
                     changedLeafElement.appendChild(leafElement);
@@ -919,20 +856,17 @@ public class PojoToDocumentTransformer {
         }
     }
 
-    public Element getStateChangeNotificationElement(String target, String value) throws
-            NetconfMessageBuilderException {
+    public Element getStateChangeNotificationElement(String target, String value) throws NetconfMessageBuilderException {
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
             Element stateChangeNotificationElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS,
                     NetconfResources.STATE_CHANGE_NOTIFICATION);
 
-            Element targetElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources
-                    .TARGET);
+            Element targetElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.TARGET);
             targetElement.setTextContent(target);
             stateChangeNotificationElement.appendChild(targetElement);
 
-            Element valueElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources
-                    .STATE_CHANGE_VALUE);
+            Element valueElement = m_doc.createElementNS(NetconfResources.IETF_NOTIFICATION_NS, NetconfResources.STATE_CHANGE_VALUE);
             valueElement.setTextContent(value);
             stateChangeNotificationElement.appendChild(valueElement);
 
@@ -944,9 +878,8 @@ public class PojoToDocumentTransformer {
 
     public Element newReplayCompleteElement() throws NetconfMessageBuilderException {
         try {
-            m_doc = DocumentUtils.getNewDocument();
-            Element replyCompleteElement = m_doc.createElementNS(NetconfResources.NC_NOTIFICATION_NS,
-                    NetconfResources.REPLAY_COMPLETE);
+            m_doc = getNewDocument();
+            Element replyCompleteElement = m_doc.createElementNS(NetconfResources.NC_NOTIFICATION_NS, NetconfResources.REPLAY_COMPLETE);
 
             return replyCompleteElement;
         } catch (ParserConfigurationException e) {
@@ -956,7 +889,7 @@ public class PojoToDocumentTransformer {
 
     public Element newNotificationCompleteElement() throws NetconfMessageBuilderException {
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
             Element replyCompleteElement = m_doc.createElementNS(NetconfResources.NC_NOTIFICATION_NS,
                     NetconfResources.NOTIFICATION_COMPLETE);
 
@@ -965,19 +898,17 @@ public class PojoToDocumentTransformer {
             throw new NetconfMessageBuilderException(ERROR_WHILE_BUILDING_DOCUMENT, e);
         }
     }
-
-    public Element getStateChangeNotificationElement(List<StateChangeInfo> changesList) throws
-            NetconfMessageBuilderException {
+    
+    public Element getStateChangeNotificationElement(List<StateChangeInfo> changesList) throws NetconfMessageBuilderException {
 
         try {
-            m_doc = DocumentUtils.getNewDocument();
+            m_doc = getNewDocument();
 
             Element stateChangeElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS,
                     NetconfResources.NC_STATE_CHANGE_NOTIFICATION);
-
+            
             for (StateChangeInfo stateChangeInfo : changesList) {
-                Element changesInfoElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources
-                        .CHANGES);
+                Element changesInfoElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.CHANGES);
 
                 Element targetElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.TARGET);
                 Map<String, String> namespaceDeclareMap = stateChangeInfo.getNamespaceDeclareMap();
@@ -993,18 +924,15 @@ public class PojoToDocumentTransformer {
                 int changedLeafKey = 1;
                 for (ChangedLeafInfo changedLeafInfo : changedLeafInfos) {
                     //get key
-                    Element changedLeafKeyElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS,
-                            NetconfResources.KEY);
+                    Element changedLeafKeyElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.KEY);
                     changedLeafKeyElement.setTextContent(String.valueOf(changedLeafKey));
                     changedLeafKey++;
                     //get anyxml content
-                    Element changeValuesAnyXml = m_doc.createElementNS(changedLeafInfo.getNamespace(),
-                            changedLeafInfo.getName());
+                    Element changeValuesAnyXml = m_doc.createElementNS(changedLeafInfo.getNamespace(), changedLeafInfo.getName());
                     changeValuesAnyXml.setPrefix(changedLeafInfo.getPrefix());
                     changeValuesAnyXml.setTextContent(changedLeafInfo.getChangedValue());
                     //append key and anyxml into changed-leaf element
-                    Element changedLeafElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources
-                            .CHANGED_LEAF);
+                    Element changedLeafElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.CHANGED_LEAF);
                     changedLeafElement.appendChild(changedLeafKeyElement);
                     changedLeafElement.appendChild(changeValuesAnyXml);
                     changesInfoElement.appendChild(changedLeafElement);

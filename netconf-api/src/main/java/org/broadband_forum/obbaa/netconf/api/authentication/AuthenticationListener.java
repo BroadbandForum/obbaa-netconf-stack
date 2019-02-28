@@ -17,11 +17,11 @@
 package org.broadband_forum.obbaa.netconf.api.authentication;
 
 /**
- * A netconf server/client would like to listen to netconf client authentication events. Supplying a
- * {@link AuthenticationListener} helps in
+ * A netconf server/client would like to listen to netconf client authentication events. Supplying a {@link AuthenticationListener} helps in
  * listening to such events,
+ * 
  *
- * @author sgs
+ * 
  */
 public interface AuthenticationListener {
     public void authenticationFailed(FailureInfo info);

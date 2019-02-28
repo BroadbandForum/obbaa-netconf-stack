@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.server.tls;
 
+import java.util.Set;
+
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener;
 import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
@@ -31,22 +33,18 @@ public class SecureNetconfServerHandlerFactory {
         return INSTANCE;
     }
 
-    // FNMS-5482 - In Karaf OSGI, default classloader here is App classloader (sun.misc.Launcher$AppClassLoader), it
-    // cannot see io/netty/util/internal/TypeParameterMatcher
+    // FNMS-5482 - In Karaf OSGI, default classloader here is App classloader (sun.misc.Launcher$AppClassLoader), it cannot see io/netty/util/internal/TypeParameterMatcher
     // which is used inside super class constructor of SecureNetconfClientHandler.
-    // Some times this causes NoClassDefFoundError (most the time it's ClassNotFoundException, it's not clear yet how
-    // come the NoClassDefFoundError occurs).
+    // Some times this causes NoClassDefFoundError (most the time it's ClassNotFoundException, it's not clear yet how come the NoClassDefFoundError occurs).
     // We're switching to bundle classloader here, this CL has access to class in package io.netty.util.internal
 
-    public SecureNetconfServerHandler getSecureNetconfServerHandler(NetconfServerMessageListener
-                                                                            axsNetconfServerMessageListener,
-                                                                    ServerMessageHandler serverMessageHandler, int
-                                                                            sessionId, NetconfLogger netconfLogger) {
+    public SecureNetconfServerHandler getSecureNetconfServerHandler(NetconfServerMessageListener axsNetconfServerMessageListener,
+                                                                    ServerMessageHandler serverMessageHandler, Set<String> caps, int sessionId, NetconfLogger netconfLogger) {
         ClassLoader prevCL = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
             return new SecureNetconfServerHandler(axsNetconfServerMessageListener,
-                    serverMessageHandler, sessionId, netconfLogger);
+                    serverMessageHandler, caps, sessionId, netconfLogger);
         } finally {
             Thread.currentThread().setContextClassLoader(prevCL);
         }

@@ -46,7 +46,7 @@ public class NetconfSshServerConnectionService extends ServerConnectionService {
         }
     }
 
-    public static class Factory extends ServerConnectionServiceFactory {
+    public static class Factory  extends ServerConnectionServiceFactory {
         public String getName() {
             return "ssh-connection";
         }
@@ -54,16 +54,14 @@ public class NetconfSshServerConnectionService extends ServerConnectionService {
         @Override
         public Service create(Session session) throws IOException {
             ValidateUtils.checkTrue(session instanceof AbstractServerSession, "Not a server session: %s", session);
-            NetconfSshServerConnectionService service = new NetconfSshServerConnectionService((AbstractServerSession)
-                    session);
+            NetconfSshServerConnectionService service = new NetconfSshServerConnectionService((AbstractServerSession) session);
             service.addPortForwardingEventListener(getPortForwardingEventListenerProxy());
             return service;
         }
     }
 
     protected void startHeartBeat() {
-        String intervalStr = (String) getSession().getFactoryManager().getProperties().get(NetconfResources
-                .HEARTBEAT_INTERVAL);
+        String intervalStr = (String) getSession().getFactoryManager().getProperties().get(NetconfResources.HEARTBEAT_INTERVAL);
         try {
             int interval = intervalStr != null ? Integer.parseInt(intervalStr) : 0;
             if (interval > 0) {
@@ -81,8 +79,7 @@ public class NetconfSshServerConnectionService extends ServerConnectionService {
     protected void sendHeartBeat() {
         try {
             Buffer buf = getSession().createBuffer(SshConstants.SSH_MSG_GLOBAL_REQUEST);
-            String request = (String) getSession().getFactoryManager().getProperties().get(ClientFactoryManager
-                    .HEARTBEAT_REQUEST);
+            String request = (String) getSession().getFactoryManager().getProperties().get(ClientFactoryManager.HEARTBEAT_REQUEST);
             if (request == null) {
                 request = "keepalive@sshd.apache.org";
             }

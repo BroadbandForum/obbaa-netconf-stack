@@ -21,24 +21,18 @@ import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
 
 public class NetconfTransportFactory {
 
-    public static NetconfTransport makeNetconfTransport(NetconfTransportOrder transportOrder) throws
-            NetconfConfigurationBuilderException {
+    public static NetconfTransport makeNetconfTransport(NetconfTransportOrder transportOrder) throws NetconfConfigurationBuilderException {
         transportOrder.validate();
 
         if (transportOrder.getTransportType().equals(NetconfTransportProtocol.SSH.name())) {
             return new SshNetconfTransport().setSocketAddrress(transportOrder.getServerSocketAddress())
-                    .setHostKeyPath(transportOrder.getServerSshHostKeyPath()).setHeartBeatInterval(transportOrder
-                            .getHeartbeatInterval());
+                    .setHostKeyPath(transportOrder.getServerSshHostKeyPath()).setHeartBeatInterval(transportOrder.getHeartbeatInterval());
         } else {// validate() call above should take care of invalid transport protocols
             return new ReverseTlsNetconfTransport(transportOrder.getCallHomeIp(), transportOrder.getCallHomePort(),
-                    transportOrder.getCallHomeListener(), transportOrder.isAllowSelfSigned(), transportOrder
-                    .getTrustChain(),
-                    transportOrder.getTrustManager(), transportOrder.getCertificateChain(), transportOrder
-                    .getPrivateKey(),
-                    transportOrder.getPrivateKeyPassword(), transportOrder.getKeyManager(), transportOrder
-                    .getLocalAddress(),
-                    transportOrder.isClientAuthenticationNeeded(), transportOrder.isTlsKeepalive(), transportOrder
-                    .getSslProvider(),
+                    transportOrder.getCallHomeListener(), transportOrder.isAllowSelfSigned(), transportOrder.getTrustChain(),
+                    transportOrder.getTrustManager(), transportOrder.getCertificateChain(), transportOrder.getPrivateKey(),
+                    transportOrder.getPrivateKeyPassword(), transportOrder.getKeyManager(), transportOrder.getLocalAddress(),
+                    transportOrder.isClientAuthenticationNeeded(), transportOrder.isTlsKeepalive(), transportOrder.getSslProvider(),
                     transportOrder.getTlsHandshaketimeoutMillis());
         }
     }

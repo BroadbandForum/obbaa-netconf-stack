@@ -1,0 +1,19 @@
+module genre2 {
+    yang-version 1;
+
+    namespace
+        "http://example.com/ns/genre2";
+
+    prefix gn;
+
+    identity base-genre2 {
+        description "Base for all genre types";
+    }
+    container genre-1 {
+        container genre-2 {
+            leaf name {
+                type string;
+            }
+        }
+    }
+}

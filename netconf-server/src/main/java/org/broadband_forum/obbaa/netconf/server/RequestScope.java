@@ -19,7 +19,15 @@ package org.broadband_forum.obbaa.netconf.server;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 public class RequestScope {
+
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(RequestScope.class,
+            LogAppNames.NETCONF_LIB);;
+    private static ThreadLocal<Boolean> m_scopeBeingReset = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     private RequestScope() {
 
@@ -33,7 +41,7 @@ public class RequestScope {
     };
 
     private static boolean enableThreadLocalInUT = false;
-
+    
     private static boolean m_useActualRequestScope = false;
 
     public static void setEnableThreadLocalInUT(boolean newValue) {
@@ -42,6 +50,13 @@ public class RequestScope {
     }
 
     public static RequestScope getCurrentScope() {
+        /*if (!m_scopeBeingReset.get()) {
+            try {
+                throw new RuntimeException("Scope is not being reset, cannot use cache");
+            } catch (Exception e) {
+                LOGGER.info("RequestScope is not being carefully reset using templates, cache should not be used here", e);
+            }
+        }*/
         // For UT in Dev & Build Boxes
         // SelfUT is to exhibit actual behaviour. In other cases; there is no threadLocal behaviour.
         if (!m_useActualRequestScope) {
@@ -71,4 +86,26 @@ public class RequestScope {
         return m_cache.get(key);
     }
 
+    public static <RT> RT withScope(RsTemplate<RT> rsTemplate) throws RsTemplate.RequestScopeExecutionException {
+        return rsTemplate.executeInternal();
+    }
+
+    public static abstract class RsTemplate<RT> {
+        protected abstract RT execute() throws RequestScopeExecutionException;
+        final RT executeInternal() throws RequestScopeExecutionException {
+            RequestScope.resetScope();
+            RequestScope.m_scopeBeingReset.set(true);
+            try{
+                return execute();
+            }finally {
+                RequestScope.resetScope();
+            }
+        };
+
+        public static class RequestScopeExecutionException extends RuntimeException {
+            public RequestScopeExecutionException(Exception e) {
+                super(e);
+            }
+        }
+    }
 }

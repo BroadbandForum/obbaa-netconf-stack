@@ -1,44 +1,23 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model;
 
 import java.io.Serializable;
 
-public class SomeInnerListPK implements Serializable {
+public class SomeInnerListPK implements Serializable{
 
     private static final long serialVersionUID = -7771201173806110601L;
     private String someKey;
     private String parentId;
-
-    public SomeInnerListPK() {
-    }
-
+    public SomeInnerListPK(){}
+    
     public String getParentId() {
         return parentId;
     }
-
     public void setParentId(String parentId) {
         this.parentId = parentId;
     }
-
     public String getSomeKey() {
         return someKey;
     }
-
     public void setSomeKey(String someKey) {
         this.someKey = someKey;
     }
@@ -78,6 +57,7 @@ public class SomeInnerListPK implements Serializable {
     public String toString() {
         return "SomeInnerListPK [parentId=" + parentId + ", someKey=" + someKey + "]";
     }
-
-
+    
+    
+    
 }

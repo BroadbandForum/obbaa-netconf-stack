@@ -1,23 +1,8 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
@@ -47,17 +32,17 @@ public class MNKeyUtil {
                                                ModelNodeId modelNodeId) {
         ModelNodeKey modelNodeKey = null;
         DataSchemaNode storedParentSchemaNode = schemaRegistry.getDataSchemaNode(storedParentSchemaPath);
-        Map<QName, String> keyValues = new LinkedHashMap<>();
-        if (storedParentSchemaNode instanceof ListSchemaNode) {
+        Map<QName,String> keyValues = new LinkedHashMap<>();
+        if(storedParentSchemaNode instanceof ListSchemaNode){
 
-            QName targetContainerQName = storedParentSchemaPath.getLastComponent();
+        	QName targetContainerQName = storedParentSchemaPath.getLastComponent();
             List<QName> keyDefinition = ((ListSchemaNode) storedParentSchemaNode).getKeyDefinition();
             List<ModelNodeRdn> rdns = modelNodeId.getRdns();
             int qNameIndex = 0;
             boolean targetContainerFound = false;
-
-            for (ModelNodeRdn rdn : rdns) {
-                /* if the target QName in the modelNodeId is located,
+            
+            for (ModelNodeRdn rdn:rdns){
+            	/* if the target QName in the modelNodeId is located,
             	 * find all key/leaf node before we hit next container. 
             	 * 
             	 * Those leaves are the keys for the target ModelNode.
@@ -67,44 +52,46 @@ public class MNKeyUtil {
             	 * PS: Here container refers to the ModelNodeRdn.CONTAINER and not YANG container
             	 * 
             	 */
-                if (targetContainerFound) {
-
-                    if (rdn.getRdnName().equals(ModelNodeRdn.CONTAINER)) {
-                        break;
-                    } else {
-                        QName qName = keyDefinition.get(qNameIndex);
-                        if (rdn.getRdnName().equals(qName.getLocalName()) &&
-                                rdn.getNamespace().equals(qName.getNamespace().toString())) {
-                            keyValues.put(qName, rdn.getRdnValue());
-                            qNameIndex++;
-                        }
-                    }
-                } else {
-                    if (rdn.getRdnValue().equals(targetContainerQName.getLocalName()) &&
-                            rdn.getNamespace().equals(targetContainerQName.getNamespace().toString()) &&
-                            rdn.getRdnName().equals(ModelNodeRdn.CONTAINER)) {
-                        targetContainerFound = true;
-                    }
-                }
+            	if (targetContainerFound){
+            		
+            		if (rdn.getRdnName().equals(ModelNodeRdn.CONTAINER)){
+            			break;
+            		}else{
+                    	QName qName = keyDefinition.get(qNameIndex);
+                    	if (rdn.getRdnName().equals(qName.getLocalName()) && 
+                    			rdn.getNamespace().equals(qName.getNamespace().toString())){
+                    		keyValues.put(qName,rdn.getRdnValue());
+                    		qNameIndex++;
+                    	}
+            		}
+            	}else{
+            		if (rdn.getRdnValue().equals(targetContainerQName.getLocalName()) && 
+            				rdn.getNamespace().equals(targetContainerQName.getNamespace().toString()) &&
+            				rdn.getRdnName().equals(ModelNodeRdn.CONTAINER)){
+            			targetContainerFound = true;
+            		}
+            	}
             }
             modelNodeKey = new ModelNodeKey(keyValues);
-        } else {
+        }else {
             modelNodeKey = new ModelNodeKeyBuilder().build();
         }
         return modelNodeKey;
     }
 
     public static ModelNodeKey getModelNodeKey(ModelNode modelNode, SchemaRegistry schemaRegistry) {
-        Map<QName, String> keys = new LinkedHashMap<>();
+        Map<QName,String> keys = new LinkedHashMap<>();
         ModelNodeKey modelNodeKey = new ModelNodeKey(keys);
-
         DataSchemaNode schemaNode = schemaRegistry.getDataSchemaNode(modelNode.getModelNodeSchemaPath());
-        if (schemaNode instanceof ListSchemaNode) {
+        if(schemaNode == null && SchemaRegistryUtil.isMountPointEnabled()){
+        	schemaNode = getDataSchemaNodeFromMountRegistry(modelNode.getModelNodeSchemaPath());
+        }
+        if(schemaNode instanceof ListSchemaNode){
             ModelNodeWithAttributes modelNodeWithAttributes = (ModelNodeWithAttributes) modelNode;
             Map<QName, ConfigLeafAttribute> attributes = modelNodeWithAttributes.getAttributes();
-            for (QName keyDef : ((ListSchemaNode) schemaNode).getKeyDefinition()) {
+            for(QName keyDef : ((ListSchemaNode)schemaNode).getKeyDefinition()){
                 ConfigLeafAttribute configLeafAttribute = attributes.get(keyDef);
-                if (configLeafAttribute != null) {
+                if(configLeafAttribute!=null){
                     keys.put(keyDef, configLeafAttribute.getStringValue());
                 }
             }
@@ -112,11 +99,10 @@ public class MNKeyUtil {
         return modelNodeKey;
     }
 
-    public static ModelNodeKey getModelNodeKey(ModelNodeId modelNodeId, SchemaPath schemaPath, SchemaRegistry
-            schemaRegistry) {
+    public static ModelNodeKey getModelNodeKey(ModelNodeId modelNodeId, SchemaPath schemaPath, SchemaRegistry schemaRegistry) {
         ModelNodeKeyBuilder builder = new ModelNodeKeyBuilder();
         DataSchemaNode schemaNode = schemaRegistry.getDataSchemaNode(schemaPath);
-        if (schemaNode instanceof ListSchemaNode) {
+        if(schemaNode instanceof ListSchemaNode){
             List<QName> keyDefinition = ((ListSchemaNode) schemaNode).getKeyDefinition();
             int i = modelNodeId.getRdns().size() - keyDefinition.size();
             for (QName keyQName : keyDefinition) {
@@ -130,23 +116,24 @@ public class MNKeyUtil {
     /**
      * Prepares a ModelNodeKey out of supplied superset of key-value pairs.
      * If the supplied superset does not contain all the keys, it returns an empty key.
-     *
      * @param nodeType
      * @param matchCriteria
      * @param schemaRegistry
      * @return
      */
-    public static ModelNodeKey getKeyFromCriteria(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria,
-                                                  SchemaRegistry schemaRegistry) {
+    public static ModelNodeKey getKeyFromCriteria(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, SchemaRegistry schemaRegistry) {
         ModelNodeKeyBuilder builder = new ModelNodeKeyBuilder();
         DataSchemaNode node = schemaRegistry.getDataSchemaNode(nodeType);
-        if (node instanceof ListSchemaNode) {
+        if (node == null && SchemaRegistryUtil.isMountPointEnabled()) {
+        	node = getDataSchemaNodeFromMountRegistry(nodeType);
+    	}
+        if(node instanceof ListSchemaNode) {
             ListSchemaNode listNode = (ListSchemaNode) node;
             for (QName keyQname : listNode.getKeyDefinition()) {
                 ConfigLeafAttribute value = matchCriteria.get(keyQname);
-                if (value != null && value.getStringValue() != null) {
+                if(value != null && value.getStringValue()!=null) {
                     builder.appendKey(keyQname, value.getStringValue());
-                } else {
+                }else {
                     return ModelNodeKey.EMPTY_KEY;
                 }
             }
@@ -157,68 +144,76 @@ public class MNKeyUtil {
     /**
      * Returns true of matchCriteria contains values for all keys of the given node.
      * If the node is a container node, it returns true always.
-     *
      * @param nodeType
      * @param matchCriteria
      * @param schemaRegistry
      * @return
      */
-    public static boolean containsAllKeys(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria,
-                                          SchemaRegistry schemaRegistry) {
+    public static boolean containsAllKeys(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, SchemaRegistry schemaRegistry) {
         DataSchemaNode node = schemaRegistry.getDataSchemaNode(nodeType);
-        if (node instanceof ListSchemaNode) {
+        if (node == null && SchemaRegistryUtil.isMountPointEnabled()) {
+        	node = getDataSchemaNodeFromMountRegistry(nodeType);
+    	}
+        if(node instanceof ListSchemaNode){
             ListSchemaNode listNode = (ListSchemaNode) node;
-            for (QName keyQname : listNode.getKeyDefinition()) {
-                // I don't think we have to check for empty string, because by definition, yang list keys cannot be
-                // empty
-                if (matchCriteria.get(keyQname) == null) {
+            for(QName keyQname : listNode.getKeyDefinition()){
+                // I don't think we have to check for empty string, because by definition, yang list keys cannot be empty
+                if(matchCriteria.get(keyQname) == null){
                     return false;
                 }
             }
-        } else if (node instanceof ContainerSchemaNode) {
+        }else if(node instanceof ContainerSchemaNode){
             return true;
-        } else {
+        }else{
             //any other schema node, the call probably is invalid, so return false
             return false;
         }
         return true;
     }
 
+	private static DataSchemaNode getDataSchemaNodeFromMountRegistry(SchemaPath nodeSchemaPath) {
+		SchemaRegistry mountRegistry = SchemaRegistryUtil.getMountRegistry();
+		if (mountRegistry != null) {
+			return mountRegistry.getDataSchemaNode(nodeSchemaPath);
+		}
+		return null;
+	}
 
     /**
      * Returns true of the ModelNode matches the given criteria, false otherwise.
-     *
      * @param matchCriteria
      * @param modelNode
      * @param schemaRegistry
      * @return
      */
-    public static boolean isMatch(Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeWithAttributes modelNode,
-                                  SchemaRegistry schemaRegistry) {
-        for (Map.Entry<QName, ConfigLeafAttribute> entry : matchCriteria.entrySet()) {
+    public static boolean isMatch(Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeWithAttributes modelNode, SchemaRegistry schemaRegistry) {
+        for(Map.Entry<QName,ConfigLeafAttribute> entry: matchCriteria.entrySet()){
             QName attributeQName = entry.getKey();
             String expectedValue = null;
-            if (entry.getValue() != null) {
+            if(entry.getValue()!=null){
                 expectedValue = entry.getValue().getStringValue();
             }
-            SchemaPath nodeSchemaPath = new SchemaPathBuilder().withParent(modelNode.getModelNodeSchemaPath())
-                    .appendQName(attributeQName).build();
+            SchemaPath nodeSchemaPath = new SchemaPathBuilder().withParent(modelNode.getModelNodeSchemaPath()).appendQName(attributeQName).build();
             DataSchemaNode schemaNode = schemaRegistry.getDataSchemaNode(nodeSchemaPath);
-            if (schemaNode instanceof LeafSchemaNode) {
+        	if (schemaRegistry.getDataSchemaNode(nodeSchemaPath) == null && SchemaRegistryUtil.isMountPointEnabled()) {
+        		schemaNode = getDataSchemaNodeFromMountRegistry(nodeSchemaPath);
+        	}
+        	
+            if(schemaNode instanceof LeafSchemaNode){
                 Map<QName, ConfigLeafAttribute> configAttributes = modelNode.getAttributes();
-                if (configAttributes.get(attributeQName) != null) {
-                    if (!configAttributes.get(attributeQName).getStringValue().equals(expectedValue)) {
+                if(configAttributes.get(attributeQName) != null){
+                    if(!configAttributes.get(attributeQName).getStringValue().equals(expectedValue)) {
                         return false;
                     }
-                } else if (expectedValue != null) {
+                }else if (expectedValue != null){
                     //expected to be not null, but it is null, so not match
                     return false;
                 }
-            } else if (schemaNode instanceof LeafListSchemaNode) {
+            }else if(schemaNode instanceof LeafListSchemaNode){
                 Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes = modelNode.getLeafLists();
-                if (leafListAttributes.get(attributeQName) != null) {
+                if(leafListAttributes.get(attributeQName)!=null){
                     Set<ConfigLeafAttribute> leafListValuesOfType = leafListAttributes.get(attributeQName);
-                    if (!leafListValuesOfType.contains(entry.getValue())) {
+                    if(!leafListValuesOfType.contains(entry.getValue())){
                         return false;
                     }
                 }

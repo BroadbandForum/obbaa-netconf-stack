@@ -1,6 +1,6 @@
 module test-xdsl-dev {
 
-  namespace "urn:xxxxx-org:yang:test-xdsl-dev";
+  namespace "urn:xxxxx-org:yang:test-xdsl-dev";  
             
   prefix "xdsl-dev";
 

@@ -26,14 +26,15 @@ import java.nio.channels.AsynchronousChannelGroup;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.junit.Test;
+
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
+import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSessionListener;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfLoginProvider;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
-import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
-import org.junit.Test;
 
 import io.netty.channel.EventLoopGroup;
 
@@ -66,26 +67,26 @@ public class NetconfClientConfigurationBuilderTest {
         assertEquals(asycChannelGroup, config.getAsynchronousChannelGroup());
 
     }
-
+    
     @Test
-    public void testDefaultNcClientBuilder() throws UnknownHostException, NetconfConfigurationBuilderException {
-        NetconfClientConfigurationBuilder builder = NetconfClientConfigurationBuilder.createDefaultNcClientBuilder();
-        NotificationListener notificationListener = mock(NotificationListener.class);
+    public void testDefaultNcClientBuilder() throws UnknownHostException, NetconfConfigurationBuilderException{
+    	NetconfClientConfigurationBuilder builder = NetconfClientConfigurationBuilder.createDefaultNcClientBuilder();
+    	NotificationListener notificationListener = mock(NotificationListener.class);
         AsynchronousChannelGroup asycChannelGroup = mock(AsynchronousChannelGroup.class);
-        builder.setConnectionTimeout(1000L)
-                .setAsynchronousChannelGroup(asycChannelGroup);
-        NetconfClientConfiguration config = builder.build();
-        config.setNotificationListener(notificationListener);
+    	builder.setConnectionTimeout(1000L)
+    			.setAsynchronousChannelGroup(asycChannelGroup);
+    	NetconfClientConfiguration config = builder.build();
+    	config.setNotificationListener(notificationListener);
         config.setAsynchronousChannelGroup(asycChannelGroup);
-
-        assertNotNull(config.toString());
+        
+    	assertNotNull(config.toString());
         assertEquals(notificationListener, config.getNotificationListener());
         assertEquals(asycChannelGroup, config.getAsynchronousChannelGroup());
         assertEquals(new Long(1000L), config.getConnectTimeoutMillis());
     }
 
     @Test
-    public void testAddCapability() throws UnknownHostException, NetconfConfigurationBuilderException {
+    public void testAddCapability() throws UnknownHostException, NetconfConfigurationBuilderException{
         NetconfClientConfigurationBuilder builder = NetconfClientConfigurationBuilder.createDefaultNcClientBuilder();
         AsynchronousChannelGroup asycChannelGroup = mock(AsynchronousChannelGroup.class);
         builder.setConnectionTimeout(1000L)

@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class EditInfo {
-
+public class EditInfo{
+    
     protected String m_target;
     private String m_operation;
     protected boolean m_implied;
@@ -45,7 +45,7 @@ public class EditInfo {
         this.m_operation = operation;
         return this;
     }
-
+    
     public Map<String, String> getNamespaceDeclareMap() {
         return m_namespaceDeclareMap;
     }
@@ -54,7 +54,7 @@ public class EditInfo {
         this.m_namespaceDeclareMap = map;
         return this;
     }
-
+    
     public List<ChangedLeafInfo> getChangedLeafInfos() {
         return m_changedLeafInfos;
     }
@@ -62,7 +62,7 @@ public class EditInfo {
     public void setChangedLeafInfos(List<ChangedLeafInfo> changedLeafInfos) {
         this.m_changedLeafInfos = changedLeafInfos;
     }
-
+    
     public void setChangedLeafInfos(ChangedLeafInfo changedLeafInfo) {
         this.m_changedLeafInfos.add(changedLeafInfo);
     }

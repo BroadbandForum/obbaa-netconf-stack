@@ -37,35 +37,31 @@ public class LoggerFactoryTest {
     private AdvancedLogger m_logger;
 
     @Before
-    public void setUp() {
+    public void setUp(){
         MockitoAnnotations.initMocks(this);
-        when(m_advancedLogger.getLogger(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers
-                .anyString())).thenReturn(m_logger);
+        when(m_advancedLogger.getLogger(Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString())).thenReturn(m_logger);
     }
 
     @Test
-    public void testLoggersAreSuppliedWhenFactoryIdNotSet() {
-        AdvancedLogger logger = LoggerFactory.getLogger(LoggerFactoryTest.class.getName(), "unit-test", "debug",
-                "global");
+    public void testLoggersAreSuppliedWhenFactoryIdNotSet(){
+        AdvancedLogger logger = LoggerFactory.getLogger(LoggerFactoryTest.class.getName(), "unit-test", "debug", "global");
         assertNotNull(logger);
         Assert.assertNotEquals(m_logger, logger);
     }
 
     @Test
-    public void testAdvancedLoggerFactoryIsCalled() {
+    public void testAdvancedLoggerFactoryIsCalled(){
         LoggerFactory.setLoggerFactory(m_advancedLogger);
-        AdvancedLogger logger = LoggerFactory.getLogger(LoggerFactoryTest.class.getName(), "unit-test", "debug",
-                "global");
+        AdvancedLogger logger = LoggerFactory.getLogger(LoggerFactoryTest.class.getName(), "unit-test", "debug", "global");
         Assert.assertEquals(m_logger, logger);
         verify(m_advancedLogger).getLogger(LoggerFactoryTest.class.getName(), "unit-test", "debug", "global");
     }
 
     @Test
-    public void testResetFactoryWorks() {
+    public void testResetFactoryWorks(){
         LoggerFactory.setLoggerFactory(m_advancedLogger);
         LoggerFactory.restLoggerFactory();
-        AdvancedLogger logger = LoggerFactory.getLogger(LoggerFactoryTest.class.getName(), "unit-test", "debug",
-                "global");
+        AdvancedLogger logger = LoggerFactory.getLogger(LoggerFactoryTest.class.getName(), "unit-test", "debug", "global");
         Assert.assertNotNull(logger);
         Assert.assertNotEquals(m_logger, logger);
     }

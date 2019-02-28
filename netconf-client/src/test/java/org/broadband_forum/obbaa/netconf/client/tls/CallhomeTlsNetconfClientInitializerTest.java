@@ -19,6 +19,7 @@ package org.broadband_forum.obbaa.netconf.client.tls;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,7 +34,6 @@ import org.mockito.MockitoAnnotations;
 
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
-
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
@@ -44,7 +44,6 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 
@@ -71,11 +70,10 @@ public class CallhomeTlsNetconfClientInitializerTest {
     private NotificationListener m_notificationListener;
 
     @Before
-    public void setUp() {
+    public  void setUp(){
         MockitoAnnotations.initMocks(this);
-        m_initializer = new CallhomeTlsNetconfClientInitializer(m_sslContext, null, Collections.<String>emptySet(),
-                m_authListener,
-                m_notificationListener, false, false, null, null, 35000);
+        m_initializer = new CallhomeTlsNetconfClientInitializer(m_sslContext, null, Collections.<String>emptySet(), m_authListener,
+                m_notificationListener, false, false, null, null,35000);
         when(m_channel.config()).thenReturn(m_socketChannelConfig);
         when(m_channel.pipeline()).thenReturn(m_channelPipeline);
         when(m_sslContext.newEngine((ByteBufAllocator) anyObject())).thenReturn(m_sslEngine);
@@ -86,12 +84,13 @@ public class CallhomeTlsNetconfClientInitializerTest {
     public void testHandshakeTimeout() throws Exception {
         ArgumentCaptor<ChannelHandler> handlerCaptor = ArgumentCaptor.forClass(ChannelHandler.class);
         m_initializer.initChannel(m_channel);
-        verify(m_channelPipeline, times(4)).addLast(handlerCaptor.capture());
+        verify(m_channelPipeline, times(3)).addLast(handlerCaptor.capture());
+        verify(m_channelPipeline).addLast(eq("EOM_HANDLER"),handlerCaptor.capture());
         assertTrue(handlerCaptor.getAllValues().get(0) instanceof SslHandler);
-        assertEquals(35000, ((SslHandler) handlerCaptor.getAllValues().get(0)).getHandshakeTimeoutMillis());
-        assertTrue(handlerCaptor.getAllValues().get(1) instanceof DelimiterBasedFrameDecoder);
-        assertTrue(handlerCaptor.getAllValues().get(2) instanceof StringDecoder);
-        assertTrue(handlerCaptor.getAllValues().get(3) instanceof StringEncoder);
+        assertEquals(35000, ((SslHandler)handlerCaptor.getAllValues().get(0)).getHandshakeTimeoutMillis());
+        assertTrue(handlerCaptor.getAllValues().get(3) instanceof DelimiterBasedFrameDecoder);
+        assertTrue(handlerCaptor.getAllValues().get(1) instanceof StringDecoder);
+        assertTrue(handlerCaptor.getAllValues().get(2) instanceof StringEncoder);
     }
 
 }

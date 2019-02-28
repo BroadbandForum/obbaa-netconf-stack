@@ -27,26 +27,26 @@ import org.junit.Test;
 
 public class ClientAuthenticationInfoTest {
 
-    private ClientAuthenticationInfo m_clientAuth;
-    private InetSocketAddress m_inetAddressSource;
-    private InetSocketAddress m_inetAddressDestination;
+	private ClientAuthenticationInfo m_clientAuth;
+	private InetSocketAddress m_inetAddressSource;
+	private InetSocketAddress m_inetAddressDestination;
 
-    @Before
-    public void setUp() {
-        m_inetAddressSource = mock(InetSocketAddress.class);
-        m_inetAddressDestination = mock(InetSocketAddress.class);
-        m_clientAuth = new ClientAuthenticationInfo(1, "admin", "admin123", m_inetAddressSource,
-                m_inetAddressDestination);
-    }
+	@Before
+	public void setUp() {
+		m_inetAddressSource = mock(InetSocketAddress.class);
+		m_inetAddressDestination = mock(InetSocketAddress.class);
+		m_clientAuth = new ClientAuthenticationInfo(1, "admin", "admin123", m_inetAddressSource,
+				m_inetAddressDestination);
+	}
 
-    @Test
-    public void testAuthenticate() {
+	@Test
+	public void testAuthenticate() {
 
-        assertEquals("admin", m_clientAuth.getUsername());
-        assertEquals("admin123", m_clientAuth.getPassword());
-        assertEquals(1, m_clientAuth.getClientSessionId());
-        assertNotNull(m_clientAuth.getInetAddressSource());
-        assertNotNull(m_clientAuth.getInetAddressDestination());
-    }
+		assertEquals("admin", m_clientAuth.getUsername());
+		assertEquals("admin123", m_clientAuth.getPassword());
+		assertEquals(1, m_clientAuth.getClientSessionId());
+		assertNotNull(m_clientAuth.getInetAddressSource());
+		assertNotNull(m_clientAuth.getInetAddressDestination());
+	}
 
 }

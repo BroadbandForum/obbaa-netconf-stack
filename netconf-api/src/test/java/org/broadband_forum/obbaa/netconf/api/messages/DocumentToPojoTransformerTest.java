@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getDocFromFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -27,14 +28,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class DocumentToPojoTransformerTest {
 
@@ -55,7 +57,7 @@ public class DocumentToPojoTransformerTest {
 
         URL url = Thread.currentThread().getContextClassLoader().getResource("netconfConfigChangeNotification.xml");
         File file = new File(url.getPath());
-        Document notificationDocument = DocumentUtils.getDocFromFile(file);
+        Document notificationDocument = getDocFromFile(file);
 
         ChangedByParams params = DocumentToPojoTransformer.getChangedByParamsFromNotification(notificationDocument);
         assertEquals("admin", params.getCommonSessionParams().getUserName());
@@ -67,7 +69,7 @@ public class DocumentToPojoTransformerTest {
     public void testGetNetconfConfigChangeNotification() throws NetconfMessageBuilderException {
         URL url = Thread.currentThread().getContextClassLoader().getResource("netconfConfigChangeNotification.xml");
         File file = new File(url.getPath());
-        Document notificationDocument = DocumentUtils.getDocFromFile(file);
+        Document notificationDocument = getDocFromFile(file);
         Notification notification = DocumentToPojoTransformer.getNotification(notificationDocument);
         assertTrue(notification instanceof NetconfConfigChangeNotification);
 
@@ -86,7 +88,7 @@ public class DocumentToPojoTransformerTest {
     public void testGetStateChangeNotification() throws NetconfMessageBuilderException {
         URL url = Thread.currentThread().getContextClassLoader().getResource("stateChangeNotification.xml");
         File file = new File(url.getPath());
-        Document notificationDocument = DocumentUtils.getDocFromFile(file);
+        Document notificationDocument = getDocFromFile(file);
         Notification notification = DocumentToPojoTransformer.getNotification(notificationDocument);
         assertTrue(notification instanceof StateChangeNotification);
 
@@ -98,51 +100,60 @@ public class DocumentToPojoTransformerTest {
     public void testGetReplayCompleteNotification() throws NetconfMessageBuilderException {
         URL url = Thread.currentThread().getContextClassLoader().getResource("replayCompleteNotification.xml");
         File file = new File(url.getPath());
-        Document notificationDocument = DocumentUtils.getDocFromFile(file);
+        Document notificationDocument = getDocFromFile(file);
         Notification notification = DocumentToPojoTransformer.getNotification(notificationDocument);
-        assertTrue(notification instanceof ReplayComplete);
-        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime
-                ("2016-04-26T16:13:01+07:00");
-        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification
-                .getEventTime());
+        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime("2016-04-26T16:13:01+07:00");
+        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification.getEventTime());
         assertEquals(expectedDateTime, actualDateTime);
+    }
+    
+    @Test
+    public void testGetReplayCompleteNotification1() throws NetconfMessageBuilderException {
+        URL url = Thread.currentThread().getContextClassLoader().getResource("replayCompleteNotification1.xml");
+        File file = new File(url.getPath());
+        Document notificationDocument = getDocFromFile(file);
+        Notification notification = DocumentToPojoTransformer.getNotification(notificationDocument);
+        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime("2016-04-26T16:13:01+07:00");
+        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification.getEventTime());
+        assertEquals(expectedDateTime, actualDateTime);
+        assertEquals("<notification xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">\n" +
+                "    <eventTime>2016-04-26T16:13:01+07:00</eventTime>\n" +
+                "    <parent-node xmlns=\"urn:ietf:params:xml:ns:test\">\n" +
+                "        <replayComplete xmlns=\"urn:ietf:params:xml:ns:netmod:notification\"/>\n" +
+                "    </parent-node>\n" +
+                "</notification>\n", DocumentUtils.documentToPrettyString(notificationDocument));
     }
 
     @Test
     public void testGetNotificationCompleteNotification() throws NetconfMessageBuilderException {
         URL url = Thread.currentThread().getContextClassLoader().getResource("notificationCompleteNotification.xml");
         File file = new File(url.getPath());
-        Document notificationDocument = DocumentUtils.getDocFromFile(file);
+        Document notificationDocument = getDocFromFile(file);
         Notification notification = DocumentToPojoTransformer.getNotification(notificationDocument);
 
-        assertTrue(notification instanceof NotificationComplete);
-        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime
-                ("2016-04-26T16:12:59+07:00");
-        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification
-                .getEventTime());
+        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime("2016-04-26T16:12:59+07:00");
+        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification.getEventTime());
         assertEquals(expectedDateTime, actualDateTime);
     }
-
+    
     @Test
     public void testGetNullDataFromRpcReply() throws Exception {
-        String okResponse = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"10\">\n" +
-                "<ok/>"
+        String okResponse = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"10\">\n" + "<ok/>"
                 + "</rpc-reply>";
         Document responseDoc = DocumentUtils.stringToDocument(okResponse);
         NetConfResponse netconfResponse = DocumentToPojoTransformer.getNetconfResponse(responseDoc);
         assertNull(netconfResponse.getData());
     }
-
+    
     @Test
-    public void testErrorDataFromRpcReply() throws Exception {
-        String errorResponse = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"2\">\n"
+    public void testErrorDataFromRpcReply() throws Exception{
+        String errorResponse = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"2\">\n" 
                 + "<rpc-error>\n"
-                + "<error-type>application</error-type>\n"
+                + "<error-type>application</error-type>\n" 
                 + "<error-tag>invalid-value</error-tag>\n"
-                + "<error-severity>error</error-severity>\n"
+                + "<error-severity>error</error-severity>\n" 
                 + "<error-path>/retrieve-active-alarms/max-number-of-alarms</error-path>\n"
-                + "<error-message>Value \"abcd\" does not meet the range constraints. Expected range of value: " +
-                "1..4294967295</error-message>\n"
+                + "<error-message>Value \"abcd\" does not meet the range constraints. Expected range of value: 1..4294967295</error-message>\n"
                 + "</rpc-error>\n" + "</rpc-reply>\n";
         Document responseDoc = DocumentUtils.stringToDocument(errorResponse);
         NetConfResponse netconfResponse = DocumentToPojoTransformer.getNetconfResponse(responseDoc);
@@ -150,11 +161,11 @@ public class DocumentToPojoTransformerTest {
         assertEquals(1, netconfResponse.getErrors().size());
         assertEquals("Value \"abcd\" does not meet the range constraints. Expected range of value: 1..4294967295",
                 netconfResponse.getErrors().get(0).getErrorMessage());
-
+            
     }
-
+    
     @Test
-    public void testMultiElementDataFromRpcReply() throws Exception {
+    public void testMultiElementDataFromRpcReply() throws Exception{
         String someResponse = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"10\">\n"
                 + "<a>A</a>"
                 + "<b>B</b>"
@@ -168,7 +179,6 @@ public class DocumentToPojoTransformerTest {
         assertEquals("a", rpcResponse.getRpcOutputElements().get(0).getLocalName());
         assertEquals("b", rpcResponse.getRpcOutputElements().get(1).getLocalName());
     }
-
     @Test
     public void testGetDataFromRpcReply() throws NetconfMessageBuilderException {
         {
@@ -201,14 +211,12 @@ public class DocumentToPojoTransformerTest {
     public void testGetNotificationNewNotification() throws NetconfMessageBuilderException {
         URL url = Thread.currentThread().getContextClassLoader().getResource("newNetconfNotification.xml");
         File file = new File(url.getPath());
-        Document notificationDocument = DocumentUtils.getDocFromFile(file);
+        Document notificationDocument = getDocFromFile(file);
         Notification notification = DocumentToPojoTransformer.getNotification(notificationDocument);
 
         assertTrue(notification instanceof NetconfNotification);
-        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime
-                ("2016-04-26T16:13:01+07:00");
-        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification
-                .getEventTime());
+        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime("2016-04-26T16:13:01+07:00");
+        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification.getEventTime());
         assertEquals(expectedDateTime, actualDateTime);
     }
 
@@ -216,35 +224,32 @@ public class DocumentToPojoTransformerTest {
     public void testGetNotificationStringXml() throws NetconfMessageBuilderException {
 
         String xmlContent = "<notification xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">"
-                + "<eventTime>2016-04-26T16:13:01+07:00</eventTime>"
+                + "<eventTime>2016-04-26T16:13:01+07:00</eventTime>" 
                 + "</notification>";
         Notification notification = DocumentToPojoTransformer.getNotification(xmlContent);
 
         assertTrue(notification instanceof NetconfNotification);
-        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime
-                ("2016-04-26T16:13:01+07:00");
-        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification
-                .getEventTime());
+        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime("2016-04-26T16:13:01+07:00");
+        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification.getEventTime());
         assertEquals(expectedDateTime, actualDateTime);
     }
-
+ 
     @Test
     public void testGetEditInfoListFromNotification() throws NetconfMessageBuilderException, SAXException, IOException {
-        URL url = Thread.currentThread().getContextClassLoader().getResource
-                ("netconfConfigChangeNotificationWithChangedLeaf.xml");
+        URL url = Thread.currentThread().getContextClassLoader().getResource("netconfConfigChangeNotificationWithChangedLeaf.xml");
         File file = new File(url.getPath());
-        Document notificationDocument = DocumentUtils.getDocFromFile(file);
+        Document notificationDocument = getDocFromFile(file);
         Notification notification = DocumentToPojoTransformer.getNotification(notificationDocument);
-
+        
         assertTrue(notification instanceof NetconfConfigChangeNotification);
         List<EditInfo> editList = ((NetconfConfigChangeNotification) notification).getEditList();
         assertEquals(1, editList.size());
         assertEquals("remove", editList.get(0).getOperation());
         assertTrue(editList.get(0).isImplied());
-        assertEquals("/prefix1:pma/prefix2:device-holder[prefix2:name=OLT-1]", editList.get(0).getTarget());
-        assertEquals("namespace1", editList.get(0).getNamespaceDeclareMap().get("prefix1"));
-        assertEquals("namespace2", editList.get(0).getNamespaceDeclareMap().get("prefix2"));
-        assertEquals("namespace3", editList.get(0).getChangedLeafInfos().get(0).getNamespace());
+        assertEquals("/prefix1:pma/prefix2:device-holder[prefix2:name=OLT-1]",editList.get(0).getTarget());
+        assertEquals("namespace1",editList.get(0).getNamespaceDeclareMap().get("prefix1"));
+        assertEquals("namespace2",editList.get(0).getNamespaceDeclareMap().get("prefix2"));
+        assertEquals("namespace3",editList.get(0).getChangedLeafInfos().get(0).getNamespace());
     }
 
     @Test
@@ -258,9 +263,9 @@ public class DocumentToPojoTransformerTest {
                 "</rpc>\n";
         Document getConfigDocument = DocumentUtils.stringToDocument(getConfigRequest);
         String requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(getConfigDocument);
-        assertEquals("get-config", requestType);
+        assertEquals("get-config",requestType);
 
-        getConfigRequest = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"5\">\n" +
+        getConfigRequest  = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"5\">\n" +
                 "    <nc:get-config xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                 "        <nc:source>\n" +
                 "            <nc:running/>\n" +
@@ -269,9 +274,9 @@ public class DocumentToPojoTransformerTest {
                 "</nc:rpc>";
         getConfigDocument = DocumentUtils.stringToDocument(getConfigRequest);
         requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(getConfigDocument);
-        assertEquals("get-config", requestType);
+        assertEquals("get-config",requestType);
 
-        getConfigRequest = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"5\">\n" +
+        getConfigRequest  = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"5\">\n" +
                 "    <get-config >\n" +
                 "        <nc:source xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                 "            <nc:running/>\n" +
@@ -280,9 +285,9 @@ public class DocumentToPojoTransformerTest {
                 "</rpc>";
         getConfigDocument = DocumentUtils.stringToDocument(getConfigRequest);
         requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(getConfigDocument);
-        assertEquals("get-config", requestType);
+        assertEquals("get-config",requestType);
 
-        getConfigRequest = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"5\">\n" +
+        getConfigRequest  = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"5\">\n" +
                 "    <get-config >\n" +
                 "        <source>\n" +
                 "            <nc:running xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\"/>\n" +
@@ -291,13 +296,12 @@ public class DocumentToPojoTransformerTest {
                 "</rpc>";
         getConfigDocument = DocumentUtils.stringToDocument(getConfigRequest);
         requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(getConfigDocument);
-        assertEquals("get-config", requestType);
+        assertEquals("get-config",requestType);
     }
 
     @Test
     public void testEditConfigRequest() throws NetconfMessageBuilderException {
-        String editConfigRequestString = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" " +
-                "message-id=\"20\">\n" +
+        String editConfigRequestString = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"20\">\n" +
                 "<nc:edit-config>\n" +
                 "    <nc:target>\n" +
                 "        <nc:running />\n" +
@@ -306,8 +310,7 @@ public class DocumentToPojoTransformerTest {
                 "    <nc:config>\n" +
                 "        <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\" " +
                 "                            xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                "            <adh:device-holder xmlns:adh=\"http://www.test-company" +
-                ".com/management-solutions/anv-device-holders\" " +
+                "            <adh:device-holder xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" " +
                 "                               xc:operation=\"create\">\n" +
                 "                <adh:name>OLT1</adh:name>\n" +
                 "            </adh:device-holder>\n" +
@@ -315,8 +318,7 @@ public class DocumentToPojoTransformerTest {
                 "    </nc:config>\n" +
                 "</nc:edit-config>\n" +
                 "</nc:rpc>";
-        EditConfigRequest editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument
-                (editConfigRequestString));
+        EditConfigRequest editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument(editConfigRequestString));
         assertEquals(RUNNING, editConfigRequest.getTarget());
         assertEquals(MERGE, editConfigRequest.getDefaultOperation());
         assertEquals(SET, editConfigRequest.getTestOption());
@@ -330,8 +332,7 @@ public class DocumentToPojoTransformerTest {
                 "    <nc:config>\n" +
                 "        <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\" " +
                 "                             xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                "            <adh:device-holder xmlns:adh=\"http://www.test-company" +
-                ".com/management-solutions/anv-device-holders\" " +
+                "            <adh:device-holder xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" " +
                 "                               xc:operation=\"create\">\n" +
                 "                <adh:name>OLT1</adh:name>\n" +
                 "            </adh:device-holder>\n" +
@@ -339,8 +340,7 @@ public class DocumentToPojoTransformerTest {
                 "    </nc:config>\n" +
                 "</nc:edit-config>\n" +
                 "</rpc>";
-        editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument
-                (editConfigRequestString));
+        editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument(editConfigRequestString));
         assertEquals(RUNNING, editConfigRequest.getTarget());
         assertEquals(MERGE, editConfigRequest.getDefaultOperation());
         assertEquals(SET, editConfigRequest.getTestOption());
@@ -354,8 +354,7 @@ public class DocumentToPojoTransformerTest {
                 "    <config>\n" +
                 "        <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\" " +
                 "                            xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                "            <adh:device-holder xmlns:adh=\"http://www.test-company" +
-                ".com/management-solutions/anv-device-holders\" " +
+                "            <adh:device-holder xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" " +
                 "                               xc:operation=\"create\">\n" +
                 "                <adh:name>OLT1</adh:name>\n" +
                 "            </adh:device-holder>\n" +
@@ -363,8 +362,7 @@ public class DocumentToPojoTransformerTest {
                 "    </config>\n" +
                 "</edit-config>\n" +
                 "</rpc>";
-        editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument
-                (editConfigRequestString));
+        editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument(editConfigRequestString));
         assertEquals(RUNNING, editConfigRequest.getTarget());
         assertEquals(MERGE, editConfigRequest.getDefaultOperation());
         assertEquals(SET, editConfigRequest.getTestOption());
@@ -378,8 +376,7 @@ public class DocumentToPojoTransformerTest {
                 "    <config>\n" +
                 "        <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\" " +
                 "                             xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                "            <adh:device-holder xmlns:adh=\"http://www.test-company" +
-                ".com/management-solutions/anv-device-holders\" " +
+                "            <adh:device-holder xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" " +
                 "                               xc:operation=\"create\">\n" +
                 "                <adh:name>OLT1</adh:name>\n" +
                 "            </adh:device-holder>\n" +
@@ -387,8 +384,7 @@ public class DocumentToPojoTransformerTest {
                 "    </config>\n" +
                 "</edit-config>\n" +
                 "</rpc>";
-        editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument
-                (editConfigRequestString));
+        editConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument(editConfigRequestString));
         assertEquals(RUNNING, editConfigRequest.getTarget());
         assertEquals(MERGE, editConfigRequest.getDefaultOperation());
         assertEquals(SET, editConfigRequest.getTestOption());
@@ -402,8 +398,7 @@ public class DocumentToPojoTransformerTest {
                 "    <config>\n" +
                 "        <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\" " +
                 "                            xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                "            <adh:device-holder xmlns:adh=\"http://www.test-company" +
-                ".com/management-solutions/anv-device-holders\" " +
+                "            <adh:device-holder xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" " +
                 "                               xc:operation=\"create\">\n" +
                 "                <adh:name>OLT1</adh:name>\n" +
                 "            </adh:device-holder>\n" +
@@ -414,8 +409,8 @@ public class DocumentToPojoTransformerTest {
         try {
             DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument(editConfigRequestString));
             fail("Excepted an exception here");
-        } catch (NetconfMessageBuilderException e) {
-            assertEquals(TARGET_CANNOT_BE_NULL_EMPTY, e.getMessage());
+        }catch (NetconfMessageBuilderException e) {
+            assertEquals(TARGET_CANNOT_BE_NULL_EMPTY,e.getMessage());
         }
 
         editConfigRequestString = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"20\">\n" +
@@ -426,18 +421,17 @@ public class DocumentToPojoTransformerTest {
                 "    <test-option>set</test-option>\n" +
                 "</edit-config>\n" +
                 "</rpc>";
-        try {
+        try{
             DocumentToPojoTransformer.getEditConfig(DocumentUtils.stringToDocument(editConfigRequestString));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
-            assertEquals("<config> cannot be null/empty", e.getMessage());
+        }catch (NetconfMessageBuilderException e) {
+            assertEquals("<config> cannot be null/empty",e.getMessage());
         }
     }
 
     @Test
     public void testCopyConfigRequest() throws NetconfMessageBuilderException {
-        String copyConfigRequestString = "<nc:rpc message-id=\"101\" " +
-                "xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+        String copyConfigRequestString = "<nc:rpc message-id=\"101\" xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                 "       <nc:copy-config>\n" +
                 "         <nc:target>\n" +
                 "           <nc:running/>\n" +
@@ -462,8 +456,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:source>\n" +
                 "       </nc:copy-config>\n" +
                 "     </rpc>";
-        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument
-                (copyConfigRequestString));
+        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
         assertEquals(RUNNING, copyConfigRequest.getTarget());
         assertEquals(RUNNING, copyConfigRequest.getSource());
 
@@ -477,8 +470,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:source>\n" +
                 "       </copy-config>\n" +
                 "     </rpc>";
-        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument
-                (copyConfigRequestString));
+        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
         assertEquals(RUNNING, copyConfigRequest.getTarget());
         assertEquals(RUNNING, copyConfigRequest.getSource());
 
@@ -492,8 +484,7 @@ public class DocumentToPojoTransformerTest {
                 "         </source>\n" +
                 "       </copy-config>\n" +
                 "     </rpc>";
-        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument
-                (copyConfigRequestString));
+        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
         assertEquals(RUNNING, copyConfigRequest.getTarget());
         assertEquals(RUNNING, copyConfigRequest.getSource());
 
@@ -507,10 +498,10 @@ public class DocumentToPojoTransformerTest {
                 "         </source>\n" +
                 "       </copy-config>\n" +
                 "     </rpc>";
-        try {
+        try{
             DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
+        }catch (NetconfMessageBuilderException e){
             assertEquals(TARGET_CANNOT_BE_NULL_EMPTY, e.getMessage());
         }
 
@@ -524,10 +515,10 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:source>\n" +
                 "       </copy-config>\n" +
                 "     </rpc>";
-        try {
+        try{
             DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
+        }catch (NetconfMessageBuilderException e){
             assertEquals(SOURCE_CANNOT_BE_NULL_EMPTY, e.getMessage());
         }
 
@@ -541,8 +532,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:source>\n" +
                 "       </nc:copy-config>\n" +
                 "     </rpc>";
-        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument
-                (copyConfigRequestString));
+        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
         assertEquals(RUNNING, copyConfigRequest.getTarget());
         assertEquals(URL, copyConfigRequest.getSource());
 
@@ -556,8 +546,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:source>\n" +
                 "       </nc:copy-config>\n" +
                 "     </rpc>";
-        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument
-                (copyConfigRequestString));
+        copyConfigRequest = DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
         assertEquals(URL, copyConfigRequest.getTarget());
         assertEquals(RUNNING, copyConfigRequest.getSource());
 
@@ -574,7 +563,7 @@ public class DocumentToPojoTransformerTest {
         try {
             DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
+        }catch (NetconfMessageBuilderException e) {
             assertEquals("target <url> cannot be null/empty", e.getMessage());
         }
 
@@ -591,9 +580,33 @@ public class DocumentToPojoTransformerTest {
         try {
             DocumentToPojoTransformer.getCopyConfig(DocumentUtils.stringToDocument(copyConfigRequestString));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
+        }catch (NetconfMessageBuilderException e) {
             assertEquals("source <url> cannot be null/empty", e.getMessage());
         }
+    }
+    
+    @Test
+    public void testGetRequestWithDepthLevel() throws NetconfMessageBuilderException {
+        String getRequestWithFilterString = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" " +
+                "message-id=\"100\">\n" +
+                "<nc:get>\n" +
+                "  <nc:filter>\n" +
+                "     <nc:top>" +
+                "        <nc:users/> " +
+                "    </nc:top>\n" +
+                "    <depth xmlns=\"http://www.test-company.com/solutions/netconf-extensions\">4</depth>\n" +
+                "  </nc:filter>\n" +
+                "</nc:get>\n" +
+                "</nc:rpc>";
+        GetRequest getRequest = DocumentToPojoTransformer.getGet(DocumentUtils.stringToDocument(getRequestWithFilterString));
+        assertEquals(null, getRequest.getFilter().getType());
+        Document document = DocumentUtils.stringToDocument(getRequestWithFilterString);
+        Node filterChildElement = (DocumentUtils.getChildNodeByName(document, NetconfResources.FILTER,
+                NetconfResources.NETCONF_RPC_NS_1_0));
+        Node childElement = DocumentUtils.getChildNodeByName(filterChildElement, TOP, NetconfResources.NETCONF_RPC_NS_1_0);
+        assertEquals(DocumentUtils.documentToPrettyString(childElement),
+                DocumentUtils.documentToPrettyString(getRequest.getFilter().getXmlFilterElements().get(0)));
+        
     }
 
     @Test
@@ -603,8 +616,7 @@ public class DocumentToPojoTransformerTest {
                 "    <nc:get>\n" +
                 "    </nc:get>\n" +
                 "</nc:rpc>";
-        GetRequest getRequest = DocumentToPojoTransformer.getGet(DocumentUtils.stringToDocument
-                (getRequestWithoutFilterString));
+        GetRequest getRequest = DocumentToPojoTransformer.getGet(DocumentUtils.stringToDocument(getRequestWithoutFilterString));
         assertEquals(null, getRequest.getFilter());
 
         String getRequestWithFilterString = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" " +
@@ -622,8 +634,7 @@ public class DocumentToPojoTransformerTest {
         Document document = DocumentUtils.stringToDocument(getRequestWithFilterString);
         Node filterChildElement = (DocumentUtils.getChildNodeByName(document, NetconfResources.FILTER,
                 NetconfResources.NETCONF_RPC_NS_1_0));
-        Node childElement = DocumentUtils.getChildNodeByName(filterChildElement, TOP, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node childElement = DocumentUtils.getChildNodeByName(filterChildElement, TOP, NetconfResources.NETCONF_RPC_NS_1_0);
         assertEquals(DocumentUtils.documentToPrettyString(childElement),
                 DocumentUtils.documentToPrettyString(getRequest.getFilter().getXmlFilterElements().get(0)));
 
@@ -687,8 +698,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:target>\n" +
                 "       </nc:delete-config>\n" +
                 "     </rpc>";
-        deleteConfigRequest = DocumentToPojoTransformer.getDeleteConfig(DocumentUtils.stringToDocument
-                (deleteConfigRequestString));
+        deleteConfigRequest = DocumentToPojoTransformer.getDeleteConfig(DocumentUtils.stringToDocument(deleteConfigRequestString));
         assertEquals(STARTUP, deleteConfigRequest.getTarget());
 
         deleteConfigRequestString = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
@@ -698,8 +708,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:target>\n" +
                 "       </delete-config>\n" +
                 "     </rpc>";
-        deleteConfigRequest = DocumentToPojoTransformer.getDeleteConfig(DocumentUtils.stringToDocument
-                (deleteConfigRequestString));
+        deleteConfigRequest = DocumentToPojoTransformer.getDeleteConfig(DocumentUtils.stringToDocument(deleteConfigRequestString));
         assertEquals(STARTUP, deleteConfigRequest.getTarget());
 
         deleteConfigRequestString = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
@@ -709,8 +718,7 @@ public class DocumentToPojoTransformerTest {
                 "         </target>\n" +
                 "       </delete-config>\n" +
                 "     </rpc>";
-        deleteConfigRequest = DocumentToPojoTransformer.getDeleteConfig(DocumentUtils.stringToDocument
-                (deleteConfigRequestString));
+        deleteConfigRequest = DocumentToPojoTransformer.getDeleteConfig(DocumentUtils.stringToDocument(deleteConfigRequestString));
         assertEquals(STARTUP, deleteConfigRequest.getTarget());
 
         deleteConfigRequestString = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
@@ -723,15 +731,14 @@ public class DocumentToPojoTransformerTest {
         try {
             DocumentToPojoTransformer.getDeleteConfig(DocumentUtils.stringToDocument(deleteConfigRequestString));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
+        }catch (NetconfMessageBuilderException e) {
             assertEquals(TARGET_CANNOT_BE_NULL_EMPTY, e.getMessage());
         }
     }
 
     @Test
     public void testGetConfigRequest() throws NetconfMessageBuilderException {
-        String getConfigRequestWithoutFilter = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" " +
-                "message-id=\"5\">\n" +
+        String getConfigRequestWithoutFilter = "<nc:rpc xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"5\">\n" +
                 "    <nc:get-config xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                 "        <nc:source>\n" +
                 "            <nc:running/>\n" +
@@ -750,8 +757,7 @@ public class DocumentToPojoTransformerTest {
                 "        </source>\n" +
                 "    </get-config>\n" +
                 "</rpc>";
-        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument
-                (getConfigRequestWithoutFilter));
+        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument(getConfigRequestWithoutFilter));
         assertEquals(RUNNING, getConfigRequest.getSource());
         assertEquals(null, getConfigRequest.getFilter());
 
@@ -767,8 +773,7 @@ public class DocumentToPojoTransformerTest {
         assertEquals(RUNNING, getConfigRequest.getSource());
         assertEquals(null, getConfigRequest.getFilter());
 
-        String getConfigRequestWithFilter = "<nc:rpc message-id=\"101\" " +
-                "xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+        String getConfigRequestWithFilter = "<nc:rpc message-id=\"101\" xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                 "       <nc:get-config>\n" +
                 "         <nc:source>\n" +
                 "           <nc:running/>\n" +
@@ -780,15 +785,13 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:filter>\n" +
                 "       </nc:get-config>\n" +
                 "     </nc:rpc>";
-        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument
-                (getConfigRequestWithFilter));
+        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument(getConfigRequestWithFilter));
         assertEquals(RUNNING, getConfigRequest.getSource());
         assertEquals(SUBTREE, getConfigRequest.getFilter().getType());
         Document document = DocumentUtils.stringToDocument(getConfigRequestWithFilter);
         Node filterChildElement = (DocumentUtils.getChildNodeByName(document, NetconfResources.FILTER,
                 NetconfResources.NETCONF_RPC_NS_1_0));
-        Node childElement = DocumentUtils.getChildNodeByName(filterChildElement, TOP, NetconfResources
-                .NETCONF_RPC_NS_1_0);
+        Node childElement = DocumentUtils.getChildNodeByName(filterChildElement, TOP, NetconfResources.NETCONF_RPC_NS_1_0);
         assertEquals(DocumentUtils.documentToPrettyString(childElement),
                 DocumentUtils.documentToPrettyString(getConfigRequest.getFilter().getXmlFilterElements().get(0)));
 
@@ -804,8 +807,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:filter>\n" +
                 "       </nc:get-config>\n" +
                 "     </rpc>";
-        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument
-                (getConfigRequestWithFilter));
+        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument(getConfigRequestWithFilter));
         assertEquals(RUNNING, getConfigRequest.getSource());
         assertEquals(SUBTREE, getConfigRequest.getFilter().getType());
         document = DocumentUtils.stringToDocument(getConfigRequestWithFilter);
@@ -827,8 +829,7 @@ public class DocumentToPojoTransformerTest {
                 "         </nc:filter>\n" +
                 "       </get-config>\n" +
                 "     </rpc>";
-        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument
-                (getConfigRequestWithFilter));
+        getConfigRequest = DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument(getConfigRequestWithFilter));
         assertEquals(RUNNING, getConfigRequest.getSource());
         assertEquals(SUBTREE, getConfigRequest.getFilter().getType());
         document = DocumentUtils.stringToDocument(getConfigRequestWithFilter);
@@ -851,18 +852,17 @@ public class DocumentToPojoTransformerTest {
                 "         </filter>\n" +
                 "       </get-config>\n" +
                 "     </rpc>";
-        try {
+        try{
             DocumentToPojoTransformer.getGetConfig(DocumentUtils.stringToDocument(getConfigRequestWithFilter));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
+        }catch (NetconfMessageBuilderException e){
             assertEquals(SOURCE_CANNOT_BE_NULL_EMPTY, e.getMessage());
         }
     }
 
     @Test
     public void testLockRequest() throws NetconfMessageBuilderException {
-        String getLockRequestString = "<nc:rpc message-id=\"101\" " +
-                "xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+        String getLockRequestString = "<nc:rpc message-id=\"101\" xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                 "  <nc:lock>\n" +
                 "   <nc:target>\n" +
                 "      <nc:running/>\n" +
@@ -903,15 +903,14 @@ public class DocumentToPojoTransformerTest {
         try {
             DocumentToPojoTransformer.getLockRequest(DocumentUtils.stringToDocument(getLockRequestString));
             fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
+        }catch (NetconfMessageBuilderException e) {
             assertEquals(TARGET_CANNOT_BE_NULL_EMPTY, e.getMessage());
         }
     }
 
     @Test
     public void testUnlockRequest() throws NetconfMessageBuilderException {
-        String getUnlockRequestString = "<nc:rpc message-id=\"101\" " +
-                "xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+        String getUnlockRequestString = "<nc:rpc message-id=\"101\" xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                 "  <nc:unlock>\n" +
                 "   <nc:target>\n" +
                 "      <nc:running/>\n" +
@@ -929,8 +928,7 @@ public class DocumentToPojoTransformerTest {
                 "    </nc:target>\n" +
                 "  </nc:unlock>\n" +
                 "</rpc>";
-        getUnlockRequest = DocumentToPojoTransformer.getUnLockRequest(DocumentUtils.stringToDocument
-                (getUnlockRequestString));
+        getUnlockRequest = DocumentToPojoTransformer.getUnLockRequest(DocumentUtils.stringToDocument(getUnlockRequestString));
         assertEquals(RUNNING, getUnlockRequest.getTarget());
 
         getUnlockRequestString = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
@@ -940,8 +938,7 @@ public class DocumentToPojoTransformerTest {
                 "    </nc:target>\n" +
                 "  </unlock>\n" +
                 "</rpc>";
-        getUnlockRequest = DocumentToPojoTransformer.getUnLockRequest(DocumentUtils.stringToDocument
-                (getUnlockRequestString));
+        getUnlockRequest = DocumentToPojoTransformer.getUnLockRequest(DocumentUtils.stringToDocument(getUnlockRequestString));
         assertEquals(RUNNING, getUnlockRequest.getTarget());
 
         getUnlockRequestString = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
@@ -958,93 +955,91 @@ public class DocumentToPojoTransformerTest {
             assertEquals(TARGET_CANNOT_BE_NULL_EMPTY, e.getMessage());
         }
     }
-
+    
     @Test
-    public void testGetAction() throws NetconfMessageBuilderException {
-        String req = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
-                "<action xmlns=\"urn:ietf:params:xml:ns:yang:1\">" +
-                "<test:test-action-container xmlns:test=\"urn:example:test-action\">" +
-                "<test:action-list>" +
-                "<test:name>apache</test:name>" +
-                "<test:reset>" +
-                "<test:reset-at>2014-07-29T13:42:00Z</test:reset-at>" +
-                "</test:reset>" +
-                "</test:action-list>" +
-                "</test:test-action-container>" +
-                "</action>" +
-                "</rpc>";
+    public void testGetAction() throws NetconfMessageBuilderException {    
+    	String req= "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+    			"<action xmlns=\"urn:ietf:params:xml:ns:yang:1\">" +
+    			"<test:test-action-container xmlns:test=\"urn:example:test-action\">" +
+    			"<test:action-list>"+
+    			"<test:name>apache</test:name>"+
+    			"<test:reset>"+
+    			"<test:reset-at>2014-07-29T13:42:00Z</test:reset-at>"+
+    			"</test:reset>"+
+    			"</test:action-list>"+
+    			"</test:test-action-container>"+
+    			"</action>"+
+    			"</rpc>";
 
-        String expectedActionElement = "<test:test-action-container xmlns:test=\"urn:example:test-action\">" +
-                "<test:action-list>" +
-                "<test:name>apache</test:name>" +
-                "<test:reset>" +
-                "<test:reset-at>2014-07-29T13:42:00Z</test:reset-at>" +
-                "</test:reset>" +
-                "</test:action-list>" +
-                "</test:test-action-container>";
-        ActionRequest validActionRequest = DocumentToPojoTransformer.getAction(DocumentUtils.stringToDocument(req));
-        assertEquals(expectedActionElement, DocumentUtils.documentToString(validActionRequest.getActionTreeElement()));
-
-
-        String invalidActionTreeReq = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
-                "<action xmlns=\"urn:ietf:params:xml:ns:yang:1\">" +
-                "</action>" +
-                "</rpc>";
-        try {
-            ActionRequest invalidActionTreeRequest = DocumentToPojoTransformer.getAction(DocumentUtils
-                    .stringToDocument(invalidActionTreeReq));
-            fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
-            assertEquals(ACTIONTREE_CANNOT_BE_NULL_EMPTY, e.getMessage());
-        }
-
-        try {
-            ActionRequest invalidActionRequest = DocumentToPojoTransformer.getAction(DocumentUtils.stringToDocument
-                    (expectedActionElement));
-            fail("Expected an exception here");
-        } catch (NetconfMessageBuilderException e) {
-            assertEquals(ACTION_CANNOT_BE_NULL_EMPTY, e.getMessage());
-        }
+    	String expectedActionElement = "<test:test-action-container xmlns:test=\"urn:example:test-action\">" +
+    			"<test:action-list>"+
+    			"<test:name>apache</test:name>"+
+    			"<test:reset>"+
+    			"<test:reset-at>2014-07-29T13:42:00Z</test:reset-at>"+
+    			"</test:reset>"+
+    			"</test:action-list>"+
+    			"</test:test-action-container>";
+    	ActionRequest validActionRequest = DocumentToPojoTransformer.getAction(DocumentUtils.stringToDocument(req));
+    	assertEquals(expectedActionElement, DocumentUtils.documentToString(validActionRequest.getActionTreeElement()));
+    	
+    	
+    	String invalidActionTreeReq= "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+    			"<action xmlns=\"urn:ietf:params:xml:ns:yang:1\">" +
+    			"</action>"+
+    			"</rpc>";
+    	try {
+    		ActionRequest invalidActionTreeRequest = DocumentToPojoTransformer.getAction(DocumentUtils.stringToDocument(invalidActionTreeReq));			
+    		fail("Expected an exception here");
+    	} catch (NetconfMessageBuilderException e) {
+    		assertEquals(ACTIONTREE_CANNOT_BE_NULL_EMPTY, e.getMessage());
+    	}
+    	
+    	try {
+    		ActionRequest invalidActionRequest = DocumentToPojoTransformer.getAction(DocumentUtils.stringToDocument(expectedActionElement));			
+    		fail("Expected an exception here");
+    	} catch (NetconfMessageBuilderException e) {
+    		assertEquals(ACTION_CANNOT_BE_NULL_EMPTY, e.getMessage());
+    	}
     }
+    
+	@Test
+	public void testGetRpcRequest() throws NetconfMessageBuilderException {
 
-    @Test
-    public void testGetRpcRequest() throws NetconfMessageBuilderException {
+		String rpcRequest = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"10\">\n"
+				+ "    <get-config >\n" 
+				+ "        <source>\n"
+				+ "            <nc:running xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.1\"/>\n"
+				+ "        </source>\n" 
+				+ "    </get-config>\n" 
+				+ "</rpc>";
+		NetconfRpcRequest netconfRpcRequest = DocumentToPojoTransformer
+				.getRpcRequest(DocumentUtils.stringToDocument(rpcRequest));
+		assertNotNull(netconfRpcRequest);
+	}
 
-        String rpcRequest = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"10\">\n"
-                + "    <get-config >\n"
-                + "        <source>\n"
-                + "            <nc:running xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.1\"/>\n"
-                + "        </source>\n"
-                + "    </get-config>\n"
-                + "</rpc>";
-        NetconfRpcRequest netconfRpcRequest = DocumentToPojoTransformer
-                .getRpcRequest(DocumentUtils.stringToDocument(rpcRequest));
-        assertNotNull(netconfRpcRequest);
-    }
+	@Test
+	public void testGetCreateSubscriptionRequest() throws NetconfMessageBuilderException {
 
-    @Test
-    public void testGetCreateSubscriptionRequest() throws NetconfMessageBuilderException {
-
-        String request = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
-                + "<create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">"
-                + "	<stream>NETCONF</stream>"
-                + "	<filter type=\"subtree\">"
-                + "		<state-change-notification xmlns=\"urn:ietf:params:xml:ns:yang:ietf-netconf-notifications\"/>"
-                + "	</filter>"
-                + "</create-subscription>"
-                + "</rpc>";
-        CreateSubscriptionRequest subscriptionRequest = DocumentToPojoTransformer
-                .getCreateSubscriptionRequest(DocumentUtils.stringToDocument(request));
-        assertNotNull(subscriptionRequest);
-    }
-
-    @Test
-    public void testGetBytesFromDocument() throws NetconfMessageBuilderException {
-        URL url = Thread.currentThread().getContextClassLoader().getResource("get.xml");
-        File file = new File(url.getPath());
-        Document document = DocumentUtils.getDocFromFile(file);
-        byte[] result = DocumentToPojoTransformer.getBytesFromDocument(document);
-        assertNotNull(result);
-    }
-
+		String request = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
+				+ "<create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">"
+				+ "	<stream>NETCONF</stream>" 
+				+ "	<filter type=\"subtree\">"
+				+ "		<state-change-notification xmlns=\"urn:ietf:params:xml:ns:yang:ietf-netconf-notifications\"/>"
+				+ "	</filter>" 
+				+ "</create-subscription>" 
+				+ "</rpc>";
+		CreateSubscriptionRequest subscriptionRequest = DocumentToPojoTransformer
+				.getCreateSubscriptionRequest(DocumentUtils.stringToDocument(request));
+		assertNotNull(subscriptionRequest);
+	}
+	
+	@Test
+	public void testGetBytesFromDocument() throws NetconfMessageBuilderException {
+		URL url = Thread.currentThread().getContextClassLoader().getResource("get.xml");
+		File file = new File(url.getPath());
+		Document document = getDocFromFile(file);
+		byte[] result = DocumentToPojoTransformer.getBytesFromDocument(document);
+		assertNotNull(result);
+	}
+	
 }

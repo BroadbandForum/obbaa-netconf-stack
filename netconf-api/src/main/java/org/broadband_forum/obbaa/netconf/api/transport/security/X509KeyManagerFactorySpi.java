@@ -19,7 +19,6 @@ package org.broadband_forum.obbaa.netconf.api.transport.security;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactorySpi;
 import javax.net.ssl.ManagerFactoryParameters;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -28,8 +27,9 @@ import java.security.UnrecoverableKeyException;
 
 /**
  * A X509 KeyManagerFactory Service Provider which lets the users supply an implementation of {@link KeyManager}.
+ * 
  *
- * @author keshava
+ * 
  */
 public class X509KeyManagerFactorySpi extends KeyManagerFactorySpi {
 
@@ -41,7 +41,7 @@ public class X509KeyManagerFactorySpi extends KeyManagerFactorySpi {
 
     @Override
     protected KeyManager[] engineGetKeyManagers() {
-        return new KeyManager[]{m_keyManager};
+        return new KeyManager[] { m_keyManager };
     }
 
     @Override
@@ -49,8 +49,7 @@ public class X509KeyManagerFactorySpi extends KeyManagerFactorySpi {
     }
 
     @Override
-    protected void engineInit(KeyStore ks, char[] password) throws KeyStoreException, NoSuchAlgorithmException,
-            UnrecoverableKeyException {
+    protected void engineInit(KeyStore ks, char[] password) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
     }
 
 }

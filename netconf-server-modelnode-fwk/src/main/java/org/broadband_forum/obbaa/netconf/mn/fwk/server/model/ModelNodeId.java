@@ -1,20 +1,7 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
+
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.Constants.REGEX_EQUAL_TO_WITH_NO_SLASH_PREFIX;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.Constants.REGEX_FORWARD_SLASH_WITH_NO_SLASH_PREFIX;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,20 +13,22 @@ import java.util.Map;
 
 import javax.xml.namespace.NamespaceContext;
 
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.api.utils.tree.NaturalOrderComparator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.CharacterCodec;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 
 public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
-
+	
     private static final long serialVersionUID = 2500631272450246422L;
 
-    private static final AdvancedLogger LOGGER = LoggerFactory.getLogger(ModelNodeId.class,
-            "netconf-server-datastore", "DEBUG",
-            "GLOBAL");
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ModelNodeId.class, LogAppNames.NETCONF_STACK);
 
-    private static final String EQUAL_TO = "=";
+    public static final String EQUAL_TO = "=";
     private static final String SLASH = "/";
     public static final ModelNodeId EMPTY_NODE_ID = new ModelNodeId();
     List<ModelNodeRdn> m_rdns = new ArrayList<ModelNodeRdn>();
@@ -49,28 +38,27 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
     private static final String COMPARE_CACHE = "CompareCache";
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Map<String, Integer>> getCache() {
+    private static Map<String, Map<String,Integer>> getCache() {
         RequestScope scope = RequestScope.getCurrentScope();
-        Map<String, Map<String, Integer>> map = (Map<String, Map<String, Integer>>) scope.getFromCache(COMPARE_CACHE);
+        Map<String, Map<String,Integer>> map = (Map<String, Map<String, Integer>>) scope.getFromCache(COMPARE_CACHE);
         if (map == null) {
-            map = new HashMap<String, Map<String, Integer>>(2000);
+            map = new HashMap<String, Map<String,Integer>>(2000);
             scope.putInCache(COMPARE_CACHE, map);
         }
         return map;
     }
-
     private static void addToCache(String params1, String params2, int value) {
-        Map<String, Map<String, Integer>> cache = getCache();
-        Map<String, Integer> map = cache.get(params1);
+        Map<String, Map<String,Integer>> cache = getCache();
+        Map<String,Integer> map = cache.get(params1);
         if (map == null) {
-            map = new HashMap<String, Integer>(500);
+            map = new HashMap<String,Integer>(500);
             cache.put(params1, map);
         }
         map.put(params2, value);
     }
-
+    
     private static Integer getValue(String params1, String params2) {
-        Map<String, Map<String, Integer>> cache = getCache();
+        Map<String, Map<String,Integer>> cache = getCache();
         Map<String, Integer> map = cache.get(params1);
         if (map != null) {
             return map.get(params2);
@@ -79,11 +67,11 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
     }
 
     public ModelNodeId(String idStr, String namespace) {
-        String[] pieces = idStr.split(SLASH);
+        String[] pieces = idStr.split(REGEX_FORWARD_SLASH_WITH_NO_SLASH_PREFIX);
         for (String idPiece : pieces) {
             if (!"".equals(idPiece.trim())) {
-                String[] rdnPieces = idPiece.split(EQUAL_TO);
-                ModelNodeRdn rdn = new ModelNodeRdn(rdnPieces[0], namespace, rdnPieces[1]);
+                String[] rdnPieces = idPiece.split(REGEX_EQUAL_TO_WITH_NO_SLASH_PREFIX);
+                ModelNodeRdn rdn = new ModelNodeRdn(rdnPieces[0], namespace, CharacterCodec.decode(rdnPieces[1]));
                 m_rdns.add(rdn);
             }
         }
@@ -114,7 +102,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
 
     /**
      * Checks whether this ModelNodeId begins with otherId.
-     *
+     * 
      * @param otherId
      * @return
      */
@@ -147,8 +135,19 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
 
     public ModelNodeRdn getLastRdn(String rdnName) {
         ListIterator<ModelNodeRdn> itr = m_rdns.listIterator(m_rdns.size());
-        while (itr.hasPrevious()) {
+        while(itr.hasPrevious()){
             ModelNodeRdn rdn = itr.previous();
+            if (rdn.getRdnName().equals(rdnName)) {
+                return rdn;
+            }
+        }
+        return null;
+    }
+
+    public ModelNodeRdn getFirstRdn(String rdnName) {
+        ListIterator<ModelNodeRdn> itr = m_rdns.listIterator();
+        while(itr.hasNext()){
+            ModelNodeRdn rdn = itr.next();
             if (rdn.getRdnName().equals(rdnName)) {
                 return rdn;
             }
@@ -209,7 +208,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
             for (ModelNodeRdn rdn : m_rdns) {
                 String prefix = "";
                 if (namespaceContext != null) {
-                    prefix = namespaceContext.getPrefix(rdn.getNamespace());
+                    prefix = getPrefix(namespaceContext, rdn.getNamespace());
                     if (prefix == null) {
                         prefix = "";
                     } else {
@@ -220,8 +219,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
                 if (rdn.getRdnName().equals(ModelNodeRdn.CONTAINER)) {
                     sb.append("/").append(prefix).append(rdn.getRdnValue());
                 } else {
-                    sb.append("[").append(prefix).append(rdn.getRdnName()).append("=").append(rdn.getRdnValue())
-                            .append("]");
+                    sb.append("[").append(prefix).append(rdn.getRdnName()).append("=").append(rdn.getRdnValueForXPath()).append("]");
                 }
             }
         } else {
@@ -229,12 +227,35 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
         }
         return sb.toString();
     }
+    
+    private String getPrefix(NamespaceContext namespaceContext, String namespace) {
+        String returnValue = null;
+        if (namespaceContext != null) {
+            returnValue = namespaceContext.getPrefix(namespace);
+        }
+        if (returnValue == null) {
+            NamespaceContext mountContext;
+            if(namespaceContext instanceof SchemaRegistryImpl
+                    && SchemaRegistryUtil.isMountPointEnabled()
+                    && ((SchemaRegistryImpl) namespaceContext).getParentRegistry() != null) {
+                mountContext = ((SchemaRegistryImpl) namespaceContext).getParentRegistry();
+            } else {
+                mountContext = SchemaRegistryUtil.getMountRegistry();
+            }
+            if (mountContext != null) {
+                return mountContext.getPrefix(namespace);
+            }
+        } else {
+            return returnValue;
+        }
+        return returnValue;
+    }
 
     public Map<String, String> xPathStringNsByPrefix(NamespaceContext namespaceContext) {
         Map<String, String> namespaceByPrefix = new HashMap<>();
 
         for (ModelNodeRdn rdn : m_rdns) {
-            String prefix = namespaceContext.getPrefix(rdn.getNamespace());
+            String prefix = getPrefix(namespaceContext, rdn.getNamespace());
             if (prefix != null) {
                 namespaceByPrefix.put(prefix, rdn.getNamespace());
             }
@@ -251,7 +272,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
     public String pathString() {
         if (m_pathString == null) {
             synchronized (this) {
-                if (m_pathString == null) {
+                if(m_pathString == null) {
                     StringBuilder sb = new StringBuilder();
                     if (!m_rdns.isEmpty()) {
                         for (ModelNodeRdn rdn : m_rdns) {
@@ -270,18 +291,17 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
 
     private int getRdnsHashCode() {
         if (m_rdnsHash == null && m_rdns != null) {
-            synchronized (this) {
-                if (m_rdnsHash == null) {
+            synchronized (this){
+                if(m_rdnsHash == null){
                     m_rdnsHash = this.m_rdns.hashCode();
                 }
             }
         }
         return m_rdnsHash;
     }
-
     @Override
     public int hashCode() {
-        final Integer rdnsHash = getRdnsHashCode();
+        final Integer rdnsHash = getRdnsHashCode(); 
         final int prime = 31;
         int result = 1;
         result = prime * result + ((rdnsHash == null) ? 0 : rdnsHash);
@@ -313,7 +333,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
     public String getModelNodeIdAsString() {
         StringBuilder sb = new StringBuilder();
         for (ModelNodeRdn rdn : m_rdns) {
-            sb.append(rdn.toString());
+            sb.append(rdn.encodedString());
         }
         return sb.toString();
     }
@@ -334,12 +354,11 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
     }
 
     /**
-     * Compares the structure of the this ModelNodeId with the supplied template. If each RDN name in the given node
-     * should be same as that
+     * Compares the structure of the this ModelNodeId with the supplied template. If each RDN name in the given node should be same as that
      * in the supplied template, then the method returns true. The RDN values are not considered for the comparison.
-     * <p>
-     * This ModelNodeId could have more number of RDNs than the template.
      *
+     * This ModelNodeId could have more number of RDNs than the template.
+     * 
      * @param template
      * @return
      */
@@ -354,8 +373,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
                 return false;
             }
 
-            if (ModelNodeRdn.CONTAINER.equals(templateRdn.getRdnName()) && !templateRdn.getRdnValue().equals(rdn
-                    .getRdnValue())) {
+            if (ModelNodeRdn.CONTAINER.equals(templateRdn.getRdnName()) && !templateRdn.getRdnValue().equals(rdn.getRdnValue())) {
                 return false;
             }
 
@@ -420,10 +438,8 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
             }
         }
         if (insideContainer && !templateKeys.isEmpty() && m_rdns.size() > template.getRdns().size()) {
-            // Continue to search in 'this' instance to cover the case where template mentions less keys (in wrong
-            // order)
-            for (int indexToResumeFrom = template.getRdns().size(); indexToResumeFrom < m_rdns.size();
-                 indexToResumeFrom++) {
+            // Continue to search in 'this' instance to cover the case where template mentions less keys (in wrong order)
+            for (int indexToResumeFrom = template.getRdns().size(); indexToResumeFrom < m_rdns.size(); indexToResumeFrom++) {
                 ModelNodeRdn thisRdn = m_rdns.get(indexToResumeFrom);
                 // We're concerned only about keys of same list
                 if (ModelNodeRdn.CONTAINER.equals(thisRdn.getRdnName())) {
@@ -446,7 +462,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
 
     /**
      * checks whether the ModelNodeId has the exact same sequence of RDNs as the given template.
-     *
+     * 
      * @param template
      * @return
      */
@@ -459,7 +475,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
 
     /**
      * Provides Parent ModelNodeId of invoked ModelNodeId instance
-     *
+     * 
      * @return the parentId of modelNodeId of
      */
     public ModelNodeId getParentId() {
@@ -474,7 +490,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
 
     /**
      * find parent ModelNodeId Rdn Size
-     *
+     * 
      * @return
      */
     private int findParentRdnSize() {
@@ -496,32 +512,33 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
         }
         return depth;
     }
-
-
+    
+    
     public synchronized void addRdn(int index, ModelNodeRdn rdn) {
         m_rdns.add(index, rdn);
         m_rdnsHash = null;
         m_xPathString = null;
     }
-
+    
     /**
      * Compares two ModelNodeId objects as follows,
-     * <p>
+     * 
      * <pre>
-     *
+     * 
      * case 1. compare same xpath modelNodeIds
-     *
+     * 
      *     "/anv:platform/users/user[name=admin]"   <  "/anv:platform/users/user[name=guest]"
-     *
+     * 
      * case 2 comparing different xpath modelNodeIds
-     *
+     * 
      *      "/anv:device-manager"   <   "/platform:platform"
-     *
+     *      
      * case 3 compare xpath parent and child modelnodeIds
-     *
+     * 
      *      "/anv:platform/"  <   "/anv:platform/users"
-     *
+     *      
      * </pre>
+     * 
      */
     public int compareTo(ModelNodeId otherModelNodeId) {
         int diff = 0;
@@ -530,7 +547,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
         Integer size = m_rdns.size();
         Integer otherSize = otherRdns.size();
         //compare each node rdns
-        for (int index = 0; index < size && index < otherSize; index++) {
+        for(int index =0; index < size && index < otherSize; index++) {
             ModelNodeRdn thisRdn = m_rdns.get(index);
             ModelNodeRdn otherRdn = otherRdns.get(index);
             String params1 = thisRdn.getRdnValue();
@@ -539,11 +556,11 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
             if (value != null && value != 0) {
                 return value;
             } else if (value != null && value == 0) {
-                continue;
+               continue;  
             } else {
-                diff = naturalOrderComparator.compare(params1, params2);
+                diff=naturalOrderComparator.compare(params1, params2);
                 addToCache(params1, params2, diff);
-                if (diff != 0) {
+                if(diff != 0) {
                     return diff;
                 }
             }
@@ -553,7 +570,7 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
     }
 
     public ModelNodeRdn getLastRdn() {
-        if (m_rdns != null && !m_rdns.isEmpty()) {
+        if(m_rdns != null && !m_rdns.isEmpty()){
             return m_rdns.get(m_rdns.size() - 1);
         }
         return null;
@@ -562,22 +579,21 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
     public boolean isRootNodeId() {
         return (getRdns().size() == 1);
     }
-
     /**
      * Provides the next RDN link between the current ModelNodeId and its parentModelNodeId
-     * <p>
+     * 
      * Note: The caller of this method must ensure the ParentModelNodeId is indeed
-     * a (super) parent of this modelNodeId before calling this method.
+     * a (super) parent of this modelNodeId before calling this method. 
      */
     public ModelNodeRdn getNextChildRdn(ModelNodeId parentModelNodeId) {
         return m_rdns.get(parentModelNodeId.getRdns().size());
     }
-
+    
     /**
      * Provides the next ModelNodeId link between the current ModelNodeId and its parentModelNodeId
-     * <p>
+     * 
      * Note: The caller of this method must ensure the ParentModelNodeId is indeed
-     * a (super) parent of this modelNodeId before calling this method.
+     * a (super) parent of this modelNodeId before calling this method. 
      */
     public ModelNodeId getNextChildId(ModelNodeId parentModelNodeId) {
         int i = parentModelNodeId.getRdns().size();
@@ -587,9 +603,9 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
                 break;
             }
         }
-
+        
         ModelNodeId newId = new ModelNodeId(parentModelNodeId);
-        for (int j = newId.m_rdns.size(); j < i; j++) {
+        for (int j=newId.m_rdns.size();j<i;j++) {
             newId.addRdn(m_rdns.get(j));
         }
         return newId;

@@ -1,37 +1,9 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
+
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.EditTreeTransformer.getLocalName;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditChangeNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.EditTreeTransformer;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
@@ -39,24 +11,37 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaMountRegistryProvider;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditChangeNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditMatchNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class EditTreeBuilder {
     private static final String EMPTY_STR = "";
-    private static final AdvancedLogger LOGGER = LoggerFactory.getLogger(EditTreeBuilder.class,
-            "netconf-server-datastore", "DEBUG", "GLOBAL");
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(EditTreeBuilder.class, LogAppNames.NETCONF_STACK);
 
     public void prepareEditSubTree(EditContainmentNode root, Element editConfigXml, SchemaPath modelNodeSchemaPath,
-                                   SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry,
-                                   ModelNodeId modelNodeId)
+                                   SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry, ModelNodeId modelNodeId)
             throws EditConfigException {
 
         if (editConfigXml != null) {
-            String nodeName = EditTreeTransformer.getLocalName(editConfigXml);
+            String nodeName = getLocalName(editConfigXml);
             if (!getContainerName(modelNodeSchemaPath).equals(nodeName)) {
                 throw new EditConfigException(NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.INVALID_VALUE,
                         "Invalid root config node :" + nodeName));
@@ -84,6 +69,17 @@ public class EditTreeBuilder {
                             operation = root.getEditOperation();
                         }
                         QName childQName = getQName(schemaRegistry, child);
+                        DataSchemaNode childSchemaNode = childQName != null ?
+                                schemaRegistry.getChild(modelNodeSchemaPath, childQName) : null;
+                        if ((childQName == null || childSchemaNode == null)
+                                && AnvExtensions.MOUNT_POINT.isExtensionIn(schemaRegistry.getDataSchemaNode(modelNodeSchemaPath))) {
+                            SchemaMountRegistryProvider provider = schemaRegistry.getMountRegistry().getProvider(modelNodeSchemaPath);
+                            schemaRegistry = provider.getSchemaRegistry(null, root);
+                            if (schemaRegistry != null) {
+                                childQName = getQName(schemaRegistry, child);
+                                modelNodeHelperRegistry = provider.getModelNodeHelperRegistry(null, root);
+                            }
+                        }
                         // throw an error if childQname is null
                         if (childQName == null) {
                             String errorMsg = String.format("%s with namespace %s not found", child.getLocalName(),
@@ -94,50 +90,37 @@ public class EditTreeBuilder {
                         }
                         // take the parent's edit operation by default, if there is any change, child will process it
                         EditContainmentNode node = new EditContainmentNode(childQName, operation);
-
+                        node.setParent(root);
                         if (modelNodeHelperRegistry.getChildListHelper(modelNodeSchemaPath, childQName) != null) {
-                            prepareSubtreeFromChildListContainer(node, child, modelNodeSchemaPath, schemaRegistry,
-                                    modelNodeHelperRegistry,
+                            prepareSubtreeFromChildListContainer(node, child, modelNodeSchemaPath, schemaRegistry, modelNodeHelperRegistry,
                                     modelNodeId);
                             root.addChild(node);
-                        } else if (modelNodeHelperRegistry.getChildContainerHelper(modelNodeSchemaPath, childQName)
-                                != null) {
-                            prepareSubtreeFromChildContainer(node, child, modelNodeSchemaPath, schemaRegistry,
-                                    modelNodeHelperRegistry,
+                        } else if (modelNodeHelperRegistry.getChildContainerHelper(modelNodeSchemaPath, childQName) != null) {
+                            prepareSubtreeFromChildContainer(node, child, modelNodeSchemaPath, schemaRegistry, modelNodeHelperRegistry,
                                     modelNodeId);
                             root.addChild(node);
-                        } else if (modelNodeHelperRegistry.getNaturalKeyHelper(modelNodeSchemaPath, childQName) !=
-                                null) {
+                        } else if (modelNodeHelperRegistry.getNaturalKeyHelper(modelNodeSchemaPath, childQName) != null) {
                             // it is a match node
                             EditTreeBuilder.addEditMatchNode(schemaRegistry, modelNodeSchemaPath, root,
                                     childQName, child);
-                        } else if (modelNodeHelperRegistry.getConfigAttributeHelper(modelNodeSchemaPath, childQName)
-                                != null) {
+                        } else if (modelNodeHelperRegistry.getConfigAttributeHelper(modelNodeSchemaPath, childQName) != null) {
                             // it is a change node
-                            EditTreeBuilder.addEditChangeNode(root, childQName, child, modelNodeSchemaPath,
-                                    schemaRegistry);
-                        } else if (modelNodeHelperRegistry.getConfigLeafListHelper(modelNodeSchemaPath, childQName)
-                                != null) {
+                            EditTreeBuilder.addLeafEditChangeNode(root, childQName, child, modelNodeSchemaPath, schemaRegistry);
+                        } else if (modelNodeHelperRegistry.getConfigLeafListHelper(modelNodeSchemaPath, childQName) != null) {
                             // it is a change node
-                            EditTreeBuilder.addEditChangeNode(root, childQName, child, modelNodeSchemaPath,
-                                    schemaRegistry);
+                            EditTreeBuilder.addLeafListEditChangeNode(root, childQName, child, modelNodeSchemaPath, schemaRegistry);
                         } else {
                             // it may be a state attribute, which has no place in edit request
                             // TODO: FNMS-10123 add all error fields
-                            LOGGER.error("Invalid item in edit request :{}; child of - {}", child.getNodeName(),
-                                    modelNodeSchemaPath);
-                            throw new EditConfigException(NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag
-                                            .INVALID_VALUE,
+                            LOGGER.error("Invalid item in edit request :{}; child of - {}", child.getNodeName(), modelNodeSchemaPath);
+                            throw new EditConfigException(NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.INVALID_VALUE,
                                     "Invalid item in edit request: "
-                                            + child.getNodeName()).setErrorPath(modelNodeId.xPathString
-                                    (schemaRegistry), modelNodeId.xPathStringNsByPrefix(schemaRegistry)));
+                                            + child.getNodeName()).setErrorPath(modelNodeId.xPathString(schemaRegistry), modelNodeId.xPathStringNsByPrefix(schemaRegistry)));
                         }
 
-                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException |
-                            InstantiationException e) {
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | InstantiationException e) {
                         // TODO: FNMS-10123 add all error fields
-                        throw new EditConfigException(NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag
-                                        .OPERATION_FAILED,
+                        throw new EditConfigException(NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED,
                                 e.getMessage()));
                     }
 
@@ -146,6 +129,24 @@ public class EditTreeBuilder {
                 }
             }
         }
+    }
+
+    public static void addLeafListEditChangeNode(EditContainmentNode root, QName childQName, Node child, SchemaPath modelNodeSchemaPath, SchemaRegistry schemaRegistry) {
+        for (EditChangeNode changeNode : root.getChangeNodes()) {
+            if (changeNode.getQName().equals(childQName) && changeNode.getValue().equals(child.getTextContent())) {
+                EditContainmentNode.throwDuplicateNodesEditConfigException(root.getModelNodeId().xPathString() + "/" + childQName.getLocalName(), childQName);
+            }
+        }
+        addEditChangeNode(root, childQName, child, modelNodeSchemaPath, schemaRegistry);
+    }
+
+    public static void addLeafEditChangeNode(EditContainmentNode root, QName childQName, Node child, SchemaPath modelNodeSchemaPath, SchemaRegistry schemaRegistry) {
+        for (EditChangeNode changeNode : root.getChangeNodes()) {
+            if (changeNode.getQName().equals(childQName)) {
+                EditContainmentNode.throwDuplicateNodesEditConfigException(root.getModelNodeId().xPathString() + "/" + childQName.getLocalName(), childQName);
+            }
+        }
+        addEditChangeNode(root, childQName, child, modelNodeSchemaPath, schemaRegistry);
     }
 
     public static String getContainerName(SchemaPath modelNodeSchemaPath) {
@@ -173,14 +174,13 @@ public class EditTreeBuilder {
     }
 
     public static QName getQName(SchemaRegistry schemaRegistry, Node node) {
-        String localName = EditTreeTransformer.getLocalName(node);
+        String localName = getLocalName(node);
         String namespace = node.getNamespaceURI();
         return schemaRegistry.lookupQName(namespace, localName);
 
     }
 
-    public static EditChangeNode addEditChangeNode(EditContainmentNode root, QName childQName, Node child, SchemaPath
-            parentSchemaPath, SchemaRegistry schemaRegistry) throws DOMException, EditConfigException {
+    private static EditChangeNode addEditChangeNode(EditContainmentNode root, QName childQName, Node child, SchemaPath parentSchemaPath, SchemaRegistry schemaRegistry) throws DOMException, EditConfigException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("CHANGE NODE == {}, Condition == {}", child.getNodeName(), child.getNodeValue());
         }
@@ -208,9 +208,7 @@ public class EditTreeBuilder {
         return editChangeNode;
     }
 
-    public static EditMatchNode addEditMatchNode(SchemaRegistry schemaRegistry, SchemaPath modelNodeSchemaPath,
-                                                 EditContainmentNode root, QName childQName, Node child) throws
-            DOMException, EditConfigException {
+    public static EditMatchNode addEditMatchNode(SchemaRegistry schemaRegistry, SchemaPath modelNodeSchemaPath, EditContainmentNode root, QName childQName, Node child) throws DOMException, EditConfigException {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("MATCH NODE == {}, Condition == {}", child.getNodeName(), child.getNodeValue());
         }
@@ -222,35 +220,33 @@ public class EditTreeBuilder {
             throw new EditConfigException(e.getRpcError());
         }
         EditMatchNode editMatchNode = new EditMatchNode(childQName, configLeafAttribute);
-
+        if (!(configLeafAttribute instanceof GenericConfigAttribute)) {
+            editMatchNode.setIdentityRefNode(true); //FIXME : FNMS-10114 Remove this boolean
+        }
         root.addMatchNode(editMatchNode);
         return editMatchNode;
     }
 
     public void prepareSubtreeFromChildContainer(EditContainmentNode node, Node xmlNode, SchemaPath modelNodeURI,
-                                                 SchemaRegistry schemaRegistry, ModelNodeHelperRegistry
-                                                         modelNodeHelperRegistry, ModelNodeId modelNodeId)
+                                                 SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry, ModelNodeId modelNodeId)
             throws IllegalAccessException, InvocationTargetException, EditConfigException, InstantiationException {
         ChildContainerHelper childContainerHelper = modelNodeHelperRegistry.getChildContainerHelper(modelNodeURI,
                 getQName(schemaRegistry, xmlNode));
         ModelNodeId id = new ModelNodeId(modelNodeId);
         id.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, xmlNode.getNamespaceURI(), node.getName()));
-        prepareEditSubTree(node, (Element) xmlNode, childContainerHelper.getChildModelNodeSchemaPath(),
-                schemaRegistry, modelNodeHelperRegistry,
+        prepareEditSubTree(node, (Element) xmlNode, childContainerHelper.getChildModelNodeSchemaPath(), schemaRegistry, modelNodeHelperRegistry,
                 id);
     }
 
     public void prepareSubtreeFromChildListContainer(EditContainmentNode node, Node xmlNode, SchemaPath modelNodeURI,
-                                                     SchemaRegistry schemaRegistry, ModelNodeHelperRegistry
-                                                             modelNodeHelperRegistry, ModelNodeId modelNodeId)
+                                                     SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry, ModelNodeId modelNodeId)
             throws IllegalAccessException, InvocationTargetException, EditConfigException {
-        ChildListHelper childListHelper = modelNodeHelperRegistry.getChildListHelper(modelNodeURI, getQName
-                (schemaRegistry, xmlNode));
+        ChildListHelper childListHelper = modelNodeHelperRegistry.getChildListHelper(modelNodeURI, getQName(schemaRegistry, xmlNode));
 
         boolean found = false;
         SchemaPath uri = childListHelper.getChildModelNodeSchemaPath();
         String containerName = getContainerName(uri);
-        if (EditTreeTransformer.getLocalName(xmlNode).equals(containerName)) {
+        if (getLocalName(xmlNode).equals(containerName)) {
             ModelNodeId id = new ModelNodeId(modelNodeId);
             id.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, xmlNode.getNamespaceURI(), containerName));
             Set<QName> keyQnames = modelNodeHelperRegistry.getNaturalKeyHelpers(uri).keySet();
@@ -261,8 +257,7 @@ public class EditTreeBuilder {
                     if (child.getNodeType() == Node.ELEMENT_NODE) {
                         QName qname = getQName(schemaRegistry, child);
                         if (keyQnames.contains(qname)) {
-                            id.addRdn(new ModelNodeRdn(qname.getLocalName(), child.getNamespaceURI(), child
-                                    .getTextContent()));
+                            id.addRdn(new ModelNodeRdn(qname.getLocalName(), child.getNamespaceURI(), child.getTextContent()));
                         }
                     }
                 }
@@ -279,8 +274,7 @@ public class EditTreeBuilder {
     }
 
     public static String getEditOperation(Element editConfigXml) throws EditConfigException {
-        String operation = editConfigXml.getAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                .EDIT_CONFIG_OPERATION);
+        String operation = editConfigXml.getAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG_OPERATION);
         if (operation != null && !EMPTY_STR.equals(operation)) {
             if (EditConfigOperations.MERGE.equals(operation)) {
                 return EditConfigOperations.MERGE;
@@ -308,9 +302,7 @@ public class EditTreeBuilder {
     public static InsertOperation getInsertOperation(String insert, String value) throws EditConfigException {
         if (insert == null) {
             return null;
-        } else if (!EMPTY_STR.equals(insert) && (insert.equals(InsertOperation.FIRST) || insert.equals
-                (InsertOperation.LAST) || insert.equals(InsertOperation.BEFORE) || insert.equals(InsertOperation
-                .AFTER))) {
+        } else if (!EMPTY_STR.equals(insert) && (insert.equals(InsertOperation.FIRST) || insert.equals(InsertOperation.LAST) || insert.equals(InsertOperation.BEFORE) || insert.equals(InsertOperation.AFTER))) {
             return new InsertOperation(insert, value);
         } else {
             LOGGER.error("Invalid <edit-config> insert operation : {}", insert);

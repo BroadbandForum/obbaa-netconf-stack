@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,6 +41,7 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import javax.persistence.metamodel.Metamodel;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 
 import org.broadband_forum.obbaa.netconf.api.messages.LogUtil;
@@ -57,8 +59,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     private static final String DOT_PATTERN = "\\.";
 
 
-    private <E> List<Predicate> getPredicates(List<Predicate> predicates, Map<String, Object> values, CriteriaBuilder
-            criteriaBuilder,
+    private <E> List<Predicate> getPredicates(List<Predicate> predicates, Map<String, Object> values, CriteriaBuilder criteriaBuilder,
                                               Root rootEntry, boolean matchValue) {
 
         if (values != null) {
@@ -78,8 +79,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         return predicates;
     }
 
-    private <E> Predicate getPredicate(String columnName, String value, CriteriaBuilder criteriaBuilder, Root
-            rootEntry) {
+    private <E> Predicate getLikePredicate(String columnName, String value, CriteriaBuilder criteriaBuilder, Root rootEntry) {
 
         StringBuilder stringBuilder = new StringBuilder(value);
         stringBuilder.append("%");
@@ -87,16 +87,24 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         return predicate;
     }
 
-    private void addOrderByAsc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, String
-            orderByColumn) {
+    private <E> Predicate getLikePredicateWithFieldsContain(String columnName, String value, CriteriaBuilder criteriaBuilder, Root rootEntry) {
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("%");
+        stringBuilder.append(value.toLowerCase());
+        stringBuilder.append("%");
+
+        return criteriaBuilder.like(criteriaBuilder.lower(rootEntry.get(columnName)), stringBuilder.toString());
+    }
+
+    private void addOrderByAsc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, String orderByColumn) {
         addOrderByAsc(all, criteriaBuilder, rootEntry, Arrays.asList(orderByColumn));
     }
 
-    private void addOrderByAsc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, List<String>
-            orderByColumns) {
+    private void addOrderByAsc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, List<String> orderByColumns) {
         List<Order> orderList = new ArrayList<Order>();
 
-        for (String orderByColumn : orderByColumns) {
+        for (String orderByColumn:orderByColumns) {
             orderList.add(criteriaBuilder.asc(rootEntry.get(orderByColumn)));
         }
 
@@ -105,16 +113,14 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         }
     }
 
-    private void addOrderByDesc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, String
-            orderByColumn) {
+    private void addOrderByDesc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, String orderByColumn) {
         addOrderByDesc(all, criteriaBuilder, rootEntry, Arrays.asList(orderByColumn));
     }
 
-    private void addOrderByDesc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry,
-                                List<String> orderByColumns) {
+    private void addOrderByDesc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, List <String> orderByColumns) {
         List<Order> orderList = new ArrayList<Order>();
 
-        for (String orderByColumn : orderByColumns) {
+        for (String orderByColumn:orderByColumns) {
             orderList.add(criteriaBuilder.desc(rootEntry.get(orderByColumn)));
         }
 
@@ -135,36 +141,28 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
 
     @Override
     public <E> E findById(Class<E> entityClass, Object primaryKey) {
-        return findById(entityClass, primaryKey, LockModeType.PESSIMISTIC_READ);
+    	return findById(entityClass, primaryKey, LockModeType.PESSIMISTIC_READ);
     }
 
     @Override
     public <E> E findById(Class<E> entityClass, Object primaryKey, LockModeType lockMode) {
-        LogUtil.logDebug(LOGGER, "findById called for class: %s with pk: %s, LockMode:%s ", entityClass, primaryKey,
-                lockMode);
+        LogUtil.logDebug(LOGGER, "findById called for class: %s with pk: %s, LockMode:%s ", entityClass, primaryKey, lockMode);
         E entity = getEntityManager().find(entityClass, primaryKey, lockMode);
         LogUtil.logDebug(LOGGER, "findById returned for class: %s with pk: %s ", entityClass, primaryKey, lockMode);
         return entity;
     }
 
     public <E> E findByUniqueKeys(Class<E> entityClass, Map<String, Object> keys) {
-        CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
-        CriteriaQuery<E> criteriaQuery = criteriaBuilder.createQuery(entityClass);
-        Root<E> rootEntry = criteriaQuery.from(entityClass);
-
-        List<Predicate> predicates = new ArrayList<>();
-        getPredicates(predicates, keys, criteriaBuilder, rootEntry, true);
-        criteriaQuery.where(predicates.toArray(new Predicate[predicates.size()]));
-
-        CriteriaQuery<E> all = criteriaQuery.select(rootEntry);
-
-        TypedQuery<E> allQuery = getEntityManager().createQuery(all);
-        return logAndReturnQuerySingleResult("findByUniqueKeys", entityClass, allQuery);
+        List<E> values = findByMatchValue(entityClass,keys);
+        if(values == null || values.isEmpty()){
+            return null;
+        }
+        return values.get(0);
     }
 
     @Override
     public <E> List<E> findAll(Class<E> pojoClass) {
-        return findAll(pojoClass, (String) null);
+        return findAll(pojoClass, (String)null);
     }
 
     @Override
@@ -191,8 +189,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     }
 
     @Override
-    public <E> List<E> findRange(Class<E> pojoClass, String predicateColumn, PredicateCondition condition, Double
-            value) {
+    public <E> List<E> findRange(Class<E> pojoClass, String predicateColumn, PredicateCondition condition, Double value) {
         CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
         CriteriaQuery<E> cq = cb.createQuery(pojoClass);
         Root<E> rootEntry = cq.from(pojoClass);
@@ -204,19 +201,18 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     }
 
     private TypedQuery m_forTest;
-
-    TypedQuery getTypedQuery() {
-        return m_forTest;
+    
+    TypedQuery getTypedQuery(){
+    	return m_forTest;
     }
-
     private <E> E logAndReturnQuerySingleResult(String methodName, Class<E> entityClass, TypedQuery<E> allQuery) {
-
-        LockModeType lockModeType = allQuery.getLockMode();
-
-        if (lockModeType == null || !lockModeType.equals(LockModeType.PESSIMISTIC_WRITE)) {
-            allQuery.setLockMode(LockModeType.PESSIMISTIC_READ);
-        }
-        m_forTest = allQuery;
+    	
+    	LockModeType lockModeType = allQuery.getLockMode();
+    	
+    	if (lockModeType == null || !lockModeType.equals(LockModeType.PESSIMISTIC_WRITE)){
+    		allQuery.setLockMode(LockModeType.PESSIMISTIC_READ);
+    	}
+    	m_forTest = allQuery;
         LogUtil.logDebug(LOGGER, "%s called for class: %s and query: %s", methodName, entityClass, allQuery);
         E resultList = allQuery.getSingleResult();
         LogUtil.logDebug(LOGGER, "%s returned for class: %s and query: %s", methodName, entityClass, allQuery);
@@ -233,24 +229,20 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         return findByMatchAndNotMatchValue(pojoClass, matchValues, null, orderByColumn, null);
     }
 
-    public <E> List<E> findByMatchValue(Class<E> pojoClass, Map<String, Object> matchValues, LockModeType
-            lockModeType) {
+    public <E> List<E> findByMatchValue(Class<E> pojoClass, Map<String, Object> matchValues, LockModeType lockModeType) {
         return findByMatchAndNotMatchValue(pojoClass, matchValues, null, lockModeType);
     }
 
     @Override
-    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String,
-            Object>
+    public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues, Map<String, Object>
             notMatchValues, LockModeType lockModeType) {
         return findByMatchAndNotMatchValue(entityClass, matchValues, notMatchValues, null, lockModeType);
     }
 
     @Override
     public <E> List<E> findByMatchAndNotMatchValue(Class<E> entityClass, Map<String, Object> matchValues,
-                                                   Map<String, Object> notMatchValues, String orderByColumn,
-                                                   LockModeType lockModeType) {
-        return findByMatchAndNotMatchValue(entityClass, matchValues, notMatchValues, orderByColumn, false,
-                lockModeType);
+                                                   Map<String, Object> notMatchValues, String orderByColumn, LockModeType lockModeType) {
+        return findByMatchAndNotMatchValue(entityClass, matchValues, notMatchValues, orderByColumn, false, lockModeType);
     }
 
     @Override
@@ -291,7 +283,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
      */
     @Override
     public <E> List<E> findByLike(Class<E> entityClass, String columnName, String value) {
-        return findByLike(entityClass, columnName, value, -1);
+    	return findByLike(entityClass, columnName, value, -1);
     }
 
     /**
@@ -303,24 +295,66 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
      */
     @Override
     public <E> List<E> findByLike(Class<E> entityClass, String columnName, String value, int count) {
+        Map<String, String> columnValueMap = new HashMap<>();
+        columnValueMap.put(columnName, value);
+        return findByLike(entityClass, columnValueMap, null, count);
+    }
+
+    @Override
+    public <E> List<E> findByLike(Class klass, Map<String, String> columnKeyMap, Map<String, Object> matchValues, int maxResults){
         CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
-        CriteriaQuery<E> criteriaQuery = criteriaBuilder.createQuery(entityClass);
-        Root<E> rootEntry = criteriaQuery.from(entityClass);
+        CriteriaQuery<E> criteriaQuery = criteriaBuilder.createQuery(klass);
+        Root<E> rootEntry = criteriaQuery.from(klass);
 
-        Predicate predicate = getPredicate(columnName, value, criteriaBuilder, rootEntry);
+        List<Predicate> allPredicates = getLikePredicates(columnKeyMap, criteriaBuilder, rootEntry);
+        TypedQuery<E> allQuery = getTypedQueryWithMaxResult(klass, allPredicates, matchValues, criteriaBuilder, criteriaQuery, rootEntry, maxResults);
 
-        criteriaQuery.where(predicate);
-        CriteriaQuery<E> all = criteriaQuery.select(rootEntry);
+        return logAndReturnQueryResult("findByLike", klass, allQuery);
+    }
 
-        String orderByColumn = getIdAttribute(entityClass);
+    @Override
+    public <E> List<E> findByLikeWithFieldsContain(Class klass, Map<String, String> columnKeyMap, Map<String, Object> matchValues, int maxResults){
+        CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
+        CriteriaQuery<E> criteriaQuery = criteriaBuilder.createQuery(klass);
+        Root<E> rootEntry = criteriaQuery.from(klass);
+
+        List<Predicate> allPredicates = getLikePredicatesWithFieldsContain(columnKeyMap, criteriaBuilder, rootEntry);
+        TypedQuery<E> allQuery = getTypedQueryWithMaxResult(klass, allPredicates, matchValues, criteriaBuilder, criteriaQuery, rootEntry, maxResults);
+
+        return logAndReturnQueryResult("findByLikeWithFieldsContain", klass, allQuery);
+    }
+
+    private <E> TypedQuery getTypedQueryWithMaxResult(Class klass, List<Predicate> predicates, Map<String, Object> matchValues, CriteriaBuilder criteriaBuilder, CriteriaQuery criteriaQuery,
+                                         Root rootEntry, int maxResults) {
+        getPredicates(predicates, matchValues, criteriaBuilder, rootEntry, true);
+        criteriaQuery.where(predicates.toArray(new Predicate[predicates.size()]));
+        CriteriaQuery all = criteriaQuery.select(rootEntry);
+
+        String orderByColumn = getIdAttribute(klass);
         addOrderByAsc(all, criteriaBuilder, rootEntry, orderByColumn);
 
         TypedQuery<E> allQuery = getEntityManager().createQuery(all);
-        if (count >= 0) {
-            allQuery.setMaxResults(count);
+        if(maxResults >= 0) {
+            allQuery.setMaxResults(maxResults);
         }
-        return logAndReturnQueryResult("findByLike", entityClass, allQuery);
 
+        return allQuery;
+    }
+
+    private <E> List<Predicate> getLikePredicates(Map<String, String> columnKeyMap, CriteriaBuilder criteriaBuilder, Root<E> rootEntry) {
+        List<Predicate> predicates = new ArrayList<>();
+        for(Entry<String, String> entry : columnKeyMap.entrySet()){
+            predicates.add(getLikePredicate(entry.getKey(), entry.getValue(), criteriaBuilder, rootEntry));
+        }
+        return predicates;
+    }
+
+    private <E> List<Predicate> getLikePredicatesWithFieldsContain(Map<String, String> columnKeyMap, CriteriaBuilder criteriaBuilder, Root<E> rootEntry) {
+        List<Predicate> predicates = new ArrayList<>();
+        for(Entry<String, String> entry : columnKeyMap.entrySet()){
+            predicates.add(getLikePredicateWithFieldsContain(entry.getKey(), entry.getValue(), criteriaBuilder, rootEntry));
+        }
+        return predicates;
     }
 
     @Override
@@ -344,27 +378,25 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
 
     private <E> List<E> logAndReturnQueryResult(final String methodName, Class<E> entityClass, TypedQuery<E> allQuery) {
         LogUtil.logDebug(LOGGER, "%s called for class: %s and query: %s", methodName, entityClass, allQuery);
-
-        LockModeType lockModeType = allQuery.getLockMode();
-        if (lockModeType == null) {
-            allQuery.setLockMode(LockModeType.PESSIMISTIC_READ);
-        }
-
+        
+    	LockModeType lockModeType = allQuery.getLockMode();
+    	if (lockModeType == null){
+    		allQuery.setLockMode(LockModeType.PESSIMISTIC_READ);
+    	}
+    	
         List<E> resultList = allQuery.getResultList();
         LogUtil.logDebug(LOGGER, "%s returned for class: %s and query: %s", methodName, entityClass, allQuery);
         return resultList;
     }
 
     @Override
-    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues,
-                                                    Map<String,
+    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues, Map<String,
             List<Object>> notMatchValues) {
         return findByMatchAndNotMatchValues(entityClass, matchValues, notMatchValues, null);
     }
 
     @Override
-    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues,
-                                                    Map<String,
+    public <E> List<E> findByMatchAndNotMatchValues(Class<E> entityClass, Map<String, List<Object>> matchValues, Map<String,
             List<Object>> notMatchValues, String orderByColumn) {
         CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
         CriteriaQuery<E> cq = cb.createQuery(entityClass);
@@ -410,8 +442,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     }
 
     @Override
-    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object>
-            notMatchValues) {
+    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object> notMatchValues) {
         CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
         CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
         Root rootEntry = criteriaQuery.from(entityClass);
@@ -424,10 +455,54 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         TypedQuery<Long> query = getEntityManager().createQuery(criteriaQuery);
         return logAndReturnQuerySingleResult("countByMatchAndNotMatchValue", entityClass, query);
     }
+    
+    @Override
+    public Long countByMatchAndLikeValue(Class entityClass, Map<String, String> matchValues, Map<String, String> likeValues, LockModeType lockMode) {
+        CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
+        CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
+        Root rootEntry = criteriaQuery.from(entityClass);
+        
+        List<Predicate> andPredicates = new ArrayList<>();
+        if (matchValues != null) {
+            for (Entry<String, String> entry : matchValues.entrySet()) {
+                Path<Object> pathObject = getPathObject(rootEntry, entry.getKey());
+                if (pathObject == null){
+                    pathObject = rootEntry.get(entry.getKey());
+                }
+                Predicate predicate = criteriaBuilder.equal(pathObject, ConvertUtils.convert(entry.getValue(), pathObject.getJavaType()));
+                andPredicates.add(predicate);
+            }
+        }
+
+        List<Predicate> orPredicates = new ArrayList<>();
+        if (likeValues != null) {
+            for (Entry<String, String> entry : likeValues.entrySet()) {
+                Path<Object> pathObject = getPathObject(rootEntry, entry.getKey());
+                if (pathObject == null){
+                    pathObject = rootEntry.get(entry.getKey());
+                }
+                Predicate predicate = getOrPredicate(entry.getValue(), criteriaBuilder, pathObject);
+                orPredicates.add(predicate);
+            }
+        }
+        
+        if (!orPredicates.isEmpty()) {
+            Predicate orPredicate  = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
+            andPredicates.add(orPredicate);
+        }
+        
+        criteriaQuery.where(andPredicates.toArray(new Predicate[andPredicates.size()]));
+        Expression<Long> count = criteriaBuilder.count(rootEntry);
+        criteriaQuery.select(count);
+        TypedQuery<Long> query = getEntityManager().createQuery(criteriaQuery);
+        if(lockMode != null) {
+            query.setLockMode(lockMode);
+        }
+        return logAndReturnQuerySingleResult("countByMatchAndLikeValue", entityClass, query);
+    }
 
     @Override
-    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object>
-            notMatchValues,
+    public Long countByMatchAndNotMatchValue(Class entityClass, Map<String, Object> matchValues, Map<String, Object> notMatchValues,
                                              LockModeType lockMode) {
         CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
         CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(Long.class);
@@ -438,16 +513,14 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         criteriaQuery.where(predicates.toArray(new Predicate[predicates.size()]));
         Expression<Long> count = criteriaBuilder.count(rootEntry);
         criteriaQuery.select(count);
-        TypedQuery<Long> query = getEntityManager().createQuery(criteriaQuery);
-        if (lockMode != null) {
+        TypedQuery<Long> query  = getEntityManager().createQuery(criteriaQuery);
+        if(lockMode != null) {
             query.setLockMode(lockMode);
         }
-        LogUtil.logDebug(LOGGER, "%s called for class: %s and query: %s with lock-mode: %s",
-                "countByMatchAndNotMatchValue",
+        LogUtil.logDebug(LOGGER, "%s called for class: %s and query: %s with lock-mode: %s", "countByMatchAndNotMatchValue",
                 entityClass, query, lockMode);
         Long resultList = query.getSingleResult();
-        LogUtil.logDebug(LOGGER, "%s returned for class: %s and query: %s with lock-mode: %s",
-                "countByMatchAndNotMatchValue",
+        LogUtil.logDebug(LOGGER, "%s returned for class: %s and query: %s with lock-mode: %s", "countByMatchAndNotMatchValue",
                 entityClass, query, lockMode);
         return resultList;
     }
@@ -483,8 +556,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         LogUtil.logDebug(LOGGER, "flush returned");
     }
 
-    public static synchronized EntityDataStoreManager getPersistenceManager(JPAEntityManagerFactory
-                                                                                    entityManagerFactory) {
+    public static synchronized EntityDataStoreManager getPersistenceManager(JPAEntityManagerFactory entityManagerFactory) {
         return new JPAEntityDataStoreManager();
     }
 
@@ -613,7 +685,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
 
     @Override
     public <E> boolean delete(E entity, Map values) {
-        List<E> lists = findByMatchValue(entity.getClass(), values);
+        List<E> lists = findByMatchValue((Class<E>) entity.getClass(), values);
         for (E e : lists) {
             delete(e);
         }
@@ -664,24 +736,27 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
 
         CriteriaQuery<E> all = cq.select(rootEntry);
         TypedQuery<E> allQuery = getEntityManager().createQuery(all);
-
+        
         allQuery.setLockMode(LockModeType.PESSIMISTIC_READ);
 
         return allQuery.getResultList();
     }
-
+    
     @Override
-    public <E> List<E> findLikeWithPagingInput(Class<E> entity, Map<String, String> matchValues, Map<String, String>
-            likeValues,
-                                               PagingInput pagingInput) {
+    public <E> List<E> findLikeWithPagingInput(Class<E> entity, Map<String, String> matchValues, Map<String, String> likeValues,
+            PagingInput pagingInput) {
         CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
         CriteriaQuery<E> criteriaQuery = criteriaBuilder.createQuery(entity);
         Root<E> rootEntry = criteriaQuery.from(entity);
-
+        
         List<Predicate> andPredicates = new ArrayList<>();
         if (matchValues != null) {
             for (Entry<String, String> entry : matchValues.entrySet()) {
-                Predicate predicate = criteriaBuilder.equal(rootEntry.get(entry.getKey()), entry.getValue());
+                Path<Object> pathObject = getPathObject(rootEntry, entry.getKey());
+                if (pathObject == null){
+                    pathObject = rootEntry.get(entry.getKey());
+                }
+                Predicate predicate = criteriaBuilder.equal(pathObject, ConvertUtils.convert(entry.getValue(), pathObject.getJavaType()));
                 andPredicates.add(predicate);
             }
         }
@@ -689,14 +764,18 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         List<Predicate> orPredicates = new ArrayList<>();
         if (likeValues != null) {
             for (Entry<String, String> entry : likeValues.entrySet()) {
-                Predicate predicate = getOrPredicate(entry.getKey(), entry.getValue(), criteriaBuilder, rootEntry);
+                Path<Object> pathObject = getPathObject(rootEntry, entry.getKey());
+                if (pathObject == null){
+                    pathObject = rootEntry.get(entry.getKey());
+                }
+                Predicate predicate = getOrPredicate(entry.getValue(), criteriaBuilder, pathObject);
                 orPredicates.add(predicate);
             }
         }
-
-        Predicate orPredicate = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
+        
+        Predicate orPredicate  = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
         andPredicates.add(orPredicate);
-
+        
         criteriaQuery.where(andPredicates.toArray(new Predicate[andPredicates.size()]));
         CriteriaQuery<E> all = criteriaQuery.select(rootEntry);
 
@@ -711,44 +790,40 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         }
         return logAndReturnQueryResult("findByLike", entity, allQuery);
     }
-
+    
     @Override
-    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput
-            pagingInput) {
+    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput pagingInput) {
         return findByMatchMultiConditions(entity, likeValues, pagingInput, null);
     }
-
+    
     @Override
-    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput
-            pagingInput, String orderBy) {
+    public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput pagingInput, String orderBy) {
         CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
         CriteriaQuery<E> criteriaQuery = criteriaBuilder.createQuery(entity);
         Root<E> rootEntry = criteriaQuery.from(entity);
-
+        
         List<Predicate> andPredicates = new ArrayList<>();
-
+        
         if (likeValues != null) {
             for (Map<String, Object> mapEntry : likeValues) {
                 List<Predicate> orPredicates = new ArrayList<>();
-                for (Entry<String, Object> entry : mapEntry.entrySet()) {
-                    if (entry.getValue() instanceof String) {
-                        Predicate predicate = getOrPredicate(entry.getKey(), (String) entry.getValue(),
-                                criteriaBuilder, rootEntry);
+                for(Entry<String, Object> entry : mapEntry.entrySet()){
+                    if(entry.getValue() instanceof String){
+                        Predicate predicate = getOrPredicate((String)entry.getValue(), criteriaBuilder, rootEntry.get(entry.getKey()));
                         orPredicates.add(predicate);
-                    } else {
-                        List<String> conditions = (List<String>) entry.getValue();
-                        for (int i = 0; i < conditions.size(); i++) {
-                            Predicate predicate = criteriaBuilder.equal(rootEntry.get(entry.getKey()), conditions.get
-                                    (i));
+                    }else{
+                        List<String> conditions = (List<String>)entry.getValue();
+                        for(int i = 0; i < conditions.size(); i++){
+                            Predicate predicate = criteriaBuilder.equal(rootEntry.get(entry.getKey()), conditions.get(i));
                             orPredicates.add(predicate);
                         }
                     }
                 }
-                Predicate orPredicate = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
+                Predicate orPredicate  = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
                 andPredicates.add(orPredicate);
             }
         }
-
+        
         criteriaQuery.where(andPredicates.toArray(new Predicate[andPredicates.size()]));
         CriteriaQuery<E> all = criteriaQuery.select(rootEntry);
 
@@ -765,15 +840,13 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         }
         return logAndReturnQueryResult("findByMatchMultiConditions", entity, allQuery);
     }
-
-    private <E> Predicate getOrPredicate(String columnName, String value, CriteriaBuilder criteriaBuilder, Root
-            rootEntry) {
+    
+    private <E> Predicate getOrPredicate(String value, CriteriaBuilder criteriaBuilder, Path columnPath) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("%");
         stringBuilder.append(value.toLowerCase());
         stringBuilder.append("%");
-        Predicate predicate = criteriaBuilder.like(criteriaBuilder.lower(rootEntry.get(columnName)), stringBuilder
-                .toString());
+        Predicate predicate = criteriaBuilder.like(criteriaBuilder.lower(columnPath), stringBuilder.toString());
         return predicate;
     }
 
@@ -787,20 +860,16 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     }
 
     @Override
-    public <E> List<E> findWithPagingAndOrderByColumn(Class<E> entityClass, PagingInput pagingInput, Map<String,
-            Object> matchValues,
+    public <E> List<E> findWithPagingAndOrderByColumn(Class<E> entityClass, PagingInput pagingInput, Map<String, Object> matchValues,
                                                       String orderByColumn, Boolean isDesc) {
-        TypedQuery<E> allQuery = findWithCriterias(entityClass, pagingInput, matchValues, null, null, null,
-                orderByColumn, isDesc);
+        TypedQuery<E> allQuery = findWithCriterias(entityClass, pagingInput, matchValues, null, null, null, orderByColumn, isDesc);
         return logAndReturnQueryResult("findWithPagingAndOrderByColumn", entityClass, allQuery);
     }
 
     @Override
     public <E> List<E> findSelectedColumnsWithMatchedValues(Class<E> entityClass, PagingInput pagingInput,
-                                                            Map<String, Object> matchedValues, List<String>
-                                                                        selectedAttrs) {
-        TypedQuery<E> allQuery = findWithCriterias(entityClass, pagingInput, matchedValues, selectedAttrs, null,
-                null, null, null);
+                                                            Map<String, Object> matchedValues, List<String> selectedAttrs) {
+        TypedQuery<E> allQuery = findWithCriterias(entityClass, pagingInput, matchedValues, selectedAttrs, null, null, null, null);
         return logAndReturnQueryResult("findSelectedColumnsWithMatchedValues", entityClass, allQuery);
     }
 
@@ -819,10 +888,8 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         return getEntityManager().createQuery(query, entityClass).setFirstResult(0).setMaxResults(1).getSingleResult();
     }
 
-    private <E> TypedQuery<E> findWithCriterias(Class<E> entityClass, PagingInput pagingInput, Map<String, Object>
-            matchedValues,
-                                                List<String> selectedAttrs, List<String> groupByAttrs, Boolean
-                                                        countByGroup, String
+    private <E> TypedQuery<E> findWithCriterias(Class<E> entityClass, PagingInput pagingInput, Map<String, Object> matchedValues,
+                                                List<String> selectedAttrs, List<String> groupByAttrs, Boolean countByGroup, String
                                                         orderByColumn, Boolean isDesc) {
 
         CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();

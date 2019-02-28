@@ -82,8 +82,7 @@ public class DynamicX509KeyManagerImplTest {
             + "OSZBnFXM2hTGAYaAC1hawHWsivK0+P5S/8E1l3NQ0wKBgBC2hDtNzS42PtBhHDD+\n"
             + "7nSF+pbJmB53mjXH2bIaM+Nh1OAlOnnMocVVu96ZGK8L/vHcu42oeXfaq34gKPDY\n"
             + "PMJuBplxHJ7a9GNL9e/VPauogTjwZvbH5SEkfpFNhueWk3x6CeupPEsAxoEslsKD\n" + "aa4T099AcE+oNokQUuDxuKzk\n";
-    private static final String CERTIFICATE_FOR_RSA_PRIVATE_KEY =
-            "MIIDNTCCAh0CCQCvOFMuHFfwGzANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
+    private static final String CERTIFICATE_FOR_RSA_PRIVATE_KEY = "MIIDNTCCAh0CCQCvOFMuHFfwGzANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
             + "TjELMAkGA1UECAwCS0ExEjAQBgNVBAcMCUJhbmdhbG9yZTEXMBUGA1UECgwOQWxj\n"
             + "YXRlbCBMdWNlbnQxDTALBgNVBAsMBEZOQkwxHzAdBgNVBAMMFnd3dy5hbGNhdGVs\n"
             + "LWx1Y2VudC5jb20wIBcNMTUwNDMwMTE0NzM3WhgPMzM4NDA0MTIxMTQ3MzdaMEAx\n"
@@ -121,8 +120,7 @@ public class DynamicX509KeyManagerImplTest {
             + "n2MbVXArL+g6DvV/uFTW6aWRXLlZqAER6SsvM3cuymSzykTFnTD8AvWCGg5iGD1v\n"
             + "KBwa59s47ufvKKS8kZF1lulKE8bZAVW97VypLetNeUi6svW4KXb2T67foF+HoyqC\n" + "9MfR/bw=\n";
 
-    private static final String RSA_ENCRYPTED_PRIVATE_KEY =
-            "MIIE6TAbBgkqhkiG9w0BBQMwDgQI9EEtQ9mEcJ4CAggABIIEyABhOJ+Hd6QCgd6E\n"
+    private static final String RSA_ENCRYPTED_PRIVATE_KEY = "MIIE6TAbBgkqhkiG9w0BBQMwDgQI9EEtQ9mEcJ4CAggABIIEyABhOJ+Hd6QCgd6E\n"
             + "YrBYuCWIfu4eklO3lJhfu7ixk/8pEbiTXp5x/b0uqZRu4MRy9V49W/+MI5GwhARr\n"
             + "lnlk9nq+VzQtF6YRugZG3R/Cy45V5BsUIHz1EfPpyQKG7ntAzE16vzOLpX+SKb6L\n"
             + "lCy8MupcnplC4YQZX66A11E5WR5HOGNzQk3xD3fsdUKRN5pz6tVP7+zF7tGOwHwE\n"
@@ -149,8 +147,7 @@ public class DynamicX509KeyManagerImplTest {
             + "OJY0InbyNi59YtOVAYsTf0s54pbxBCduX1QB+pkg+C3IYAvhmjfiVswqY3zr0bVg\n"
             + "MvIFM0s65AFjZasDbQicriqaRue+MEy6n4jZfzoXstDMpDmHT39GXn4wJt3Ydh4T\n" + "PbfE3eCd0NPBiz4yCQ==\n";
     private static final String RSA_ENCRYPTED_PRIVATE_KEY_PASS = "rsapass";
-    private static final String CERTIFICATE_FOR_RSA_ENCRYPTED_PRIVATE_KEY =
-            "MIIDRTCCAi0CCQCvOFMuHFfwHDANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
+    private static final String CERTIFICATE_FOR_RSA_ENCRYPTED_PRIVATE_KEY = "MIIDRTCCAi0CCQCvOFMuHFfwHDANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
             + "TjELMAkGA1UECAwCS0ExEjAQBgNVBAcMCUJhbmdhbG9yZTEXMBUGA1UECgwOQWxj\n"
             + "YXRlbCBMdWNlbnQxDTALBgNVBAsMBEZOQkwxHzAdBgNVBAMMFnd3dy5hbGNhdGVs\n"
             + "LWx1Y2VudC5jb20wIBcNMTUwNDMwMTIwNDQ5WhgPMzM4NDA0MTIxMjA0NDlaMFAx\n"
@@ -166,8 +163,7 @@ public class DynamicX509KeyManagerImplTest {
             + "tglK71qghEzVg9VfQJ8vjD77qszU7FJpU4e+3W95CH859smCAb36ScWAZ+ve0Yl7\n"
             + "aVJBJAP77iPHoJB81PwnCWnqMv0nsSpjELHCvtskJFajL6/TMvMamWU2fHMTX+8y\n"
             + "KSy8UHsJlyuG0lifWAWAByesIf1RKlT6XsWlwktYUZhlZ4vngUq+d+lxULuYySyQ\n"
-            + "6+6p1B6N2d/G0BP//rfe545GXqisvZVWiEX6bUkbR2UWECGMUOQ2kyJK7o38CTNz\n" +
-                    "5m8VL/eSzilLP3BWrdU2RXI4KVZwqDK65A==\n";
+            + "6+6p1B6N2d/G0BP//rfe545GXqisvZVWiEX6bUkbR2UWECGMUOQ2kyJK7o38CTNz\n" + "5m8VL/eSzilLP3BWrdU2RXI4KVZwqDK65A==\n";
 
     private static final String DSA_PRIVATE_KEY = "MIICZgIBADCCAjoGByqGSM44BAEwggItAoIBAQDQ3bisLVPEXLOyhMLaczI+JHsk\n"
             + "lx05MeeHeSu6yV6i925e1psWy51f9h2Sq7ntFr+rPDHXoH7J/vUFMQ8MsXg4OLD9\n"
@@ -182,8 +178,7 @@ public class DynamicX509KeyManagerImplTest {
             + "ulxcpwrWABuXD0mtutJQw+t3c2xkvzSAwCGOX/6gn9p73liyXsi3CIc6Y/sAwpbu\n"
             + "W1qNfSWgCpJq7V9Hxerc4BHIx/BTWmDOzStjL1BbjEym86C/Ty6wXLX9YvMC7Z49\n"
             + "6A6Cu1EEIwIhAKbzpWBwko+MH4SZL7HRb0Jp1Acq8wGyfBQZDfNBb8U0\n";
-    private static final String CERTIFICATE_FOR_DSA_PRIVATE_KEY =
-            "MIIFdTCCBF0CCQCvOFMuHFfwHTANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
+    private static final String CERTIFICATE_FOR_DSA_PRIVATE_KEY = "MIIFdTCCBF0CCQCvOFMuHFfwHTANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
             + "TjELMAkGA1UECAwCS0ExEjAQBgNVBAcMCUJhbmdhbG9yZTEXMBUGA1UECgwOQWxj\n"
             + "YXRlbCBMdWNlbnQxDTALBgNVBAsMBEZOQkwxHzAdBgNVBAMMFnd3dy5hbGNhdGVs\n"
             + "LWx1Y2VudC5jb20wIBcNMTUwNTA1MDQ1MDE2WhgPMzM4NDA0MTcwNDUwMTZaMFsx\n"
@@ -213,8 +208,7 @@ public class DynamicX509KeyManagerImplTest {
             + "4ofSAH0onibwutceWxljQeAs5jow9ea6kVWDIZw/s+G2A8nX4uHZwAFAH1pS3BJg\n"
             + "DJS+2nBRIQDip3SajKDf7aTT+UQ9/qbNE+TA+nsURA+lPL97Jb6Y8diulx0YABT1\n" + "2yCuwbsEVTC1\n";
 
-    private static final String DSA_ENCRYPTED_PRIVATE_KEY =
-            "MIICkTAbBgkqhkiG9w0BBQMwDgQIrtZQGyieY1kCAggABIICcCWjC93ibQV+0uKg\n"
+    private static final String DSA_ENCRYPTED_PRIVATE_KEY = "MIICkTAbBgkqhkiG9w0BBQMwDgQIrtZQGyieY1kCAggABIICcCWjC93ibQV+0uKg\n"
             + "m8ouRQwu0vlOpKRpdYbYHQNrk+W4zu1g48lPUPx6AR6Ixnt1owwkQvWUE/0434vA\n"
             + "WmABmO0h/yMSBiS4F4numrVL83UMUwUURhN+qGLwT5E5Iv5Ibt9ok7lct+nwiFrS\n"
             + "UFWHw2UijvrXo/VKiYVKsXUuM5/SdiWru7vL7roaDhvxKsWxcCLvTIL4WH+Zf3iw\n"
@@ -229,8 +223,7 @@ public class DynamicX509KeyManagerImplTest {
             + "kxVEcRBIsD+GUMTZ+zUsHm8Gh6zpHIkJ/GixyH8cu+ZXjH59ledYNTZjKQclZW+Y\n"
             + "jdJH6eViga8DqZtjDNVIZCqbpDaoZ5O+RLzIYdlC6hI4YBQc1w==\n";
     private static final String DSA_ENCRYPTED_PRIVATE_KEY_PASS = "dsapass";
-    private static final String CERTIFICATE_FOR_DSA_ENCRYPTED_PRIVATE_KEY =
-            "MIIFcjCCBFoCCQCvOFMuHFfwHDANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
+    private static final String CERTIFICATE_FOR_DSA_ENCRYPTED_PRIVATE_KEY = "MIIFcjCCBFoCCQCvOFMuHFfwHDANBgkqhkiG9w0BAQUFADB3MQswCQYDVQQGEwJJ\n"
             + "TjELMAkGA1UECAwCS0ExEjAQBgNVBAcMCUJhbmdhbG9yZTEXMBUGA1UECgwOQWxj\n"
             + "YXRlbCBMdWNlbnQxDTALBgNVBAsMBEZOQkwxHzAdBgNVBAMMFnd3dy5hbGNhdGVs\n"
             + "LWx1Y2VudC5jb20wIBcNMTUwNTA1MDUwMDI1WhgPMzM4NDA0MTcwNTAwMjVaMFgx\n"
@@ -325,10 +318,8 @@ public class DynamicX509KeyManagerImplTest {
     @Test
     public void testRsaUnEncryptedPrivateKeyFromFile() throws KeyManagerInitException {
         String rsaPrivateKeyPath = getClass().getResource("/keyMgrTest/rsaPrivateKey.pem").getPath();
-        String certificateForRsaPrivateKey = getClass().getResource("/keyMgrTest/certificateForRsaPrivateKey.crt")
-                .getPath();
-        DynamicX509KeyManager x509KeyManager = new DynamicX509KeyManagerImpl(certificateForRsaPrivateKey,
-                rsaPrivateKeyPath, "");
+        String certificateForRsaPrivateKey = getClass().getResource("/keyMgrTest/certificateForRsaPrivateKey.crt").getPath();
+        DynamicX509KeyManager x509KeyManager = new DynamicX509KeyManagerImpl(certificateForRsaPrivateKey, rsaPrivateKeyPath, "");
 
         PrivateKey key = x509KeyManager.getPrivateKey("key");
         assertEquals("RSA", key.getAlgorithm());
@@ -341,7 +332,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -351,10 +342,8 @@ public class DynamicX509KeyManagerImplTest {
     @Test
     public void testDsaUnEncryptedPrivateKeyFromFile() throws KeyManagerInitException {
         String dsaPrivateKeyPath = getClass().getResource("/keyMgrTest/dsaPrivateKey.pem").getPath();
-        String certificateForDsaPrivateKey = getClass().getResource("/keyMgrTest/certificateForDsaPrivateKey.crt")
-                .getPath();
-        DynamicX509KeyManager x509KeyManager = new DynamicX509KeyManagerImpl(certificateForDsaPrivateKey,
-                dsaPrivateKeyPath, "");
+        String certificateForDsaPrivateKey = getClass().getResource("/keyMgrTest/certificateForDsaPrivateKey.crt").getPath();
+        DynamicX509KeyManager x509KeyManager = new DynamicX509KeyManagerImpl(certificateForDsaPrivateKey, dsaPrivateKeyPath, "");
 
         PrivateKey key = x509KeyManager.getPrivateKey("key");
         assertEquals("DSA", key.getAlgorithm());
@@ -367,7 +356,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -392,7 +381,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -417,7 +406,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -442,7 +431,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA256withRSA", certChain[0].getSigAlgName());
@@ -468,7 +457,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -493,7 +482,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -518,7 +507,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -541,7 +530,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
 
         certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());

@@ -77,6 +77,12 @@
                 <value>/configattributetest/example-jukebox-types.yang</value>
             </list>
         </constructor-arg>
+        <constructor-arg>
+            <set/>
+        </constructor-arg>
+        <constructor-arg>
+            <map/>
+        </constructor-arg>
         <constructor-arg ref="noLockService"/>
     </bean>
 

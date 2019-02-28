@@ -16,11 +16,16 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 public class SshSessionInfo {
 
     NetconfSubsystem subsystem;
     Integer sessionId;
     String user;
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SshSessionInfo.class, LogAppNames.NETCONF_LIB);
 
     public NetconfSubsystem getSubsystem() {
         return subsystem;
@@ -51,7 +56,8 @@ public class SshSessionInfo {
 
     @Override
     public String toString() {
-        return "SshSessionInfo [subsystem=" + subsystem + ", sessionId=" + sessionId + ", user=" + user + "]";
+        return "SshSessionInfo [subsystem=" + subsystem + ", sessionId=" + LOGGER.sensitiveData(sessionId) +
+                ", user=" + ((this.getUser() != null) ? LOGGER.sensitiveData(user) : user) + "]";
     }
 
 }

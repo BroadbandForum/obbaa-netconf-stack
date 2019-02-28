@@ -6,7 +6,7 @@
 
     <context:annotation-config/>
 
-    <bean id="entityManagerFactory" class="JPAEntityManagerFactory">
+    <bean id="entityManagerFactory" class="org.broadband_forum.obbaa.netconf.persistence.jpa.JPAEntityManagerFactory">
         <constructor-arg value="hsql"/>
     <constructor-arg name="properties">
         <map key-type="java.lang.String" value-type="java.lang.String">
@@ -15,7 +15,7 @@
         </map>
     </constructor-arg>
    </bean>
-    <bean id="persistenceManagerUtil" class="ThreadLocalPersistenceManagerUtil">
+    <bean id="persistenceManagerUtil" class="org.broadband_forum.obbaa.netconf.persistence.jpa.ThreadLocalPersistenceManagerUtil">
         <constructor-arg ref="entityManagerFactory"/>
     </bean>
 

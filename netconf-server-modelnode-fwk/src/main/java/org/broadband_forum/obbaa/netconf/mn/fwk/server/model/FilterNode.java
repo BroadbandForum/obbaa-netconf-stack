@@ -1,51 +1,31 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.StringUtil;
 import org.opendaylight.yangtools.yang.common.QName;
 
 import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.StringUtil;
 
-public class FilterNode {
+public class FilterNode extends AbstractFilterNode {
     private List<FilterNode> m_childNodes = new ArrayList<FilterNode>();
     private List<FilterMatchNode> m_matchNodes = new ArrayList<FilterMatchNode>();
     private List<FilterNode> m_selectNodes = new ArrayList<FilterNode>();
     private boolean m_isEmpty = false;
-
-    private String m_namespace;
-    private String m_nodeName;
+    private boolean m_mountNodeImmediateChild = false;
     private NetconfQueryParams m_params;
 
-    public FilterNode(List<FilterNode> childNodes, List<FilterMatchNode> matchNodes, List<FilterNode> selectNodes,
-                      boolean isEmpty,
-                      String namespace, String nodeName, NetconfQueryParams params) {
+    public FilterNode(List<FilterNode> childNodes, List<FilterMatchNode> matchNodes, List<FilterNode> selectNodes, boolean isEmpty,
+            String namespace, String nodeName, NetconfQueryParams params) {
+        super(nodeName,namespace);
         m_childNodes = childNodes;
         m_matchNodes = matchNodes;
         m_selectNodes = selectNodes;
         m_isEmpty = isEmpty;
-        m_namespace = namespace;
-        m_nodeName = nodeName;
         m_params = params;
     }
-
+    
     public List<FilterNode> getChildNodes() {
         return m_childNodes;
     }
@@ -73,23 +53,13 @@ public class FilterNode {
     public void setEmpty(boolean empty) {
         this.m_isEmpty = empty;
     }
-
-    public void setNamespace(String namespace) {
-        this.m_namespace = namespace;
-    }
-
-    public void setNodeName(String nodeName) {
-        this.m_nodeName = nodeName;
-    }
-
+    
     public FilterNode(String nodeName, String namespace) {
-        m_nodeName = nodeName;
-        m_namespace = namespace;
+        super(nodeName,namespace);
     }
 
     public FilterNode(QName qName) {
-        m_nodeName = qName.getLocalName();
-        m_namespace = qName.getNamespace().toString();
+        super(qName.getLocalName(),qName.getNamespace().toString());
     }
 
     public boolean isSelectNode() {
@@ -97,10 +67,6 @@ public class FilterNode {
     }
 
     public FilterNode() {
-    }
-
-    public String getNodeName() {
-        return m_nodeName;
     }
 
     public FilterNode addContainmentNode(String nodeName, String namespace) {
@@ -114,9 +80,10 @@ public class FilterNode {
         return this;
     }
 
-    public void addMatchNode(String nodeName, String namespace, String filter) {
+    public FilterMatchNode addMatchNode(String nodeName, String namespace, String filter) {
         FilterMatchNode node = new FilterMatchNode(nodeName, namespace, filter);
         m_matchNodes.add(node);
+        return node;
     }
 
     public void addSelectNode(FilterNode selectNode) {
@@ -144,9 +111,17 @@ public class FilterNode {
         String filler = StringUtil.blanks(indent);
 
         if (isSelectNode()) {
-            sb.append(filler).append("Select [" + m_nodeName + ", namespace=" + m_namespace + "]\n");
+            if (m_attributes.isEmpty()) {
+                sb.append(filler).append("Select [" + m_nodeName + ", namespace=" + m_namespace + "]\n");
+            } else {
+                sb.append(filler).append("Select [" + m_nodeName + ", namespace=" + m_namespace + ",attributes " + m_attributes + "]\n");
+            }
         } else {
-            sb.append(filler).append("Containment [" + m_nodeName + ", namespace=" + m_namespace + "]\n");
+            if (m_attributes.isEmpty()) {
+                sb.append(filler).append("Containment [" + m_nodeName + ", namespace=" + m_namespace + "]\n");
+            } else {
+                sb.append(filler).append("Containment [" + m_nodeName + ", namespace=" + m_namespace + ",attributes " + m_attributes + "]\n");
+            }
         }
 
         for (FilterMatchNode mn : m_matchNodes) {
@@ -220,7 +195,7 @@ public class FilterNode {
             if (!child.getMatchNodes().isEmpty()) {
                 return true;
             }
-            boolean returnValue = child.childHasMatchCondition();
+            boolean returnValue =  child.childHasMatchCondition();
             if (returnValue) {
                 return true;
             }
@@ -229,9 +204,9 @@ public class FilterNode {
     }
 
     public boolean hasMatchCondition() {
-        if (!this.getMatchNodes().isEmpty() || childHasMatchCondition()) {
+        if(!this.getMatchNodes().isEmpty() || childHasMatchCondition()){
             return true;
-        } else {
+        }else{
             return false;
         }
     }
@@ -247,6 +222,7 @@ public class FilterNode {
         result = prime * result + ((m_nodeName == null) ? 0 : m_nodeName.hashCode());
         result = prime * result + ((m_params == null) ? 0 : m_params.hashCode());
         result = prime * result + ((m_selectNodes == null) ? 0 : m_selectNodes.hashCode());
+        result = prime * result + ((m_attributes == null) ? 0 : m_attributes.hashCode());
         return result;
     }
 
@@ -291,6 +267,42 @@ public class FilterNode {
                 return false;
         } else if (!m_selectNodes.equals(other.m_selectNodes))
             return false;
+        if (m_attributes == null) {
+            if (other.m_attributes != null)
+                return false;
+        } else if (!m_attributes.equals(other.m_attributes))
+            return false;
         return true;
     }
+    
+    public boolean isMountPointImmediateChild(){
+    	return m_mountNodeImmediateChild;
+    }
+
+    public void setMountPointImmediateChild(boolean isImmediateMountChild){
+    	m_mountNodeImmediateChild = isImmediateMountChild;
+    }
+
+    public boolean isSameType(FilterNode other) {
+        return m_namespace.equals(other.getNamespace()) && m_nodeName.equals(other.getNodeName());
+    }
+
+    public boolean canBeMerged(FilterNode other) {
+        return isSameType(other) && ( getMatchNodes().equals(other.getMatchNodes()) || (getMatchNodes().isEmpty() || other.getMatchNodes().isEmpty()) );
+    }
+
+    public void merge(FilterNode other) {
+        m_childNodes.addAll(other.getChildNodes());
+        mergeSelectNodes(other);
+    }
+
+
+    private void mergeSelectNodes(FilterNode other){
+        for(FilterNode otherSelectNode : other.getSelectNodes()){
+            if(!m_selectNodes.contains(otherSelectNode)){
+                m_selectNodes.add(otherSelectNode);
+            }
+        }
+    }
+
 }

@@ -37,8 +37,7 @@ public class KeyManagerInitException extends Throwable {
         super(cause);
     }
 
-    public KeyManagerInitException(String message, Throwable cause, boolean enableSuppression, boolean
-            writableStackTrace) {
+    public KeyManagerInitException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

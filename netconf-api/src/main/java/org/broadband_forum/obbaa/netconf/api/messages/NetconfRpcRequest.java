@@ -16,17 +16,19 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.NetconfMessage;
-import org.broadband_forum.obbaa.netconf.api.NetconfRpcPayLoadType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-public class NetconfRpcRequest extends AbstractNetconfRequest implements NetconfMessage {
+import org.broadband_forum.obbaa.netconf.api.NetconfMessage;
+import org.broadband_forum.obbaa.netconf.api.NetconfRpcPayLoadType;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-    private RpcName m_rpcName;
+public class NetconfRpcRequest extends AbstractNetconfRequest implements NetconfMessage{
 
-    private Element m_inputElement;
+	private RpcName m_rpcName;
+	private Element m_inputElement;
+	private boolean m_isSchemaMountedRpc  = false; 
+	private Element m_rpcContext;
 
     public Element getRpcInput() {
         return m_inputElement;
@@ -41,11 +43,18 @@ public class NetconfRpcRequest extends AbstractNetconfRequest implements Netconf
     public RpcName getRpcName() {
         return m_rpcName;
     }
+    
+    public boolean isSchemaMountedRpc (){
+        return m_isSchemaMountedRpc;
+    }
+    
+    public void setIsSchemaMountedRpc(boolean isSchemaMountedRpc){
+        m_isSchemaMountedRpc = isSchemaMountedRpc;
+    }
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addRpcElement
-                (m_inputElement).build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addRpcElement(m_inputElement).build();
         return doc;
     }
 
@@ -54,5 +63,11 @@ public class NetconfRpcRequest extends AbstractNetconfRequest implements Netconf
         return NetconfRpcPayLoadType.REQUEST;
     }
 
+	public Element getRpcContext() {
+		return m_rpcContext;
+	}
 
+	public void setRpcContext(Element rpcContext) {
+		this.m_rpcContext = rpcContext;
+	}
 }

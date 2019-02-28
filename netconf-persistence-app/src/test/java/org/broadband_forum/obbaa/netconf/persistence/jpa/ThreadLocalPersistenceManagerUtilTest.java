@@ -26,8 +26,6 @@ import static org.mockito.Mockito.when;
 
 import javax.persistence.EntityManager;
 
-import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
-import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -35,13 +33,16 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
+import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
+
 public class ThreadLocalPersistenceManagerUtilTest {
     private ThreadLocalPersistenceManagerUtil m_util;
     @Mock
     private EMFactory m_factory;
 
     @Before
-    public void setUp() {
+    public void setUp(){
         MockitoAnnotations.initMocks(this);
         m_util = new ThreadLocalPersistenceManagerUtil(m_factory);
         setUpMocks();
@@ -53,7 +54,7 @@ public class ThreadLocalPersistenceManagerUtilTest {
         Thread t1 = new Thread(() -> {
             ems[0] = m_util.getEntityDataStoreManager();
         }, "Thread 1");
-        Thread t2 = new Thread(() -> ems[1] = m_util.getEntityDataStoreManager(), "Thread 2");
+        Thread t2 =  new Thread(() -> ems[1] = m_util.getEntityDataStoreManager(), "Thread 2");
         t1.start();
         t2.start();
         t1.join();
@@ -82,13 +83,12 @@ public class ThreadLocalPersistenceManagerUtilTest {
     private void setUpMocks() {
         doAnswer(new Answer() {
             int m_count = 0;
-
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 EntityManager em = mock(EntityManager.class);
-                if (m_count % 2 == 0) {
+                if(m_count % 2 ==0) {
                     when(em.isOpen()).thenReturn(true);
-                } else {
+                }else {
                     when(em.isOpen()).thenReturn(false);
                 }
                 m_count++;

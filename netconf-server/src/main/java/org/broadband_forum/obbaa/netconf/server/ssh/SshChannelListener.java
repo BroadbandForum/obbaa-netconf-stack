@@ -21,29 +21,29 @@ import org.apache.sshd.common.channel.ChannelListener;
 
 public class SshChannelListener implements ChannelListener {
 
-    @Override
+	@Override
     public void channelInitialized(Channel channel) {
-
+	    
     }
 
-    @Override
+	@Override
     public void channelOpenSuccess(Channel channel) {
-
+	    
     }
 
-    @Override
+	@Override
     public void channelOpenFailure(Channel channel, Throwable reason) {
-
+	    
     }
 
-    @Override
+	@Override
     public void channelStateChanged(Channel channel, String hint) {
-
+	    
     }
 
-    @Override
+	@Override
     public void channelClosed(Channel channel, Throwable reason) {
-
+	    
     }
 
 }

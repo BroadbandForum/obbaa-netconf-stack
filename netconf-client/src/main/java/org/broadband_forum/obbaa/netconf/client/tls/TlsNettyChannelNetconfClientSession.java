@@ -16,36 +16,36 @@
 
 package org.broadband_forum.obbaa.netconf.client.tls;
 
+import java.net.SocketAddress;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import org.w3c.dom.Document;
+
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodec;
+import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodecImpl;
 import org.broadband_forum.obbaa.netconf.api.client.AbstractNetconfClientSession;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfDelimiters;
 import org.broadband_forum.obbaa.netconf.api.messages.PojoToDocumentTransformer;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-
-import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
-
-import java.net.SocketAddress;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import io.netty.channel.socket.SocketChannel;
 
 public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSession {
 
-    private static final Logger LOGGER = Logger.getLogger(TlsNettyChannelNetconfClientSession.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(TlsNettyChannelNetconfClientSession.class, LogAppNames.NETCONF_LIB);
     private final long m_creationTime;
-    private Channel m_serverChannel;
-    private final ExecutorService m_executorService;// NOSONAR
+    private SocketChannel m_serverChannel;
+    private FrameAwareNetconfMessageCodec m_codec = new FrameAwareNetconfMessageCodecImpl();
 
-    public TlsNettyChannelNetconfClientSession(Channel ch, ExecutorService executorService) {// NOSONAR
+    public TlsNettyChannelNetconfClientSession(SocketChannel ch) {// NOSONAR
         m_serverChannel = ch;
-        m_executorService = executorService;
         m_creationTime = System.currentTimeMillis();
     }
 
@@ -54,8 +54,9 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
         String helloString = null;
         try {
             PojoToDocumentTransformer builder = new PojoToDocumentTransformer().newClientHelloMessage(caps);
-            helloString = DocumentUtils.documentToString(builder.build()) + NetconfResources.RPC_EOM_DELIMITER;
-            LOGGER.debug("CLIENT sending Hello message : " + helloString);
+            Document doc = builder.build();
+            helloString = new String(m_codec.encode(doc));
+            LOGGER.debug("CLIENT sending Hello message : {}", LOGGER.sensitiveData(helloString));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -63,37 +64,26 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
     }
 
     @Override
-    public synchronized Future<NetConfResponse> sendRpcMessage(final String currentMessageId, Document
-            requestDocument, final long messageTimeOut) {
+    public synchronized CompletableFuture<NetConfResponse> sendRpcMessage(final String currentMessageId, Document requestDocument, final long messageTimeOut) {
         String xmlString = "";
         try {
-            xmlString = DocumentUtils.documentToString(requestDocument) + NetconfDelimiters
-                    .rpcEndOfMessageDelimiterString();
-            logRequest(requestDocument, currentMessageId);
-        } catch (Exception e) {
+            xmlString = new String(m_codec.encode(requestDocument));
+        }catch (Exception e) {
             throw new RuntimeException(e);
         }
 
         m_serverChannel.writeAndFlush(xmlString);
 
-        Future<NetConfResponse> futureResponse = m_executorService.submit(new Callable<NetConfResponse>() {
-            @Override
-            public NetConfResponse call() throws Exception {
-                // wait for a certain time to get the message back
-                NetConfResponse response = m_rpcResponses.get(currentMessageId, messageTimeOut, TimeUnit.MILLISECONDS);
-                logResponse(response, currentMessageId);
-                return response;
-            }
-        });
-
-        return futureResponse;
+        TimeoutFutureResponse future = new TimeoutFutureResponse(messageTimeOut, TimeUnit.MILLISECONDS);
+        m_responseFutures.put(currentMessageId, future);
+        return future;
     }
 
     public Channel getServerChannel() {
         return m_serverChannel;
     }
 
-    public void setServerChannel(Channel serverChannel) {
+    public void setServerChannel(SocketChannel serverChannel) {
         m_serverChannel = serverChannel;
     }
 
@@ -110,11 +100,6 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
     }
 
     @Override
-    public synchronized void sendHeartBeat(long timeout) {
-        LOGGER.warn("TLS client session does not support heartbeats yet");
-    }
-
-    @Override
     public boolean isOpen() {
         if (m_serverChannel == null) {
             return false;
@@ -128,6 +113,15 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
     }
 
     @Override
+    public void setTcpKeepAlive(boolean keepAlive) {
+        try {
+            m_serverChannel.config().setKeepAlive(keepAlive);
+        } catch (Exception e) {
+            LOGGER.error("Error occurred while setting TCP keep-alive", e);
+        }
+    }
+
+    @Override
     public void closeAsync() {
         if (m_serverChannel.isOpen()) {
             m_serverChannel.close();
@@ -137,10 +131,14 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("TlsNettyChannelNetconfClientSession{");
-        sb.append("localsocket=").append(m_serverChannel.localAddress());
-        sb.append(", remotesocket=").append(m_serverChannel.remoteAddress());
-        sb.append(", creationtime=").append(NetconfResources.DATE_TIME_FORMATTER.print(m_creationTime));
+        sb.append("localsocket=").append(LOGGER.sensitiveData(m_serverChannel.localAddress()));
+        sb.append(", remotesocket=").append(LOGGER.sensitiveData(m_serverChannel.remoteAddress()));
+        sb.append(", creationtime=").append(LOGGER.sensitiveData(NetconfResources.DATE_TIME_FORMATTER.print(m_creationTime)));
         sb.append('}');
         return sb.toString();
+    }
+
+    public void setCodec(FrameAwareNetconfMessageCodec codec) {
+        m_codec = codec;
     }
 }

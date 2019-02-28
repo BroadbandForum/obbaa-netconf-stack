@@ -16,6 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.client.tls;
 
+import java.security.cert.X509Certificate;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+
+import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
+
 public class SecureNetconfClientHandlerFactory {
     private static final SecureNetconfClientHandlerFactory INSTANCE = new SecureNetconfClientHandlerFactory();
 
@@ -26,18 +32,17 @@ public class SecureNetconfClientHandlerFactory {
         return INSTANCE;
     }
 
-    // FNMS-5482 - In Karaf OSGI, default classloader here is App classloader (sun.misc.Launcher$AppClassLoader), it
-    // cannot see io/netty/util/internal/TypeParameterMatcher
+    // FNMS-5482 - In Karaf OSGI, default classloader here is App classloader (sun.misc.Launcher$AppClassLoader), it cannot see io/netty/util/internal/TypeParameterMatcher
     // which is used inside super class constructor of SecureNetconfClientHandler.
-    // Some times this causes NoClassDefFoundError (most the time it's ClassNotFoundException, it's not clear yet how
-    // come the NoClassDefFoundError occurs).
+    // Some times this causes NoClassDefFoundError (most the time it's ClassNotFoundException, it's not clear yet how come the NoClassDefFoundError occurs).
     // We're switching to bundle classloader here, this CL has access to class in package io.netty.util.internal
 
-    public SecureNetconfClientHandler getSecureNetconfClientHandler(TlsNettyChannelNetconfClientSession clientSession) {
+    public SecureNetconfClientHandler getSecureNetconfClientHandler(TlsNettyChannelNetconfClientSession clientSession, Set<String> capabilities, 
+            ExecutorService callHomeExecutorService, CallHomeListener callHomeListener, X509Certificate peerCertificate, boolean selfSigned) {
         ClassLoader prevCL = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-            return new SecureNetconfClientHandler(clientSession);
+            return new SecureNetconfClientHandler(clientSession, capabilities, callHomeExecutorService, callHomeListener, peerCertificate, selfSigned);
         } finally {
             Thread.currentThread().setContextClassLoader(prevCL);
         }

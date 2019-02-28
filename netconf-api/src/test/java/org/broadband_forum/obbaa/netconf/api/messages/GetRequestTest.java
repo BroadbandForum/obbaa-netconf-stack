@@ -21,12 +21,10 @@ import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class GetRequestTest {
 
@@ -70,8 +68,7 @@ public class GetRequestTest {
         m_getRequest.setWithDelay(m_withDelay);
         m_getRequest.setMessageId(m_messageId);
         assertNotNull(m_getRequest.getRequestDocument());
-        assertXMLEquals(loadAsXml("TestXMLResources/getTest.xml"), m_getRequest.getRequestDocument()
-                .getDocumentElement());
+        assertXMLEquals(loadAsXml("TestXMLResources/getTest.xml"), m_getRequest.getRequestDocument().getDocumentElement());
 
     }
 

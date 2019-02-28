@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -41,106 +40,106 @@ import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
 @IdClass(SongPK.class)
 @YangList(name = "song")
 public class Song {
-    public static final String NAME = "name";
+	public static final String NAME = "name";
+	
+	@Id 
+	@Column(name=NAME)
+	@YangListKey(name="name", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+	private String name;
 
-    @Id
-    @Column(name = NAME)
-    @YangListKey(name = "name", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-    private String name;
+	@Column(name="location")
+	@YangAttribute(name="location", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+	private String location;
+	
+	@Column(name="format")
+	@YangAttribute(name="format", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+	private String format;
+	
+	@Column(name="length")
+	@YangAttribute(name="length", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+	private String length;
+	
+	@Column
+	@YangOrderByUser
+	private Integer insertOrder;
 
-    @Column(name = "location")
-    @YangAttribute(name = "location", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-    private String location;
+	@Id
+	@YangParentId
+	String parentId;
 
-    @Column(name = "format")
-    @YangAttribute(name = "format", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-    private String format;
+	@YangSchemaPath
+	@Column(length = 1000)
+	String schemaPath;
 
-    @Column(name = "length")
-    @YangAttribute(name = "length", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-    private String length;
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+	@YangLeafList(name="singer", namespace = JukeboxConstants.JB_NS, revision= JukeboxConstants.JB_REVISION)
+	private Set<Singer> singers = new LinkedHashSet<>();
 
-    @Column
-    @YangOrderByUser
-    private Integer insertOrder;
+	public String getSchemaPath() {
+		return schemaPath;
+	}
 
-    @Id
-    @YangParentId
-    String parentId;
+	public void setSchemaPath(String schemaPath) {
+		this.schemaPath = schemaPath;
+	}
 
-    @YangSchemaPath
-    @Column(length = 1000)
-    String schemaPath;
+	public String getParentId() {
+		return parentId;
+	}
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @YangLeafList(name = "singer", namespace = JukeboxConstants.JB_NS, revision = JukeboxConstants.JB_REVISION)
-    private Set<Singer> singers = new LinkedHashSet<>();
+	public void setParentId(String parentId) {
+		this.parentId = parentId;
+	}
+	
+	public String getName() {
+		return name;
+	}
 
-    public String getSchemaPath() {
-        return schemaPath;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	public String getLocation() {
+		return location;
+	}
 
-    public void setSchemaPath(String schemaPath) {
-        this.schemaPath = schemaPath;
-    }
+	public void setLocation(String location) {
+		this.location = location;
+	}
+	
+	public String getFormat() {
+		return format;
+	}
 
-    public String getParentId() {
-        return parentId;
-    }
+	public void setFormat(String format) {
+		this.format = format;
+	}
 
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
+	public String getLength() {
+		return length;
+	}
 
-    public String getName() {
-        return name;
-    }
+	public void setLength(String length) {
+		this.length = length;
+	}
+	
+	public Set<Singer> getSingers() {
+		return singers;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setSingers(Set<Singer> singers) {
+		this.singers = singers;
+	}
 
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
-    public String getLength() {
-        return length;
-    }
-
-    public void setLength(String length) {
-        this.length = length;
-    }
-
-    public Set<Singer> getSingers() {
-        return singers;
-    }
-
-    public void setSingers(Set<Singer> singers) {
-        this.singers = singers;
-    }
-
-    public void addSingers(Singer singer) {
-        singers.add(singer);
-    }
-
-    public int getInsertOrder() {
-        return insertOrder;
-    }
-
-    public void setInsertOrder(Integer insertOrder) {
-        this.insertOrder = insertOrder;
-    }
+	public void addSingers(Singer singer) {
+		singers.add(singer);
+	}
+	
+	public int getInsertOrder() {
+		return insertOrder;
+	}
+	
+	public void setInsertOrder(Integer insertOrder) {
+		this.insertOrder = insertOrder;
+	}
 }

@@ -1,27 +1,11 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
 
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -43,43 +27,43 @@ public class EditConfigReplaceTest extends AbstractEditConfigTestSetup {
 
     @Before
     public void initServer() throws SchemaBuildException {
-        super.setup();
+       super.setup();
     }
 
     @Test
     public void testReplceWhenThereisNoLibraryWorks() throws SAXException, IOException {
-
+        
         //remove the library first
         EditConfigRequest request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(TestUtil.loadAsXml("/remove-config-delete-library.xml")));
+                                                .setTargetRunning()
+                                                .setTestOption(EditConfigTestOptions.SET)
+                                                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+                                                .setConfigElement(new EditConfigElement()
+                                                        .addConfigElementContent(loadAsXml("/remove-config-delete-library.xml")));
         request.setMessageId("1");
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
-
+        
         // assert Ok response
-        TestUtil.assertXMLEquals("/ok-response.xml", response);
+		assertXMLEquals("/ok-response.xml", response);
 
-        // do a get-config to be sure
+		// do a get-config to be sure
         verifyGetConfig(null, "/empty-jukebox.xml");
-
+        
         //do replace and make sure you get a ok response
         request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(TestUtil.loadAsXml("/replace-config-library.xml")));
+                            .setTargetRunning()
+                            .setTestOption(EditConfigTestOptions.SET)
+                            .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+                            .setConfigElement(new EditConfigElement()
+                                    .addConfigElementContent(loadAsXml("/replace-config-library.xml")));
         request.setMessageId("1");
         response = new NetConfResponse();
         m_server.onEditConfig(m_clientInfo, request, response);
         response.setMessageId("1");
-
+        
         // assert Ok response
-        TestUtil.assertXMLEquals("/ok-response.xml", response);
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(null, "/depeche-mode-jukebox.xml");
@@ -93,19 +77,19 @@ public class EditConfigReplaceTest extends AbstractEditConfigTestSetup {
                 .setTestOption(EditConfigTestOptions.SET)
                 .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
                 .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(TestUtil.loadAsXml("/replace-config-library.xml")));
+                        .addConfigElementContent(loadAsXml("/replace-config-library.xml")));
         request.setMessageId("1");
         NetConfResponse response = new NetConfResponse();
-        m_server.onEditConfig(m_clientInfo, request, response);
+         m_server.onEditConfig(m_clientInfo, request, response);
         response.setMessageId("1");
 
         // assert Ok response
-        TestUtil.assertXMLEquals("/ok-response.xml", response);
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(null, "/depeche-mode-jukebox.xml");
     }
-
+    
     private void verifyGetConfig(String filterInput, String expectedOutput) throws SAXException, IOException {
         NetconfClientInfo client = new NetconfClientInfo("test", 1);
 
@@ -115,7 +99,7 @@ public class EditConfigReplaceTest extends AbstractEditConfigTestSetup {
         if (filterInput != null) {
             NetconfFilter filter = new NetconfFilter();
             // we have two variants fo the select node in here
-            filter.addXmlFilter(TestUtil.loadAsXml(filterInput));
+            filter.addXmlFilter(loadAsXml(filterInput));
             request.setFilter(filter);
         }
 
@@ -124,40 +108,40 @@ public class EditConfigReplaceTest extends AbstractEditConfigTestSetup {
 
         m_server.onGetConfig(client, request, response);
 
-        TestUtil.assertXMLEquals(expectedOutput, response);
+        assertXMLEquals(expectedOutput, response);
     }
-
+    
     @Test
     public void testReplceWhenThereisNoAlbumWorks() throws SAXException, IOException {
-
+        
         //remove the library first
         EditConfigRequest request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(TestUtil.loadAsXml("/remove-album-circus.xml")));
+                                                .setTargetRunning()
+                                                .setTestOption(EditConfigTestOptions.SET)
+                                                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+                                                .setConfigElement(new EditConfigElement()
+                                                        .addConfigElementContent(loadAsXml("/remove-album-circus.xml")));
         request.setMessageId("1");
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(m_clientInfo, request, response);
         // assert Ok response
-        TestUtil.assertXMLEquals("/ok-response.xml", response);
+        assertXMLEquals("/ok-response.xml", response);
 
-
+        
         //do replace and make sure you get a ok response
         request = new EditConfigRequest()
-                .setTargetRunning()
-                .setTestOption(EditConfigTestOptions.SET)
-                .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
-                .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(TestUtil.loadAsXml("/replace-config-album-circus.xml")));
+                            .setTargetRunning()
+                            .setTestOption(EditConfigTestOptions.SET)
+                            .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
+                            .setConfigElement(new EditConfigElement()
+                                    .addConfigElementContent(loadAsXml("/replace-config-album-circus.xml")));
         request.setMessageId("1");
         response = new NetConfResponse();
         m_server.onEditConfig(m_clientInfo, request, response);
         response.setMessageId("1");
-
+        
         // assert Ok response
-        TestUtil.assertXMLEquals("/ok-response.xml", response);
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(null, "/lennny-circus-replaced.xml");
@@ -171,14 +155,14 @@ public class EditConfigReplaceTest extends AbstractEditConfigTestSetup {
                 .setTestOption(EditConfigTestOptions.SET)
                 .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
                 .setConfigElement(new EditConfigElement()
-                        .addConfigElementContent(TestUtil.loadAsXml("/replace-config-album-circus.xml")));
+                        .addConfigElementContent(loadAsXml("/replace-config-album-circus.xml")));
         request.setMessageId("1");
         NetConfResponse response = new NetConfResponse();
         m_server.onEditConfig(m_clientInfo, request, response);
         response.setMessageId("1");
 
         // assert Ok response
-        TestUtil.assertXMLEquals("/ok-response.xml", response);
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(null, "/lennny-circus-replaced.xml");
@@ -193,15 +177,14 @@ public class EditConfigReplaceTest extends AbstractEditConfigTestSetup {
                 .setTestOption(EditConfigTestOptions.SET)
                 .setErrorOption(EditConfigErrorOptions.STOP_ON_ERROR)
                 .setDefaultOperation(EditConfigDefaultOperations.REPLACE)
-                .setConfigElement(new EditConfigElement().addConfigElementContent(TestUtil.loadAsXml("/replace-config-jukebox" +
-                        ".xml")));
+                .setConfigElement(new EditConfigElement().addConfigElementContent(loadAsXml("/replace-config-jukebox.xml")));
         request.setMessageId("1");
         NetConfResponse response = new NetConfResponse();
         m_server.onEditConfig(m_clientInfo, request, response);
         response.setMessageId("1");
 
         // assert Ok response
-        TestUtil.assertXMLEquals("/ok-response.xml", response);
+        assertXMLEquals("/ok-response.xml", response);
         verifyGetConfig(null, "/replace-jukebox-response.xml");
     }
 }

@@ -1,23 +1,19 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
+import static org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil.DELIMITER;
+import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
-import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
@@ -26,19 +22,7 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil.DELIMITER;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
+import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants;
 
 /**
  * Created by keshava on 5/12/16.
@@ -66,11 +50,12 @@ public class EMNKeyUtilTest {
 
     @Before
     public void setUp() throws SchemaBuildException {
-        m_schemaRegistry = new SchemaRegistryImpl(new NoLockService());
+        m_schemaRegistry = new SchemaRegistryImpl(Collections.emptyList(), Collections.emptySet(), Collections
+                .emptyMap(), new NoLockService());
         List<YangTextSchemaSource> yangs = TestUtil.getJukeBoxYangs();
         yangs.addAll(TestUtil.getByteSources(Arrays.asList("/referenceyangs/yang-with-choice-cases@2016-05-16.yang",
                 "/referenceyangs/yang-with-choice-cases-augmenting-module@2016-05-16.yang")));
-        m_schemaRegistry.loadSchemaContext("EMNKeyUtilTest", yangs, null, Collections.emptyMap());
+        m_schemaRegistry.loadSchemaContext("EMNKeyUtilTest", yangs, Collections.emptySet(), Collections.emptyMap());
     }
 
     @Test
@@ -159,8 +144,6 @@ public class EMNKeyUtilTest {
         } catch (IllegalArgumentException e) {
             //expected
         }
-
-
     }
 
     private void runAssertsChoiceCases(ModelNodeId nodeId, ModelNodeId modifiedNodeId) {

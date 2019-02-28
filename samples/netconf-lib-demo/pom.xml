@@ -19,12 +19,12 @@
     <parent>
         <groupId>org.bbf.obbaa.netconf</groupId>
         <artifactId>samples</artifactId>
-        <version>1.1.0</version>
+        <version>2.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>netconf-lib-demo</artifactId>
     <packaging>jar</packaging>
-    <name>netconf-lib-demo</name>
+    <name>netconf-lib/samples/netconf-lib-demo</name>
 
     <dependencies>
         <dependency>
@@ -38,12 +38,11 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- netconf lib deps -->
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
-            <artifactId>netconf-api</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk15on</artifactId>
         </dependency>
+        <!-- netconf lib deps -->
         <dependency>
             <groupId>org.bbf.obbaa.netconf</groupId>
             <artifactId>netconf-client</artifactId>

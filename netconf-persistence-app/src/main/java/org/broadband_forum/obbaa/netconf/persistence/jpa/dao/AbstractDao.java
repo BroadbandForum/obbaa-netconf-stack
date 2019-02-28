@@ -37,10 +37,10 @@ public abstract class AbstractDao<E, PK extends Serializable> implements EntityD
         this.m_persistenceManagerUtil = persistenceManagerUtil;
     }
 
-    protected Class<E> getEntityClass() {
+    protected Class<E> getEntityClass(){
         return m_entityClass;
     }
-
+    
     protected EntityDataStoreManager getPersistenceManager() {
         return m_persistenceManagerUtil.getEntityDataStoreManager();
     }
@@ -56,17 +56,16 @@ public abstract class AbstractDao<E, PK extends Serializable> implements EntityD
     @Override
     @Deprecated
     public E findById(PK primaryKey) {
-        return findByIdWithReadLock(primaryKey);
+    	return findByIdWithReadLock(primaryKey);
     }
-
     @Override
     public E findByIdWithWriteLock(PK primaryKey) {
         return findById(primaryKey, LockModeType.PESSIMISTIC_WRITE);
     }
-
+    
     @Override
-    public E findByIdWithReadLock(PK primaryKey) {
-        return findById(primaryKey, LockModeType.PESSIMISTIC_READ);
+    public E findByIdWithReadLock(PK primaryKey){
+    	return findById(primaryKey, LockModeType.PESSIMISTIC_READ);
     }
 
     @Override
@@ -80,7 +79,7 @@ public abstract class AbstractDao<E, PK extends Serializable> implements EntityD
         entityDataStoreManager.create(entity);
     }
 
-    public E findById(PK pk, LockModeType lockModeType) {
+    public E findById(PK pk, LockModeType lockModeType){
         return getPersistenceManager().findById(m_entityClass, pk, lockModeType);
     }
 
@@ -106,15 +105,12 @@ public abstract class AbstractDao<E, PK extends Serializable> implements EntityD
     public List<E> findWithPaging(PagingInput pagingInput) {
         return getPersistenceManager().findWithPaging(m_entityClass, pagingInput);
     }
-
+    
     @Override
-    public List<E> findWithPagingAndOrderByColumn(PagingInput pagingInput, Map<String, Object> matchValues, String
-            orderByColumn,
-                                                  Boolean isDesc) {
-        return getPersistenceManager().findWithPagingAndOrderByColumn(m_entityClass, pagingInput, matchValues,
-                orderByColumn, isDesc);
+    public List<E> findWithPagingAndOrderByColumn(PagingInput pagingInput, Map<String, Object> matchValues, String orderByColumn,
+            Boolean isDesc) {
+        return getPersistenceManager().findWithPagingAndOrderByColumn(m_entityClass, pagingInput, matchValues, orderByColumn, isDesc);
     }
-
     /**
      * The DAO of a Entity must override this method and supply a list of java entity attribute names
      * to return a system ordered list always

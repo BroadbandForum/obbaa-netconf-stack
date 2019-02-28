@@ -18,15 +18,13 @@ package org.broadband_forum.obbaa.netconf.api.logger;
 
 import org.w3c.dom.Document;
 
+import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 
 public interface NetconfLogger {
     void logRequest(String remoteHost, String remotePort, String userName, String sessionId, Document request);
-
-    void logResponse(String remoteHost, String remotePort, String userName, String sessionId, Document response);
-
-    void logNotificationIn(String remoteHost, String remotePort, String userName, String sessionId, Document
-            notification);
-
+    void logResponse(String remoteHost, String remotePort, String userName, String sessionId, Document response, AbstractNetconfRequest request);
+    void logNotificationIn(String remoteHost, String remotePort, String userName, String sessionId, Document notification);
     void logNotificationOut(String stream, Notification notification);
+    void setThreadLocalDeviceLogId(Document doc);
 }

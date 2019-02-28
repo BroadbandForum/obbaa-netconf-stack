@@ -1,0 +1,44 @@
+
+#2216
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="5">
+    <edit-config>
+  <target>
+    <running/>
+  </target>
+  <config>
+            <!--
+##
+-->
+            <platform:platform xmlns:platform="http://www.test-company.com/solutions/anv-platform">
+      <license:license-details xmlns:license="http://www.test-company.com/solutions/license-management">
+        <license:license-key xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="replace">
+          <license:license-name>CORE</license:license-name>
+          <license:key-string>AC4wLAIUf3j8ZJ3Virp6H9GhUr7nC5kgJncCFG+YXfND69BqRiwDpqXslbfECAGxBCus7QAF
+c3IAEWphdmEudXRpbC5IYXNoTWFwBQfawcMWYNEDAAJGAApsb2FkRmFjdG9ySQAJdGhyZXNo
+b2xkeHA/QAAAAAAADHcIAAAAEAAAAAp0AAtzeXN0ZW1Vc2FnZXQACkNPTU1FUkNJQUx0ABlG
+aXhlZF9wb3J0X2NvdW50aW5nX3J1bGVzdAFXeyJydWxlcyI6W3siaGFyZHdhcmUtdHlwZSI6
+IlNYMTZGIiwieERTTF9wb3J0cyI6IjE2In0seyJoYXJkd2FyZS10eXBlIjoiU1g0RiIsInhE
+U0xfcG9ydHMiOiI0In0seyJoYXJkd2FyZS10eXBlIjoiU1g4RiIsInhEU0xfcG9ydHMiOiI4
+In0seyJoYXJkd2FyZS10eXBlIjoiU0REUFUtQ0ZBUy1CIiwieERTTF9wb3J0cyI6IjE2In0s
+eyJoYXJkd2FyZS10eXBlIjoiU0REUFUtQ0ZBUy1EIiwieERTTF9wb3J0cyI6IjE2In0seyJo
+YXJkd2FyZS10eXBlIjoiU0REUFUtQ0ZBUy1IIiwieERTTF9wb3J0cyI6IjE2In0seyJoYXJk
+d2FyZS10eXBlIjoiU0REUFUtQ0ZFUi1DIiwieERTTF9wb3J0cyI6IjE2In1dfXQACnN5c3Rl
+bU5hbWV0AApOQVYgdGVzdCAxdAAHcmVsZWFzZXQAAzEuNXQAHFZhcmlhYmxlX3BvcnRfY291
+bnRpbmdfcnVsZXN0AXd7InJ1bGVzIjpbeyJQT1JULVRZUEUiOiJ4RFNMX3BvcnRzIiwiR0VU
+IjoiPGludGVyZmFjZXMtc3RhdGUgeG1sbnM9J3VybjppZXRmOnBhcmFtczp4bWw6bnM6eWFu
+ZzppZXRmLWludGVyZmFjZXMnPjxpbnRlcmZhY2U+PHR5cGUvPjxuYW1lLz48XC9pbnRlcmZh
+Y2U+PFwvaW50ZXJmYWNlcy1zdGF0ZT4iLCJDT1VOVC1FWFAiOiJjb3VudCgvL2lmOmludGVy
+ZmFjZXMtc3RhdGUvaWY6aW50ZXJmYWNlW2lmOnR5cGU9J2lhbmFpZnQ6ZmFzdGRzbCddKSIs
+IkNPVU5ULU5TIjp7ImlmIjoidXJuOmlldGY6cGFyYW1zOnhtbDpuczp5YW5nOmlldGYtaW50
+ZXJmYWNlcyIsImlhbmFpZnQiOiJ1cm46aWV0ZjpwYXJhbXM6eG1sOm5zOnlhbmc6aWFuYS1p
+Zi10eXBlIn19XX10AAp4RFNMX3BvcnRzdAAEMjAwMHQADGZhbnNfZmVhdHVyZXQABHRydWV0
+AAZob3N0aWR0AAdUZXN0MDAxdAAMY3VzdG9tZXJOYW1ldAAbVkVSSVpPTiBDT01NVU5JQ0FU
+SU9OUyBJTkMudAARbGljZW5zZS5jb21wb25lbnR0AARDT1JFeAAA</license:key-string>
+        </license:license-key>
+      </license:license-details>
+    </platform:platform>
+  </config>
+</edit-config>
+</rpc>
+
+##

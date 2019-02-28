@@ -31,14 +31,14 @@ public class NetconfQueryParams {
 
     private int m_depth;
     private boolean m_includeConfig;
-    private Map<String, List<QName>> m_fieldValues = new HashMap<>();
-
+    private Map<String, List<QName>> m_fieldValues= new HashMap<>();
+ 
     public NetconfQueryParams(int depth, boolean includeConfig) {
         m_depth = depth;
         m_includeConfig = includeConfig;
-
+       
     }
-
+    
     public NetconfQueryParams(int depth, boolean includeConfig, Map<String, List<QName>> fieldValues) {
         m_depth = depth;
         m_includeConfig = includeConfig;
@@ -52,8 +52,8 @@ public class NetconfQueryParams {
     public boolean isIncludeConfig() {
         return m_includeConfig;
     }
-
-    public Map<String, List<QName>> getFields() {
+    
+    public Map<String, List<QName>> getFields(){
         return m_fieldValues;
     }
 

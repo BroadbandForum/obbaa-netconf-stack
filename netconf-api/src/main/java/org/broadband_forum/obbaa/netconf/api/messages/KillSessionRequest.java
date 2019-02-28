@@ -21,8 +21,9 @@ import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <kill-session>} operation.
+ * 
  *
- * @author keshava
+ * 
  */
 public class KillSessionRequest extends AbstractNetconfRequest {
 
@@ -30,8 +31,7 @@ public class KillSessionRequest extends AbstractNetconfRequest {
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addKillSessionElement
-                (m_sessionId).build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addKillSessionElement(m_sessionId).build();
         return doc;
     }
 

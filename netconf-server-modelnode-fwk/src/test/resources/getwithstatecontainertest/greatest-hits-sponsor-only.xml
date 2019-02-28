@@ -1,0 +1,10 @@
+<sponsors xmlns="http://example.com/ns/example-jukebox">
+    <sponsor>
+        <name>JD</name>
+        <type>entertainment</type>
+    </sponsor>
+    <sponsor>
+        <name>BlackDog</name>
+        <type>general</type>
+    </sponsor>
+</sponsors>

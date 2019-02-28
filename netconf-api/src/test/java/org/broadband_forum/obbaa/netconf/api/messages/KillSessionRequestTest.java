@@ -19,13 +19,11 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.assertXMLEquals;
-
+import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import java.io.IOException;
-
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.TestXML;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class KillSessionRequestTest {
 
@@ -39,7 +37,7 @@ public class KillSessionRequestTest {
         m_killSessionRequest.setMessageId(m_messageId);
         m_killSessionRequest.setSessionId(m_sessionId);
         assertNotNull(m_killSessionRequest.getRequestDocument());
-        TestXML.assertXMLEquals(TestXML.loadAsXml("killSession.xml"), m_killSessionRequest.getRequestDocument().getDocumentElement());
+        assertXMLEquals(loadAsXml("killSession.xml"), m_killSessionRequest.getRequestDocument().getDocumentElement());
 
     }
 

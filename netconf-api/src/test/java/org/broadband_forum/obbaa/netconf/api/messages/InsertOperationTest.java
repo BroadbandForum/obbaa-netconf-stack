@@ -17,15 +17,14 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 public class InsertOperationTest {
 
-    @Test
-    public void testThePojo() {
-        InsertOperation operation = new InsertOperation("name", "value");
-        assertEquals("name", operation.getName());
-        assertEquals("value", operation.getValue());
-    }
+	@Test
+	public void testThePojo() {
+		InsertOperation operation = new InsertOperation("name", "value");
+		assertEquals("name", operation.getName());
+		assertEquals("value", operation.getValue());
+	}
 }

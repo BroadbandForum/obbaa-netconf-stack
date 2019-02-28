@@ -25,7 +25,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target({ElementType.TYPE, ElementType.FIELD})
 public @interface YangLeafList {
-    String name() default "";
+	String name() default "";
 
     String namespace() default "";
 

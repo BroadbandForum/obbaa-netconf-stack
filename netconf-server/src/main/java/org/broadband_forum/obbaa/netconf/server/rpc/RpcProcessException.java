@@ -20,11 +20,12 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This exception is thrown by the RPC handlers when custom RPC processing/execution fails
+ * 
  *
- * @author pregunat
  */
 
 public class RpcProcessException extends Exception {
@@ -34,16 +35,22 @@ public class RpcProcessException extends Exception {
     private List<NetconfRpcError> m_rpcErrors;
 
     public RpcProcessException(NetconfRpcError rpcError) {
+        super(rpcError.getErrorMessage());
         this.m_rpcErrors = new ArrayList<NetconfRpcError>();
         this.m_rpcErrors.add(rpcError);
     }
 
     public RpcProcessException(List<NetconfRpcError> rpcErrors) {
+        super(makeMessage(rpcErrors));
         this.m_rpcErrors = rpcErrors;
     }
 
     public List<NetconfRpcError> getRpcErrors() {
         return m_rpcErrors;
+    }
+    
+    private static String makeMessage(List<NetconfRpcError> rpcErrors) {
+        return rpcErrors.stream().map((error) -> error.getErrorMessage()).collect(Collectors.joining(", "));
     }
 
     @Override

@@ -1,0 +1,20 @@
+module deviation-test-dev {
+	
+	yang-version 1;
+    
+	namespace "urn:org:bbf:pma:deviation:test";
+	
+	prefix "devTest";
+	
+	import feature-test { prefix "feat"; }
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+	
+	deviation "/feat:test/feat:leaf1" {
+	    deviate add {
+	        must "true()";
+	    }
+	}
+}

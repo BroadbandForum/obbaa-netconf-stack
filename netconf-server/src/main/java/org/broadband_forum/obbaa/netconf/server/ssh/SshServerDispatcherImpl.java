@@ -53,7 +53,6 @@ import java.util.concurrent.Future;
 
 public class SshServerDispatcherImpl implements NetconfServerDispatcher {
     private static final Logger LOGGER = Logger.getLogger(SshServerDispatcherImpl.class);
-
     static {
         SecurityUtils.setRegisterBouncyCastle(false);
     }
@@ -70,8 +69,7 @@ public class SshServerDispatcherImpl implements NetconfServerDispatcher {
     }
 
     @Override
-    public Future<NetconfServerSession> createServer(final NetconfServerConfiguration config) throws
-            NetconfServerDispatcherException {
+    public Future<NetconfServerSession> createServer(final NetconfServerConfiguration config) throws NetconfServerDispatcherException {
         if (config.getNetconfTransport() instanceof SshNetconfTransport) {
             return m_executorService.submit(new Callable<NetconfServerSession>() {
                 @Override
@@ -99,11 +97,9 @@ public class SshServerDispatcherImpl implements NetconfServerDispatcher {
             keyPairProvider.setAlgorithm(KeyUtils.RSA_ALGORITHM);
             sshd.setKeyPairProvider(keyPairProvider);
 
-            sshd.setPasswordAuthenticator(new NetconfPasswordAuthenticator(config
-                    .getNetconfServerAuthenticationHandler(), config
+            sshd.setPasswordAuthenticator(new NetconfPasswordAuthenticator(config.getNetconfServerAuthenticationHandler(), config
                     .getAuthenticationListener()));
-            sshd.setPublickeyAuthenticator(new NetconfPublicKeyAuthenticator(config
-                    .getNetconfServerAuthenticationHandler(), config
+            sshd.setPublickeyAuthenticator(new NetconfPublicKeyAuthenticator(config.getNetconfServerAuthenticationHandler(), config
                     .getAuthenticationListener()));
 
             List<NamedFactory<Command>> factories = new ArrayList<>();
@@ -120,8 +116,9 @@ public class SshServerDispatcherImpl implements NetconfServerDispatcher {
             }
             factories.add(netconfSubsystemFactory);
             sshd.setSubsystemFactories(factories);
-            Map<String, String> properties = new HashMap<String, String>();
+            Map<String, String> properties = new HashMap<>();
             properties.put(ServerFactoryManager.IDLE_TIMEOUT, String.valueOf(config.getConnectionIdleTimeOutMillis()));
+            properties.put(ServerFactoryManager.NIO2_READ_TIMEOUT, String.valueOf(Long.MAX_VALUE));
             sshd.getProperties().putAll(properties);
             ExecutorService executor = config.getExecutorService();
             if (executor != null) {
@@ -134,8 +131,8 @@ public class SshServerDispatcherImpl implements NetconfServerDispatcher {
                 heartbeatInt = "0";
             }
             sshd.getProperties().put(NetconfResources.HEARTBEAT_INTERVAL, heartbeatInt);
-            sshd.setServiceFactories(Arrays.asList(new ServiceFactory[]{new ServerUserAuthServiceFactory(),
-                    new NetconfSshServerConnectionService.Factory()}));
+            sshd.setServiceFactories(Arrays.asList(new ServiceFactory[] { new ServerUserAuthServiceFactory(),
+                    new NetconfSshServerConnectionService.Factory() }));
             sshd.start();
             NetconfServerSession serverSession = new SshNetconfServerSession(sshd);
             return serverSession;

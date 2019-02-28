@@ -1,0 +1,9 @@
+module mgmt-jukebox-1 {
+    yang-version 1;
+
+    namespace
+        "http://example.com/ns/mgmt-jukebox-1";
+
+    prefix mgb1;
+
+}

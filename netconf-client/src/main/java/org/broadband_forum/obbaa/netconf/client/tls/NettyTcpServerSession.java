@@ -16,12 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.client.tls;
 
+import org.apache.log4j.Logger;
+
 import org.broadband_forum.obbaa.netconf.api.client.TcpServerSession;
 
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
-
-import org.apache.log4j.Logger;
 
 public class NettyTcpServerSession implements TcpServerSession {
     private static final Logger LOGGER = Logger.getLogger(NettyTcpServerSession.class);

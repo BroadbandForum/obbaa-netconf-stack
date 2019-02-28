@@ -23,11 +23,12 @@ import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 public class NetconfRpcError {
 
@@ -42,19 +43,18 @@ public class NetconfRpcError {
     private String m_errorMessage;
     private Element m_errorInfo;
     private Document m_document;
-    private List<Pair<Object, String>> m_errorInfoElements = new LinkedList<Pair<Object, String>>();
+    private List<Pair<Object,String>> m_errorInfoElements = new LinkedList<Pair<Object,String>>();
 
     /**
      * The ErrorTag, ErrorType,ErrorSeverity are mandatory parameters. User facing message is also made mandatory.
-     *
+     * 
      * @param errorTag
      * @param errorType
      * @param errorSeverity
      * @param errorMessage
      */
-    public NetconfRpcError(NetconfRpcErrorTag errorTag, NetconfRpcErrorType errorType, NetconfRpcErrorSeverity
-            errorSeverity,
-                           String errorMessage) {
+    public NetconfRpcError(NetconfRpcErrorTag errorTag, NetconfRpcErrorType errorType, NetconfRpcErrorSeverity errorSeverity,
+            String errorMessage) {
         this.m_errorTag = errorTag;
         this.m_errorType = errorType;
         this.m_errorSeverity = errorSeverity;
@@ -67,15 +67,14 @@ public class NetconfRpcError {
     }
 
     /**
-     * @deprecated use {@link #setErrorPath(String, Map<String, String>)} or {@link #setErrorPathElement(Element)}
-     * instead.
-     */
+     * @deprecated use {@link #setErrorPath(String, Map<String, String>)} or {@link #setErrorPathElement(Element)} instead.  
+     */    
     @Deprecated
     public NetconfRpcError setErrorPath(String errorPath) {
         this.m_errorPath = errorPath;
         return this;
     }
-
+    
     /**
      * Either errorPath or errorPathElement should be set
      */
@@ -84,7 +83,7 @@ public class NetconfRpcError {
         this.m_errorPathNsByPrefix = errorPathNsByPrefix;
         return this;
     }
-
+    
     /**
      * Either errorPath or errorPathElement should be set
      */
@@ -123,14 +122,13 @@ public class NetconfRpcError {
     }
 
     /**
-     * @deprecated use {@link #setErrorPath(String, Map<String, String>)} or {@link #setErrorPathElement(Element)}
-     * instead.
-     */
+     * @deprecated use {@link #setErrorPath(String, Map<String, String>)} or {@link #setErrorPathElement(Element)} instead.  
+     */    
     @Deprecated
     public void setErrorPathNsByPrefix(Map<String, String> errorPathNsByPrefix) {
         this.m_errorPathNsByPrefix = errorPathNsByPrefix;
     }
-
+    
     public Element getErrorPathElement() {
         return m_errorPathElement;
     }
@@ -149,19 +147,17 @@ public class NetconfRpcError {
                     LOGGER.error("could not get document", e);
                 }
             }
-
+            
             if (m_document != null) {
                 if (m_errorInfo == null) {
-                    m_errorInfo = m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
-                            .RPC_ERROR_INFO);
+                    m_errorInfo = m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_ERROR_INFO);
                 }
-
+          
                 for (Pair<Object, String> element : m_errorInfoElements) {
                     Element errorInfoContent = null;
                     Object first = element.getFirst();
                     if (first instanceof String) {
-                        errorInfoContent = m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, (String)
-                                first);
+                        errorInfoContent = m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, (String) first);
                     } else if (first instanceof NetconfRpcErrorInfo) {
                         errorInfoContent = m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0,
                                 ((NetconfRpcErrorInfo) first).value());
@@ -179,20 +175,18 @@ public class NetconfRpcError {
         if (m_errorInfo == null && !m_errorInfoElements.isEmpty()) {
             getErrorInfo();
         }
-        return "NetconfRpcError [errorType=" + m_errorType.value() + ", errorTag=" + m_errorTag.value() + ", " +
-                "errorSeverity="
-                + m_errorSeverity.value() + ", errorAppTag=" + m_errorAppTag + ", errorPath=" + m_errorPath + ", " +
-                "errorMessage="
+        return "NetconfRpcError [errorType=" + m_errorType.value() + ", errorTag=" + m_errorTag.value() + ", errorSeverity="
+                + m_errorSeverity.value() + ", errorAppTag=" + m_errorAppTag + ", errorPath=" + m_errorPath + ", errorMessage="
                 + m_errorMessage + ", errorInfoContent=" + DocumentUtils.getErrorInfoContents(m_errorInfo) + "]";
     }
-
+    
     public NetconfRpcError addErrorInfoElement(NetconfRpcErrorInfo elementName, String elementTextContent) {
         m_errorInfoElements.add(new Pair<Object, String>(elementName, elementTextContent));
         return this;
     }
-
+    
     public NetconfRpcError addErrorInfoElements(List<Pair<String, String>> errorInfoElements) {
-        for (Pair<String, String> element : errorInfoElements) {
+        for (Pair<String,String> element:errorInfoElements) {
             m_errorInfoElements.add(new Pair<Object, String>(element.getFirst(), element.getSecond()));
         }
         return this;
@@ -262,32 +256,25 @@ public class NetconfRpcError {
     }
 
     public static NetconfRpcError getUnknownElementError(String unknownElementName, NetconfRpcErrorType errorType) {
-        return new NetconfRpcError(NetconfRpcErrorTag.UNKNOWN_ELEMENT, errorType, NetconfRpcErrorSeverity.Error,
-                String.format(
+        return new NetconfRpcError(NetconfRpcErrorTag.UNKNOWN_ELEMENT, errorType, NetconfRpcErrorSeverity.Error, String.format(
                 NetconfRpcErrorMessages.AN_UNEXPECTED_ELEMENT_S_IS_PRESENT, unknownElementName)).addErrorInfoElement(
                 NetconfRpcErrorInfo.BadElement, unknownElementName);
     }
 
     public static NetconfRpcError getBadElementError(String badElementName, NetconfRpcErrorType errorType) {
-        return new NetconfRpcError(NetconfRpcErrorTag.BAD_ELEMENT, errorType, NetconfRpcErrorSeverity.Error, String
-                .format(
+        return new NetconfRpcError(NetconfRpcErrorTag.BAD_ELEMENT, errorType, NetconfRpcErrorSeverity.Error, String.format(
                 NetconfRpcErrorMessages.AN_UNEXPECTED_ELEMENT_S_IS_PRESENT, badElementName)).addErrorInfoElement(
                 NetconfRpcErrorInfo.BadElement, badElementName);
     }
 
-    public static NetconfRpcError getUnknownNamespaceError(String badNamespace, String badElement,
-                                                           NetconfRpcErrorType errorType) {
-        return new NetconfRpcError(NetconfRpcErrorTag.UNKNOWN_NAMESPACE, errorType, NetconfRpcErrorSeverity.Error,
-                String.format(
+    public static NetconfRpcError getUnknownNamespaceError(String badNamespace, String badElement, NetconfRpcErrorType errorType) {
+        return new NetconfRpcError(NetconfRpcErrorTag.UNKNOWN_NAMESPACE, errorType, NetconfRpcErrorSeverity.Error, String.format(
                 NetconfRpcErrorMessages.AN_UNEXPECTED_NAMESPACE_S_IS_PRESENT, badNamespace)).addErrorInfoElement(
-                NetconfRpcErrorInfo.BadNamespace, badNamespace).addErrorInfoElement(NetconfRpcErrorInfo.BadElement,
-                badElement);
+                NetconfRpcErrorInfo.BadNamespace, badNamespace).addErrorInfoElement(NetconfRpcErrorInfo.BadElement, badElement);
     }
 
-    public static NetconfRpcError getMissingElementError(List<String> missingAttributes, NetconfRpcErrorType
-            errorType) {
-        NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ELEMENT, errorType,
-                NetconfRpcErrorSeverity.Error,
+    public static NetconfRpcError getMissingElementError(List<String> missingAttributes, NetconfRpcErrorType errorType) {
+        NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ELEMENT, errorType, NetconfRpcErrorSeverity.Error,
                 String.format(NetconfRpcErrorMessages.EXPECTED_ELEMENTS_IS_MISSING, missingAttributes));
         for (String missingAtt : missingAttributes) {
             error.addErrorInfoElement(NetconfRpcErrorInfo.BadElement, missingAtt);
@@ -296,8 +283,7 @@ public class NetconfRpcError {
     }
 
     public static NetconfRpcError getMisplacedKeyError(List<String> misplacedKeys, NetconfRpcErrorType errorType) {
-        NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ELEMENT, errorType,
-                NetconfRpcErrorSeverity.Error,
+        NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ELEMENT, errorType, NetconfRpcErrorSeverity.Error,
                 String.format(NetconfRpcErrorMessages.EXPECTED_KEYS_IS_MISPLACED, misplacedKeys));
         for (String misplacedKey : misplacedKeys) {
             error.addErrorInfoElement(NetconfRpcErrorInfo.BadElement, misplacedKey);
@@ -306,8 +292,7 @@ public class NetconfRpcError {
     }
 
     public static NetconfRpcError getMissingKeyError(List<String> missingKeys, NetconfRpcErrorType errorType) {
-        NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ELEMENT, errorType,
-                NetconfRpcErrorSeverity.Error,
+        NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ELEMENT, errorType, NetconfRpcErrorSeverity.Error,
                 String.format(NetconfRpcErrorMessages.EXPECTED_KEYS_IS_MISSING, missingKeys));
         for (String missingKey : missingKeys) {
             error.addErrorInfoElement(NetconfRpcErrorInfo.BadElement, missingKey);
@@ -315,16 +300,20 @@ public class NetconfRpcError {
         return error;
     }
 
-    public static NetconfRpcError getBadAttributeError(String badAttributeName, NetconfRpcErrorType errorType, String
-            rfcMessageError) {
-        return new NetconfRpcError(NetconfRpcErrorTag.BAD_ATTRIBUTE, NetconfRpcErrorType.Application,
-                NetconfRpcErrorSeverity.Error,
+    public static NetconfRpcError getDuplicateKeyError(List<String> duplicateKeys, NetconfRpcErrorType errorType) {
+        NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.BAD_ELEMENT, errorType, NetconfRpcErrorSeverity.Error,
+                String.format(NetconfRpcErrorMessages.DUPLICATE_KEYS_IS_PRESENT, duplicateKeys));
+        duplicateKeys.forEach(duplicateKey -> error.addErrorInfoElement(NetconfRpcErrorInfo.BadElement, duplicateKey));
+        return error;
+    }
+
+    public static NetconfRpcError getBadAttributeError(String badAttributeName, NetconfRpcErrorType errorType, String rfcMessageError) {
+        return new NetconfRpcError(NetconfRpcErrorTag.BAD_ATTRIBUTE, NetconfRpcErrorType.Application, NetconfRpcErrorSeverity.Error,
                 rfcMessageError).addErrorInfoElement(NetconfRpcErrorInfo.BadAttribute, badAttributeName);
     }
 
     public static NetconfRpcError getApplicationError(String errorMsg) {
-        return new NetconfRpcError(NetconfRpcErrorTag.OPERATION_FAILED, NetconfRpcErrorType.Application,
-                NetconfRpcErrorSeverity.Error,
+        return new NetconfRpcError(NetconfRpcErrorTag.OPERATION_FAILED, NetconfRpcErrorType.Application, NetconfRpcErrorSeverity.Error,
                 errorMsg);
     }
 }

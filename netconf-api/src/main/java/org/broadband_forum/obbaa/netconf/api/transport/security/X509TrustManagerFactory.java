@@ -18,14 +18,13 @@ package org.broadband_forum.obbaa.netconf.api.transport.security;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-
 import java.security.Provider;
 
 /**
- * A X509 TrustManagerFactory which lets the users supply an implementation of {@link TrustManager} via
- * {@link X509TrustManagerFactorySpi}.
+ * A X509 TrustManagerFactory which lets the users supply an implementation of {@link TrustManager} via {@link X509TrustManagerFactorySpi}.
+ * 
  *
- * @author keshava
+ * 
  */
 public class X509TrustManagerFactory extends TrustManagerFactory {
 

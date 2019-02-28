@@ -15,25 +15,25 @@
  */
 
 /**
- *
+ * 
  */
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Element;
 
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 /**
- * NotificationComplete is a notification message used inform netconf client that notification subscription is
- * stopped as stop time
+ * NotificationComplete is a notification message used inform netconf client that notification subscription is stopped as stop time
  * specified in subscription requrest expires.
+ * 
  *
- * @author gnanavek
+ * 
  */
 public class NotificationComplete extends NetconfNotification {
-
+    
     public static final QName TYPE = QName.create(NetconfResources.NC_NOTIFICATION_NS, "notificationComplete");
 
     /**
@@ -47,7 +47,7 @@ public class NotificationComplete extends NetconfNotification {
         Element replayComplete = new PojoToDocumentTransformer().newNotificationCompleteElement();
         setNotificationElement(replayComplete);
     }
-
+    
     @Override
     public QName getType() {
         return TYPE;

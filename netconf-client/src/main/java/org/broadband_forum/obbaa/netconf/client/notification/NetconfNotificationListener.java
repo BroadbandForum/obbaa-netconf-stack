@@ -16,9 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.client.notification;
 
+import org.apache.log4j.Logger;
+
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
-import org.apache.log4j.Logger;
 
 public class NetconfNotificationListener implements NotificationListener {
     private static final Logger LOGGER = Logger.getLogger(NetconfNotificationListener.class);

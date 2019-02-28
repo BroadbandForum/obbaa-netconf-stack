@@ -25,7 +25,7 @@
         maxElementsInMemory="1000"
         maxElementsOnDisk="10000"
         overflowToDisk="false"
-        diskPersistent="true"
+        diskPersistent="false"
         timeToLiveSeconds="300"
         timeToIdleSeconds="120"
         memoryStoreEvictionPolicy="LFU"

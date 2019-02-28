@@ -19,6 +19,5 @@ package org.broadband_forum.obbaa.netconf.api.client;
 import java.security.cert.X509Certificate;
 
 public interface CallHomeListener {
-    public void connectionEstablished(NetconfClientSession clientSession, NetconfLoginProvider netconfLoginProvider,
-                                      X509Certificate peerX509Certificate, boolean isSelfSigned);
+    public void connectionEstablished(NetconfClientSession clientSession, NetconfLoginProvider netconfLoginProvider, X509Certificate peerX509Certificate, boolean isSelfSigned);
 }

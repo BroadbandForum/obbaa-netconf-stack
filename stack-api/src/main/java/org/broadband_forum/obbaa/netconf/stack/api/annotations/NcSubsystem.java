@@ -27,9 +27,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface NcSubsystem {
-    String[] yangFilePaths() default {};
-
+    String [] yangFilePaths() default {};
     String yangModule();
-
     String defaultXMLFilePath() default "";
 }

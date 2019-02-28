@@ -16,6 +16,11 @@
 
 package org.broadband_forum.obbaa.netconf.api.client;
 
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
@@ -32,42 +37,34 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.Set;
-import java.util.concurrent.Future;
+import org.w3c.dom.Element;
 
 /**
- * A session given to netconf clients, can be used to send netconf messages to a netconf server. Following is an
- * example on how to build a
+ * A session given to netconf clients, can be used to send netconf messages to a netconf server. Following is an example on how to build a
  * lock request and send the message to the server.
- * <p>
+ *
  * <pre>
- * NetconfClientSession session = ... //get the session using the client dispatcher. See implementations of
- * {@link NetconfClientDispatcher} to find out how to get a NetconfClientSession.
+ * NetconfClientSession session = ... //get the session using the client dispatcher. See implementations of {@link NetconfClientDispatcher} to find out how to get a NetconfClientSession.
  * LockRequest lockReq = new LockRequest().setTarget("running");
  * NetConfResponse res = session.lock(lockReq).get();
  *
- * @author keshava
+ *
  */
 public interface NetconfClientSession {
 
-    public static final String GET_METHOD = "get";
-    public static final String TYPE = "type";
-    public static final String GET_CONFIG_METHOD = "getConfig";
-    public static final String EDIT_CONFIG_METHOD = "editConfig";
-    public static final String COPY_CONFIG_METHOD = "copyConfig";
-    public static final String RPC_METHOD = "rpc";
-    public static int DEFAULT_KEEP_ALIVE_PROBES = 3;
-    public static long DEFAULT_KEEP_ALIVE_TIMEOUT_MILLIS = 10000;
-    public static final long DEFAULT_CONNECT_TIMEOUT_SECS = 10L;
+    String GET_METHOD = "get";
+    String TYPE = "type";
+    String GET_CONFIG_METHOD = "getConfig";
+    String EDIT_CONFIG_METHOD = "editConfig";
+    String COPY_CONFIG_METHOD = "copyConfig";
+    String RPC_METHOD = "rpc";
+    long DEFAULT_CONNECT_TIMEOUT_SECS = 10L;
 
     void setMessageId(AbstractNetconfRequest request);
 
     /**
      * Perform Netconf <get-config> operation.
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -92,8 +89,7 @@ public interface NetconfClientSession {
      * --------------------------------
      *  GetConfigFilter filter = new GetConfigFilter()
      *                                   .setType("subtree")
-     *                                   .setXmlFilters(DocumentUtils.getInstance().getElementByName(requestDocument,
-     *                                   "top"));//Add the Element "top" here
+     *                                   .setXmlFilters(DocumentUtils.getInstance().getElementByName(requestDocument, "top"));//Add the Element "top" here
      *  GetConfigRequest request = new GetConfigRequest()
      *                                   .setSourceRunning()
      *                                   .setFilter(filter);
@@ -104,11 +100,11 @@ public interface NetconfClientSession {
      * @return A Future reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> getConfig(GetConfigRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> getConfig(GetConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <edit-config>}operation.
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -138,12 +134,11 @@ public interface NetconfClientSession {
      * --------------------------------
      * Corresponding NetconfRequest
      * --------------------------------
-     *  List<{@link EditConfigElement }> configElements = new ArrayList<>();
+     *  List<{@link EditConfigElement}> configElements = new ArrayList<>();
      *  {@link EditConfigElement} configElement = new EditConfigElement();
-     *  configElement.setConfigElementContent(confgurationElement);//Set <configuration> org.w3c.dom.Element as
-     *  content here
+     *  configElement.setConfigElementContent(confgurationElement);//Set <configuration> org.w3c.dom.Element as content here
      *  configElements.add(configElement);
-     *  {@link EditConfigRequest } request = new EditConfigRequest()
+     *  {@link EditConfigRequest} request = new EditConfigRequest()
      *                                       .setTargetRunning()
      *                                       .setTestOption(EditConfigTestOptions.TEST_THEN_SET)
      *                                       .setErrorOption(EditConfigErrorOptions.ROLLBACK_ON_ERROR)
@@ -153,14 +148,14 @@ public interface NetconfClientSession {
      * </pre>
      *
      * @param request {@link EditConfigRequest} containing request parameters.
-     * @return A Future reference to get the response.
+     * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException if the the request is not valid.
      */
-    public Future<NetConfResponse> editConfig(EditConfigRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> editConfig(EditConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code<copy-config>} operation.
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -188,14 +183,14 @@ public interface NetconfClientSession {
      *  }
      *
      *  @param request {@link CopyConfigRequest}
-     *  @return A Future reference to get the response.
+     *  @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> copyConfig(CopyConfigRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> copyConfig(CopyConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code<delete-config>} operation. <b>Example:</b>
-     * <p>
+     *
      * <pre>
      * {@code
      * --------------------------------
@@ -216,14 +211,14 @@ public interface NetconfClientSession {
      * NetConfResponse respone = session.deleteConfig(request).get();
      * }
      *  @param request {@link DeleteConfigRequest}
-     *  @return A Future reference to get the response.
+     *  @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> deleteConfig(DeleteConfigRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> deleteConfig(DeleteConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <lock>} operation
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -247,14 +242,14 @@ public interface NetconfClientSession {
      * </pre>
      *
      * @param request {@link LockRequest}
-     * @return A Future reference to get the response.
+     * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> lock(LockRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> lock(LockRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <unlock>} operation
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -277,14 +272,14 @@ public interface NetconfClientSession {
      *  NetConfResponse respone = session.unlock(request).get();
      *  }
      *  @param request {@link UnLockRequest}
-     *  @return A Future reference to get the response.
+     *  @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> unlock(UnLockRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> unlock(UnLockRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <get>} operation.
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -309,21 +304,20 @@ public interface NetconfClientSession {
      * --------------------------------
      *  NetconfFilter filter = new NetconfFilter()
      *                                    .setType("subtree")
-     *                                    .setXmlFilters(DocumentUtils.getInstance().getElementByName
-     *                                    (requestDocument, "top"));
+     *                                    .setXmlFilters(DocumentUtils.getInstance().getElementByName(requestDocument, "top"));
      *  GetRequest request = new GetRequest().setFilter(filter);
      *  NetConfResponse response = session.get(request).get();}
      * </pre>
      *
      * @param request {@link GetRequest}
-     * @return A Future reference to get the response.
+     * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> get(GetRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> get(GetRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <rpc>} operation.
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -348,10 +342,10 @@ public interface NetconfClientSession {
      * </pre>
      *
      * @param request {@link NetconfRpcRequest}
-     * @return A Future reference to get the response.
+     * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> rpc(NetconfRpcRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> rpc(NetconfRpcRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Method to send a RPC Message directly without using Message POJOs.
@@ -360,11 +354,11 @@ public interface NetconfClientSession {
      * @return
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> sendRpc(AbstractNetconfRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> sendRpc(AbstractNetconfRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <create-subscription>} operation.
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -386,13 +380,12 @@ public interface NetconfClientSession {
      * @return
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> createSubscription(CreateSubscriptionRequest request, NotificationListener
-            notificationListener)
+    CompletableFuture<NetConfResponse> createSubscription(CreateSubscriptionRequest request, NotificationListener notificationListener)
             throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <close-session> } operation.
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -411,14 +404,14 @@ public interface NetconfClientSession {
      * </pre>
      *
      * @param request {@link CloseSessionRequest}
-     * @return A Future reference to get the response.
+     * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> closeSession(CloseSessionRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> closeSession(CloseSessionRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <kill-session> } operation
-     * <p>
+     *
      * <pre>
      * <b>Example:</b>
      * {@code
@@ -440,24 +433,23 @@ public interface NetconfClientSession {
      * </pre>
      *
      * @param request
-     * @return A Future reference to get the response.
+     * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    public Future<NetConfResponse> killSession(KillSessionRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> killSession(KillSessionRequest request) throws NetconfMessageBuilderException;
 
-    public Future<NetConfResponse> action(ActionRequest request) throws NetconfMessageBuilderException;
+    CompletableFuture<NetConfResponse> action(ActionRequest request) throws NetconfMessageBuilderException;
 
     /**
-     * Get the capability of the connected server. The capabilities are exchanged during session establishment via
-     * netconf {@code <hello>}
+     * Get the capability of the connected server. The capabilities are exchanged during session establishment via netconf {@code <hello>}
      * message.
-     * <p>
+     *
      * <pre>
      * See RFC 6242 section-8.
      * </pre>
      *
      * @param capability - fully formatted capability name For example :
-     *                   <p>
+     *
      *                   <pre>
      *                   1. "urn:ietf:params:netconf:capability:startup:1.0"
      *                   2. "http://example.net/router/2.3/myfeature"
@@ -465,7 +457,7 @@ public interface NetconfClientSession {
      *                   </pre>
      * @return true if the server has the given capability, false otherwise.
      */
-    public boolean getServerCapability(String capability);
+    boolean getServerCapability(String capability);
 
     /**
      * Get session identifier of the NETCONF session. This session identifier is set by the netconf server during
@@ -473,18 +465,18 @@ public interface NetconfClientSession {
      *
      * @return current session id
      */
-    public int getSessionId();
+    int getSessionId();
 
-    public void addSessionListener(NetconfClientSessionListener listener);
+    void addSessionListener(NetconfClientSessionListener listener);
 
-    public void sessionClosed();
+    void sessionClosed();
 
     /**
      * call home device client session needs to provide remote address to map into deviceId configuration in pma
      *
      * @return
      */
-    public SocketAddress getRemoteAddress();
+    SocketAddress getRemoteAddress();
 
     /**
      * If call home device remote address does not resolve to device Id, then close session.
@@ -493,42 +485,21 @@ public interface NetconfClientSession {
      *
      * @throws InterruptedException
      */
-    public void close() throws InterruptedException, IOException;
+    void close() throws InterruptedException, IOException;
 
     void closeAsync();
 
     /**
-     * Get the capabilities of the connected server. The capabilities are exchanged during session establishment via
-     * netconf {@code <hello>}
+     * Get the capabilities of the connected server. The capabilities are exchanged during session establishment via netconf {@code <hello>}
      * message.
      *
      * @return
      */
-    public Set<String> getServerCapabilities();
-
-    /**
-     * Sends a transport specific keep-alive message.
-     * Throws a {@link IOException} if a response is not received within specified timeout.
-     *
-     * @param timeout - the timeout for response for a keep-alive message.
-     */
-    public void sendHeartBeat(long timeout) throws InterruptedException, IOException;
+    Set<String> getServerCapabilities();
 
     boolean isOpen();
 
     long getCreationTime();
-
-    /**
-     * Increments the number of successviely failed keep-alive attempt.
-     *
-     * @return
-     */
-    int incrementAndGetFailedKACount();
-
-    /**
-     * Resets the KA Failure counter to 0.
-     */
-    void resetKAFailureCount();
 
     /**
      * The time in milli seconds when the last data was sent.
@@ -537,5 +508,9 @@ public interface NetconfClientSession {
      */
     long getIdleTimeStart();
 
+    void setTcpKeepAlive(boolean keepAlive);
+
     void closeGracefully() throws IOException;
+
+    NetconfClientSession getType();
 }

@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.junit.Assert.assertEquals;
@@ -25,8 +9,10 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreValidator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TxService;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -45,6 +31,9 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcResponse;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
+
 import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
 
 /**
@@ -56,16 +45,16 @@ public class NetconfServerWithSchemaValidationTest {
     private SchemaRegistry m_mockSchemaRegistry;
     private NetconfClientInfo m_clientInfo = new NetconfClientInfo("UT", 1);
 
-    private List<Element> getElements() {
-        List<Element> elements = new ArrayList<Element>();
+	private List<Element> getElements() {
+		List<Element> elements = new ArrayList<Element>();
         Document document = DocumentUtils.createDocument();
-        Element element = document.createElementNS("ns", "config");
+        Element element  = document.createElementNS("ns", "config");
         elements.add(element);
-        return elements;
-    }
-
+		return elements;
+	}
+    
     @Before
-    public void setUp() {
+    public void setUp(){
         m_mockEditcofigValidator = mock(RpcRequestConstraintParser.class);
         m_mockSchemaRegistry = mock(SchemaRegistry.class);
         m_server = new NetConfServerImpl(m_mockSchemaRegistry, m_mockEditcofigValidator);
@@ -80,14 +69,12 @@ public class NetconfServerWithSchemaValidationTest {
         when(element.getConfigElementContents()).thenReturn(elements);
         when(element.getXmlElement()).thenReturn(dummyElement);
         request.setConfigElement(element);
-
+        
         request.setMessageId("1");
-
-        NetconfRpcError error = NetconfRpcErrorUtil.getNetconfRpcError(NetconfRpcErrorTag.ACCESS_DENIED,
-                NetconfRpcErrorType.Application, NetconfRpcErrorSeverity.Warning, "message");
-        doThrow(new ValidationException(error)).when(m_mockEditcofigValidator).validate(request, RequestType
-                .EDIT_CONFIG);
-
+        
+        NetconfRpcError error = NetconfRpcErrorUtil.getNetconfRpcError(NetconfRpcErrorTag.ACCESS_DENIED, NetconfRpcErrorType.Application, NetconfRpcErrorSeverity.Warning, "message");
+        doThrow(new ValidationException(error)).when(m_mockEditcofigValidator).validate(request, RequestType.EDIT_CONFIG);
+       
         NetConfResponse response = new NetConfResponse();
         m_server.onEditConfig(m_clientInfo, request, response);
         assertFalse(response.isOk());
@@ -104,6 +91,11 @@ public class NetconfServerWithSchemaValidationTest {
 
     @Test
     public void testRpcRequestIsValidated() throws ValidationException {
+        RootModelNodeAggregator aggregator = mock(RootModelNodeAggregator.class);
+        SubSystemRegistry subSysRegistry = mock(SubSystemRegistry.class);
+        DataStoreValidator validator = mock(DataStoreValidator.class);
+        DataStore datastore = new DataStore("test", aggregator, subSysRegistry, validator, new TxService(), null);
+        m_server.setRunningDataStore(datastore);
         m_server.setRpcRequestHandlerRegistry(mock(RpcRequestHandlerRegistry.class));
         NetconfRpcRequest request = new NetconfRpcRequest();
         request.setRpcInput(getElements().get(0));
@@ -113,6 +105,4 @@ public class NetconfServerWithSchemaValidationTest {
         request.setMessageId("1");
         m_server.onRpc(m_clientInfo, request, response);
     }
-
-
 }

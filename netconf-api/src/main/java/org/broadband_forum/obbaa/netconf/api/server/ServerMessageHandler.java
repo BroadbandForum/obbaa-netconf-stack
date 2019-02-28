@@ -24,4 +24,6 @@ import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
  */
 public interface ServerMessageHandler {
     void processRequest(NetconfClientInfo clientInfo, AbstractNetconfRequest request, ResponseChannel channel);
+    NetconfServerMessageListener getServerMessageListener();
+    void setServerMessageListener(NetconfServerMessageListener listener);
 }

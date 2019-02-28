@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><module xmlns="urn:ietf:params:xml:ns:yang:yin:1" xmlns:test-deviation-module-dev="urn:opendaylight:test-deviation-module-dev" xmlns:test-deviation-module="urn:opendaylight:test-deviation-module" name="test-deviation-module-dev">
+    <yang-version value="1"/>
+    <namespace uri="urn:opendaylight:test-deviation-module-dev"/>
+    <prefix value="test-deviation-module-dev"/>
+    <import module="test-deviation-module">
+        <prefix value="test-deviation-module"/>
+        <revision-date date="2017-10-11"/>
+    </import>
+    <revision date="2017-10-11"/>
+    <deviation target-node="/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-add">
+        <deviate value="add">
+            <default value="defaultValue"/>
+        </deviate>
+    </deviation>
+    <deviation target-node="/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-delete">
+        <deviate value="delete">
+            <default value="1"/>
+        </deviate>
+    </deviation>
+    <deviation target-node="/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-not-supported">
+        <deviate value="not-supported"/>
+    </deviation>
+    <deviation target-node="/test-deviation-module:top-test-container/test-deviation-module:test-leaf-for-replace">
+        <deviate value="replace">
+            <mandatory value="false"/>
+            <type name="int64">
+                <range value="0..1000"/>
+            </type>
+        </deviate>
+    </deviation>
+    <deviation target-node="/test-deviation-module:top-test-container/test-deviation-module:test-leaflist-for-add">
+        <deviate value="add">
+            <max-elements value="2"/>
+            <min-elements value="1"/>
+        </deviate>
+    </deviation>
+</module>

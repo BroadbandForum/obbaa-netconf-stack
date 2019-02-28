@@ -20,36 +20,36 @@ import org.junit.Test;
 
 public class KeyManagerInitExceptionTest {
 
-    @Test(expected = KeyManagerInitException.class)
-    public void testKeyManagerInitException() throws KeyManagerInitException {
+	@Test(expected = KeyManagerInitException.class)
+	public void testKeyManagerInitException() throws KeyManagerInitException {
 
-        throw new KeyManagerInitException();
-    }
+		throw new KeyManagerInitException();
+	}
 
-    @Test(expected = KeyManagerInitException.class)
-    public void testKeyManagerInitExceptionwithMessage() throws KeyManagerInitException {
+	@Test(expected = KeyManagerInitException.class)
+	public void testKeyManagerInitExceptionwithMessage() throws KeyManagerInitException {
 
-        throw new KeyManagerInitException("Invalid private key");
-    }
+		throw new KeyManagerInitException("Invalid private key");
+	}
 
-    @Test(expected = KeyManagerInitException.class)
-    public void testKeyManagerInitExceptionwithThrowable() throws KeyManagerInitException {
+	@Test(expected = KeyManagerInitException.class)
+	public void testKeyManagerInitExceptionwithThrowable() throws KeyManagerInitException {
 
-        throw new KeyManagerInitException(new Throwable());
-    }
+		throw new KeyManagerInitException(new Throwable());
+	}
 
-    @Test(expected = KeyManagerInitException.class)
-    public void testKeyManagerInitException2() throws KeyManagerInitException {
+	@Test(expected = KeyManagerInitException.class)
+	public void testKeyManagerInitException2() throws KeyManagerInitException {
 
-        throw new KeyManagerInitException("Invalid private key", new Throwable());
-    }
+		throw new KeyManagerInitException("Invalid private key", new Throwable());
+	}
 
-    @Test(expected = KeyManagerInitException.class)
-    public void testKeyManagerInitException3() throws KeyManagerInitException {
+	@Test(expected = KeyManagerInitException.class)
+	public void testKeyManagerInitException3() throws KeyManagerInitException {
 
-        boolean enableSuppression = true;
-        boolean writableStackTrace = true;
-        throw new KeyManagerInitException("Invalid private key", new Throwable(), enableSuppression,
-                writableStackTrace);
-    }
+		boolean enableSuppression = true;
+		boolean writableStackTrace = true;
+		throw new KeyManagerInitException("Invalid private key", new Throwable(), enableSuppression,
+				writableStackTrace);
+	}
 }

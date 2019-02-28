@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
- * This class is used to test notification automation drivers
+ * This class is used to test notification automation drivers 
  * Created by nhtoan on 3/23/16.
  */
 public class AutomationTest {
@@ -43,8 +43,7 @@ public class AutomationTest {
         caps.add("urn:ietf:params:netconf:capability:writable-running:1.0");
         try {
             // client session
-            NetconfClientSession clientSession = NetconfClientSessionFactory.createSSHClientSession("192.168.95.175",
-                    9292, 0, "SSH",
+            NetconfClientSession clientSession = NetconfClientSessionFactory.createSSHClientSession("192.168.95.175", 9292, 0, "SSH",
                     "123456", caps);
             Set<String> serCaps = clientSession.getServerCapabilities();
             for (String serCap : serCaps) {
@@ -57,13 +56,11 @@ public class AutomationTest {
             NotificationQueue queue = new NotificationQueue();
             Document createSubscriptionRequest = DocumentUtils.loadXmlDocument(AutomationTest.class
                     .getResourceAsStream("/create-subscription.xml"));
-            String response = netconfDriver.sendCreateSubscriptionRequest(DocumentUtils.prettyPrint
-                    (createSubscriptionRequest), queue, null);
+            String response = netconfDriver.sendCreateSubscriptionRequest(DocumentUtils.prettyPrint(createSubscriptionRequest), queue, null);
             System.out.println("Create-Subscription response: " + response);
 
             // send edit-config
-            Document editRequest = DocumentUtils.loadXmlDocument(AutomationTest.class.getResourceAsStream
-                    ("/edit-request.xml"));
+            Document editRequest = DocumentUtils.loadXmlDocument(AutomationTest.class.getResourceAsStream("/edit-request.xml"));
             String editResponse = netconfDriver.sendEditConfigRequest(DocumentUtils.prettyPrint(editRequest), null);
             System.out.println("Edit Something: " + editResponse);
 
@@ -78,8 +75,7 @@ public class AutomationTest {
             }
 
             // send edit-config to remove
-            Document removeRequest = DocumentUtils.loadXmlDocument(AutomationTest.class.getResourceAsStream
-                    ("/remove-request.xml"));
+            Document removeRequest = DocumentUtils.loadXmlDocument(AutomationTest.class.getResourceAsStream("/remove-request.xml"));
             String removeResponse = netconfDriver.sendEditConfigRequest(DocumentUtils.prettyPrint(removeRequest), null);
             System.out.println("Remove the change: " + removeResponse);
 
@@ -93,8 +89,7 @@ public class AutomationTest {
             // close session
             Document closeSessionRequest = DocumentUtils.loadXmlDocument(AutomationTest.class
                     .getResourceAsStream("/closeSessionRequest.xml"));
-            String closeResponce = netconfDriver.sendCloseSessionRequest(DocumentUtils.prettyPrint
-                    (closeSessionRequest), null);
+            String closeResponce = netconfDriver.sendCloseSessionRequest(DocumentUtils.prettyPrint(closeSessionRequest), null);
             if (null != closeResponce) {
                 LOGGER.info("Close connection: " + closeResponce);
             }

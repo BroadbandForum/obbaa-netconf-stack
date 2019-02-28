@@ -19,12 +19,16 @@ package org.broadband_forum.obbaa.netconf.server;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
 
+import java.util.concurrent.CompletableFuture;
+
 public abstract class AbstractResponseChannel implements ResponseChannel {
     private boolean m_isSessionClosed = false;
+    private CompletableFuture<Boolean> m_closeFuture = new CompletableFuture<>();
 
     @Override
     public void markSessionClosed() {
         m_isSessionClosed = true;
+        m_closeFuture.complete(Boolean.TRUE);
     }
 
     @Override
@@ -34,5 +38,10 @@ public abstract class AbstractResponseChannel implements ResponseChannel {
 
     @Override
     public void sendNotification(Notification notification) {
+    }
+
+    @Override
+    public CompletableFuture<Boolean> getCloseFuture() {
+        return m_closeFuture;
     }
 }

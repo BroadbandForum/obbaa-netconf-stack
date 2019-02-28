@@ -1,0 +1,10 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-list-multikeys">
+    <library>
+        <artist>
+            <album>
+                <name>Greatest hits</name>
+                <song/>
+            </album>
+        </artist>
+    </library>
+</jukebox>

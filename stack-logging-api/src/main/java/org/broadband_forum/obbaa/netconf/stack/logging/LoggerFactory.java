@@ -18,9 +18,6 @@ package org.broadband_forum.obbaa.netconf.stack.logging;
 
 import java.lang.reflect.Proxy;
 
-/**
- * Created by kbhatk on 10/30/17.
- */
 public class LoggerFactory {
     private static AdvancedLoggerFactory LOGGER_FACTORY = new DefaultLoggerFactoryImpl();
 
@@ -31,8 +28,8 @@ public class LoggerFactory {
     public static void setLoggerFactory(AdvancedLoggerFactory advancedLogger) {
         LoggerFactory.LOGGER_FACTORY = advancedLogger;
     }
-
     public static AdvancedLogger getLogger(Class klass, String application, String logType, String logScope) {
+
         return LOGGER_FACTORY.getLogger(klass, application, logType, logScope);
     }
 
@@ -44,7 +41,7 @@ public class LoggerFactory {
         @Override
         public AdvancedLogger getLogger(String category, String application, String logType, String logScope) {
             return (AdvancedLogger) Proxy.newProxyInstance(AdvancedLogger.class.getClassLoader(),
-                    new Class[]{AdvancedLogger.class}, new DefaultLogger(category));
+                    new Class[] { AdvancedLogger.class }, new DefaultLogger(category));
         }
 
         @Override

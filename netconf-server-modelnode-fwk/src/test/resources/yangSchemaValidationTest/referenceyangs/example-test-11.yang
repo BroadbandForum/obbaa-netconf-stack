@@ -14,7 +14,7 @@ module example-test-11 {
     description
       "Example Data Model Module";
 
-    revision "2017-14-02" {
+    revision "2017-02-14" {
       description "Initial version.";
       reference
         "example.com document 1-4673";
@@ -31,6 +31,26 @@ module example-test-11 {
           description
             "Time gap between each song";
         }
+        
+        action container-action {
+            input {
+                leaf container-action-leaf {
+                    type string;
+                }
+            }
+        }
+        
+        notification container-notification {
+            leaf container-notification-leaf {
+                type string;
+            }
+        }
     }  // container player
+    
+    notification root-notification {
+        leaf root-notification-leaf {
+            type string;
+        }
+    }
 
   }  // module example-test-11

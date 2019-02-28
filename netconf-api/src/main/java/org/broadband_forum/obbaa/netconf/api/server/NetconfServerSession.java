@@ -19,10 +19,9 @@ package org.broadband_forum.obbaa.netconf.api.server;
 public interface NetconfServerSession {
     /**
      * Stops the netconf server completely. This means all netconf client sessions will be closed.
-     *
-     * @param waitForTermination - if set to true, the scall will not return immediately, it will wait untill all
-     *                           resources are gracefully
-     *                           closed.
+     * 
+     * @param waitForTermination - if set to true, the scall will not return immediately, it will wait untill all resources are gracefully
+     *            closed.
      */
     public void killServer(boolean waitForTermination);
 }

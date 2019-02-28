@@ -30,9 +30,9 @@ public class InvalidClientConfigurationTest {
     public void testSSHNCClientWithInvalidTransport() throws Exception {
         NetconfTransportOrder transportOrder = new NetconfTransportOrder();
         transportOrder.setTransportType(NetconfTransportProtocol.SSH.name());
-        try {
+        try{
             NetconfTransportFactory.makeNetconfTransport(transportOrder);
-        } catch (NetconfConfigurationBuilderException e) {
+        }catch (NetconfConfigurationBuilderException e){
             assertEquals("Invalid options server socket address is null ", e.getMessage());
         }
     }

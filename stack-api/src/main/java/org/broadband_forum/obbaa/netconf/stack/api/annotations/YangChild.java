@@ -29,7 +29,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(ElementType.FIELD)
 @Retention(RUNTIME)
 public @interface YangChild {
-    String name() default "";
+	String name() default "";
 
     String namespace() default "";
 

@@ -25,32 +25,22 @@ import org.junit.Test;
 
 public class SuccessInfoTest {
 
-    private static final String IP_ADDRESS = "127.0.0.1";
-    private static final int PORT = 1234;
-    private SuccessInfo m_successInfo;
+	private static final String IP_ADDRESS = "127.0.0.1";
+	private static final int PORT = 1234;
+	private SuccessInfo m_successInfo;
 
-    @Before
-    public void setUp() {
-        m_successInfo = new SuccessInfo().setIp(IP_ADDRESS).setPort(PORT).setPeerCertificate(null);
-    }
+	@Before
+	public void setUp() {
+		m_successInfo = new SuccessInfo().setIp(IP_ADDRESS).setPort(PORT).setPeerCertificate(null);
+	}
 
-    @Test
-    public void testPojo() {
-        assertEquals(IP_ADDRESS, m_successInfo.getIp());
-        assertEquals(PORT, m_successInfo.getPort());
+	@Test
+	public void testPojo() {
+		assertEquals(IP_ADDRESS, m_successInfo.getIp());
+		assertEquals(PORT, m_successInfo.getPort());
 
-        assertNotEquals("127.0.0.2", m_successInfo.getIp());
-        assertNotEquals(124, m_successInfo.getPort());
-        assertNull(m_successInfo.getPeerCertificate());
-    }
-
-    @Test
-    public void testToString() {
-        SuccessInfo temp_successInfo = new SuccessInfo().setIp(IP_ADDRESS).setPort(PORT);
-        assertEquals(m_successInfo, temp_successInfo);
-        assertNotEquals(m_successInfo, null);
-
-        assertEquals("SuccessInfo [m_ip=" + m_successInfo.getIp() + ", m_port=" + m_successInfo.getPort() + "]",
-                m_successInfo.toString());
-    }
+		assertNotEquals("127.0.0.2", m_successInfo.getIp());
+		assertNotEquals(124, m_successInfo.getPort());
+		assertNull(m_successInfo.getPeerCertificate());
+	}
 }

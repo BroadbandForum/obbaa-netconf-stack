@@ -1,0 +1,16 @@
+module mgmt-jukebox {
+    yang-version 1;
+
+    namespace
+        "http://example.com/ns/mgmt-jukebox";
+
+    prefix mgb;
+    container mgmt-jukebox-1 {
+        container genre-2 {
+            leaf name {
+                type string;
+            }
+        }
+    }
+
+}

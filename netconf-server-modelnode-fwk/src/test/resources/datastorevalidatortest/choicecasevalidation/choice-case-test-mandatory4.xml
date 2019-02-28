@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation xmlns="urn:org:bbf:pma:validation">
+    <mandatory-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+        <level1-list>
+        <name>TEST</name>
+        </level1-list>
+    </mandatory-validation>
+</validation>

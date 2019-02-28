@@ -21,6 +21,7 @@ import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.GetConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
+import org.broadband_forum.obbaa.netconf.server.QueuingMessageHandler;
 import org.junit.Test;
 
 import static org.mockito.Matchers.anyObject;
@@ -30,7 +31,7 @@ import static org.mockito.Mockito.verify;
 
 public class QueuingMessageHandlerTest {
     @Test
-    public void testProcessRequest() {
+    public void testProcessRequest(){
         NetconfServerMessageListener msgListener = mock(NetconfServerMessageListener.class);
         QueuingMessageHandler handler = new QueuingMessageHandler(msgListener);
         NetconfClientInfo clientInfo = mock(NetconfClientInfo.class);

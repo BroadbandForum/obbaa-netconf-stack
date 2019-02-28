@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.server;
 
 
+import org.broadband_forum.obbaa.netconf.server.AnvTracingUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -31,29 +32,28 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 public class AnvTracingUtilTest {
 
     @Test
-    public void testPollingRequest() throws NetconfMessageBuilderException {
+    public void testPollingRequest() throws NetconfMessageBuilderException{
         GetConfigRequest request = new GetConfigRequest();
         NetconfFilter filter = new NetconfFilter();
-        request.setFilter(filter);
+        request.setFilter(filter );
         boolean isPollingRequest = AnvTracingUtil.isEmptyRequest(request);
         Assert.assertTrue(isPollingRequest);
-
+        
         GetRequest getRequest = new GetRequest();
-        getRequest.setFilter(filter);
+        getRequest.setFilter(filter );
         isPollingRequest = AnvTracingUtil.isEmptyRequest(getRequest);
         Assert.assertFalse(isPollingRequest);
-
+        
         Document reqDoc = DocumentUtils.stringToDocument(getRequestMessage());
         isPollingRequest = AnvTracingUtil.isEmptyRequest(reqDoc, NetconfResources.GET_CONFIG);
         Assert.assertTrue(isPollingRequest);
-
+        
         isPollingRequest = AnvTracingUtil.isEmptyRequest(reqDoc, NetconfResources.GET);
         Assert.assertFalse(isPollingRequest);
     }
 
     private String getRequestMessage() {
-        return "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" " +
-                "message-id=\"13\"><get-config><source><running/></source><filter/></get-config></rpc>";
+        return "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"13\"><get-config><source><running/></source><filter/></get-config></rpc>";
     }
-
+    
 }

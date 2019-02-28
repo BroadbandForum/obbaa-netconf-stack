@@ -21,15 +21,15 @@ import java.util.Set;
 
 /**
  * An interface to authorize netconf operations.
- */
+ * */
 public interface NetconfServerAuthorizationHandler {
 
-    public boolean isPermitted(Serializable sessionId, String... permissions) throws Exception;
+    public boolean isPermitted(Serializable netconfClientSessionId, String... permissions) throws Exception;
 
-    public boolean isPermittedAll(Serializable sessionId, String... permissions) throws Exception;
-
+    public boolean isPermittedAll(Serializable netconfClientSessionId, String... permissions) throws Exception;
+    
     public boolean isPermitted(String username, String... permissions) throws Exception;
-
+    
     public boolean isPermittedAll(String username, String... permissions) throws Exception;
 
     public Set<String> getPermissions(String username) throws Exception;

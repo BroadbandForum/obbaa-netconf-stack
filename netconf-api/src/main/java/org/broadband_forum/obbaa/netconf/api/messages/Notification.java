@@ -16,10 +16,11 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public interface Notification extends CompletableMessage {
 
@@ -28,10 +29,10 @@ public interface Notification extends CompletableMessage {
     public Element getNotificationElement();
 
     Document getNotificationDocument() throws NetconfMessageBuilderException;
-
+    
     String notificationToString();
-
+    
     String notificationToPrettyString();
-
+    
     public QName getType();
 }

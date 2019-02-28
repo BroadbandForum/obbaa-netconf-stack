@@ -16,29 +16,32 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+
 /**
  * Netconf {@code <get-config>} {@code <filter>} element.
- *
- * @author keshava
+ * 
  * @see {@link GetConfigRequest}.
- * <p>
- * Netconf {@code <create-subscription>} {@code <filter>} element.
+ * 
+ *      Netconf {@code <create-subscription>} {@code <filter>} element.
  * @see {@link CreateSubscriptionRequest}.
+ * 
+ *
+ * 
  */
 public class NetconfFilter {
-
+    
     public static final String SUBTREE_TYPE = "subtree";
-
+    
     private String m_type;
-
+    
     private List<Element> m_xmlFilters = new ArrayList<>();
 
     public String getType() {
@@ -72,7 +75,7 @@ public class NetconfFilter {
     public Element getXmlFilter() {
         Document doc = DocumentUtils.createDocument();
         Element filter = doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.FILTER);
-        for (Element filterElement : m_xmlFilters) {
+        for(Element filterElement : m_xmlFilters){
             filter.appendChild(doc.importNode(filterElement, true));
         }
         return filter;

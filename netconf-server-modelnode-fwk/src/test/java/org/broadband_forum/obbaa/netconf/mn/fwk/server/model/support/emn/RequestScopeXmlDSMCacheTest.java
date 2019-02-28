@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static org.junit.Assert.assertEquals;
@@ -26,8 +10,6 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -39,6 +21,8 @@ import org.mockito.MockitoAnnotations;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 
 public class RequestScopeXmlDSMCacheTest {
 
@@ -61,39 +45,31 @@ public class RequestScopeXmlDSMCacheTest {
     @Mock
     private SchemaPath m_schemaPath;
 
-    private ModelNodeId m_nodeId = new ModelNodeId("/container=test1/container=test2", "http://test:ns");
+    private ModelNodeId m_nodeId =  new ModelNodeId("/container=test1/container=test2", "http://test:ns");
     @Mock
     private XmlModelNodeImpl m_node;
     @Mock
     private SchemaPath m_schemaPath1;
 
-    private ModelNodeId m_childNode1Id = new ModelNodeId("/container=test1/container=test2/container=test3",
-            "http://test:ns");
-    ;
+    private ModelNodeId m_childNode1Id = new ModelNodeId("/container=test1/container=test2/container=test3", "http://test:ns");;
     @Mock
     private XmlModelNodeImpl m_childNode1;
     @Mock
     private SchemaPath m_schemaPath2;
 
-    private ModelNodeId m_childNode2Id = new ModelNodeId("/container=test1/container=test2/container=test4",
-            "http://test:ns");
-    ;
+    private ModelNodeId m_childNode2Id = new ModelNodeId("/container=test1/container=test2/container=test4", "http://test:ns");;
     @Mock
     private XmlModelNodeImpl m_childNode2;
     @Mock
     private SchemaPath m_schemaPath3;
 
-    private ModelNodeId m_grandChildNode1Id = new ModelNodeId
-            ("/container=test1/container=test2/container=test4/container=test5", "http://test:ns");
-    ;
+    private ModelNodeId m_grandChildNode1Id = new ModelNodeId("/container=test1/container=test2/container=test4/container=test5", "http://test:ns");;
     @Mock
     private XmlModelNodeImpl m_grandChildNode1;
     @Mock
     private SchemaPath m_schemaPath4;
 
-    private ModelNodeId m_grandChildNode2Id = new ModelNodeId
-            ("/container=test1/container=test2/container=test4/container=test6", "http://test:ns");
-    ;
+    private ModelNodeId m_grandChildNode2Id = new ModelNodeId("/container=test1/container=test2/container=test4/container=test6", "http://test:ns");;
     @Mock
     private XmlModelNodeImpl m_grandChildNode2;
 
@@ -104,7 +80,7 @@ public class RequestScopeXmlDSMCacheTest {
     }
 
     @Before
-    public void setUp() {
+    public void setUp(){
         MockitoAnnotations.initMocks(this);
         m_cache = new RequestScopeXmlDSMCache();
         m_cache2 = new RequestScopeXmlDSMCache();
@@ -115,7 +91,7 @@ public class RequestScopeXmlDSMCacheTest {
     @Ignore("This test checks 'thread local-ness' of the class, " +
             "this is to be run manually every time the class is changed, not in CI")
     public void testCacheDoesNotInterfereWithMultipleThreads() throws InterruptedException {
-        for (int i = 0; i < 1000; i++) {
+        for(int i=0; i < 1000; i++){
             final ModelNode[] t1Node = new ModelNode[1];
             Thread t1 = new Thread(() -> {
                 m_cache.putInCache(m_sp1, m_id1, m_node1);
@@ -137,7 +113,7 @@ public class RequestScopeXmlDSMCacheTest {
     }
 
     @Test
-    public void testCacheWorksForMultipleNodesOfDifferentTypes() {
+    public void testCacheWorksForMultipleNodesOfDifferentTypes(){
         assertNull(m_cache.getFromCache(m_sp1, m_id1));
         assertNull(m_cache.getFromCache(m_sp2, m_id2));
         m_cache.putInCache(m_sp1, m_id1, m_node1);
@@ -150,7 +126,7 @@ public class RequestScopeXmlDSMCacheTest {
     }
 
     @Test
-    public void testCacheWorksForMultipleNodesOfSameType() {
+    public void testCacheWorksForMultipleNodesOfSameType(){
         assertNull(m_cache.getFromCache(m_sp1, m_id1));
         assertNull(m_cache.getFromCache(m_sp1, m_id2));
         m_cache.putInCache(m_sp1, m_id1, m_node1);
@@ -163,7 +139,7 @@ public class RequestScopeXmlDSMCacheTest {
     }
 
     @Test
-    public void testMarkingNodesToBeUpdatedWorks() {
+    public void testMarkingNodesToBeUpdatedWorks(){
         m_cache.putInCache(m_sp1, m_id1, m_node1);
         m_cache.putInCache(m_sp1, m_id2, m_node2);
         m_cache.markNodeToBeUpdated(m_sp1, m_id1);
@@ -184,7 +160,7 @@ public class RequestScopeXmlDSMCacheTest {
     }
 
     @Test
-    public void test2DifferentCachesDentInterfere() {
+    public void test2DifferentCachesDentInterfere(){
         m_cache.putInCache(m_sp1, m_id1, m_node1);
         assertNull(m_cache2.getFromCache(m_sp1, m_id1));
         assertEquals(m_node1, m_cache.getFromCache(m_sp1, m_id1));
@@ -205,7 +181,7 @@ public class RequestScopeXmlDSMCacheTest {
         assertNull(m_treeCache.getFromCache(m_schemaPath3, m_grandChildNode1Id));
         assertNull(m_treeCache.getFromCache(m_schemaPath4, m_grandChildNode2Id));
         assertEquals(m_childNode1, m_treeCache.getFromCache(m_schemaPath1, m_childNode1Id));
-        assertEquals(m_node, m_treeCache.getFromCache(m_schemaPath, m_nodeId));
+        assertEquals(m_node, m_treeCache.getFromCache(m_schemaPath,m_nodeId));
     }
 
     @Test
@@ -215,14 +191,14 @@ public class RequestScopeXmlDSMCacheTest {
         m_treeCache.putInCache(m_schemaPath2, m_childNode2Id, m_childNode2);
         m_treeCache.putInCache(m_schemaPath3, m_grandChildNode1Id, m_grandChildNode1);
         m_treeCache.removeFromCache(m_grandChildNode2Id);
-        assertEquals(m_childNode1, m_treeCache.getFromCache(m_schemaPath1, m_childNode1Id));
-        assertEquals(m_childNode2, m_treeCache.getFromCache(m_schemaPath2, m_childNode2Id));
-        assertEquals(m_grandChildNode1, m_treeCache.getFromCache(m_schemaPath3, m_grandChildNode1Id));
+        assertEquals(m_childNode1,m_treeCache.getFromCache(m_schemaPath1, m_childNode1Id));
+        assertEquals(m_childNode2,m_treeCache.getFromCache(m_schemaPath2, m_childNode2Id));
+        assertEquals(m_grandChildNode1,m_treeCache.getFromCache(m_schemaPath3, m_grandChildNode1Id));
         assertNull(m_treeCache.getFromCache(m_schemaPath4, m_grandChildNode2Id));
     }
 
     @After
-    public void tearDown() {
+    public void tearDown(){
         RequestScope.resetScope();
     }
 

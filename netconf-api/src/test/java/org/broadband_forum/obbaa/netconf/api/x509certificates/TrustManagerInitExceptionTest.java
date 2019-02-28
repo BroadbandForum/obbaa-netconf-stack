@@ -19,17 +19,17 @@ package org.broadband_forum.obbaa.netconf.api.x509certificates;
 import org.junit.Test;
 
 public class TrustManagerInitExceptionTest {
+	
+	@Test(expected = TrustManagerInitException.class)
+	public void testTrustManagerInitException() throws TrustManagerInitException {
 
-    @Test(expected = TrustManagerInitException.class)
-    public void testTrustManagerInitException() throws TrustManagerInitException {
+		throw new TrustManagerInitException("Trust Manager Init Exception",new Exception());
+	}
 
-        throw new TrustManagerInitException("Trust Manager Init Exception", new Exception());
-    }
+	@Test(expected = TrustManagerInitException.class)
+	public void testTrustManagerInitExceptionwithMessage() throws TrustManagerInitException {
 
-    @Test(expected = TrustManagerInitException.class)
-    public void testTrustManagerInitExceptionwithMessage() throws TrustManagerInitException {
-
-        throw new TrustManagerInitException("Trust Manager Init Exception");
-    }
+		throw new TrustManagerInitException("Trust Manager Init Exception");
+	}
 
 }

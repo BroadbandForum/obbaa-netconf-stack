@@ -22,13 +22,15 @@ import java.net.SocketAddress;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
-import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.api.TcpConnectionListener;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.logger.DefaultNetconfLogger;
+import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
 import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
+import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
+import org.broadband_forum.obbaa.netconf.api.utils.SystemPropertyUtils;
+
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.NC_NBI_CLIENT_IDLE_CONNECTION_TIMEOUT_MS;
 
 public class NetconfServerConfiguration {
 
@@ -38,7 +40,7 @@ public class NetconfServerConfiguration {
     private NetconfServerMessageListener m_netconfServerMessageListener;
     private ServerMessageHandler m_serverMessageHandler;
     private NetconfServerAuthenticationHandler m_netconfServerAuthenticationHandler;
-    private long m_connectionIdleTimeoutMillis = NetconfResources.DEFAULT_CONNECTION_TIMEOUT;
+    private long m_connectionIdleTimeoutMillis;
     private EventLoopGroup m_eventLoopGroup;
     private SocketAddress m_localAddress;
     private ExecutorService m_executorService;// NOSONAR
@@ -48,16 +50,13 @@ public class NetconfServerConfiguration {
     private TcpConnectionListener m_tcpConnectionListener;
 
     public NetconfServerConfiguration() {
+        m_connectionIdleTimeoutMillis = Long.parseLong(SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(NC_NBI_CLIENT_IDLE_CONNECTION_TIMEOUT_MS,"9223372036854775807"));
     }
 
-    public NetconfServerConfiguration(NetconfTransport netconfTransport, Set<String> caps, ServerCapabilityProvider
-            capabilityProvider,
-                                      NetconfServerMessageListener netconfServerMessageListener, ServerMessageHandler
-                                              serverMessageHandler,
-                                      NetconfServerAuthenticationHandler netconfServerAuthenticationHandler, long
-                                              connectionTimeOutMillis,
-                                      EventLoopGroup eventLoopGroup, ExecutorService executorService,
-                                      AuthenticationListener authenticationListener,// NOSONAR
+    public NetconfServerConfiguration(NetconfTransport netconfTransport, Set<String> caps, ServerCapabilityProvider capabilityProvider,
+                                      NetconfServerMessageListener netconfServerMessageListener, ServerMessageHandler serverMessageHandler,
+                                      NetconfServerAuthenticationHandler netconfServerAuthenticationHandler, long connectionTimeOutMillis,
+                                      EventLoopGroup eventLoopGroup, ExecutorService executorService, AuthenticationListener authenticationListener,// NOSONAR
                                       NetconfSessionIdProvider sessionIdProvider, NetconfLogger netconfLogger,
                                       TcpConnectionListener tcpConnectionListener) {
         m_netconfTransport = netconfTransport;
@@ -165,16 +164,11 @@ public class NetconfServerConfiguration {
 
     @Override
     public String toString() {
-        return "NetconfServerConfiguration{" + "m_capabilityProvider=" + m_capabilityProvider + ", " +
-                "m_netconfTransport=" + m_netconfTransport
-                + ", m_caps=" + m_caps + ", m_netconfServerMessageListener=" + m_netconfServerMessageListener + ", " +
-                "m_serverMessageHandler="
-                + m_serverMessageHandler + ", m_netconfServerAuthenticationHandler=" +
-                m_netconfServerAuthenticationHandler
-                + ", m_connectionIdleTimeoutMillis=" + m_connectionIdleTimeoutMillis + ", m_eventLoopGroup=" +
-                m_eventLoopGroup
-                + ", m_localAddress=" + m_localAddress + ", m_executorService=" + m_executorService + ", " +
-                "m_authenticationListener="
+        return "NetconfServerConfiguration{" + "m_capabilityProvider=" + m_capabilityProvider + ", m_netconfTransport=" + m_netconfTransport
+                + ", m_caps=" + m_caps + ", m_netconfServerMessageListener=" + m_netconfServerMessageListener + ", m_serverMessageHandler="
+                + m_serverMessageHandler + ", m_netconfServerAuthenticationHandler=" + m_netconfServerAuthenticationHandler
+                + ", m_connectionIdleTimeoutMillis=" + m_connectionIdleTimeoutMillis + ", m_eventLoopGroup=" + m_eventLoopGroup
+                + ", m_localAddress=" + m_localAddress + ", m_executorService=" + m_executorService + ", m_authenticationListener="
                 + m_authenticationListener + ", m_sessionIdProvider=" + m_sessionIdProvider + '}';
     }
 

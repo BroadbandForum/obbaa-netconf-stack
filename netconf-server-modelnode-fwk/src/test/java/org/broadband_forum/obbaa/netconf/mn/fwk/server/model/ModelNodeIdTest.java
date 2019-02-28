@@ -1,21 +1,4 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -26,6 +9,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.opendaylight.yangtools.yang.common.QName;
@@ -404,12 +389,21 @@ public class ModelNodeIdTest {
     }
 
     @Test
+    public void testGetFirstRdn() {
+        assertNull(EMPTY_CONTAINER.getFirstRdn(ModelNodeRdn.CONTAINER));
+
+        assertEquals(ANV_PLATFORM_ROOT_CONTAINER_NAME, TWO_CONTAINERS_ONLY.getFirstRdn(ModelNodeRdn.CONTAINER).getRdnValue());
+
+        assertEquals(KEYVALUE1, LIST_WITH_SINGLE_KEY.getFirstRdn(KEYNAME1).getRdnValue());
+    }
+
+    @Test
     public void testGetNextRdn() {
         ModelNodeRdn rdn1 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level1");
         ModelNodeRdn rdn2 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level2");
         ModelNodeRdn rdn3 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level3");
         ModelNodeRdn rdn4 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level4");
-        ModelNodeRdn rdn5 = new ModelNodeRdn(ModelNodeRdn.NAME, "ns", "key1");
+        ModelNodeRdn rdn5 = new ModelNodeRdn(ModelNodeRdn.NAME, "ns", "'key1'");
         ModelNodeRdn rdn6 = new ModelNodeRdn("key2", "ns", "key2");
 
         ModelNodeId parentId = new ModelNodeId();
@@ -432,5 +426,48 @@ public class ModelNodeIdTest {
 
         targetNextId = grandChildId.getNextChildId(childId);
         assertEquals(grandChildId, targetNextId);
+        assertEquals("/level1/level2/level3/level4[name='key1'][key2='key2']", targetNextId.xPathString());
     }
+
+    @Test
+    public void testGetNextRdnForInvalidKeys() {
+        ModelNodeRdn rdn1 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level1");
+        ModelNodeRdn rdn2 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level2");
+        ModelNodeRdn rdn3 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level3");
+        ModelNodeRdn rdn4 = new ModelNodeRdn(ModelNodeRdn.CONTAINER, "ns", "level4");
+        ModelNodeRdn rdn5 = new ModelNodeRdn(ModelNodeRdn.NAME, "ns", "key1'");
+        ModelNodeRdn rdn6 = new ModelNodeRdn("key2", "ns", "'key2");
+
+        ModelNodeId parentId = new ModelNodeId();
+        parentId.addRdn(rdn1);
+        parentId.addRdn(rdn2);
+        ModelNodeId childId = new ModelNodeId();
+        childId.addRdn(rdn1).addRdn(rdn2).addRdn(rdn3).addRdn(rdn4);
+
+        ModelNodeId grandChildId = new ModelNodeId();
+        grandChildId.addRdn(rdn1).addRdn(rdn2).addRdn(rdn3).addRdn(rdn4).addRdn(rdn5).addRdn(rdn6);
+
+        ModelNodeId targetNextId = grandChildId.getNextChildId(childId);
+        assertEquals(grandChildId, targetNextId);
+        assertEquals("/level1/level2/level3/level4[name='key1'][key2='key2']", targetNextId.xPathString());
+    }
+
+    @Test
+    public void testUrlEncodeDecode() {
+        ModelNodeId keyWithSpecialChars = new ModelNodeId(Arrays.asList(
+                new ModelNodeRdn(ModelNodeRdn.CONTAINER, ANV_PLATFORM_NAMESPACE,
+                        ANV_PLATFORM_ROOT_CONTAINER_NAME),
+                new ModelNodeRdn(ModelNodeRdn.CONTAINER, ANV_PLATFORM_NAMESPACE, SOMECONTAINER),
+                new ModelNodeRdn(KEYNAME1, ANV_PLATFORM_NAMESPACE, KEYVALUE1),
+                new ModelNodeRdn(KEYNAME3, ANV_PLATFORM_NAMESPACE, "/funnykey=value><%\\")));
+        final String encodedText = keyWithSpecialChars.getModelNodeIdAsString();
+        assertEquals("/container=platform/container=SomeContainer/KeyName1=KeyValue1/KeyName3=\\/funnykey\\=value><%\\\\", encodedText);
+        assertEquals("/funnykey=value><%\\", keyWithSpecialChars.getLastRdn().getRdnValue());
+
+        ModelNodeId decodedKey = new ModelNodeId(encodedText, ANV_PLATFORM_NAMESPACE);
+        assertEquals("/funnykey=value><%\\", decodedKey.getRdnValue(KEYNAME3));
+        assertEquals("/container=platform/container=SomeContainer/KeyName1=KeyValue1/KeyName3=\\/funnykey\\=value><%\\\\", decodedKey.getModelNodeIdAsString());
+        assertEquals(keyWithSpecialChars, decodedKey);
+    }
+
 }

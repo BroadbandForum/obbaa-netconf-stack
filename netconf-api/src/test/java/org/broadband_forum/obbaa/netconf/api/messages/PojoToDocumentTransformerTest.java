@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -23,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,15 +36,16 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.Node;
 
 import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
+
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class PojoToDocumentTransformerTest {
 
@@ -67,12 +68,10 @@ public class PojoToDocumentTransformerTest {
     private Element m_element = mock(Element.class);
     private Document m_document = mock(Document.class);
     protected static final String ERROR_WHILE_BUILDING_DOCUMENT = "Error while building document ";
-    private static final String EXPECTED_CLIENT_HELLO_MESSAGE = "<hello " +
-            "xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+    private static final String EXPECTED_CLIENT_HELLO_MESSAGE = "<hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
             + "<capabilities><capability>urn:ietf:params:netconf:base:1.0</capability>"
             + "<capability>urn:ietf:params:netconf:base:1.1</capability></capabilities></hello>";
-    private static final String EXPECTED_SERVER_HELLO_MESSAGE = "<hello " +
-            "xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+    private static final String EXPECTED_SERVER_HELLO_MESSAGE = "<hello xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
             + "<capabilities><capability>urn:ietf:params:netconf:base:1.0</capability>"
             + "<capability>urn:ietf:params:netconf:base:1.1</capability>"
             + "<capability>urn:ietf:params:netconf:capability:writable-running:1.0</capability>"
@@ -81,7 +80,7 @@ public class PojoToDocumentTransformerTest {
     private PojoToDocumentTransformer m_transformer = new PojoToDocumentTransformer();
 
     private void initializeExecute() {
-
+        
         m_transformer.m_doc = m_document;
     }
 
@@ -110,13 +109,10 @@ public class PojoToDocumentTransformerTest {
         sessionInfo.setUserName("admin");
         ChangedByParams changedByParams = new ChangedByParams(sessionInfo);
 
-        Element configChangeNotificationElement = m_transformer.getConfigChangeNotificationElement(dataStore,
-                editList, changedByParams);
-        Element datastoreElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources
-                .DATA_STORE);
+        Element configChangeNotificationElement = m_transformer.getConfigChangeNotificationElement(dataStore, editList, changedByParams);
+        Element datastoreElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.DATA_STORE);
         assertEquals("running", datastoreElement.getTextContent());
-        Element changeByElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources
-                .CHANGED_BY);
+        Element changeByElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.CHANGED_BY);
         assertNotNull(changeByElement);
 
         Element userNameElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.USER_NAME);
@@ -129,19 +125,15 @@ public class PojoToDocumentTransformerTest {
         assertEquals("urn:ietf:params:xml:ns:yang:ietf-netconf-notifications", impliedElement.getNamespaceURI());
         Element targetElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.TARGET);
         NamedNodeMap attributes = targetElement.getAttributes();
-        assertEquals("http://www.test-company.com/solutions/namespace1", attributes.getNamedItem("xmlns:prefix1")
-                .getNodeValue());
-        assertEquals("http://www.test-company.com/solutions/namespace2", attributes.getNamedItem("xmlns:prefix2")
-                .getNodeValue());
+        assertEquals("http://www.test-company.com/solutions/namespace1", attributes.getNamedItem("xmlns:prefix1").getNodeValue());
+        assertEquals("http://www.test-company.com/solutions/namespace2", attributes.getNamedItem("xmlns:prefix2").getNodeValue());
         assertEquals(2, attributes.getLength());
         assertEquals("/prefix1:container1/prefix2:container2[prefix2:name=OLT-1]", targetElement.getTextContent());
 
-        Element operationElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources
-                .OPERATION);
+        Element operationElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.OPERATION);
         assertEquals("merge", operationElement.getTextContent());
 
-        Element changedLeafElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources
-                .CHANGED_LEAF);
+        Element changedLeafElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.CHANGED_LEAF);
         assertNotNull(changedLeafElement);
 
         Element leaf1Element = DocumentUtils.getChildElement(changedLeafElement, "prefix3:leaf1");
@@ -162,51 +154,44 @@ public class PojoToDocumentTransformerTest {
         String target = "/prefix1:container1/prefix2:container2[prefix2:name=name1]";
         stateChangeInfo.setNamespaceDeclareMap(namespaceDeclareMap);
         stateChangeInfo.setTarget(target);
-        ChangedLeafInfo changedLeafInfo1 = new ChangedLeafInfo("leaf1", "newValue1",
-                "http://www.test-company.com/solutions/namespace3",
+        ChangedLeafInfo changedLeafInfo1 = new ChangedLeafInfo("leaf1", "newValue1", "http://www.test-company.com/solutions/namespace3",
                 "prefix3");
-        ChangedLeafInfo changedLeafInfo2 = new ChangedLeafInfo("leaf2", "newValue2",
-                "http://www.test-company.com/solutions/namespace3",
+        ChangedLeafInfo changedLeafInfo2 = new ChangedLeafInfo("leaf2", "newValue2", "http://www.test-company.com/solutions/namespace3",
                 "prefix3");
         stateChangeInfo.setChangedLeafInfos(changedLeafInfo1);
         stateChangeInfo.setChangedLeafInfos(changedLeafInfo2);
-
+        
         changesList.add(stateChangeInfo);
 
         Element stateChangeNotificationElement = m_transformer.getStateChangeNotificationElement(changesList);
-
+        
         Element changesElement = DocumentUtils.getElement(stateChangeNotificationElement, NetconfResources.CHANGES);
         assertNotNull(changesElement);
 
         Element targetElement = DocumentUtils.getElement(stateChangeNotificationElement, NetconfResources.TARGET);
         NamedNodeMap attributes = targetElement.getAttributes();
-        assertEquals("http://www.test-company.com/solutions/namespace1", attributes.getNamedItem("xmlns:prefix1")
-                .getNodeValue());
-        assertEquals("http://www.test-company.com/solutions/namespace2", attributes.getNamedItem("xmlns:prefix2")
-                .getNodeValue());
+        assertEquals("http://www.test-company.com/solutions/namespace1", attributes.getNamedItem("xmlns:prefix1").getNodeValue());
+        assertEquals("http://www.test-company.com/solutions/namespace2", attributes.getNamedItem("xmlns:prefix2").getNodeValue());
         assertEquals(2, attributes.getLength());
         assertEquals("/prefix1:container1/prefix2:container2[prefix2:name=name1]", targetElement.getTextContent());
 
-        Element changedLeafElement = DocumentUtils.getElement(stateChangeNotificationElement, NetconfResources
-                .CHANGED_LEAF);
+        Element changedLeafElement = DocumentUtils.getElement(stateChangeNotificationElement, NetconfResources.CHANGED_LEAF);
         assertNotNull(changedLeafElement);
-
-
+        
+        
         Element leaf1Element1 = DocumentUtils.getChildElement(changesElement, "prefix3:leaf1");
         assertNotNull(leaf1Element1);
         assertEquals("newValue1", leaf1Element1.getTextContent());
         assertEquals("http://www.test-company.com/solutions/namespace3", leaf1Element1.getNamespaceURI());
         assertEquals("prefix3", leaf1Element1.getPrefix());
-
+        
         Element leaf1Element2 = DocumentUtils.getChildElement(changesElement, "prefix3:leaf2");
         assertNotNull(leaf1Element2);
         assertEquals("newValue2", leaf1Element2.getTextContent());
         assertEquals("http://www.test-company.com/solutions/namespace3", leaf1Element1.getNamespaceURI());
         assertEquals("prefix3", leaf1Element2.getPrefix());
-
-        String changesElementStringExpected = "<changes xmlns=\"http://bbf.org/netconf-stack\"><target xmlns:prefix1=\"http://www.test-company.com/solutions/namespace1\" xmlns:prefix2=\"http://www.test-company.com/solutions/namespace2\">/prefix1:container1/prefix2:container2[prefix2:name=name1" +
-                "]</target><changed-leaf><key>1</key><prefix3:leaf1 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue1</prefix3:leaf1></changed-leaf><changed-leaf><key>2" +
-                "</key><prefix3:leaf2 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue2</prefix3:leaf2></changed-leaf></changes>";
+        
+        String changesElementStringExpected = "<changes xmlns=\"urn:bbf:yang:obbaa:netconf-stack\"><target xmlns:prefix1=\"http://www.test-company.com/solutions/namespace1\" xmlns:prefix2=\"http://www.test-company.com/solutions/namespace2\">/prefix1:container1/prefix2:container2[prefix2:name=name1]</target><changed-leaf><key>1</key><prefix3:leaf1 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue1</prefix3:leaf1></changed-leaf><changed-leaf><key>2</key><prefix3:leaf2 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue2</prefix3:leaf2></changed-leaf></changes>";
         assertEquals(changesElementStringExpected, DocumentUtils.documentToString(changesElement));
 
     }
@@ -218,10 +203,8 @@ public class PojoToDocumentTransformerTest {
         PojoToDocumentTransformer subscription = new PojoToDocumentTransformer().newNetconfRpcDocument("1")
                 .addCreateSubscriptionElement(NetconfResources.NETCONF, null, startTime, stopTime);
         Document subscriptionDoc = subscription.build();
-        String startTimeAsString = DocumentUtils.getInstance().getElementByName(subscriptionDoc, "startTime")
-                .getTextContent();
-        String stopTimeAsString = DocumentUtils.getInstance().getElementByName(subscriptionDoc, "stopTime")
-                .getTextContent();
+        String startTimeAsString = DocumentUtils.getInstance().getElementByName(subscriptionDoc, "startTime").getTextContent();
+        String stopTimeAsString = DocumentUtils.getInstance().getElementByName(subscriptionDoc, "stopTime").getTextContent();
 
         ISODateTimeFormat.dateTimeNoMillis().parseDateTime(startTimeAsString);
         ISODateTimeFormat.dateTimeNoMillis().parseDateTime(stopTimeAsString);
@@ -257,8 +240,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddGetConfigElementWhenRpcIsNull() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddGetConfigElementWhenRpcIsNull() throws NetconfMessageBuilderException, ParserConfigurationException {
 
         initializeExecute();
         try {
@@ -376,8 +358,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithEmptySource() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddCopyConfigElementWithEmptySource() throws NetconfMessageBuilderException, ParserConfigurationException {
 
         String source = "";
         String target = RUNNING;
@@ -394,8 +375,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithNullSource() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddCopyConfigElementWithNullSource() throws NetconfMessageBuilderException, ParserConfigurationException {
 
         String source = null;
         String target = RUNNING;
@@ -412,12 +392,11 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithEmptyTarget() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddCopyConfigElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
 
         String source = RUNNING;
-        Document doc = DocumentUtils.getNewDocument();
-        Element config = doc.createElementNS("http://www.test-company.com/ns/tester", "name");
+        Document doc = getNewDocument();
+        Element config = doc.createElementNS("http://www.test.com/ns/tester", "name");
         String target = "";
         boolean targetIsUrl = true;
         boolean srcIsUrl = false;
@@ -431,12 +410,11 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithNullTarget() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddCopyConfigElementWithNullTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
 
         String source = RUNNING;
-        Document doc = DocumentUtils.getNewDocument();
-        Element config = doc.createElementNS("http://www.test-company.com/ns/tester", "name");
+        Document doc = getNewDocument();
+        Element config = doc.createElementNS("http://www.test.com/ns/tester", "name");
         String target = null;
         boolean targetIsUrl = true;
         boolean srcIsUrl = false;
@@ -451,8 +429,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddDeleteConfigElementWithEmptyTarget() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddDeleteConfigElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
         String target = "";
         try {
             m_transformer.addDeleteConfigElement(target);
@@ -465,8 +442,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddDeleteConfigElementWithNullTarget() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddDeleteConfigElementWithNullTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
         String target = null;
         try {
             m_transformer.addDeleteConfigElement(target);
@@ -479,8 +455,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddLockElementWithEmptyTarget() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddLockElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
         String target = "";
         try {
             m_transformer.addLockElement(target);
@@ -506,8 +481,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddUnLockElementWithEmptyTarget() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddUnLockElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
         String target = "";
         try {
             m_transformer.addUnLockElement(target);
@@ -520,8 +494,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddUnLockElementWithNullTarget() throws NetconfMessageBuilderException,
-            ParserConfigurationException {
+    public void testAddUnLockElementWithNullTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
         String target = null;
         try {
             m_transformer.addUnLockElement(target);
@@ -537,10 +510,8 @@ public class PojoToDocumentTransformerTest {
         initializeExecute();
         EditConfigElement configElement = null;
         Element element2 = mock(Element.class);
-        when(m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG))
-                .thenReturn(m_element);
-        when(m_document.createElementNS(NetconfResources.WITH_DELAY_NS, NetconfResources.WITH_DELAY)).thenReturn
-                (element2);
+        when(m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG)).thenReturn(m_element);
+        when(m_document.createElementNS(NetconfResources.WITH_DELAY_NS, NetconfResources.WITH_DELAY)).thenReturn(element2);
         when(m_document.getFirstChild()).thenReturn(node);
 
         try {
@@ -582,10 +553,8 @@ public class PojoToDocumentTransformerTest {
         EditConfigElement configElement = mock(EditConfigElement.class);
         initializeExecute();
         Element element2 = mock(Element.class);
-        when(m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG))
-                .thenReturn(m_element);
-        when(m_document.createElementNS(NetconfResources.WITH_DELAY_NS, NetconfResources.WITH_DELAY)).thenReturn
-                (element2);
+        when(m_document.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG)).thenReturn(m_element);
+        when(m_document.createElementNS(NetconfResources.WITH_DELAY_NS, NetconfResources.WITH_DELAY)).thenReturn(element2);
         when(m_document.getFirstChild()).thenReturn(node);
         when(configElement.getConfigElementContents()).thenReturn(null);
 

@@ -16,7 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.api.utils;
 
-import static junit.framework.TestCase.assertEquals;
+import org.broadband_forum.obbaa.netconf.api.utils.PemReader;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -29,14 +30,14 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
-import org.junit.Test;
+import static junit.framework.TestCase.assertEquals;
 
 /**
  * Created by kbhatk on 11/8/16.
  */
 public class PemReaderTest {
 
-    private static final String PK_WITH_DELIMITERS = "  \n-----BEGIN PRIVATE KEY-----\n" +
+    private static final String PK_WITH_DELIMITERS= "  \n-----BEGIN PRIVATE KEY-----\n" +
             "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQD1DrBjS7UeS9ZD\n" +
             "e42Zcyszc9mM5t50ue/ndT+lbWL8VP6HwRE7Y+za36put8Ry4FVwA1GsEkJBPeLn\n" +
             "/a9Z9/qA1d7+l89YhihQaYxTE4Q/ueMqM0RE7VKGRcqexewPrUGDTibbvZ91kY4c\n" +
@@ -64,33 +65,33 @@ public class PemReaderTest {
             "lBIiP20uRgEJKeq/ADK9W5XkUN8zvKqJ+YTyq139RyugQ1iKeo2vU8AW8W643vtc\n" +
             "8/Amd1Pkr/6UoVGRvzQFsf16gA==\n" +
             "-----END PRIVATE KEY-----  \n  ";
-    private static final String PK_WITHOUT_DELIMITERS =
+    private static final String PK_WITHOUT_DELIMITERS  =
             "MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQD1DrBjS7UeS9ZD\n" +
-                    "e42Zcyszc9mM5t50ue/ndT+lbWL8VP6HwRE7Y+za36put8Ry4FVwA1GsEkJBPeLn\n" +
-                    "/a9Z9/qA1d7+l89YhihQaYxTE4Q/ueMqM0RE7VKGRcqexewPrUGDTibbvZ91kY4c\n" +
-                    "wZIr07dTtXoeH2rxbF0OM0cW1zLkWARIpxqxT1Hwrq8rAaI4Flc/QIASXkhVSzmY\n" +
-                    "dw0uv70AHkJKdJ/aBijBD5FUASCOHfk3mgw0xVy8+dCeNadjtezwlo487FFqCtfg\n" +
-                    "v7ml3Fdtt3IDoph0moQRgNZgVEKt/+YA4pJyqzc+rqb4Yryni3C24iDlztH+GNuv\n" +
-                    "OX0wutvTAgMBAAECggEAZjzgniyhvagKFlFfvBtudKLqqnxPZweD7V7fVNcUKw4S\n" +
-                    "uvRzigGgeZhC9Lo6fWrWeksIMe/UMH/vQLZ4B+MLYeDYjgMsAFTIUPQYFTjZPfUB\n" +
-                    "r0OAQfl5KofHhwIwAEJaSLu8PoUYF+bIEXs4zowfug7Gifa1mU+Kazg9emwB0X2O\n" +
-                    "Gq21B8CFu9pdZzGQTfAgTNFnnvIm2PNltiAQaVI/2S7Q/NADS3gGpNWqbY/K3vvB\n" +
-                    "4xSITBaaph0WP/eNEZ0FWpW5bpABO4Q2A3Sx5MCnKt+DHymCyGuzYvRGmGhFmtbd\n" +
-                    "B771n5vGfWRYSLNcjy5hyUCeET1suYsePXG6h8w8MQKBgQD9CWHdo0A20XnZ1iIf\n" +
-                    "P+kAgclIxPGb2KRQB2iO50/NLILwvjz5KZBpkYs9NPdAfkE+t3zXvYVQw5ABBUuP\n" +
-                    "n6A9vV0ays9S0rZhKxEYiZ05ZbBICdkTMYggCTZDXzQsZtbpA8AMPI1BSF1TXTbL\n" +
-                    "M9+LwQ+LibY0c3Z54GVnQPjybQKBgQD37WJqfRtlFc4cWAKNXe3M0OMXUMdO9clm\n" +
-                    "J1VAwH5ARx6o1P6+FSefMaYUT6FAFJgNj2PwITJjh3z7kwSGH+8LR0UF+ONNZMaL\n" +
-                    "pfIkTunSejFQ00zAUt8yQM8QMtC+7jofoDLvFtAsSx5u16P2q9cHjNeW7x3vEIGd\n" +
-                    "Lpxu1QwfPwKBgQCFotLg7zsWuIMWHRVgU6yG7ASWPg0sNbpx2bfK4TcwMPXml1I0\n" +
-                    "dVMjrg5PgQ2kLgnfSaDRf/JMuTvwjg9eBvvmH4BwifP81fQkVU5uGx/CFIaJRUoz\n" +
-                    "7NDrunHCGyG+4YFXBvgCfmhLtiAzyuMJZpgFgyzmkRB9mw1TSMPFSHcx8QKBgQCv\n" +
-                    "P4Aij75ujKQ9isR7EtsFvN3Y3EOV/8zVxZXQiIB1hRAZ/Tz4NdHlCF5B2yu7NRNp\n" +
-                    "+mKFGaIZkmr5FSnMeQQqr70NhKl/Sm3BxpJLsfA71B3J6SJGjA2y4va6l4DQhWpW\n" +
-                    "cpGuSSzrMkoXxZvjwAHmF1tJGErLcpp79bej7Dp+VwKBgQDOFIlfFRS7VwA5KPg2\n" +
-                    "euezvaRz51eJOIIqRtKMzGLoFsIAT6UoTaBbYz6nk5qPrWXa64BWU5CSNENXv8lQ\n" +
-                    "lBIiP20uRgEJKeq/ADK9W5XkUN8zvKqJ+YTyq139RyugQ1iKeo2vU8AW8W643vtc\n" +
-                    "8/Amd1Pkr/6UoVGRvzQFsf16gA==";
+            "e42Zcyszc9mM5t50ue/ndT+lbWL8VP6HwRE7Y+za36put8Ry4FVwA1GsEkJBPeLn\n" +
+            "/a9Z9/qA1d7+l89YhihQaYxTE4Q/ueMqM0RE7VKGRcqexewPrUGDTibbvZ91kY4c\n" +
+            "wZIr07dTtXoeH2rxbF0OM0cW1zLkWARIpxqxT1Hwrq8rAaI4Flc/QIASXkhVSzmY\n" +
+            "dw0uv70AHkJKdJ/aBijBD5FUASCOHfk3mgw0xVy8+dCeNadjtezwlo487FFqCtfg\n" +
+            "v7ml3Fdtt3IDoph0moQRgNZgVEKt/+YA4pJyqzc+rqb4Yryni3C24iDlztH+GNuv\n" +
+            "OX0wutvTAgMBAAECggEAZjzgniyhvagKFlFfvBtudKLqqnxPZweD7V7fVNcUKw4S\n" +
+            "uvRzigGgeZhC9Lo6fWrWeksIMe/UMH/vQLZ4B+MLYeDYjgMsAFTIUPQYFTjZPfUB\n" +
+            "r0OAQfl5KofHhwIwAEJaSLu8PoUYF+bIEXs4zowfug7Gifa1mU+Kazg9emwB0X2O\n" +
+            "Gq21B8CFu9pdZzGQTfAgTNFnnvIm2PNltiAQaVI/2S7Q/NADS3gGpNWqbY/K3vvB\n" +
+            "4xSITBaaph0WP/eNEZ0FWpW5bpABO4Q2A3Sx5MCnKt+DHymCyGuzYvRGmGhFmtbd\n" +
+            "B771n5vGfWRYSLNcjy5hyUCeET1suYsePXG6h8w8MQKBgQD9CWHdo0A20XnZ1iIf\n" +
+            "P+kAgclIxPGb2KRQB2iO50/NLILwvjz5KZBpkYs9NPdAfkE+t3zXvYVQw5ABBUuP\n" +
+            "n6A9vV0ays9S0rZhKxEYiZ05ZbBICdkTMYggCTZDXzQsZtbpA8AMPI1BSF1TXTbL\n" +
+            "M9+LwQ+LibY0c3Z54GVnQPjybQKBgQD37WJqfRtlFc4cWAKNXe3M0OMXUMdO9clm\n" +
+            "J1VAwH5ARx6o1P6+FSefMaYUT6FAFJgNj2PwITJjh3z7kwSGH+8LR0UF+ONNZMaL\n" +
+            "pfIkTunSejFQ00zAUt8yQM8QMtC+7jofoDLvFtAsSx5u16P2q9cHjNeW7x3vEIGd\n" +
+            "Lpxu1QwfPwKBgQCFotLg7zsWuIMWHRVgU6yG7ASWPg0sNbpx2bfK4TcwMPXml1I0\n" +
+            "dVMjrg5PgQ2kLgnfSaDRf/JMuTvwjg9eBvvmH4BwifP81fQkVU5uGx/CFIaJRUoz\n" +
+            "7NDrunHCGyG+4YFXBvgCfmhLtiAzyuMJZpgFgyzmkRB9mw1TSMPFSHcx8QKBgQCv\n" +
+            "P4Aij75ujKQ9isR7EtsFvN3Y3EOV/8zVxZXQiIB1hRAZ/Tz4NdHlCF5B2yu7NRNp\n" +
+            "+mKFGaIZkmr5FSnMeQQqr70NhKl/Sm3BxpJLsfA71B3J6SJGjA2y4va6l4DQhWpW\n" +
+            "cpGuSSzrMkoXxZvjwAHmF1tJGErLcpp79bej7Dp+VwKBgQDOFIlfFRS7VwA5KPg2\n" +
+            "euezvaRz51eJOIIqRtKMzGLoFsIAT6UoTaBbYz6nk5qPrWXa64BWU5CSNENXv8lQ\n" +
+            "lBIiP20uRgEJKeq/ADK9W5XkUN8zvKqJ+YTyq139RyugQ1iKeo2vU8AW8W643vtc\n" +
+            "8/Amd1Pkr/6UoVGRvzQFsf16gA==";
     private static final String PUBLIC_KEYS = "-----BEGIN PUBLIC KEY-----\n" +
             "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyCJcuCh0yXlwp/+E0VEJ\n" +
             "i9arlag2vJdkq5s3DuL6RgKeASOE/dfXugV90Oe49EA/62atpi0g9yZnHWmZ8hsd\n" +
@@ -140,34 +141,31 @@ public class PemReaderTest {
             "jl+42Zh54vMOehq1MNBZMNaIYniVIcDncsdjXL9l1fcEad+LwS7dp7dzdCEBfDf0\n" +
             "Yj0EUgVAMJZtbQa4mj4+6i5eVZZGcTQEtwkG3CC5j59Qnirsh9uJw5irYl2CzMoD\n" +
             "bWb9HX8EIgIgVgFv6ZS3yg8hQfa2TTsslrjgS75VHFhSgLu3ieG2Atc=\n" +
-            "-----END PRIVATE KEY-----\n";
+            "-----END PRIVATE KEY-----\n" ;
 
 
     @Test
-    public void testStripPKDelimiters() {
+    public void testStripPKDelimiters(){
         assertEquals(PK_WITHOUT_DELIMITERS, PemReader.stripPKDelimiters(PK_WITH_DELIMITERS));
     }
-
     @Test
-    public void testStripPKWithoutDelimiters() {
+    public void testStripPKWithoutDelimiters(){
         assertEquals(PK_WITHOUT_DELIMITERS, PemReader.stripPKDelimiters(PK_WITHOUT_DELIMITERS));
     }
 
     @Test
-    public void testReadPublicKey() throws InvalidKeySpecException, CertificateException, NoSuchAlgorithmException,
-            KeyException {
+    public void testReadPublicKey() throws InvalidKeySpecException, CertificateException, NoSuchAlgorithmException, KeyException {
         InputStream stream = new ByteArrayInputStream(PUBLIC_KEYS.getBytes(StandardCharsets.UTF_8));
 
         List<PublicKey> publicKeys = PemReader.readPublicKey(stream);
         assertEquals(3, publicKeys.size());
-        assertEquals("RSA", publicKeys.get(0).getAlgorithm());
-        assertEquals("RSA", publicKeys.get(1).getAlgorithm());
-        assertEquals("DSA", publicKeys.get(2).getAlgorithm());
+        assertEquals("RSA",publicKeys.get(0).getAlgorithm());
+        assertEquals("RSA",publicKeys.get(1).getAlgorithm());
+        assertEquals("DSA",publicKeys.get(2).getAlgorithm());
     }
 
     @Test
-    public void testReadPrivateKey() throws InvalidKeySpecException, CertificateException, NoSuchAlgorithmException,
-            KeyException {
+    public void testReadPrivateKey() throws InvalidKeySpecException, CertificateException, NoSuchAlgorithmException, KeyException {
         InputStream stream = new ByteArrayInputStream(PK_WITH_DELIMITERS.getBytes(StandardCharsets.UTF_8));
 
         PrivateKey privateKey = PemReader.readPrivateKey(stream);

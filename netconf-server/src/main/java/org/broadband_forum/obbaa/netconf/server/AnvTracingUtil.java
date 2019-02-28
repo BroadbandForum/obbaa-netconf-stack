@@ -27,20 +27,20 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 public class AnvTracingUtil {
 
 
-    public static boolean isEmptyRequest(Document request, String requestType) {
-        if (NetconfResources.GET_CONFIG.equals(requestType)) {
+    public static boolean isEmptyRequest( Document request, String requestType){
+        if ( NetconfResources.GET_CONFIG.equals(requestType)){
             NetconfFilter filter = DocumentToPojoTransformer.getFilterFromRpcDocument(request);
-            if (filter != null && filter.getXmlFilterElements().isEmpty()) {
+            if ( filter != null && filter.getXmlFilterElements().isEmpty()){
                 return true;
             }
         }
         return false;
     }
-
-    public static boolean isEmptyRequest(AbstractNetconfRequest request) {
-        if (request instanceof GetConfigRequest) {
+    
+    public static boolean isEmptyRequest( AbstractNetconfRequest request){
+        if ( request instanceof GetConfigRequest){
             NetconfFilter filter = ((GetConfigRequest) request).getFilter();
-            if (filter != null && filter.getXmlFilterElements().isEmpty()) {
+            if ( filter != null && filter.getXmlFilterElements().isEmpty()){
                 return true;
             }
         }

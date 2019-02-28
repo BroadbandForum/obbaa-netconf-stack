@@ -21,24 +21,24 @@ import java.io.Serializable;
 /**
  * Created by keshava on 5/1/16.
  */
-public class ArtistPK implements Serializable {
-
-    private static final long serialVersionUID = -3556721233258225065L;
-    String name;
+public class ArtistPK implements Serializable{
+    
+	private static final long serialVersionUID = -3556721233258225065L;
+	String name;
     String parentId;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
+        if (this == o){
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass()){
             return false;
         }
 
         ArtistPK artistPK = (ArtistPK) o;
 
-        if (name != null ? !name.equals(artistPK.name) : artistPK.name != null) {
+        if (name != null ? !name.equals(artistPK.name) : artistPK.name != null){
             return false;
         }
         return parentId != null ? parentId.equals(artistPK.parentId) : artistPK.parentId == null;

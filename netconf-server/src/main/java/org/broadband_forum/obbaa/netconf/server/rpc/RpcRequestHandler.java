@@ -18,8 +18,6 @@ package org.broadband_forum.obbaa.netconf.server.rpc;
 
 import java.util.List;
 
-import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-
 import org.broadband_forum.obbaa.netconf.api.NetconfMessage;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
@@ -27,7 +25,12 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.messages.RpcName;
+import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 
+/**
+ * Implementation of RpcRequestHandler can be annotated with @see RpcRequiresPermission to specify required permissions
+ *
+ */
 public interface RpcRequestHandler {
 
     public RpcName getRpcQName();
@@ -36,31 +39,26 @@ public interface RpcRequestHandler {
 
     /**
      * Model Service Framework uses this method to set the RPC definition from yang
-     *
+     * 
      * @param rpcDefinition
      */
     public void setRpcDefinition(final RpcDefinition rpcDefinition);
 
     /**
-     * A basic level of yang-based validation is available. Special cases need to be implemented by the
-     * RpcRequestHandlers
-     *
-     * @param rpcConstraintParser
-     * @param the                 rpc
+     * A basic level of yang-based validation is available. Special cases need to be implemented by the RpcRequestHandlers
+     * @param rpcConstraintParser 
+     * @param the rpc
      * @throws RpcValidationException
      */
-    public void validate(RpcPayloadConstraintParser rpcConstraintParser, final NetconfMessage rpc) throws
-            RpcValidationException;
+    public void validate(RpcPayloadConstraintParser rpcConstraintParser, final NetconfMessage rpc) throws RpcValidationException;
 
     /**
      * This method will contain the implementation of RPC requests.
-     * <p>
-     * The RpcRequestHandlers should implement this method and set {@link NetConfResponse#setOk(boolean)} method of
+     * 
+     * The RpcRequestHandlers should implement this method and set {@link NetConfResponse#setOk(boolean)} method of response
+     * For failure cases, the RpcRequestHandlers should add NetConfResponse errors to {@link NetConfResponse#addErrors(java.util.List)} method of
      * response
-     * For failure cases, the RpcRequestHandlers should add NetConfResponse errors to
-     * {@link NetConfResponse#addErrors(java.util.List)} method of
-     * response
-     *
+     * 
      * @param clientInfo
      * @param request
      * @param response
@@ -68,7 +66,6 @@ public interface RpcRequestHandler {
      * @throws RpcProcessException
      */
 
-    public List<Notification> processRequest(final NetconfClientInfo clientInfo, final NetconfRpcRequest request,
-                                             final NetconfRpcResponse response)
+    public List<Notification> processRequest(final NetconfClientInfo clientInfo, final NetconfRpcRequest request, final NetconfRpcResponse response)
             throws RpcProcessException;
 }

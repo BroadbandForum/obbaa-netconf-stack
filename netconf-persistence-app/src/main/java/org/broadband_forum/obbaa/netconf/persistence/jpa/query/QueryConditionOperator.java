@@ -19,9 +19,9 @@ package org.broadband_forum.obbaa.netconf.persistence.jpa.query;
 import java.util.EnumSet;
 
 public enum QueryConditionOperator {
-    EQUALS(false),
-    NOT_EQUALS(true),
-    LESS_THAN(false),
+    EQUALS(false), 
+    NOT_EQUALS(true), 
+    LESS_THAN(false), 
     GREATER_THAN(false),
     LESS_THAN_OR_EQUALS(false),
     GREATER_THAN_OR_EQUALS(false),
@@ -36,17 +36,17 @@ public enum QueryConditionOperator {
     NOT_CONTAINS(true),
     IN(false),
     NOT_IN(true);
-
+    
     public static final EnumSet<QueryConditionOperator> UNARY_OPERATORS = EnumSet.of(IS_NULL, IS_NOT_NULL);
-
+    
     private static final long serialVersionUID = 1L;
-
+    
     private boolean m_isNegative;
-
+    
     private QueryConditionOperator(boolean isNegative) {
         m_isNegative = isNegative;
     }
-
+    
     public boolean isNegative() {
         return m_isNegative;
     }

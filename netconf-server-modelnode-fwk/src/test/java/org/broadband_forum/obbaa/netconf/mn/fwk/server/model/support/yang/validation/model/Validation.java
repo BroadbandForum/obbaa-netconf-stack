@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Broadband Forum
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.ValidationConstants.VALIDATION_NS;
@@ -37,34 +21,33 @@ import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangXmlSubtree;
 
 
-@YangContainer(name = "validation", namespace = VALIDATION_NS, revision = VALIDATION_REVISION)
+@YangContainer(name="validation", namespace = VALIDATION_NS , revision=VALIDATION_REVISION)
 @Entity
-public class Validation implements Serializable {
+public class Validation implements Serializable{
     private static final long serialVersionUID = -2093214494292603580L;
 
     @Id
     @YangParentId
-    @Column(name = YangParentId.PARENT_ID_FIELD_NAME)
+    @Column(name=YangParentId.PARENT_ID_FIELD_NAME)
     private String parentId;
-
+    
     @YangSchemaPath
     @Column(length = 1000)
     private String schemaPath;
-
+    
     @YangChild
     @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<SomeList> someList = new LinkedHashSet<SomeList>();
 
     @YangXmlSubtree
-    @Column(length = 100000)
+    @Column(length=100000)
     private String xmlSubTree;
-
+    
     @YangChild
     @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, orphanRemoval = true)
     private Set<OrderByUserList> orderByUserList = new LinkedHashSet<OrderByUserList>();
-
-    public Validation() {
-    }
+    
+    public Validation(){}
 
     public String getParentId() {
         return parentId;
@@ -82,7 +65,7 @@ public class Validation implements Serializable {
         this.xmlSubTree = xmlSubTree;
     }
 
-
+   
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -134,8 +117,7 @@ public class Validation implements Serializable {
 
     @Override
     public String toString() {
-        return "Validation [parentId=" + parentId + ", schemaPath=" + schemaPath + ", someList=" + someList + ", " +
-                "xmlSubTree=" + xmlSubTree
+        return "Validation [parentId=" + parentId + ", schemaPath=" + schemaPath + ", someList=" + someList + ", xmlSubTree=" + xmlSubTree
                 + ", orderByUserList=" + orderByUserList + "]";
     }
 
@@ -164,4 +146,5 @@ public class Validation implements Serializable {
     }
 
 
+    
 }

@@ -5,8 +5,6 @@
                 <jbox:artist>
                     <jbox:name>Lenny</jbox:name>
                     <jbox:awards>Lenny's 1st award</jbox:awards>
-                    <jbox:awards>Lenny's 2nd award</jbox:awards>
-                    <jbox:awards>Lenny's 3rd award</jbox:awards>
                     <jbox:album-count>2</jbox:album-count>
                 </jbox:artist>
             </jbox:library>

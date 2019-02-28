@@ -18,22 +18,23 @@ package org.broadband_forum.obbaa.netconf.server.rpc;
 
 public enum RequestType {
 
-    RPC,
-    EDIT_CONFIG,
-    COPY_CONFIG,
-    GET_CONFIG,
-    GET,
-    DELETE_CONFIG,
-    UNLOCK,
-    CLOSE_SESSION,
-    KILL_SESSION,
-    ACTION;
-
-    public boolean isRpc() {
-        return this.equals(RPC);
-    }
-
-    public boolean isAction() {
-        return this.equals(ACTION);
-    }
+	RPC,
+	EDIT_CONFIG,
+	COPY_CONFIG,
+	GET_CONFIG,
+	GET,
+	DELETE_CONFIG,
+	UNLOCK,
+	CLOSE_SESSION,
+	KILL_SESSION,
+	ACTION
+	;
+	
+	public boolean isRpc(){
+		return this.equals(RPC);
+	}
+	
+	public boolean isAction(){
+		return this.equals(ACTION);
+	}
 }

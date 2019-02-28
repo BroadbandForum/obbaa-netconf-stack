@@ -20,16 +20,17 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcher;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcherException;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
 import org.broadband_forum.obbaa.netconf.api.client.TcpServerSession;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public abstract class AbstractNetconfClientDispatcher implements NetconfClientDispatcher {
-    private static final Logger LOGGER = Logger.getLogger(AbstractNetconfClientDispatcher.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(AbstractNetconfClientDispatcher.class, LogAppNames.NETCONF_LIB);
 
     private final ExecutorService m_executorService;// NOSONAR
 
@@ -42,11 +43,9 @@ public abstract class AbstractNetconfClientDispatcher implements NetconfClientDi
     }
 
     @Override
-    public Future<NetconfClientSession> createClient(final NetconfClientConfiguration config) throws
-            NetconfClientDispatcherException {
+    public Future<NetconfClientSession> createClient(final NetconfClientConfiguration config) throws NetconfClientDispatcherException {
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Creating new client session with config " + config + "\n Executor status: " +
-                    m_executorService);
+            LOGGER.debug("Creating new client session" + "\n Executor status: " + m_executorService);
         }
         return m_executorService.submit(new Callable<NetconfClientSession>() {
             @Override
@@ -60,8 +59,7 @@ public abstract class AbstractNetconfClientDispatcher implements NetconfClientDi
             throws NetconfClientDispatcherException;
 
     @Override
-    public Future<TcpServerSession> createReverseClient(NetconfClientConfiguration config) throws
-            NetconfClientDispatcherException {
+    public Future<TcpServerSession> createReverseClient(NetconfClientConfiguration config) throws NetconfClientDispatcherException {
         throw new NetconfClientDispatcherException("This client dispatacher does not support reverse connnection");
 
     }

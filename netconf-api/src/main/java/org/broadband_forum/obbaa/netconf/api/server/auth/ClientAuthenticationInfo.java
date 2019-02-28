@@ -23,11 +23,10 @@ public class ClientAuthenticationInfo {
     private final String m_username;
     private final String m_password;
     private final InetSocketAddress m_inetAddressSource;
-    private final InetSocketAddress m_inetAddressDestination;
+    private final  InetSocketAddress m_inetAddressDestination;
 
-    public ClientAuthenticationInfo(long clientSessionId, String username, String password, InetSocketAddress
-            inetAddressSource,
-                                    InetSocketAddress inetDestinationAddress) {
+    public ClientAuthenticationInfo(long clientSessionId, String username, String password, InetSocketAddress inetAddressSource,
+            InetSocketAddress inetDestinationAddress) {
         this.m_clientSessionId = clientSessionId;
         this.m_username = username;
         this.m_password = password;
@@ -58,15 +57,15 @@ public class ClientAuthenticationInfo {
     public String getSourceAddress() {
         return getInetAddressSource().getAddress().getHostAddress();
     }
-
+    
     public String getDestinationAddress() {
         return getInetAddressDestination().getAddress().getHostAddress();
     }
-
+    
     public int getSourcePort() {
         return getInetAddressSource().getPort();
     }
-
+    
     public int getDestinationPort() {
         return getInetAddressDestination().getPort();
     }

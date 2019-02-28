@@ -109,10 +109,10 @@ public abstract class ServerMessageListenerAdapter implements NetconfServerMessa
     public void sessionClosed(String reasonForClosing, int sessionId) {
 
     }
-
+    
     @Override
-    public void onAction(NetconfClientInfo info, ActionRequest req, ActionResponse resp) {
-
+    public void onAction(NetconfClientInfo info, ActionRequest req, ActionResponse resp){
+    	
     }
 
 }

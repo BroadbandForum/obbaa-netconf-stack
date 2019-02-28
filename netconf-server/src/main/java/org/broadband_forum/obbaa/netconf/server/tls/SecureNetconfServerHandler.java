@@ -17,17 +17,24 @@
 package org.broadband_forum.obbaa.netconf.server.tls;
 
 import static org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener.CLOSE_RESPONSE_TIME_OUT_SECS;
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.CHUNKED_HANDLER;
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.CHUNK_SIZE;
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.EOM_HANDLER;
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.MAXIMUM_SIZE_OF_CHUNKED_MESSAGES;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.server.AbstractResponseChannel;
-import org.broadband_forum.obbaa.netconf.server.AnvTracingUtil;
 import org.w3c.dom.Document;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodec;
+import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodecImpl;
+import org.broadband_forum.obbaa.netconf.api.MessageToolargeException;
+import org.broadband_forum.obbaa.netconf.api.NetconfMessageCodec;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLoggingContext;
@@ -37,6 +44,7 @@ import org.broadband_forum.obbaa.netconf.api.messages.CompletableMessage;
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
 import org.broadband_forum.obbaa.netconf.api.messages.KillSessionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfDelimiters;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfHelloMessage;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorInfo;
@@ -50,36 +58,47 @@ import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.api.utils.SystemPropertyUtils;
+import org.broadband_forum.obbaa.netconf.server.AbstractResponseChannel;
+import org.broadband_forum.obbaa.netconf.server.AnvTracingUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 
 public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<String> {
     private static final String HELLO_MESSAGE_NOT_RECIEVED = "hello message not received";
-    private static final Logger LOGGER = Logger.getLogger(SecureNetconfServerHandler.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SecureNetconfServerHandler.class, LogAppNames.NETCONF_LIB);
     private NetconfServerMessageListener m_serverMessageListener;
     private AtomicBoolean m_helloRecieved = new AtomicBoolean(false);
     private Channel m_channel;
     private int m_sessionId;
     private NetconfClientInfo m_clientInfo;
     private boolean m_closeSession = false;
+    private Set<String> m_caps;
 
+    protected NetconfMessageCodec getCurrentCodec() {
+        return m_currentCodec;
+    }
+
+    private FrameAwareNetconfMessageCodec m_currentCodec = new FrameAwareNetconfMessageCodecImpl();
     protected ServerMessageHandler m_serverMessageHandler;
-    protected ResponseChannel m_responseChannel;
+    protected TLSChannel m_responseChannel;
     private NetconfLogger m_netconfLogger;
 
     public SecureNetconfServerHandler(NetconfServerMessageListener axsNetconfServerMessageListener,
-                                      ServerMessageHandler serverMessageHandler, int sessionId, NetconfLogger
-                                              netconfLogger) {
+                                      ServerMessageHandler serverMessageHandler, Set<String> caps, int sessionId, NetconfLogger netconfLogger) {
         this.m_serverMessageListener = axsNetconfServerMessageListener;
         this.m_serverMessageHandler = serverMessageHandler;
         this.m_sessionId = sessionId;
-        this.m_clientInfo = new NetconfClientInfo("TLS-CLIENT", m_sessionId);// TODO: FNMS-9949 need to figure out
-        // how to get username
+        this.m_clientInfo = new NetconfClientInfo("TLS-CLIENT", m_sessionId);// TODO: FNMS-9949 need to figure out how to get username
         this.m_responseChannel = new TLSChannel();
         m_netconfLogger = netconfLogger;
+        this.m_caps = caps;
     }
 
     @Override
@@ -89,7 +108,7 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         String remoteHost = NetconfClientInfo.NON_INET_HOST;
         String remotePort = NetconfClientInfo.NON_INET_PORT;
         if (remoteAddress instanceof InetSocketAddress) {
-            remoteHost = ((InetSocketAddress) remoteAddress).getHostName();
+            remoteHost = ((InetSocketAddress) remoteAddress).getAddress().getHostAddress();
             remotePort = String.valueOf(((InetSocketAddress) remoteAddress).getPort());
         }
         m_clientInfo.setRemoteHost(remoteHost).setRemotePort(remotePort);
@@ -105,41 +124,51 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
         LOGGER.debug("Server incoming message:" + msg);
-        if (!m_helloRecieved.get()) {
-            Document rpcDoc = DocumentUtils.stringToDocument(msg);
+        Document doc = null;
+        try{
+            doc = m_currentCodec.decode(msg);
+            if (!m_helloRecieved.get()) {
+                if (!NetconfResources.HELLO.equals(doc.getFirstChild().getNodeName())) {
+                    closeSession();
+                    ctx.flush();
+                } else {
+                    NetconfHelloMessage hello = DocumentToPojoTransformer.getHelloMessage(doc);
+                    m_helloRecieved.set(true);
+                    LOGGER.info("Server Received Hello message :" + hello.toString());
 
-            if (!NetconfResources.HELLO.equals(rpcDoc.getFirstChild().getNodeName())) {
-                closeSession();
-                ctx.flush();
+                    if (hello.getCapabilities().contains(NetconfResources.NETCONF_BASE_CAP_1_1)
+                            && this.m_caps.contains(NetconfResources.NETCONF_BASE_CAP_1_1)) {
+                        ctx.pipeline().replace(EOM_HANDLER, CHUNKED_HANDLER, new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, false, NetconfDelimiters.rpcChunkMessageDelimiter()));
+                        int chunkSize = Integer.parseInt(SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(CHUNK_SIZE,"65536"));
+                        int maxSizeOfChunkMsg = Integer.parseInt(SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(MAXIMUM_SIZE_OF_CHUNKED_MESSAGES,"67108864"));
+                        m_currentCodec.useChunkedFraming(maxSizeOfChunkMsg , chunkSize);
+                    }
+                    m_responseChannel.setHandler(m_currentCodec);
+                    m_serverMessageListener.onHello(m_clientInfo, hello.getCapabilities());
+                }
             } else {
-                NetconfHelloMessage hello = DocumentToPojoTransformer.getHelloMessage(rpcDoc);
-                m_helloRecieved.set(true);
-                LOGGER.info("Server Received Hello message :" + hello.toString());
-                m_serverMessageListener.onHello(m_clientInfo, hello.getCapabilities());
+                processRequest(doc);
             }
-        } else {
-            processRequest(msg);
+        }catch (MessageToolargeException e){
+            LOGGER.warn("Closing netconf session, incoming message too long to decode", e);
+            closeSession();
+            ctx.flush();
         }
-
     }
 
-    private void processRequest(String msg) throws NetconfMessageBuilderException {
+    private void processRequest(Document request) throws NetconfMessageBuilderException {
         NetConfResponse response = new NetConfResponse();
-        Document request = null;
         AbstractNetconfRequest netconfRequest = null;
         boolean invalidRequest = false;
         try {
-            request = DocumentUtils.stringToDocument(msg);
             String requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(request);
             if (AnvTracingUtil.isEmptyRequest(request, requestType)) {
                 NetconfLoggingContext.suppress();
             }
-            m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo
-                    .getUsername(), new Integer(m_clientInfo.getSessionId()).toString(), request);
+            m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(), new Integer(m_clientInfo.getSessionId()).toString(), request);
             String messageId = DocumentUtils.getInstance().getMessageIdFromRpcDocument(request);
             if (messageId == null || messageId.isEmpty()) {
-                throw new NetconfMessageBuilderException(new NetconfRpcError(NetconfRpcErrorTag.MISSING_ATTRIBUTE,
-                        NetconfRpcErrorType.RPC,
+                throw new NetconfMessageBuilderException(new NetconfRpcError(NetconfRpcErrorTag.MISSING_ATTRIBUTE, NetconfRpcErrorType.RPC,
                         NetconfRpcErrorSeverity.Error, "<message-id> cannot be null/empty")
                         .addErrorInfoElement(NetconfRpcErrorInfo.BadAttribute, NetconfResources.MESSAGE_ID)
                         .addErrorInfoElement(NetconfRpcErrorInfo.BadElement, NetconfResources.RPC).toString());
@@ -169,8 +198,7 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
                         if (!isKillSessionValid((KillSessionRequest) netconfRequest, m_clientInfo)) {
                             invalidRequest = true;
                             response.setOk(false);
-                            NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.INVALID_VALUE,
-                                    NetconfRpcErrorType.Application,
+                            NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.INVALID_VALUE, NetconfRpcErrorType.Application,
                                     NetconfRpcErrorSeverity.Error, "Invalid session ID");
                             response.addError(rpcError);
                         }
@@ -197,8 +225,7 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
                 // Send RPC error and close the session
                 invalidRequest = true;
                 response.setOk(false);
-                NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.MALFORMED_MESSAGE,
-                        NetconfRpcErrorType.RPC,
+                NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.MALFORMED_MESSAGE, NetconfRpcErrorType.RPC,
                         NetconfRpcErrorSeverity.Error, "Invalid request type");
                 response.addError(rpcError);
                 m_closeSession = true;
@@ -206,17 +233,16 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         } catch (NetconfMessageBuilderException e) {
             if (request != null) {
                 try {
-                    LOGGER.error("Got an invalid netconf request from :" + m_clientInfo + " " + DocumentUtils
-                            .documentToString(request));
+                    LOGGER.error("Got an invalid netconf request from :" + m_clientInfo + " " + DocumentUtils.documentToString(request));
                 } catch (NetconfMessageBuilderException ex) {
                     LOGGER.error("Got an invalid netconf request from :" + m_clientInfo, ex);
                 }
             }
             invalidRequest = true;
             response.setOk(false);
-            NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ATTRIBUTE, NetconfRpcErrorType
-                    .RPC,
-                    NetconfRpcErrorSeverity.Error, "Got an invalid netconf request from " + m_clientInfo);
+            NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.MISSING_ATTRIBUTE, NetconfRpcErrorType.RPC,
+                    NetconfRpcErrorSeverity.Error, "Got an invalid netconf request from user: " + m_clientInfo.getUsername() + ", sessionId : " + m_clientInfo.getSessionId()
+                    + ", IP address : " + m_clientInfo.getRemoteHost() + ", Port: " + m_clientInfo.getRemotePort());
             response.addError(rpcError);
         } finally {
             NetconfLoggingContext.enable();
@@ -228,9 +254,9 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         }
     }
 
-    private void killSession(KillSessionRequest axsNetconfRequest) {
-        LOGGER.info("Session killed :" + axsNetconfRequest.requestToString());
-        SecureSessionManager.getInstance().killSesssion(axsNetconfRequest.getSessionId());
+    private void killSession(int sessionId) {
+        LOGGER.info("Session killed :" + sessionId);
+        SecureSessionManager.getInstance().killSesssion(sessionId);
 
     }
 
@@ -277,41 +303,53 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         return m_responseChannel;
     }
 
-    private class TLSChannel extends AbstractResponseChannel {
-        public synchronized void sendResponse(NetConfResponse response, AbstractNetconfRequest request) throws
-                NetconfMessageBuilderException {
-            // write to the wire
+    protected class TLSChannel extends AbstractResponseChannel {
+        private NetconfMessageCodec m_handler;
+
+        public void setHandler(NetconfMessageCodec handler) {
+            m_handler = handler;
+        }
+
+        public void sendResponse(NetConfResponse response, AbstractNetconfRequest request) throws NetconfMessageBuilderException {
+            markSessionToBeClosedOrKillSession(request, response);
+            writeResponse(response);
+        }
+
+        private void markSessionToBeClosedOrKillSession(AbstractNetconfRequest request, NetConfResponse response) throws NetconfMessageBuilderException {
             if (request != null) {
                 try {
-                    response.setOtherRpcAttributes(DocumentUtils.getInstance().getRpcOtherAttributes(request
-                            .getRequestDocument()));
+                    response.setOtherRpcAttributes(DocumentUtils.getInstance().getRpcOtherAttributes(request.getRequestDocument()));
                     if (AnvTracingUtil.isEmptyRequest(request)) {
                         NetconfLoggingContext.suppress();
                     }
-                    m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(),
-                            m_clientInfo.getUsername(),
-                            new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument());
+                    m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(),
+                            new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument(), request);
                     if (request instanceof CloseSessionRequest) {
                         if (response.isOk()) {
                             m_closeSession = true;
                         }
                     } else if (request instanceof KillSessionRequest) {
                         if (response.isOk()) {
-                            killSession((KillSessionRequest) request);
+                            killSession(((KillSessionRequest) request).getSessionId());
                         }
+                    } else if (response.isCloseSession()) {
+                         m_closeSession = true;
                     }
                 } finally {
                     NetconfLoggingContext.enable();
                 }
             }
+        }
 
+        private void writeResponse(NetConfResponse response) throws NetconfMessageBuilderException {
             Document responseDoc = response.getResponseDocument();
-            String responseString = DocumentUtils.documentToString(responseDoc) + NetconfResources.RPC_EOM_DELIMITER;
+            byte[] responseBytes = m_handler.encode(responseDoc);
+            String str = new String(responseBytes);
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(String.format("SERVER: sending Response : %s", responseString));
+                LOGGER.debug(String.format("SERVER: sending Response : %s", str));
             }
             try {
-                doWrite(response, responseString);
+                doWrite(response, str);
             } catch (InterruptedException e) {
                 LOGGER.warn("Interrupted while sending close/kill session response", e);
             } finally {
@@ -325,8 +363,8 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         public synchronized void sendNotification(Notification notification) {
             try {
                 Document document = notification.getNotificationDocument();
-                String notificationString = DocumentUtils.documentToString(document) + NetconfResources
-                        .RPC_EOM_DELIMITER;
+                byte[] notifByte = m_handler.encode(document);
+                String notificationString = new String(notifByte);
                 // lock output Stream to make sure no other thread writes same time to support inter-leave capability
                 if (m_channel.isOpen() && m_channel.isActive()) {
                     doWrite(notification, notificationString);
@@ -337,16 +375,13 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
                     // session is closed
                     m_closeSession = true;
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Notification not pushed to " + m_clientInfo.toString() + "-session closed-" +
-                                notification.notificationToPrettyString());
+                        LOGGER.debug("Notification not pushed to " + m_clientInfo.toString() + "-session closed-" + notification.notificationToPrettyString());
                     }
                 }
             } catch (Exception e) {
-                // When the server fails to deliver a notification (EG TCP error), the server closes the session that
-                // created the
+                // When the server fails to deliver a notification (EG TCP error), the server closes the session that created the
                 // subscription
-                LOGGER.error("Session will be closed. Exception occurred while sending notification-" + notification,
-                        e);
+                LOGGER.error("Session will be closed. Exception occurred while sending notification-" + notification, e);
                 m_closeSession = true;
             } finally {
                 if (m_closeSession) {

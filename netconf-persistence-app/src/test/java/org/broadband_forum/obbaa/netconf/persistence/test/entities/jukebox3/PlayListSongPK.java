@@ -21,22 +21,22 @@ import java.io.Serializable;
 /**
  * Created by keshava on 1/29/16.
  */
-public class PlayListSongPK implements Serializable {
+public class PlayListSongPK implements Serializable{
     String indx;
     String parentId;
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
+        if (this == o){
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (o == null || getClass() != o.getClass()){
             return false;
         }
 
         PlayListSongPK that = (PlayListSongPK) o;
 
-        if (parentId != null ? !parentId.equals(that.parentId) : that.parentId != null) {
+        if (parentId != null ? !parentId.equals(that.parentId) : that.parentId != null){
             return false;
         }
         return indx != null ? indx.equals(that.indx) : that.indx == null;
