@@ -1,9 +1,9 @@
 <pkgmgr:current-configuration  xmlns:pkgmgr="http://www.test-company.com/solutions/package-manager">
     <pkgmgr:timestamp>2016-11-07T13:06:01.306Z</pkgmgr:timestamp>
     <pkgmgr:repositories>
-        <pkgmgr:repository>mvn:org.bbf/feature/2.0.0/xml/features</pkgmgr:repository>
-        <pkgmgr:repository>mvn:org.bbf.modulex/feature/features-repo/2.0.0/xml/features</pkgmgr:repository>
-        <pkgmgr:repository>mvn:org.bbf.moduley/pan-feature/2.0.0/xml/features</pkgmgr:repository>
+        <pkgmgr:repository>mvn:org.bbf/feature/2.1.0/xml/features</pkgmgr:repository>
+        <pkgmgr:repository>mvn:org.bbf.modulex/feature/features-repo/2.1.0/xml/features</pkgmgr:repository>
+        <pkgmgr:repository>mvn:org.bbf.moduley/pan-feature/2.1.0/xml/features</pkgmgr:repository>
     </pkgmgr:repositories>
     <pkgmgr:feature>
         <pkgmgr:feature-name>resource-management/1.0.0.SNAPSHOT</pkgmgr:feature-name>

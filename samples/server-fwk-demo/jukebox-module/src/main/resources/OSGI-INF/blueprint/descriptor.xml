@@ -1,0 +1,100 @@
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0" xmlns:jpa="http://aries.apache.org/xmlns/jpa/v2.0.0" xmlns:tx="http://aries.apache.org/xmlns/transactions/v1.2.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.osgi.org/xmlns/blueprint/v1.0.0 https://osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd"
+    default-activation="eager">
+    <jpa:enable />
+    <tx:enable-annotations />
+
+    <!-- bean definition -->
+    <bean id="osgiEDSM" class="org.broadband_forum.obbaa.netconf.samples.jb.persistence.OsgiEntityDataStoreManager" />
+
+    <bean id="persistenceManagerUtil" class="org.broadband_forum.obbaa.netconf.persistence.jpa.OsgiPersistenceManagerUtil" >
+        <property name="entityDataStoreManager" ref="osgiEDSM" />
+    </bean>
+
+    <bean id="artistDao" class="org.broadband_forum.obbaa.netconf.samples.jb.persistence.ArtistDaoImpl">
+        <argument ref="persistenceManagerUtil"/>
+    </bean>
+
+    <reference id="schemaRegistry" interface="org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry" availability="mandatory"/>
+    <reference id="jpaModelServiceDeployer" interface="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ModelServiceDeployer"
+               availability="mandatory" filter="(dsm.type=jpa)"/>
+    <reference id="entityRegistry" interface="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistry"/>
+    <reference id="modelNodeHelperRegistry" interface="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry"
+               availability="mandatory"/>
+    <reference id="subSystemRegistry" interface="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry"
+               availability="mandatory"/>
+    <reference id="modelNodeDSMRegistry" interface="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistry"
+               availability="mandatory"/>
+
+    <bean id="modelNodeDSM" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.XmlSubtreeDSM">
+        <argument ref="persistenceManagerUtil" />
+        <argument ref="entityRegistry" />
+        <argument ref="schemaRegistry" />
+        <argument ref="modelNodeHelperRegistry" />
+        <argument ref="subSystemRegistry" />
+        <argument ref="modelNodeDSMRegistry" />
+    </bean>
+
+    <bean id="playRpcHandler" class="org.broadband_forum.obbaa.netconf.samples.jb.app.PlayRpcHandler"/>
+
+    <bean id="jukeboxModelService" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.BundleContextAwareModelService">
+        <argument value="example-jukebox"/>
+        <argument value="2014-07-03"/>
+        <argument value="/jukebox-default.xml"/>
+        <argument ref="jbSubsystem"/>
+        <argument>
+            <set value-type="org.broadband_forum.obbaa.netconf.server.rpc.RpcRequestHandler">
+                <ref component-id="playRpcHandler"/>
+            </set>
+        </argument>
+        <argument>
+            <set value-type="org.broadband_forum.obbaa.netconf.server.rpc.MultiRpcRequestHandler"/>
+        </argument>
+        <argument>
+            <list>
+                <value>/example-jukebox.yang</value>
+                <value>/ietf-yang-types.yang</value>
+                <value>/ietf-inet-types.yang</value>
+                <value>/ietf-restconf.yang</value>
+            </list>
+        </argument>
+        <property name="bundleContext" ref="blueprintBundleContext"/>
+        <property name="modelNodeDSM" ref="modelNodeDSM"/>
+        <property name="entityClasses" ref="jbEntities"/>
+    </bean>
+
+    <bean id="jbEntities" class="java.util.ArrayList">
+        <argument>
+            <list value-type="java.lang.Class">
+                <value>org.broadband_forum.obbaa.netconf.samples.jb.persistence.entities.Jukebox</value>
+                <value>org.broadband_forum.obbaa.netconf.samples.jb.persistence.entities.Artist</value>
+                <value>org.broadband_forum.obbaa.netconf.samples.jb.persistence.entities.Singer</value>
+                <value>org.broadband_forum.obbaa.netconf.samples.jb.persistence.entities.PlayList</value>
+            </list>
+        </argument>
+    </bean>
+
+    <bean id="jbSubsystem" class="org.broadband_forum.obbaa.netconf.samples.jb.app.JukeboxSubsystem">
+        <argument ref="artistDao"/>
+    </bean>
+
+    <bean id="jukeboxApp" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SimpleNcyApp" init-method="init"
+          destroy-method="destroy">
+        <property name="modelServiceDeployer" ref="jpaModelServiceDeployer"/>
+        <property name="modelServices">
+            <list>
+                <ref component-id="jukeboxModelService"/>
+            </list>
+        </property>
+    </bean>
+
+
+    <service ref="artistDao" interface="org.broadband_forum.obbaa.netconf.samples.jb.persistence.ArtistDao">
+    </service>
+    <!-- Export services -->
+    <service ref="persistenceManagerUtil" interface="org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil" >
+        <service-properties>
+            <entry key="component" value="jukebox" />
+        </service-properties>
+    </service>
+</blueprint>

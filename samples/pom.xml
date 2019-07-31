@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.bbf.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>2.0.0</version>
+        <version>2.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.bbf.obbaa.netconf</groupId>
@@ -29,5 +29,123 @@
     <name>netconf-lib/samples</name>
     <modules>
         <module>netconf-lib-demo</module>
+        <module>server-fwk-demo</module>
     </modules>
+
+    <properties>
+        <codehaus.build_helper.plugin.version>1.9</codehaus.build_helper.plugin.version>
+        <karaf.maven.plugin.version>4.0.2</karaf.maven.plugin.version>
+        <apache.karaf.version>4.0.4</apache.karaf.version>
+        <docker-maven-plugin.version>0.4.3</docker-maven-plugin.version>
+        <opendaylight-yangtools.version>2.0.11</opendaylight-yangtools.version>
+        <pax-jdbc.version>1.1.0</pax-jdbc.version>
+        <hsql.version>2.3.3</hsql.version>
+        <commons-io.version>2.4</commons-io.version>
+        <commons-collection.version>3.2.1</commons-collection.version>
+        <commons-beanutils.version>1.9.2</commons-beanutils.version>
+        <commons-lang3.version>3.5</commons-lang3.version>
+        <commons.lang.version>2.6</commons.lang.version>
+        <opendaylight-yangtools.version>2.0.11</opendaylight-yangtools.version>
+        <transaction.version>1.3.0</transaction.version>
+        <transaction-api.version>1.2</transaction-api.version>
+        <pax-jdbc.version>1.1.0</pax-jdbc.version>
+        <jpa.version>2.3.0</jpa.version>
+        <hibernate.version>4.3.6.Final</hibernate.version>
+        <pax-http-whiteboard.version>4.2.4</pax-http-whiteboard.version>
+        <ehcache-core.version>2.4.3</ehcache-core.version>
+        <commons-pool2.version>2.4.2</commons-pool2.version>
+        <guava.version>23.6.1-jre</guava.version>
+        <errorprone.version>2.0.18</errorprone.version>
+        <j2objc-annotations.version>1.1</j2objc-annotations.version>
+        <animal-sniffer-annotation.version>1.14</animal-sniffer-annotation.version>
+        <netty.version>4.1.16.Final</netty.version>
+        <bouncy-castle.version>1.46</bouncy-castle.version>
+        <joda-time.version>2.8</joda-time.version>
+        <mina.version>1.3.0</mina.version>
+        <commons-io.version>2.4</commons-io.version>
+        <commons-collection.version>3.2.1</commons-collection.version>
+        <commons-beanutils.version>1.9.2</commons-beanutils.version>
+        <javax.servlet-api.version>3.0.1</javax.servlet-api.version>
+        <jdom.version>1.1.3</jdom.version>
+        <commons-jxpath.version>1.3</commons-jxpath.version>
+        <javax.ws.rs-api.version>2.0</javax.ws.rs-api.version>
+        <apache.servicemix.bundles.aopalliance.version>1.0_6</apache.servicemix.bundles.aopalliance.version>
+        <org.apache.servicemix.bundles.xmlbeans.version>2.6.0_2</org.apache.servicemix.bundles.xmlbeans.version>
+
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.bbf.obbaa.netconf</groupId>
+                <artifactId>bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.karaf.features</groupId>
+                <artifactId>framework</artifactId>
+                <type>kar</type>
+                <version>${apache.karaf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.karaf.features</groupId>
+                <artifactId>standard</artifactId>
+                <classifier>features</classifier>
+                <version>${apache.karaf.version}</version>
+                <type>xml</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.karaf.log</groupId>
+                <artifactId>org.apache.karaf.log.core</artifactId>
+                <version>${apache.karaf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.karaf.features</groupId>
+                <artifactId>enterprise</artifactId>
+                <classifier>features</classifier>
+                <type>xml</type>
+                <version>${apache.karaf.version}</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${codehaus.build_helper.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>attach-features-xml</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>attach-artifact</goal>
+                            </goals>
+                            <configuration>
+                                <artifacts>
+                                    <artifact>
+                                        <file>target/classes/features.xml</file>
+                                        <type>xml</type>
+                                        <classifier>features</classifier>
+                                    </artifact>
+                                </artifacts>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.karaf.tooling</groupId>
+                    <artifactId>karaf-maven-plugin</artifactId>
+                    <version>${karaf.maven.plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

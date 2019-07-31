@@ -1,0 +1,29 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"  xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="7">
+  <edit-config>
+    <target>
+      <running/>
+    </target>
+    <config>
+    	<jukebox xmlns="http://example.com/ns/example-jukebox" xc:operation="replace">
+        <library >
+          <artist>
+            <name>Lenny</name>
+            <album>
+              <name>greatest hits</name>
+              <year>2000</year>
+              <genre>pop</genre>
+              <song>
+                <name>song2</name>
+                <singer-ref>Lenny Kravitz</singer-ref>
+                <location>/tmp/song1</location>
+              </song>
+            </album>
+          </artist>
+          <singer>
+            <name>Lenny Kravitz</name>
+          </singer>
+        </library>
+      </jukebox>
+    </config>
+  </edit-config>
+</rpc>

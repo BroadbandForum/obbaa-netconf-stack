@@ -1,0 +1,11 @@
+version: '2'
+services:
+    sample-ncy-stack:
+        image: sample-ncy-stack
+        container_name: sample-ncy-stack
+        restart: always
+        ports:
+            #remote debug port
+            - "5006:5005"
+            #netconf port
+            - "9294:9292"
