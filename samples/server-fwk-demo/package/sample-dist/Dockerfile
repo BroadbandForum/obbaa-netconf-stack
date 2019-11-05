@@ -29,7 +29,7 @@ RUN apk add --no-cache bash
 
 RUN mkdir /sample
 RUN mkdir /sample/stores
-ARG version=1.0.0-SNAPSHOT
+ARG version=2.1.1
 ADD target/sample-dist*.tar.gz /sample
 
 RUN ln -s /sample/sample-dist-${version} /sample/sample-dist

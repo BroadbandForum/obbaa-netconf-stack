@@ -11,7 +11,7 @@
 ### Reporting an Issue:
 >Note: Issues on GitHub for OB-BAA NETCONF stack are intended to be related to bugs and integration questions. 
 
-* Make sure you test against the latest released version. It is possible we already fixed the bug you're experiencing. However, if you are on an older version of OB-BAA and feel the issue is critical, do let us know.
+* Make sure you test against the latest released version. It is possible we already fixed the bug you're experiencing. However, if you are on an older version of OB-BAA NETCONF stack and feel the issue is critical, do let us know.
 
 * Check existing issues (both open and closed) to make sure it has not been reported previously.
 

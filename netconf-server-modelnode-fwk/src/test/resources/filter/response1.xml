@@ -1,14 +1,14 @@
 <pkgmgr:current-configuration xmlns:pkgmgr="http://www.test-company.com/solutions/package-manager">
     <pkgmgr:feature>
-        <pkgmgr:feature-name>resource-management/1.0.0.SNAPSHOT</pkgmgr:feature-name>
+        <pkgmgr:feature-name>resource-management/2.1.1</pkgmgr:feature-name>
         <pkgmgr:required>false</pkgmgr:required>
     </pkgmgr:feature>
     <pkgmgr:feature>
-        <pkgmgr:feature-name>common-apps/1.0.0.SNAPSHOT</pkgmgr:feature-name>
+        <pkgmgr:feature-name>common-apps/2.1.1</pkgmgr:feature-name>
         <pkgmgr:required>true</pkgmgr:required>
     </pkgmgr:feature>
     <pkgmgr:feature>
-        <pkgmgr:feature-name>file-transfer-libs/1.0.0.SNAPSHOT</pkgmgr:feature-name>
+        <pkgmgr:feature-name>file-transfer-libs/2.1.1</pkgmgr:feature-name>
         <pkgmgr:required>false</pkgmgr:required>
     </pkgmgr:feature>
 </pkgmgr:current-configuration>
