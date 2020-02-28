@@ -18,9 +18,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.bbf.obbaa.netconf</groupId>
+    <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>2.1.1</version>
+    <version>3.0.0</version>
     <packaging>pom</packaging>
     <name>netconf-lib/parent-pom</name>
     <modules>
@@ -482,6 +482,17 @@
                     </execution>
                 </executions>
             </plugin-->
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.8</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
         </plugins>
         <extensions>
             <extension>
@@ -491,6 +502,37 @@
             </extension>
         </extensions>
     </build>
+    <url>https://github.com/broadbandforum/obbaa-netconf-stack</url>
+    <description>obbaa-netconf-stack libs</description>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>broadband-forum</name>
+            <email>helpatbbf@broadband-forum.org</email>
+            <organization>broadband-forum.org</organization>
+            <organizationUrl>https://obbaa.broadband-forum.org</organizationUrl>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git://github.com/broadbandforum/obbaa-netconf-stack.git</connection>
+        <developerConnection>scm:git:ssh://github.com:broadbandforum/obbaa-netconf-stack.git</developerConnection>
+        <url>http://github.com//broadbandforum/obbaa-netconf-stack</url>
+    </scm>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
     <profiles>
         <profile>
             <id>jacoco</id>
@@ -502,7 +544,7 @@
                         <version>${jacoco.maven.plugin}</version>
                         <configuration>
                             <includes>
-                                <include>org.broadband_forum.obbaa.*</include>
+                                <include>org.broadband-forum.obbaa.*</include>
                             </includes>
                             <destFile>${sonar.jacoco.reportPath}</destFile>
                             <propertyName>jacoco.agent.argLine</propertyName>

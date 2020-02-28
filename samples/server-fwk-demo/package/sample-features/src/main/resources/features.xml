@@ -23,19 +23,19 @@
 
     <feature name="sample-feature" version="${project.version}" description="Demo Feature">
         <feature version="${project.version}">third-party-libs</feature>
-        <bundle>mvn:org.bbf.obbaa.netconf/netconf-api/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/netconf-client/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/auth-spi/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/netconf-persistence-app/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/stack-logging-api/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/netconf-server/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/stack-api/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/stack-logging-api/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/netconf-server-modelnode-fwk/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf/netconf-notification-app/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/netconf-api/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/netconf-client/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/auth-spi/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/netconf-persistence-app/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/stack-logging-api/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/netconf-server/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/stack-api/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/stack-logging-api/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/netconf-server-modelnode-fwk/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf/netconf-notification-app/${project.version}</bundle>
 
-        <bundle>mvn:org.bbf.obbaa.netconf.samples/netconf-nbi/${project.version}</bundle>
-        <bundle>mvn:org.bbf.obbaa.netconf.samples/jukebox-module/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf.samples/netconf-nbi/${project.version}</bundle>
+        <bundle>mvn:org.broadband-forum.obbaa.netconf.samples/jukebox-module/${project.version}</bundle>
 
     </feature>
 

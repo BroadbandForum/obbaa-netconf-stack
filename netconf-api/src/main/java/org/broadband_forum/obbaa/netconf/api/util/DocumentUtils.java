@@ -229,8 +229,7 @@ public class DocumentUtils {
             Node type = filterNode.getAttributes().getNamedItem(NetconfResources.TYPE);
             filter.setType(type.getTextContent());
 
-            Element xmlFilter = DocumentUtils.getInstance().getFirstElementChildNode(filterNode);
-            filter.addXmlFilter(xmlFilter);
+            filter.setXmlFilters(DocumentUtils.getChildElements(filterNode));
 
             subscriptionRequest.setFilter(filter);
         }

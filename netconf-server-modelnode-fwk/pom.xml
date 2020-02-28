@@ -2,34 +2,34 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <groupId>org.bbf.obbaa.netconf</groupId>
+        <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>2.1.1</version>
+        <version>3.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.bbf.obbaa.netconf</groupId>
+    <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>netconf-server-modelnode-fwk</artifactId>
     <packaging>bundle</packaging>
     <name>netconf-fwk/netconf-server-modelnode-fwk</name>
     <dependencies>
         <!-- Internal -->
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>stack-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-persistence-app</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>auth-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-persistence-app</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
@@ -37,17 +37,17 @@
 
         <!-- External -->
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>stack-logging-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-server</artifactId>
             <version>${project.version}</version>
         </dependency>

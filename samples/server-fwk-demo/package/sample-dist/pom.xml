@@ -19,9 +19,9 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>org.bbf.obbaa.netconf.samples</groupId>
+        <groupId>org.broadband-forum.obbaa.netconf.samples</groupId>
         <artifactId>package</artifactId>
-        <version>2.1.1</version>
+        <version>3.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>sample-dist</artifactId>
@@ -29,7 +29,7 @@
     <name>samples/server-fwk-demo/karaf-package/sample-dist</name>
     <dependencies>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf.samples</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf.samples</groupId>
             <artifactId>sample-features</artifactId>
             <version>${project.version}</version>
             <classifier>features</classifier>
@@ -57,67 +57,67 @@
             <type>xml</type>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-client</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-server</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-driver</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>stack-logging-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-persistence-app</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>auth-spi</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>stack-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-server-modelnode-fwk</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>netconf-notification-app</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.bbf.obbaa.netconf.samples</groupId>
+            <groupId>org.broadband-forum.obbaa.netconf.samples</groupId>
             <artifactId>netconf-nbi</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

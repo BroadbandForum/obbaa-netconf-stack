@@ -34,6 +34,7 @@ import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.junit.Test;
 import org.w3c.dom.DOMException;
@@ -182,6 +183,34 @@ public class DocumentUtilsTest {
         request.setRpcInput(element);
         subscriptionRequest = DocumentUtils.getInstance().getSubscriptionRequest(request);
         assertEquals(NetconfResources.NETCONF, subscriptionRequest.getStream());
+    }
+    
+    @Test
+    public void testGetSubscriptionRequestWithFilter() throws DOMException, ParseException, NetconfMessageBuilderException {
+        NetconfRpcRequest request = new NetconfRpcRequest();
+        String rpcInput = "<create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">\n" +
+                "          <filter type=\"subtree\">\n" +
+                "               <test:data2 xmlns:test=\"test-namespace\">\n" +
+                "                   <test:data1>value1</test:data1>\n" +
+                "               </test:data2>\n" +
+                "               <test:data2 xmlns:test=\"test-namespace\">\n" +
+                "                   <test:data1>value2</test:data1>\n" +
+                "               </test:data2>\n" +
+                "               <test:data4 xmlns:test=\"test-namespace\">\n" +
+                "                   <test:data3>value3</test:data3>\n" +
+                "               </test:data4>\n" +
+                "          </filter>\n" +
+                "          </create-subscription>";
+        Element element = DocumentUtils.stringToDocument(rpcInput).getDocumentElement();
+        request.setRpcInput(element);
+        CreateSubscriptionRequest subscriptionRequest = DocumentUtils.getInstance().getSubscriptionRequest(request);
+
+        NetconfFilter filter = subscriptionRequest.getFilter();
+        List<Element> elements = filter.getXmlFilterElements();
+        assertEquals(3, elements.size());
+        assertEquals("value1", elements.get(0).getChildNodes().item(1).getTextContent());
+        assertEquals("value2", elements.get(1).getChildNodes().item(1).getTextContent());
+        assertEquals("value3", elements.get(2).getChildNodes().item(1).getTextContent());
     }
 
     @Test

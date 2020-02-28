@@ -1,3 +1,3 @@
 <pkgmgr:current-configuration xmlns:pkgmgr="http://www.test-company.com/solutions/package-manager">
-    <pkgmgr:repository>mvn:org.bbf/feature/2.1.1/xml/features</pkgmgr:repository>
+    <pkgmgr:repository>mvn:org.bbf/feature/3.0.0/xml/features</pkgmgr:repository>
 </pkgmgr:current-configuration>
