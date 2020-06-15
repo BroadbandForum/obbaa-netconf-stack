@@ -62,7 +62,7 @@
         <bouncy.castle.version>1.46</bouncy.castle.version>
         <mina.version>1.3.0</mina.version>
         <woodstox.core.asl.version>4.4.1</woodstox.core.asl.version>
-        <guava.version>23.6.1-jre</guava.version>
+        <guava.version>24.1.1-jre</guava.version>
         <scala.version>2.11.12</scala.version>
         <zk.version>0.10</zk.version>
         <osgi.core.version>6.0.0</osgi.core.version>
