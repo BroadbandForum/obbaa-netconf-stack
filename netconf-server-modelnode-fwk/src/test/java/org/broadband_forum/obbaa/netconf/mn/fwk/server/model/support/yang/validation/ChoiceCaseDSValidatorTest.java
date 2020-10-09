@@ -657,16 +657,16 @@ public class ChoiceCaseDSValidatorTest extends AbstractDataStoreValidatorTest {
 	 */
 	@Test
     public void testMandatoryChoiceCase3() throws ModelNodeInitException, SAXException, IOException {
-        String xmlPath = "/datastorevalidatortest/choicecasevalidation/choice-case-test-mandatory3.xml";
-        NetConfResponse response = assertSendingFailedEdit(m_server, m_clientTestUser, loadAsXml(xmlPath));
-        assertEquals(1, response.getErrors().size());
-        NetconfRpcError rpcError = response.getErrors().get(0);
-        assertEquals(NetconfRpcErrorTag.DATA_MISSING, rpcError.getErrorTag());
-        assertEquals(NetconfRpcErrorType.Application, rpcError.getErrorType());
-        assertEquals(NetconfRpcErrorSeverity.Error, rpcError.getErrorSeverity());
-        assertEquals("Missing mandatory node", rpcError.getErrorMessage());
-        assertEquals("/validation:validation/validation:mandatory-validation/validation:mandatory-case2-leaf2", rpcError.getErrorPath());
-    }
+		String xmlPath = "/datastorevalidatortest/choicecasevalidation/choice-case-test-mandatory3.xml";
+		NetConfResponse response = assertSendingFailedEdit(m_server, m_clientTestUser, loadAsXml(xmlPath));
+		assertEquals(1, response.getErrors().size());
+		NetconfRpcError rpcError = response.getErrors().get(0);
+		assertEquals(NetconfRpcErrorTag.DATA_MISSING, rpcError.getErrorTag());
+		assertEquals(NetconfRpcErrorType.Application, rpcError.getErrorType());
+		assertEquals(NetconfRpcErrorSeverity.Error, rpcError.getErrorSeverity());
+		assertEquals("Missing mandatory node - mandatory-case2-leaf2", rpcError.getErrorMessage());
+		assertEquals("/validation:validation/validation:mandatory-validation/validation:mandatory-case2-leaf2", rpcError.getErrorPath());
+	}
 	
 	@Test
 	public void testEditWithMultipleCasesOfChoiceInReq() throws Exception {

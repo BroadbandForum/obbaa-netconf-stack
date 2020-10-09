@@ -32,6 +32,7 @@ import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilderException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;

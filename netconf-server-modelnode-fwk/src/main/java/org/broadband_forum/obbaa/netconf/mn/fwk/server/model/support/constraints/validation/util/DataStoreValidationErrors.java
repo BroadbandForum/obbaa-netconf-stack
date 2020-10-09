@@ -110,5 +110,11 @@ public class DataStoreValidationErrors {
         id.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, namespace, elementName));
         return id.xPathString();
     }
+    public static NetconfRpcError getViolateMinElementRPCError(String nodeType, int minElements) {
+        NetconfRpcError rpcError = getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED);
+        rpcError.setErrorMessage(String.format("Minimum elements required for %s is %s.", nodeType ,minElements));
+        rpcError.setErrorAppTag("too-few-elements");
+        return rpcError;
+    }
 
 }
