@@ -71,7 +71,7 @@
         <xml.apis.version>1.4.01</xml.apis.version>
         <hibernate.version>4.3.6.Final</hibernate.version>
         <org.hsqldb.version>2.3.3</org.hsqldb.version>
-        <commons-beanutils-version>1.9.2</commons-beanutils-version>
+        <commons-beanutils-version>1.9.4</commons-beanutils-version>
         <commons-logging.version>1.2</commons-logging.version>
         <commons-lang3.version>3.5</commons-lang3.version>
         <commons-jexl-version>1.1_5</commons-jexl-version>
