@@ -23,12 +23,24 @@ public class InsertOperation {
 	public static final String BEFORE = "before";
 	public static final String AFTER = "after";
 
+    public static final InsertOperation FIRST_OP = new InsertOperation(FIRST, null);
+    public static final InsertOperation LAST_OP = new InsertOperation(LAST, null);
+
     private final String m_value;
     private final String m_name;
 
     public InsertOperation(String name, String value) {
         this.m_name = name;
         this.m_value = value;
+    }
+
+    public static InsertOperation get(String name, String value) {
+        if (FIRST.equals(name) ) {
+            return FIRST_OP;
+        } else if(LAST.equals(name)) {
+            return LAST_OP;
+        }
+        return new InsertOperation(name, value);
     }
     
     public String getValue() {

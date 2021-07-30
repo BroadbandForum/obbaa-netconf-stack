@@ -827,4 +827,25 @@ public class SchemaRegistryUtil {
         }
         return null;
     }
+    public static boolean isLeafListOrderedByUser(QName qName, SchemaPath parentSP, SchemaRegistry schemaRegistry) {
+        LeafListSchemaNode leafListSchemaNode = getLeafListSchemaNode(qName, parentSP, schemaRegistry);
+        return leafListSchemaNode.isUserOrdered();
+    }
+
+    private static LeafListSchemaNode getLeafListSchemaNode(QName qName, SchemaPath parentSP, SchemaRegistry schemaRegistry) {
+        Collection<DataSchemaNode> schemaNodes = schemaRegistry.getChildren(parentSP);
+        LeafListSchemaNode leafListSchemaNode = null;
+        for (DataSchemaNode dataSchemaNode : schemaNodes) {
+            if (dataSchemaNode instanceof LeafListSchemaNode) {
+                if (dataSchemaNode.getQName().equals(qName)) {
+                    leafListSchemaNode = (LeafListSchemaNode) dataSchemaNode;
+                    break;
+                }
+            }
+        }
+        if (leafListSchemaNode == null) {
+            throw new RuntimeException(String.format("Cannot get the schema node for '%s'", qName));
+        }
+        return leafListSchemaNode;
+    }
 }

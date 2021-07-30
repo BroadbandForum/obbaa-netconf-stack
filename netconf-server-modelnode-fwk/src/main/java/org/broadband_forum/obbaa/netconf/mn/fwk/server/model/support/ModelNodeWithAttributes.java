@@ -117,6 +117,7 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
         return getAttributes().get(qname);
     }
 
+    @Override
     public Set<ConfigLeafAttribute> getLeafList(QName qName) {
         return m_leafLists.get(qName);
     }
@@ -125,9 +126,11 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
         m_leafLists.putAll(leafLists);
     }
 
+    @Override
     public Map<QName, LinkedHashSet<ConfigLeafAttribute>> getLeafLists() {
         return m_leafLists;
     }
+
 
     public void updateLeafListAttributes(Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes){
         if (leafListAttributes != null) {

@@ -6,6 +6,7 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.Container;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ContainerChild;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ContainerList;
@@ -17,7 +18,10 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Container(name = "album", namespace = Jukebox.NAMESPACE)
 public class Album extends AnnotationModelNode {
@@ -97,4 +101,14 @@ public class Album extends AnnotationModelNode {
     public SchemaPath getModelNodeSchemaPath() {
         return ALBUM_SCHEMA_PATH;
     }
+
+	@Override
+	public Set<ConfigLeafAttribute> getLeafList(QName qName) {
+		return null;
+	}
+
+	@Override
+	public Map<QName, LinkedHashSet<ConfigLeafAttribute>> getLeafLists() {
+		return null;
+	}
 }

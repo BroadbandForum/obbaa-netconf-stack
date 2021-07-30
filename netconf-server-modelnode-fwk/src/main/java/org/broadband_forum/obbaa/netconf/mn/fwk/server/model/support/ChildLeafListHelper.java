@@ -3,6 +3,7 @@ package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetAttributeException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 import java.util.Collection;
@@ -25,5 +26,6 @@ public interface ChildLeafListHelper extends ConstraintHelper {
 	public void removeAllChild(ModelNode instance) throws ModelNodeDeleteException;
 	
 	public void addChildByUserOrder(ModelNode instance, ConfigLeafAttribute value, String leafOperation, InsertOperation insertOperation) throws SetAttributeException, GetAttributeException;
-	
+
+	public LeafListSchemaNode getLeafListSchemaNode();
 }

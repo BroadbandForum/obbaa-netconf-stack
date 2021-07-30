@@ -42,4 +42,8 @@ public interface ConfigLeafAttribute {
      */
     String getNamespace();
 
+    Integer getInsertIndex();
+
+    void setInsertIndex(Integer insertIndex);
+
 }

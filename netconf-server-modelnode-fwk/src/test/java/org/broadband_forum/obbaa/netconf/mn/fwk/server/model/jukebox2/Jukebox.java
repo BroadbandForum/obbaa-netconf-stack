@@ -1,10 +1,15 @@
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.jukebox2;
 
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.Container;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ContainerChild;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
@@ -50,4 +55,14 @@ public class Jukebox extends AnnotationModelNode {
     public SchemaPath getModelNodeSchemaPath() {
         return JUKEBOX_SCHEMA_PATH;
     }
+
+	@Override
+	public Set<ConfigLeafAttribute> getLeafList(QName qName) {
+		return null;
+	}
+
+	@Override
+	public Map<QName, LinkedHashSet<ConfigLeafAttribute>> getLeafLists() {
+		return null;
+	}
 }

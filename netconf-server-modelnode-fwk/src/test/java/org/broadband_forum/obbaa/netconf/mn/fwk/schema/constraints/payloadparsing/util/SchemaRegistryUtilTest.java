@@ -32,7 +32,6 @@ import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilderException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
@@ -57,6 +56,9 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 
 public class SchemaRegistryUtilTest {
 
+    public static final String NESTED_CHOICE_NS_REVISION = "urn:nested-choice-case-test?revision=2020-01-20";
+    public static final String NESTED_CHOICE_NS = "urn:nested-choice-case-test";
+    public static final String NESTED_CHOICE_REVISION = "2020-01-20";
     private static SchemaRegistry c_anvSchemaRegistry;
 
     @BeforeClass
@@ -67,6 +69,7 @@ public class SchemaRegistryUtilTest {
         addYangSource(yangSources, "/yangSchemaValidationTest/referenceyangs/ietf-yang-types.yang");
         addYangSource(yangSources, "/yangSchemaValidationTest/referenceyangs/anv-alarms.yang");
         addYangSource(yangSources, "/schemaregistryutiltest/test-module@2018-08-23.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/nested-choice-with-leaf-list-and-list@2020-01-20.yang");
         c_anvSchemaRegistry.buildSchemaContext(yangSources, Collections.emptySet(), Collections.emptyMap());
     }
 
@@ -550,7 +553,7 @@ public class SchemaRegistryUtilTest {
                 .getPath()).getParent().toString());
         actualSchemaRegistry = SchemaRegistryUtil.createSchemaRegistry(resourceDir, Collections.emptySet(), Collections.emptyMap(),
                 true, new NoLockService());
-        assertEquals(29, actualSchemaRegistry.getAllModules().size());
+        assertEquals(30, actualSchemaRegistry.getAllModules().size());
         assertEquals(Optional.empty(), actualSchemaRegistry.getModule("dummy"));
     }
 
@@ -651,5 +654,18 @@ public class SchemaRegistryUtilTest {
         Element request = TestUtil.transformToElement(elementXML);
         MountProviderInfo actualValue = SchemaRegistryUtil.getMountProviderInfo(request, c_anvSchemaRegistry);
         assertNull(actualValue);
+    }
+
+    @Test
+    public void testIsLeafListOrderedByUser(){
+        SchemaPath container1ListSP = fromString("(" + NESTED_CHOICE_NS_REVISION + ")" +
+                "root-container");
+
+        assertFalse(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-leaf-list1"),
+                container1ListSP,c_anvSchemaRegistry));
+
+        assertTrue(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-leaf-list2"),
+                container1ListSP,c_anvSchemaRegistry));
+
     }
 }

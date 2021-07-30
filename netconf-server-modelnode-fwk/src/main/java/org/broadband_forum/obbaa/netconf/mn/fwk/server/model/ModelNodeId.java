@@ -124,6 +124,10 @@ public class ModelNodeId implements Comparable<ModelNodeId>, Serializable {
         return new ArrayList<ModelNodeRdn>(this.m_rdns);
     }
 
+    public List<ModelNodeRdn> getRdnsReadOnly() {
+        return this.m_rdns;
+    }
+
     public String getRdnValue(String rdnName) {
         for (ModelNodeRdn rdn : m_rdns) {
             if (rdn.getRdnName().equals(rdnName)) {

@@ -1,7 +1,10 @@
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
@@ -104,4 +107,8 @@ public interface ModelNode {
     }
     
     public ModelNodeDataStoreManager getModelNodeDSM();
+
+	Set<ConfigLeafAttribute> getLeafList(QName qName);
+
+	Map<QName, LinkedHashSet<ConfigLeafAttribute>> getLeafLists();
 }

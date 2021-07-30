@@ -15,6 +15,7 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
     private final String m_attributeNS;
     private final String m_identityRefNS;
     private final String m_identityRefPrefix;
+    private Integer m_insertIndex = -1;
 
     public IdentityRefConfigAttribute(String identityRefNs, String identityRefPrefix, String attributeLocalName, String attributeValue,
                                       String attributeNamespace) {
@@ -75,6 +76,16 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
 
     public String getNamespacePrefix() {
         return m_identityRefPrefix;
+    }
+
+    @Override
+    public Integer getInsertIndex() {
+        return m_insertIndex;
+    }
+
+    @Override
+    public void setInsertIndex(Integer insertIndex) {
+        m_insertIndex = insertIndex;
     }
 
     @Override

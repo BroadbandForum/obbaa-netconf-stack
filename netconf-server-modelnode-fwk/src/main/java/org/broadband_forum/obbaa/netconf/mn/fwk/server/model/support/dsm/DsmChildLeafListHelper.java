@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
@@ -13,7 +14,9 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsin
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetAttributeException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.DataStoreException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildLeafListHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDeleteException;
@@ -87,8 +90,12 @@ public class DsmChildLeafListHelper extends YangConstraintHelper implements Chil
     
     @Override
 	public void addChildByUserOrder(ModelNode parentNode, ConfigLeafAttribute value, String operation, InsertOperation insertOperation) throws SetAttributeException, GetAttributeException {
-		Collection<ConfigLeafAttribute> childList = getValue(parentNode);
-		if (childList.contains(value)) {
+
+        ModelNode reloadedParentNode = reloadModelNode(parentNode, m_modelNodeDSM, m_schemaRegistry);
+        ArrayList<ConfigLeafAttribute> childList = new ArrayList<>();
+        childList.addAll(getValue(reloadedParentNode));
+
+        if (childList.contains(value)) {
 			if (insertOperation != null) {
 				childList.remove(value);
 			} else if (operation.equals(EditConfigOperations.MERGE) || operation.equals(EditConfigOperations.REPLACE)) {
@@ -97,19 +104,25 @@ public class DsmChildLeafListHelper extends YangConstraintHelper implements Chil
 		}
     	// default insert operation
 		if (insertOperation == null) {
-			insertOperation = new InsertOperation(InsertOperation.LAST, null);
+			insertOperation = InsertOperation.LAST_OP;
 		}
         ModelNodeId parentId = EMNKeyUtil.getParentId(parentNode.getSchemaRegistry(), parentNode.getModelNodeSchemaPath(), parentNode.getModelNodeId());
-        int insertIndex = insertChildAtSpecificIndex(childList, value, insertOperation);
+        insertChildAtSpecificIndex(childList, value, insertOperation);
         LinkedHashSet<ConfigLeafAttribute> children = new LinkedHashSet<>();
         children.addAll(childList);
-        m_modelNodeDSM.updateNode(parentNode, parentId, null, Collections.singletonMap(m_qName, children), insertIndex, false);
+        m_modelNodeDSM.updateNode(parentNode, parentId, null, Collections.singletonMap(m_qName, children), -1, false);
 	}
-    
-	private int insertChildAtSpecificIndex(Collection<ConfigLeafAttribute> childList, ConfigLeafAttribute value, InsertOperation insertOperation) {
+
+    @Override
+    public LeafListSchemaNode getLeafListSchemaNode() {
+        return m_leafListSchemaNode;
+    }
+
+    private void insertChildAtSpecificIndex(List<ConfigLeafAttribute> childList, ConfigLeafAttribute value, InsertOperation insertOperation) {
 		if (childList.isEmpty() || insertOperation.getName().equals(InsertOperation.LAST)) {
 			childList.add(value);
-			return childList.size();
+            setInsertIndex(childList);
+            return;
 		}
 
 		ArrayList<ConfigLeafAttribute> children = (ArrayList<ConfigLeafAttribute>)childList;
@@ -121,17 +134,18 @@ public class DsmChildLeafListHelper extends YangConstraintHelper implements Chil
         }
 		if (insertOperation.getName().equals(InsertOperation.FIRST)) {
 			children.add(0, value);
-			return 0;
+            setInsertIndex(childList);
+            return;
 		} else if (insertOperation.getName().equals(InsertOperation.AFTER)) {// For After insert, increase
             indexValueToInsert++;
         }
 		
 		if (indexValueToInsert > children.size() - 1) {
 			children.add(value);
-			return children.size();
+            setInsertIndex(childList);
 		} else {
 			children.add(indexValueToInsert, value);
-			return indexValueToInsert;
+            setInsertIndex(childList);
 		}
 	}
 
@@ -157,5 +171,23 @@ public class DsmChildLeafListHelper extends YangConstraintHelper implements Chil
     @Override
     public boolean isChildSet(ModelNode node) {
         return true;
+    }
+
+    private static ModelNode reloadModelNode(ModelNode modelNode, ModelNodeDataStoreManager modelNodeDSM, SchemaRegistry schemaRegistry)
+            throws DataStoreException {
+        ModelNode freshModelNode = modelNode;
+        ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(modelNode, schemaRegistry);
+        SchemaPath modelNodeSchemaPath = modelNode.getModelNodeSchemaPath();
+        if (modelNode instanceof ModelNodeWithAttributes) {
+            freshModelNode = modelNodeDSM.findNode(modelNodeSchemaPath, modelNodeKey,
+                        EMNKeyUtil.getParentId(schemaRegistry, modelNodeSchemaPath, modelNode.getModelNodeId()));
+        }
+        return freshModelNode;
+    }
+
+    private void setInsertIndex(List<ConfigLeafAttribute> childList) {
+        for (ConfigLeafAttribute child : childList) {
+            child.setInsertIndex(childList.indexOf(child));
+        }
     }
 }

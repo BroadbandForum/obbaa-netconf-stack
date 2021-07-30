@@ -10,21 +10,20 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.hibernate.proxy.HibernateProxy;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigAttributeFactory;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
  * A Mapper that maps JPA + NCY Stack annotated objects into ModelNodes and vice-versa.
@@ -48,7 +47,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
     public ModelNodeWithAttributes getModelNode(Object entityObject, ModelNodeDataStoreManager modelNodeDSM){
         ModelNodeId parentId = new ModelNodeId();
         SchemaPath schemaPath;
-        Class<?> klass = getEntityClass(entityObject);
+        Class<?> klass = DSMUtils.getEntityClass(entityObject);
         SchemaPath parentSchemaPath = null;
         try {
             Method parentIdMethod = m_entityRegistry.getParentIdGetter(klass);
@@ -59,7 +58,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             if(parentIdStr!=null ){
                 parentId = new ModelNodeId(parentIdStr, m_entityRegistry.getQName(klass)
                         .getNamespace().toString());
-                if(parentId.getRdns().size() > 0){
+                if (parentId.getRdnsReadOnly().size() > 0) {
                     DataSchemaNode nonChoiceParent = m_schemaRegistry.getNonChoiceParent(schemaPath);
                     if(nonChoiceParent != null){
                         parentSchemaPath = nonChoiceParent.getPath();
@@ -101,46 +100,9 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
         }
         node.setAttributes(configValues);
         // Set the config leafLists
-        Map<QName,Method> leafListGetters = m_entityRegistry.getYangLeafListGetters(klass);
-        Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
-        for(Map.Entry<QName, Method> leafListGetter : leafListGetters.entrySet()){
-            Set<Object> values;
-            try{
-                values = (Set<Object>) leafListGetter.getValue().invoke(entityObject);
-                if (values!=null && !values.isEmpty()) {
-                    QName leafListQName = leafListGetter.getKey();
-                    LinkedHashSet<ConfigLeafAttribute> leafList = new LinkedHashSet<>();
-
-                    Iterator iterator = values.iterator();
-                    while (iterator.hasNext()){
-                        Object leafListEntity = iterator.next();
-                        Class<?> leafListKlass = getEntityClass(leafListEntity);
-                        if (leafListKlass!=null) {
-                            Map<QName, Method> leafListEntityAttrGetters = m_entityRegistry.getAttributeGetters(leafListKlass);
-                            Method attributeGetter = leafListEntityAttrGetters.get(leafListQName);
-                            String leafListStringValue = (String) attributeGetter.invoke(leafListEntity);
-
-                            Map<QName, Method> leafListEntityAttrNsGetters = m_entityRegistry.getYangAttributeNSGetters(leafListKlass);
-                            Method identityRefNSGetter= leafListEntityAttrNsGetters.get(leafListQName);
-
-                            if(identityRefNSGetter!=null){
-                                String leafListStringNsValue = (String) identityRefNSGetter.invoke(leafListEntity);
-                                ConfigLeafAttribute configLeafAttribute = ConfigAttributeFactory.getConfigAttributeFromEntity(m_schemaRegistry,
-                                        parentSchemaPath,leafListStringNsValue, leafListQName,leafListStringValue);
-                                leafList.add(configLeafAttribute);
-                            }else{
-                                leafList.add(ConfigAttributeFactory.getConfigAttributeFromEntity(m_schemaRegistry,
-                                        parentSchemaPath,leafListQName.getLocalName(), leafListQName, leafListStringValue));
-                            }
-                        }
-                    }
-                    leafLists.put(leafListQName, leafList);
-                    node.setLeafLists(leafLists);
-                }
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new ModelNodeMapperException(e);
-            }
-        }
+        Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = DSMUtils.getConfigLeafListsFromEntity(m_schemaRegistry, schemaPath,
+                m_entityRegistry, klass, entityObject);
+        node.setLeafLists(leafLists);
         return node;
     }
     
@@ -153,8 +115,9 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             Map<QName, Method> attributeSetters = m_entityRegistry.getAttributeSetters(klass);
             for(Map.Entry<QName, Method> configAttribute : attributeSetters.entrySet()){
                 ConfigLeafAttribute configLeafAttribute = configValues.get(configAttribute.getKey());
-                if(configLeafAttribute!=null) {
-                    configAttribute.getValue().invoke(entity, configLeafAttribute.getStringValue());
+                if(configLeafAttribute!=null){
+                    String leafValue = getConfigValue(configLeafAttribute);
+                    configAttribute.getValue().invoke(entity, leafValue);
                 }else{
                     configAttribute.getValue().invoke(entity, (String)null);
                 }
@@ -179,7 +142,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             Map<QName, Method> leafListGetters = m_entityRegistry.getYangLeafListGetters(klass);
             for(Map.Entry<QName, Method> leafListQNameGetterEntry: leafListGetters.entrySet()){
                 QName leafListQName = leafListQNameGetterEntry.getKey();
-                Set<ConfigLeafAttribute> values = ((ModelNodeWithAttributes) modelNode).getLeafList(leafListQName);
+                Set<ConfigLeafAttribute> values = modelNode.getLeafList(leafListQName);
                 if (values!=null && !values.isEmpty()) {
                     Collection<Object> updatedEntities = buildLeafListEntities(leafListQName,modelNode,values);
                     ((Collection)leafListQNameGetterEntry.getValue().invoke(entity)).addAll(updatedEntities);
@@ -188,12 +151,19 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             
             if (insertIndex != -1) {
                 Method orderByUserSetter = m_entityRegistry.getOrderByUserSetter(klass);
-                orderByUserSetter.invoke(entity, insertIndex);
+                if (orderByUserSetter != null) {
+                    orderByUserSetter.invoke(entity, insertIndex);
+                }
             }
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private String getConfigValue(ConfigLeafAttribute configLeafAttribute) {
+        String value = configLeafAttribute.getStringValue();
+        return value;
     }
 
     private Set<Object> buildLeafListEntities(QName leafListQName, ModelNode parentModelNode,Set<ConfigLeafAttribute> values) {
@@ -202,6 +172,8 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
         SchemaPath parentSchemaPath = parentModelNode.getModelNodeSchemaPath();
         SchemaPath leafListSchemaPath = m_schemaRegistry.getDescendantSchemaPath(parentSchemaPath, leafListQName);
         Class<?> leafListKlass = m_entityRegistry.getEntityClass(leafListSchemaPath);
+        boolean isLeafListOrderedByUser = SchemaRegistryUtil.isLeafListOrderedByUser(leafListQName,
+                parentModelNode.getModelNodeSchemaPath(), m_schemaRegistry);
 
         Iterator<ConfigLeafAttribute> valueIter = values.iterator();
         while (valueIter.hasNext()) {
@@ -210,7 +182,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             try {
                 leafListEntity = leafListKlass.newInstance();
                 Method schemaPathSetter = m_entityRegistry.getSchemaPathSetter(leafListKlass);
-                SchemaPath pathWithoutRevisions = m_schemaRegistry.stripRevisions(parentSchemaPath);
+                SchemaPath pathWithoutRevisions = m_schemaRegistry.stripRevisions(leafListSchemaPath);
                 schemaPathSetter.invoke(leafListEntity, SchemaPathUtil.toString(pathWithoutRevisions));
                 Method parentIdSetter = m_entityRegistry.getParentIdSetter(leafListKlass);
                 parentIdSetter.invoke(leafListEntity, parentModelNode.getModelNodeId().getModelNodeIdAsString());
@@ -218,13 +190,15 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
                 Map<QName,Method> attributeSetters = m_entityRegistry.getAttributeSetters(leafListKlass);
                 Method attributeSetter = attributeSetters.get(leafListQName);
                 if(attributeSetter!=null){
-                    attributeSetter.invoke(leafListEntity,configLeafAttribute.getStringValue());
+                    String leafListValue = getConfigValue(configLeafAttribute);
+                    attributeSetter.invoke(leafListEntity, leafListValue);
 
                     Method attributeNsSetter = m_entityRegistry.getYangAttributeNSSetters(leafListKlass).get(leafListQName);
                     if(attributeNsSetter!=null){
                         attributeNsSetter.invoke(leafListEntity,configLeafAttribute.getNamespace());
                     }
                 }
+                updateLeafListIndex(configLeafAttribute, leafListKlass, leafListEntity, isLeafListOrderedByUser);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
@@ -232,6 +206,17 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             leafListValueEntities.add(leafListEntity);
         }
         return leafListValueEntities;
+    }
+
+    private void updateLeafListIndex(ConfigLeafAttribute configLeafAttribute, Class<?> leafListKlass,
+                                     Object leafListEntity, boolean isLeafListOrderedByUser)
+            throws InvocationTargetException, IllegalAccessException {
+        if (isLeafListOrderedByUser) {
+            Method orderByUserSetter = m_entityRegistry.getOrderByUserSetter(leafListKlass);
+            if (orderByUserSetter != null) {
+                orderByUserSetter.invoke(leafListEntity, configLeafAttribute.getInsertIndex());
+            }
+        }
     }
 
     @Override
@@ -249,7 +234,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
     @Override
     public Collection<Object> getChildEntities(Object parentEntityObj, QName childQname) {
         try {
-            Class<?> entityClass = getEntityClass(parentEntityObj);
+            Class<?> entityClass = DSMUtils.getEntityClass(parentEntityObj);
             Map<QName, Method> childGetters = m_entityRegistry.getYangChildGetters(entityClass);
             if(childGetters !=null && !childGetters.isEmpty()) {
                 Method childGetter = childGetters.get(childQname);
@@ -265,7 +250,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
 
     @Override
     public void clearLeafLists(Object entity, Set<QName> qNames) {
-        Class<?> klass = getEntityClass(entity);
+        Class<?> klass = DSMUtils.getEntityClass(entity);
         Map<QName, Method> leafListGetters = m_entityRegistry.getYangLeafListGetters(klass);
         for(QName qName : qNames){
             try {
@@ -277,11 +262,4 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
         }
     }
 
-    private Class<?> getEntityClass(Object entityObject) {
-        if (entityObject instanceof HibernateProxy) {
-            return ((HibernateProxy) entityObject).getHibernateLazyInitializer()
-                    .getPersistentClass();
-        }
-        return entityObject.getClass();
-    }
 }

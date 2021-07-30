@@ -21,7 +21,8 @@ public class YangModelFactory {
 													 /*"/yangs/ietf/ietf-interfaces.yang",*/
 			"/yangs/ietf/ietf-yang-types.yang",
 			"/yangs/ietf/ietf-yang-schema-mount.yang",
-			"/yangs/ietf/ietf-yang-library@2016-06-21.yang"};
+			"/yangs/ietf/ietf-yang-library@2016-06-21.yang"
+	};
 	
 	
 	private List<URL> m_ietfYangModels = new ArrayList<URL>();
@@ -58,6 +59,22 @@ public class YangModelFactory {
 		    Module module = YangParserUtil.getParsedModule(context, yangFilePath);
 		    m_yangModuleMap.put(yangFilePath, module);
 		    return module;
+		}
+	}
+
+	public Module loadModule(String yangFilePath, String[] dependentYangFiles) {
+		if(m_yangModuleMap.containsKey(yangFilePath)) {
+			return m_yangModuleMap.get(yangFilePath);
+		} else {
+			List<YangTextSchemaSource> yangSources = new ArrayList<>();
+			yangSources.add(YangParserUtil.getYangSource(yangFilePath));
+			for (String path : dependentYangFiles) {
+				yangSources.add(YangParserUtil.getYangSource(YangModelFactory.class.getResource(path)));
+			}
+			SchemaContext context = YangParserUtil.parseSchemaSources(YangModelFactory.class.getName(), yangSources);
+			Module module = YangParserUtil.getParsedModule(context, yangFilePath);
+			m_yangModuleMap.put(yangFilePath, module);
+			return module;
 		}
 	}
 	

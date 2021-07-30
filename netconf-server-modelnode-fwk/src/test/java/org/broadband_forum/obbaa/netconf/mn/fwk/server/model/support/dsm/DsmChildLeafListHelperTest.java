@@ -7,9 +7,12 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.JB_NS;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.JUKEBOX_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LIBRARY_LOCAL_NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SINGER_QNAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -23,6 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
 import org.junit.Before;
@@ -50,6 +54,8 @@ public class DsmChildLeafListHelperTest {
 
     private static final String EXAMPLE_JUKEBOX_YANGFILE = "/dsmchildleaflisthelpertest/example-jukebox.yang";
     private static final String EXAMPLE_JUKEBOX_YANGTYPES = "/dsmchildleaflisthelpertest/example-jukebox-types.yang";
+    public static final String SINGER_ORDERED_BY_USER_LOCALNAME = "singer-ordered-by-user";
+    public static final QName SINGER_ORDERED_BY_USER_QNAME = QName.create(JB_NS, SINGER_ORDERED_BY_USER_LOCALNAME);
     private SchemaRegistry m_schemaRegistry;
     ModelNodeDataStoreManager m_modelNodeDSM;
     private static final String ARTIST_NAME = "Artist";
@@ -107,6 +113,185 @@ public class DsmChildLeafListHelperTest {
         verify(m_modelNodeDSM, times(1)).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap(SINGER_QNAME, values), false);
     }
 
+    @Test
+    public void testAddChildByUserOrder_NoExistingLeafLists() throws Exception {
+
+        ModelNodeWithAttributes albumModelNode = getAlbumModelNode();
+
+        LinkedHashSet<ConfigLeafAttribute> expectedLeafLists = new LinkedHashSet<>();
+        ConfigLeafAttribute singer = new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user0");
+        expectedLeafLists.add(singer);
+
+        for (ConfigLeafAttribute expectedLeafList : expectedLeafLists) {
+            assertEquals(-1, expectedLeafList.getInsertIndex().intValue());
+        }
+
+        LeafListSchemaNode leafListSchemaNode = mock(LeafListSchemaNode.class);
+        when(leafListSchemaNode.isUserOrdered()).thenReturn(true);
+        DsmChildLeafListHelper childLeafListHelper = spy(new DsmChildLeafListHelper(leafListSchemaNode, SINGER_ORDERED_BY_USER_QNAME,
+                m_modelNodeDSM, m_schemaRegistry));
+        childLeafListHelper.addChildByUserOrder(albumModelNode, singer, "create", InsertOperation.FIRST_OP);
+
+        verify(m_modelNodeDSM).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap(SINGER_ORDERED_BY_USER_QNAME,
+                expectedLeafLists), -1,false);
+
+        assertEquals(0, expectedLeafLists.iterator().next().getInsertIndex().intValue());
+    }
+
+    @Test
+    public void testAddChildByUserOrder_InsertOpLast() throws Exception {
+
+        ModelNodeWithAttributes albumModelNode = getAlbumModelNode();
+
+        LinkedHashSet<ConfigLeafAttribute> expectedLeafLists = new LinkedHashSet<>();
+        ConfigLeafAttribute singer3 = new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user3");
+        expectedLeafLists.add(singer3);
+        expectedLeafLists.addAll(populateOrderedByUserValuesInModelNode(albumModelNode));
+
+        for (ConfigLeafAttribute expectedLeafList : expectedLeafLists) {
+            assertEquals(-1, expectedLeafList.getInsertIndex().intValue());
+        }
+
+        LeafListSchemaNode leafListSchemaNode = mock(LeafListSchemaNode.class);
+        when(leafListSchemaNode.isUserOrdered()).thenReturn(true);
+        DsmChildLeafListHelper childLeafListHelper = spy(new DsmChildLeafListHelper(leafListSchemaNode, SINGER_ORDERED_BY_USER_QNAME,
+                m_modelNodeDSM, m_schemaRegistry));
+        childLeafListHelper.addChildByUserOrder(albumModelNode, singer3, "create", InsertOperation.LAST_OP);
+
+        verify(m_modelNodeDSM).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap(SINGER_ORDERED_BY_USER_QNAME,
+                expectedLeafLists), -1,false);
+
+        assertInsertIndex(0, "singer-ordered-by-user1", expectedLeafLists);
+        assertInsertIndex(1, "singer-ordered-by-user2", expectedLeafLists);
+        assertInsertIndex(2, "singer-ordered-by-user3", expectedLeafLists);
+    }
+
+    @Test
+    public void testAddChildByUserOrder_InsertOpFirst() throws Exception {
+
+        ModelNodeWithAttributes albumModelNode = getAlbumModelNode();
+
+        LinkedHashSet<ConfigLeafAttribute> expectedLeafLists = new LinkedHashSet<>();
+        ConfigLeafAttribute singer0 = new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user0");
+        expectedLeafLists.add(singer0);
+        expectedLeafLists.addAll(populateOrderedByUserValuesInModelNode(albumModelNode));
+
+        for (ConfigLeafAttribute expectedLeafList : expectedLeafLists) {
+            assertEquals(-1, expectedLeafList.getInsertIndex().intValue());
+        }
+
+        LeafListSchemaNode leafListSchemaNode = mock(LeafListSchemaNode.class);
+        when(leafListSchemaNode.isUserOrdered()).thenReturn(true);
+        DsmChildLeafListHelper childLeafListHelper = spy(new DsmChildLeafListHelper(leafListSchemaNode, SINGER_ORDERED_BY_USER_QNAME,
+                m_modelNodeDSM, m_schemaRegistry));
+        childLeafListHelper.addChildByUserOrder(albumModelNode, singer0, "create", InsertOperation.FIRST_OP);
+
+        verify(m_modelNodeDSM).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap(SINGER_ORDERED_BY_USER_QNAME,
+                expectedLeafLists), -1,false);
+
+        assertInsertIndex(0, "singer-ordered-by-user0", expectedLeafLists);
+        assertInsertIndex(1, "singer-ordered-by-user1", expectedLeafLists);
+        assertInsertIndex(2, "singer-ordered-by-user2", expectedLeafLists);
+    }
+
+    @Test
+    public void testAddChildByUserOrder_InsertOpAfter() throws Exception {
+
+        ModelNodeWithAttributes albumModelNode = getAlbumModelNode();
+
+        LinkedHashSet<ConfigLeafAttribute> expectedLeafLists = new LinkedHashSet<>();
+        ConfigLeafAttribute singer = new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user-after-1");
+        expectedLeafLists.add(singer);
+        expectedLeafLists.addAll(populateOrderedByUserValuesInModelNode(albumModelNode));
+
+        for (ConfigLeafAttribute expectedLeafList : expectedLeafLists) {
+            assertEquals(-1, expectedLeafList.getInsertIndex().intValue());
+        }
+
+        LeafListSchemaNode leafListSchemaNode = mock(LeafListSchemaNode.class);
+        when(leafListSchemaNode.isUserOrdered()).thenReturn(true);
+        DsmChildLeafListHelper childLeafListHelper = spy(new DsmChildLeafListHelper(leafListSchemaNode, SINGER_ORDERED_BY_USER_QNAME,
+                m_modelNodeDSM, m_schemaRegistry));
+        childLeafListHelper.addChildByUserOrder(albumModelNode, singer, "create", InsertOperation.get(InsertOperation.AFTER,"singer-ordered-by-user1"));
+
+        verify(m_modelNodeDSM).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap(SINGER_ORDERED_BY_USER_QNAME,
+                expectedLeafLists), -1,false);
+
+        assertInsertIndex(0, "singer-ordered-by-user1", expectedLeafLists);
+        assertInsertIndex(1, "singer-ordered-by-user-after-1", expectedLeafLists);
+        assertInsertIndex(2, "singer-ordered-by-user2", expectedLeafLists);
+    }
+
+    @Test
+    public void testAddChildByUserOrder_InsertOpAfterLastValue() throws Exception {
+
+        ModelNodeWithAttributes albumModelNode = getAlbumModelNode();
+
+        LinkedHashSet<ConfigLeafAttribute> expectedLeafLists = new LinkedHashSet<>();
+        ConfigLeafAttribute singer = new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user-last");
+        expectedLeafLists.add(singer);
+        expectedLeafLists.addAll(populateOrderedByUserValuesInModelNode(albumModelNode));
+
+        for (ConfigLeafAttribute expectedLeafList : expectedLeafLists) {
+            assertEquals(-1, expectedLeafList.getInsertIndex().intValue());
+        }
+
+        LeafListSchemaNode leafListSchemaNode = mock(LeafListSchemaNode.class);
+        when(leafListSchemaNode.isUserOrdered()).thenReturn(true);
+        DsmChildLeafListHelper childLeafListHelper = spy(new DsmChildLeafListHelper(leafListSchemaNode, SINGER_ORDERED_BY_USER_QNAME,
+                m_modelNodeDSM, m_schemaRegistry));
+        childLeafListHelper.addChildByUserOrder(albumModelNode, singer, "create", InsertOperation.get(InsertOperation.AFTER,"singer-ordered-by-user2"));
+
+        verify(m_modelNodeDSM).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap(SINGER_ORDERED_BY_USER_QNAME,
+                expectedLeafLists), -1,false);
+
+        assertInsertIndex(0, "singer-ordered-by-user1", expectedLeafLists);
+        assertInsertIndex(1, "singer-ordered-by-user2", expectedLeafLists);
+        assertInsertIndex(2, "singer-ordered-by-user-last", expectedLeafLists);
+    }
+
+    @Test
+    public void testAddChildByUserOrder_InsertOpBefore() throws Exception {
+
+        ModelNodeWithAttributes albumModelNode = getAlbumModelNode();
+
+        LinkedHashSet<ConfigLeafAttribute> expectedLeafLists = new LinkedHashSet<>();
+        ConfigLeafAttribute singer = new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user-before-2");
+        expectedLeafLists.add(singer);
+        expectedLeafLists.addAll(populateOrderedByUserValuesInModelNode(albumModelNode));
+
+        for (ConfigLeafAttribute expectedLeafList : expectedLeafLists) {
+            assertEquals(-1, expectedLeafList.getInsertIndex().intValue());
+        }
+
+        LeafListSchemaNode leafListSchemaNode = mock(LeafListSchemaNode.class);
+        when(leafListSchemaNode.isUserOrdered()).thenReturn(true);
+        DsmChildLeafListHelper childLeafListHelper = spy(new DsmChildLeafListHelper(leafListSchemaNode, SINGER_ORDERED_BY_USER_QNAME,
+                m_modelNodeDSM, m_schemaRegistry));
+        childLeafListHelper.addChildByUserOrder(albumModelNode, singer, "create", InsertOperation.get(InsertOperation.BEFORE,"singer-ordered-by-user2"));
+
+        verify(m_modelNodeDSM).updateNode(albumModelNode, m_artistNodeId, null, Collections.singletonMap(SINGER_ORDERED_BY_USER_QNAME,
+                expectedLeafLists), -1,false);
+
+        assertInsertIndex(0, "singer-ordered-by-user1", expectedLeafLists);
+        assertInsertIndex(1, "singer-ordered-by-user-before-2", expectedLeafLists);
+        assertInsertIndex(2, "singer-ordered-by-user2", expectedLeafLists);
+    }
+
+    private void assertInsertIndex(int expectedInsertIndex, String leafListValue, LinkedHashSet<ConfigLeafAttribute> expectedLeafLists) {
+        boolean isPresent = false;
+        for (ConfigLeafAttribute expectedLeafList : expectedLeafLists) {
+            if(expectedLeafList.getStringValue().equals(leafListValue)){
+                isPresent = true;
+                assertEquals(expectedInsertIndex, expectedLeafList.getInsertIndex().intValue());
+                break;
+            }
+        }
+        if(!isPresent){
+            fail("Expected Leaf-list not present ");
+        }
+    }
+
     private void populateValuesInModelNode(ModelNodeWithAttributes modelNode) {
         Map<QName, ConfigLeafAttribute> attributes = new HashMap<>();
         attributes.put(NAME_QNAME, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "album"));
@@ -119,6 +304,36 @@ public class DsmChildLeafListHelperTest {
         leafListAttrs.put(SINGER_QNAME, singerLeafList);
         modelNode.setLeafLists(leafListAttrs);
         modelNode.setModelNodeId(new ModelNodeId(m_albumNodeId));
+    }
+
+    private LinkedHashSet<ConfigLeafAttribute> populateOrderedByUserValuesInModelNode(ModelNodeWithAttributes modelNode) {
+        Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs = new HashMap<>();
+        LinkedHashSet<ConfigLeafAttribute> singerLeafList = new LinkedHashSet<>();
+        singerLeafList.add(new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user1"));
+        singerLeafList.add(new GenericConfigAttribute(SINGER_ORDERED_BY_USER_LOCALNAME, JB_NS, "singer-ordered-by-user2"));
+        leafListAttrs.put(SINGER_ORDERED_BY_USER_QNAME, singerLeafList);
+        modelNode.setLeafLists(leafListAttrs);
+        return singerLeafList;
+    }
+
+    private void populateLeafAttributes(ModelNodeWithAttributes modelNode) {
+        Map<QName, ConfigLeafAttribute> attributes = new HashMap<>();
+        attributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album"));
+        modelNode.setAttributes(attributes);
+        modelNode.setModelNodeId(new ModelNodeId(m_albumNodeId));
+    }
+
+    private ModelNodeWithAttributes getAlbumModelNode() {
+        ModelNodeWithAttributes albumModelNode = new ModelNodeWithAttributes(ALBUM_SCHEMA_PATH, m_albumNodeId,
+                null, null, m_schemaRegistry, m_modelNodeDSM);
+        populateLeafAttributes(albumModelNode);
+
+        Map<QName, String> keys = new HashMap<>();
+        keys.put(NAME_QNAME, ALBUM_NAME);
+        ModelNodeKey modelNodeKey = new ModelNodeKey(keys);
+        when(m_modelNodeDSM.findNode(ALBUM_SCHEMA_PATH, modelNodeKey, m_artistNodeId)).
+                thenReturn(albumModelNode);
+        return albumModelNode;
     }
 
     private void updateModelNode(ModelNodeWithAttributes modelNode) {

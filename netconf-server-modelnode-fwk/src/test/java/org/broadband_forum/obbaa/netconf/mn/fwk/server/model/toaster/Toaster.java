@@ -1,9 +1,12 @@
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.toaster;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.w3c.dom.Element;
@@ -188,4 +191,13 @@ public class Toaster implements ModelNode {
         return null;
     }
 
+	@Override
+	public Set<ConfigLeafAttribute> getLeafList(QName qName) {
+		return null;
+	}
+
+	@Override
+	public Map<QName, LinkedHashSet<ConfigLeafAttribute>> getLeafLists() {
+		return null;
+	}
 }

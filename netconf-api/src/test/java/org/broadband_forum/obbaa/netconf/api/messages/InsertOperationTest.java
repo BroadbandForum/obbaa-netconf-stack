@@ -16,15 +16,51 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 public class InsertOperationTest {
 
 	@Test
-	public void testThePojo() {
-		InsertOperation operation = new InsertOperation("name", "value");
-		assertEquals("name", operation.getName());
-		assertEquals("value", operation.getValue());
+	public void testBeforeOperation(){
+		InsertOperation insertOperation = InsertOperation.get(InsertOperation.BEFORE, "value");
+		assertEquals("before", insertOperation.getName());
+		assertEquals("value", insertOperation.getValue());
+	}
+
+	@Test
+	public void testAfterOperation(){
+		InsertOperation insertOperation = InsertOperation.get(InsertOperation.AFTER, "value");
+		assertEquals("after", insertOperation.getName());
+		assertEquals("value", insertOperation.getValue());
+	}
+
+	@Test
+	public void testFirstOperation(){
+		InsertOperation insertOperation = InsertOperation.get(InsertOperation.FIRST, "discarded-value");
+		assertEquals("first", insertOperation.getName());
+		assertEquals(null, insertOperation.getValue());
+	}
+
+	@Test
+	public void testFirstOperationDirect(){
+		InsertOperation insertOperation = InsertOperation.FIRST_OP;
+		assertEquals("first", insertOperation.getName());
+		assertEquals(null, insertOperation.getValue());
+	}
+
+	@Test
+	public void testLastOperation(){
+		InsertOperation insertOperation = InsertOperation.get(InsertOperation.LAST, "discarded-value");
+		assertEquals("last", insertOperation.getName());
+		assertEquals(null, insertOperation.getValue());
+	}
+
+	@Test
+	public void testLastOperationDirect(){
+		InsertOperation insertOperation = InsertOperation.LAST_OP;
+		assertEquals("last", insertOperation.getName());
+		assertEquals(null, insertOperation.getValue());
 	}
 }

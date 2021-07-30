@@ -8,6 +8,7 @@ public class GenericConfigAttribute implements ConfigLeafAttribute,Comparable<Ge
     private final String m_attributeNS;
     private final String m_attributeValue;
     private Element m_domValue;
+    private Integer m_insertIndex = -1;
 
     public GenericConfigAttribute(String attributeLocalName, String attributeNS, String attributeValue) {
         m_attributeLocalName = attributeLocalName;
@@ -44,6 +45,16 @@ public class GenericConfigAttribute implements ConfigLeafAttribute,Comparable<Ge
     @Override
     public String getNamespace() {
         return m_attributeNS;
+    }
+
+    @Override
+    public Integer getInsertIndex() {
+        return m_insertIndex;
+    }
+
+    @Override
+    public void setInsertIndex(Integer insertIndex) {
+        m_insertIndex = insertIndex;
     }
 
     @Override

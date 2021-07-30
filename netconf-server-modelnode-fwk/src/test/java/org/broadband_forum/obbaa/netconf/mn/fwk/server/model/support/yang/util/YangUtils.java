@@ -79,6 +79,18 @@ public class YangUtils {
         return module;
     }
 
+    public static Module deployInMemoryHelpers(String yangFilePath, String[] dependentYangFiles, SubSystem subSystem,
+                                               ModelNodeHelperRegistry modelNodeHelperRegistry,
+                                               SubSystemRegistry subSystemRegistry,
+                                               SchemaRegistry schemaRegistry, ModelNodeDataStoreManager modelNodeDsm) throws ModelNodeFactoryException {
+        ModelNodeRegistrar.registerModelNodeFactory(HelperDrivenModelNodeFactory.class.getName(), new HelperDrivenModelNodeFactory(),
+                modelNodeHelperRegistry);
+        Module module = YangModelFactory.getInstance().loadModule(yangFilePath, dependentYangFiles);
+        traverseModule(subSystem, modelNodeHelperRegistry, subSystemRegistry,
+                schemaRegistry, modelNodeDsm, module);
+        return module;
+    }
+
 	private static void traverseModule(SubSystem subSystem,
 			ModelNodeHelperRegistry modelNodeHelperRegistry,
 			SubSystemRegistry subSystemRegistry, SchemaRegistry schemaRegistry,

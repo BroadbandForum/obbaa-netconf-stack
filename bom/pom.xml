@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>4.0.0</version>
+        <version>4.1.0</version>
     </parent>
     <!-- All API/SPI Bundles must be listed here. BOM to help Application/SP Development. -->
     <modelVersion>4.0.0</modelVersion>

@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>4.0.0</version>
+    <version>4.1.0</version>
     <packaging>pom</packaging>
     <name>netconf-lib/parent-pom</name>
     <modules>
@@ -38,7 +38,7 @@
         <module>bom</module>
     </modules>
     <properties>
-        <obbaa-nc-stack.version>1.0.0</obbaa-nc-stack.version>
+        <obbaa-nc-stack.version>4.1.0</obbaa-nc-stack.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.source.version>1.8</java.source.version>
         <!-- Dependency versions-->

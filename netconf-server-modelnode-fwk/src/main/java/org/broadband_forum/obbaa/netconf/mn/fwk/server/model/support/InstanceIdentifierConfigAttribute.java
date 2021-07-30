@@ -19,6 +19,7 @@ public class InstanceIdentifierConfigAttribute implements ConfigLeafAttribute, C
     private final LinkedHashSet<InstanceIdentifierAttributeComponent> m_attributeValue;
     private final String m_attributeNS;
     private final Map<String, String> m_nsPrefixMap;
+    private Integer m_insertIndex = -1;
 
     public InstanceIdentifierConfigAttribute(Map<String, String> nsPrefixMap, String attributeNamespace, String attributeLocalName, String attributeValue) {
         constructInstanceIdentifierElement(nsPrefixMap, attributeNamespace, attributeLocalName, attributeValue);
@@ -119,6 +120,16 @@ public class InstanceIdentifierConfigAttribute implements ConfigLeafAttribute, C
             namespacePrefix.setLength(namespacePrefix.length() - 1);
         }
         return namespacePrefix.toString();
+    }
+
+    @Override
+    public Integer getInsertIndex() {
+        return m_insertIndex;
+    }
+
+    @Override
+    public void setInsertIndex(Integer insertIndex) {
+        m_insertIndex = insertIndex;
     }
 
     @Override
