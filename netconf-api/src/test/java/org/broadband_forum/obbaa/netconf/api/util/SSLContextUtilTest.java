@@ -32,6 +32,7 @@ import org.broadband_forum.obbaa.netconf.api.x509certificates.TrustManagerInitEx
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslProvider;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -90,6 +91,7 @@ public class SSLContextUtilTest {
     }
 
     @Test
+    @Ignore
     public void testGetClientSSLContext_WithCustomManagersAndOpenSsl() throws Exception {
         NetconfClientConfiguration config = getCallHomeTLSClientConfiguration(SslProvider.OPENSSL);
         doClientAsserts(config);
