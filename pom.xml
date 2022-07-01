@@ -78,7 +78,7 @@
         <commons-collections.version>3.2.1</commons-collections.version>
         <mchange.c3p0.osgi.version>0.9.5.2_1</mchange.c3p0.osgi.version>
         <commons-jxpath.version>1.3</commons-jxpath.version>
-        <cxf.version>3.0.4</cxf.version>
+        <cxf.version>3.1.14</cxf.version>
         <fasterxml.jackson.version>2.9.0</fasterxml.jackson.version>
         <org.springframework.boot.version>1.2.5.RELEASE</org.springframework.boot.version>
         <org.srpingframework.test.version>4.1.7.RELEASE</org.srpingframework.test.version>
