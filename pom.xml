@@ -72,7 +72,7 @@
         <osgi.core.version>6.0.0</osgi.core.version>
         <xml.apis.version>1.4.01</xml.apis.version>
         <hibernate.version>5.4.2.Final</hibernate.version>
-        <org.hsqldb.version>2.3.3</org.hsqldb.version>
+        <org.hsqldb.version>2.7.1</org.hsqldb.version>
         <commons-beanutils-version>1.9.4</commons-beanutils-version>
         <commons-logging.version>1.2</commons-logging.version>
         <commons-net.version>3.3</commons-net.version>
