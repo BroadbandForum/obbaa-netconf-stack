@@ -1,0 +1,19 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Invisible album</name>
+                <song>
+                    <name>Are you gonne go my way</name>
+                </song>
+            </album>
+            <album>
+                <name>Visible album</name>
+                <song>
+                    <name>Are you gonne go my way</name>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

@@ -20,19 +20,33 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>stack-logging-api</artifactId>
-    <packaging>bundle</packaging>
     <name>netconf-fwk/stack-logging-api</name>
+    <packaging>bundle</packaging>
+
 
     <dependencies>
         <!-- external -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+            <version>1.7.24</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -57,6 +71,10 @@
                         </goals>
                         <configuration>
                             <failOnWarning>true</failOnWarning>
+                            <ignoredDependencies>
+                                <ignoredDependency>org.apache.logging.log4j:log4j-slf4j-impl:jar:${slf4j.log4j.impl.version}</ignoredDependency>
+                                <ignoredDependency>org.apache.logging.log4j:log4j-core:jar:${log4j2.version}</ignoredDependency>
+                            </ignoredDependencies>
                             <outputXML>true</outputXML>
                         </configuration>
                     </execution>

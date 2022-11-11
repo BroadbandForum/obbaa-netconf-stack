@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil.getDataParentSchemaPath;
@@ -6,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -83,7 +100,7 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<ModelNode> listNodes(SchemaPath nodeType) {
+    public List<ModelNode> listNodes(SchemaPath nodeType, SchemaRegistry mountRegistry) {
         LOGGER.debug(String.format("listNodes with nodeType: {}", nodeType));
         List<ModelNode> modelNodes = new ArrayList<>();
         Class entityClass = m_entityRegistry.getEntityClass(nodeType);
@@ -110,7 +127,7 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
     }
 
     @Override
-    public List<ModelNode> listChildNodes(SchemaPath childType, ModelNodeId parentId) {
+    public List<ModelNode> listChildNodes(SchemaPath childType, ModelNodeId parentId, SchemaRegistry mountRegistry) {
         if(LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("listChildNodes result for childType: %s, parentId: %s", childType, parentId.getModelNodeIdAsString()));
         }
@@ -131,7 +148,7 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
         return children;
     }
 
-    public ModelNodeWithAttributes findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId) {
+    public ModelNodeWithAttributes findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId, SchemaRegistry mountRegistry) {
         if (LOGGER.isDebugEnabled()) {    LOGGER.debug( String.format("findNode with nodeType: %s, key: %s, parentId: %s ",nodeType, key, parentId.getModelNodeIdAsString()));}
         Class klass = m_entityRegistry.getEntityClass(nodeType);
         if(klass != null){
@@ -154,7 +171,7 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
     }
 
     @Override
-    public List<ModelNode> findNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId) throws
+    public List<ModelNode> findNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId, SchemaRegistry mountRegistry) throws
             DataStoreException {
         LOGGER.debug("findNodes with nodeType: {} matchCriteria: {} parentId: {}", nodeType, matchCriteria, parentId);
         Class klass = m_entityRegistry.getEntityClass(nodeType);
@@ -236,24 +253,87 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
 	}
 
     @SuppressWarnings("unchecked")
-	protected void incrementOrderByColumnForExistingEntities(Class klass, String columnName, int newInsertIndex) {
-    	List<Object> existingEntities = getEntityDataStoreManager(klass).findRange(klass, columnName, PredicateCondition.GREATER_THAN_EQUAL, new Double(newInsertIndex));
-    	if (existingEntities != null && !existingEntities.isEmpty()) {
-            for (Object entity : existingEntities){
+    @Override
+    public void updateIndex(ModelNode modelNode, ModelNodeId parentId, int newIndex) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("updateIndex Of Node: {} parentId: {}", modelNode.getModelNodeSchemaPath(), parentId);
+        }
+        SchemaPath nodeType = modelNode.getModelNodeSchemaPath();
+        List entities = findNodes(nodeType, Collections.emptyMap(), parentId, m_schemaRegistry);
+        if (newIndex != -1 && newIndex < entities.size()) {
+            Class klass = m_entityRegistry.getEntityClass(nodeType);
+            Object entity = findEntity(modelNode, parentId);
+            if (klass != null && entity != null) {
+                try {
+                    String columnName = m_entityRegistry.getOrderByFieldName(klass);
+                    Method orderByUserGetter = m_entityRegistry.getOrderByUserGetter(klass);
+                    int currentIndex = (int) orderByUserGetter.invoke(entity);
+                    if (newIndex != currentIndex) {
+                        if (newIndex > currentIndex) {
+                            List<Object> existingEntities = getEntityDataStoreManager(klass).findRangeBetween(klass,
+                                    columnName, new Double(currentIndex + 1), new Double(newIndex));
+                            decrementOrderByColumnOfEntities(existingEntities);
+                        } else {
+                            List<Object> existingEntities = getEntityDataStoreManager(klass).findRangeBetween(klass,
+                                    columnName, new Double(newIndex), new Double(currentIndex - 1));
+                            incrementOrderByColumnOfEntities(existingEntities);
+                        }
+                        Method orderByUserSetter = m_entityRegistry.getOrderByUserSetter(klass);
+                        orderByUserSetter.invoke(entity, newIndex);
+                    }
+                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                    throw new DataStoreException(e);
+                }
+            } else {
+                throw new DataStoreException("Either entity or class does not exist");
+            }
+        } else {
+            throw new DataStoreException("Specified index is invalid");
+        }
+    }
+
+    private void incrementOrderByColumnOfEntities(List<Object> existingEntities) {
+        if (existingEntities != null && !existingEntities.isEmpty()) {
+            for (Object entity : existingEntities) {
                 Method childOrderBySetter = m_entityRegistry.getOrderByUserSetter(entity.getClass());
                 Method childOrderByGetter = m_entityRegistry.getOrderByUserGetter(entity.getClass());
 
-                if (childOrderByGetter != null && childOrderBySetter != null){
-                	try {
-						Integer currentIndex = (Integer) childOrderByGetter.invoke(entity);
-						currentIndex++;
-						childOrderBySetter.invoke(entity, currentIndex);
-					} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-						throw new DataStoreException(e);
-					}
+                if (childOrderByGetter != null && childOrderBySetter != null) {
+                    try {
+                        Integer currentIndex = (Integer) childOrderByGetter.invoke(entity);
+                        currentIndex++;
+                        childOrderBySetter.invoke(entity, currentIndex);
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        throw new DataStoreException(e);
+                    }
                 }
             }
         }
+    }
+
+    private void decrementOrderByColumnOfEntities(List<Object> existingEntities) {
+        if (existingEntities != null && !existingEntities.isEmpty()) {
+            for (Object entity : existingEntities) {
+                Method childOrderBySetter = m_entityRegistry.getOrderByUserSetter(entity.getClass());
+                Method childOrderByGetter = m_entityRegistry.getOrderByUserGetter(entity.getClass());
+
+                if (childOrderByGetter != null && childOrderBySetter != null) {
+                    try {
+                        Integer currentIndex = (Integer) childOrderByGetter.invoke(entity);
+                        currentIndex--;
+                        childOrderBySetter.invoke(entity, currentIndex);
+                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+                        throw new DataStoreException(e);
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void incrementOrderByColumnForExistingEntities(Class klass, String columnName, int newInsertIndex) {
+        List<Object> existingEntities = getEntityDataStoreManager(klass).findRange(klass, columnName, PredicateCondition.GREATER_THAN_EQUAL, new Double(newInsertIndex));
+        incrementOrderByColumnOfEntities(existingEntities);
     }
 
     @Override
@@ -313,7 +393,7 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
         Class <?> klass = null;
         if (entity != null) {
             klass = entity.getClass();
-            deleteEntityAndUpdateParent(entity, modelNode.getModelNodeSchemaPath(), parentId);
+            deleteEntityAndUpdateParent(entity, modelNode, parentId);
         }
         //flush to make sure deleted objects are flushed
         getEntityDataStoreManager(klass).getEntityManager().flush();
@@ -402,14 +482,15 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
         getEntityDataStoreManager(entity.getClass()).persist(entity);
     }
 
-    private void deleteEntityAndUpdateParent(Object entity, SchemaPath nodeSchemaPath, ModelNodeId modelNodeId) {
+    private void deleteEntityAndUpdateParent(Object entity, ModelNode modelNode, ModelNodeId parentModelNodeId) {
+        SchemaPath nodeSchemaPath = modelNode.getModelNodeSchemaPath();
         if(hasDirectEntityRelationWithParent(entity)){
             SchemaPath parentSchemaPath = getDataParentSchemaPath(m_schemaRegistry, nodeSchemaPath);
             if (parentSchemaPath!=null) {
                 Class parentKlass = m_entityRegistry.getEntityClass(parentSchemaPath);
                 if (parentKlass != null) {
-                    Object parentPK = buildPrimaryKey(parentSchemaPath, parentKlass, MNKeyUtil.getModelNodeKey(m_schemaRegistry, parentSchemaPath, modelNodeId),
-                            EMNKeyUtil.getParentId(m_schemaRegistry, parentSchemaPath, modelNodeId));
+                    Object parentPK = buildPrimaryKey(parentSchemaPath, parentKlass, MNKeyUtil.getModelNodeKey(m_schemaRegistry, parentSchemaPath, parentModelNodeId),
+                            EMNKeyUtil.getParentId(m_schemaRegistry, parentSchemaPath, parentModelNodeId));
                     Object parentEntity = getEntityDataStoreManager(parentKlass).findById(parentKlass, parentPK, LockModeType.PESSIMISTIC_WRITE);
                     if (parentEntity != null) {
                         DataSchemaNode schemaNode = m_schemaRegistry.getDataSchemaNode(nodeSchemaPath);
@@ -438,7 +519,25 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
             }
         }
 
-        deleteEntity(entity);
+        safeDeleteEntity(entity, modelNode.getModelNodeId());
+    }
+
+    /*
+    calls preDeleteEntity if interceptors exist, just to make sure to clean up (if required) before deleting
+     */
+    private void safeDeleteEntity(Object entity, ModelNodeId modelNodeId) {
+        EntityDataStoreManager entityDataStoreManager = getEntityDataStoreManager(entity.getClass());
+        List<EntityOnDeleteInterceptor> entityOnDeleteInterceptors = m_entityRegistry.getEntityOnDeleteInterceptor(entity.getClass());
+        if (entityOnDeleteInterceptors != null) {
+            entityOnDeleteInterceptors.forEach(entityOnDeleteInterceptor -> {
+                try {
+                    entityOnDeleteInterceptor.preDeleteEntity(entityDataStoreManager, entity, modelNodeId);
+                } catch (Exception e) {
+                    throw new DataStoreException("Error while pre delete container ", e);
+                }
+            });
+        }
+        deleteEntity(entityDataStoreManager, entity);
     }
 
     private boolean hasDirectEntityRelationWithParent(Object entity) {
@@ -510,22 +609,22 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
         return null;
     }
 
-    private void deleteEntity(Object entity) {
+    private void deleteEntity(EntityDataStoreManager entityDataStoreManager, Object entity) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("deleting entity object with hashcode %s and entity is  %s",entity.hashCode(), entity));
         }
-        getEntityDataStoreManager(entity.getClass()).delete(entity);
+        entityDataStoreManager.delete(entity);
     }
     
     @Override
-    public boolean isChildTypeBigList(SchemaPath nodeType) {
+    public boolean isChildTypeBigList(SchemaPath nodeType, SchemaRegistry mountRegistry) {
         Class klass = m_entityRegistry.getEntityClass(nodeType);
         
         return m_entityRegistry.getBigListType(klass);
     }
 
     @Override
-    public List<ListEntryInfo> findNodesLike(SchemaPath nodeType, ModelNodeId parentId, Map<QName, String> keysLike, int maxResults) {
+    public List<ListEntryInfo> findVisibleNodesLike(SchemaPath nodeType, ModelNodeId parentId, Map<QName, String> keysLike, int maxResults, SchemaRegistry mountRegistry) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("finding nodes of type {} with parentId {}, keySearch {}, maxResults {}", nodeType, parentId, keysLike, maxResults);
         }
@@ -543,13 +642,15 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
     private List<ListEntryInfo> prepareEntryInfos(List<ModelNodeWithAttributes> modelNodes) {
         List<ListEntryInfo> matchingEntries = new ArrayList<>();
         for(ModelNodeWithAttributes node : modelNodes){
-            Map<QName, ConfigLeafAttribute> keys = node.getKeyAttributes();
-            ListEntryInfo info = new ListEntryInfo();
-            for(Map.Entry<QName, ConfigLeafAttribute> key : keys.entrySet()){
-                String moduleName = m_schemaRegistry.getModuleByNamespace(key.getKey().getNamespace().toString()).getName();
-                info.getKeys().put(new ListEntryQName(moduleName, key.getKey().getLocalName()), key.getValue().getStringValue());
+            if(node.isVisible()) {
+                Map<QName, ConfigLeafAttribute> keys = node.getKeyAttributes();
+                ListEntryInfo info = new ListEntryInfo();
+                for (Map.Entry<QName, ConfigLeafAttribute> key : keys.entrySet()) {
+                    String moduleName = m_schemaRegistry.getModuleByNamespace(key.getKey().getNamespace().toString()).getName();
+                    info.getKeys().put(new ListEntryQName(moduleName, key.getKey().getLocalName()), key.getValue().getStringValue());
+                }
+                matchingEntries.add(info);
             }
-            matchingEntries.add(info);
         }
         return matchingEntries;
     }
@@ -564,7 +665,7 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
     }
 
     
-    public List findByMatchValues(SchemaPath nodeType, Map<String, Object> matchValues){
+    public List findByMatchValues(SchemaPath nodeType, Map<String, Object> matchValues, SchemaRegistry mountRegistry){
         Class klass = m_entityRegistry.getEntityClass(nodeType);
         if(klass == null){
             throw new IllegalArgumentException(String.format("Nodes of type {} cannot be searched", nodeType));
@@ -574,7 +675,7 @@ public class AnnotationBasedModelNodeDataStoreManager implements ModelNodeDataSt
     }
     
     @Override
-    public EntityRegistry getEntityRegistry(SchemaPath nodeType){
+    public EntityRegistry getEntityRegistry(SchemaPath nodeType, SchemaRegistry mountRegistry){
         return m_entityRegistry;
     }
 }

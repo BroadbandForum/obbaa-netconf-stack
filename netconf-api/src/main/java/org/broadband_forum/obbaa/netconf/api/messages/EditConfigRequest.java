@@ -16,16 +16,22 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.EDIT_CONFIG;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Netconf request to perform {@code <edit-config> } operation.
  * 
  * @see {@link EditConfigElement}, {@link EditConfigDefaultOperations}, {@link EditConfigErrorOptions}, {@link EditConfigOperations},
  *      {@link EditConfigTestOptions} for more info.
- *
+ * 
  * 
  */
 public class EditConfigRequest extends AbstractNetconfRequest {
@@ -37,6 +43,10 @@ public class EditConfigRequest extends AbstractNetconfRequest {
     private EditConfigElement m_configElement;
     private String m_defaultOperation = EditConfigDefaultOperations.MERGE;
     private boolean m_uploadToPmaRequest = false;
+    private boolean m_withTransactionId = false;
+    private boolean m_triggerSyncUponSuccess = false;
+    private final Map<String, Object> m_context = new HashMap<>();
+    private String m_reqXmlStrCopy = null;
 
     public String getTarget() {
         return m_target;
@@ -82,8 +92,13 @@ public class EditConfigRequest extends AbstractNetconfRequest {
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
         Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId)
-                .addEditConfigElement(m_target, m_defaultOperation, m_testOption, m_errorOption, m_withDelay, m_configElement).build();
+                .addEditConfigElement(m_withTransactionId, m_target, m_defaultOperation, m_testOption, m_errorOption, m_withDelay, m_configElement, m_userContext, m_contextSessionId).build();
         return doc;
+    }
+
+    @Override
+    public String getRpcType() {
+        return EDIT_CONFIG;
     }
 
     public EditConfigRequest setDefaultOperation(String defaultOperation) {
@@ -115,11 +130,40 @@ public class EditConfigRequest extends AbstractNetconfRequest {
         return m_uploadToPmaRequest;
     }
 
-    @Override
+    public void setTransactionId(boolean withTransactionId) {
+        m_withTransactionId = withTransactionId;
+    }
+
+    public boolean getWithTransactionId() {
+        return m_withTransactionId;
+    }
+
+    public boolean isTriggerSyncUponSuccess() {
+		return m_triggerSyncUponSuccess;
+	}
+
+	public void setTriggerSyncUponSuccess(boolean triggerSyncUponSuccess) {
+		this.m_triggerSyncUponSuccess = triggerSyncUponSuccess;
+	}
+
+    public Object getContextValue(String key) {
+        return m_context.get(key);
+    }
+
+    public Map<String, Object> getContextMap() {
+        return m_context;
+    }
+
+    public void addContextValue(String key, Object value) {
+        m_context.put(key, value);
+    }
+
+	@Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((m_configElement == null) ? 0 : m_configElement.hashCode());
+        result = prime * result + ((m_reqXmlStrCopy == null) ? 0 : m_reqXmlStrCopy.hashCode());
         result = prime * result + ((m_defaultOperation == null) ? 0 : m_defaultOperation.hashCode());
         result = prime * result + ((m_errorOption == null) ? 0 : m_errorOption.hashCode());
         result = prime * result + ((m_target == null) ? 0 : m_target.hashCode());
@@ -140,6 +184,11 @@ public class EditConfigRequest extends AbstractNetconfRequest {
             if (other.m_configElement != null)
                 return false;
         } else if (!m_configElement.equals(other.m_configElement))
+            return false;
+        if (m_reqXmlStrCopy == null) {
+            if (other.m_reqXmlStrCopy != null)
+                return false;
+        } else if (!m_reqXmlStrCopy.equals(other.m_reqXmlStrCopy))
             return false;
         if (m_defaultOperation == null) {
             if (other.m_defaultOperation != null)
@@ -164,4 +213,22 @@ public class EditConfigRequest extends AbstractNetconfRequest {
         return true;
     }
 
+    public void unsetConfigElement() {
+        m_configElement = null;
+    }
+
+    public void setConfigElement() throws NetconfMessageBuilderException {
+        Element configElement = DocumentUtils.stringToDocument(m_reqXmlStrCopy).getDocumentElement();
+        m_configElement = new EditConfigElement()
+                .setConfigElementContents(DocumentUtils.getChildElements(configElement));
+    }
+
+    public String getReqXmlStrCopy(){
+        return m_reqXmlStrCopy;
+    }
+
+    public void setReqXmlStrCopy() throws NetconfMessageBuilderException {
+        m_reqXmlStrCopy = DocumentUtils.documentToString(getConfigElement().getXmlElement());
+        unsetConfigElement();
+    }
 }

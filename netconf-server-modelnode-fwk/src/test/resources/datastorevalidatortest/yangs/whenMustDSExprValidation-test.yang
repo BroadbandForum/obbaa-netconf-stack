@@ -1,0 +1,280 @@
+module whenMustDSExprValidation-test {
+	
+	yang-version 1.1;
+    
+	namespace "urn:org:bbf2:pma:whenMustDSExprValidation-test";
+	
+	prefix "whenmust";
+	
+	import datastore-validator-test {
+          prefix validation;
+	}
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+	
+	container whenMustRefersSiblings{
+	 
+	    list router{
+	        key router-name;
+	        
+	        leaf router-name{
+	            type string;
+	        }
+	        
+	        container twamp-light {
+                when "../router-name = 'Base'";
+	        }
+	        
+	        container firewall {
+                when "../router-name = 'Base'";
+            }
+	        
+	        list interface{
+	            key interface-name;
+	            
+	            leaf interface-name{
+	                type string;
+	            }
+	            
+	            container ptp-hw-assist {
+                    when "../../router-name = 'Base'";
+
+                    leaf admin-state {
+                        type string;
+                        default "disable";
+                        description
+                            "Time stamping of Precision Time Protocol (PTP) packets
+                             at the physical interface.";
+                    }
+
+                } // container ptp-hw-assist
+
+	        }
+	        
+	        
+	    }
+	    
+	    
+	 leaf leaf1{
+	  type string;
+	 }
+	 
+	 leaf leaf2 {
+	  when "../leaf1 = 'leaf1'";
+	  type string;
+	 }
+	 
+	 leaf leaf3 {
+	  must "../leaf1 = 'leaf1'";
+	  type string;
+	 }
+	 
+	 leaf leaf4 {
+	  type string;
+	  default "leaf4";
+	 }
+	 
+	 leaf leaf5 {
+	  when "../leaf1 = 'leaf1'";
+	  type string;
+	  default "leaf5";
+	 }
+	 
+	 leaf leaf6 {
+	  type string;
+	 }
+	 
+	 leaf leaf7 {
+	  when "../leaf1 = 'leaf1'";
+	  must "../leaf6 = 'leaf6'";
+	  type string;
+	 }
+	  
+	 leaf leaf8 {
+	  when "/otherRootContainer/otherRootLeaf";
+	  type string;
+	 }
+	 
+	 leaf leaf9 {
+	  when "/validation:validation/validation:iamImpactNode";
+	  type string;
+	 }
+	 
+	 container containerWithLeaflist {
+	  when "./../leaf1 != 'root'";
+	  leaf-list leaflist1{
+	   type string;
+	  }
+	  
+	  leaf leaf2{
+	   when "../leaflist1='tom'";
+	   type string;
+	  }
+	  
+	  leaf leaf3{
+	   when "not(../leaflist1='tom')";
+	   type string;
+	  }
+	  
+	  leaf leaf4{
+	   when "../leaflist1 != 'tom'";
+	   type string;
+	  }
+	 }
+	 
+     container whenNodeWithSelfAtStart {
+      leaf innerLeaf1 {
+       type string;
+      }
+      
+      leaf innerLeaf2 {
+       when "./../../leaf1";
+       type string;
+      }
+      
+      leaf innerLeaf3 {
+       when "../../leaf1 = 'test'";
+       type string;
+      }
+      
+      leaf innerLeaf4 {
+       must "../../leaf1 = 'test'";
+       type string;
+      }
+      
+      leaf innerLeaf5 {
+       when "not(../../leaf1 = 'innerLeaf5')";
+       type string;
+      } 
+      
+	 }
+	 
+	 container mustNodeWithSelfAtStart {
+      must "./innerLeaf1 = 'innerLeaf1'";
+      leaf innerLeaf1 {
+       type string;
+      }
+      
+      leaf innerLeaf2 {
+       must "./../../leaf1 = 'test'";
+       type string;
+      }
+      
+      leaf innerLeaf3 {
+       must "../../leaf1 = 'test'";
+       type string;
+      } 
+      
+      leaf innerLeaf4 {
+       when "../../leaf1 = 'test'";
+       type string;
+      }  
+         
+      leaf innerLeaf5 {
+       must "not(../../leaf1 = 'test')";
+       type string;
+      }  
+	 }
+	 
+	 list whenMustListWithSingleKey {
+	  key name;
+	  leaf name {
+	   type string;
+	  }
+	  
+	  leaf otherLeaf1{
+	   type string;
+	  }
+	  
+	  list whenMustInnerListWithSingleKey {
+	   key name;
+	   leaf name {
+	    type string;
+	   }
+	   
+	   leaf whenRefersParentname{
+	    when "../../../whenMustListWithSingleKey[name=current()/../name]";
+	    type string;
+	   }
+	   
+	   leaf mustRefersParentname{
+	    must "../../../whenMustListWithSingleKey[name=current()/../name]";
+	    type string;
+	   }
+	  }
+	  
+	 }
+	 
+	 list whenMustListWithMultiKey {
+	  key "name id";
+	  leaf name {
+	   type string;
+	  }
+	  
+	  leaf id {
+	   type string;
+	  }
+	  
+	  leaf otherLeaf1{
+	   type string;
+	  }
+	  
+	  list whenMustInnerListWithMultiKey {
+	   key name;
+	   leaf name {
+	    type string;
+	   }
+	   
+	   leaf innerLeaf2{
+	    must "../../../whenMustListWithMultiKey[name=current()][id='1']";
+	    type string;
+	   }
+	  }
+	 }
+	}
+	
+	container otherRootContainer {
+        must "not(./otherRootLeaf = 'root')";
+        leaf otherRootLeaf {
+            type string;
+        }
+
+        leaf selfStartRefersSibling {
+            when "./../otherRootLeaf = 'test'";
+            type string;
+        }
+
+        leaf otherDefaultLeaf {
+            type string;
+            default "otherDefaultLeaf";
+        }
+
+        leaf selfStartRefersDefaultSibling {
+            must "./../otherDefaultLeaf != 'root'";
+            type string;
+        }
+
+        list must-validation-with-default {
+            key "key";
+            must "current()/group-ipv4-address-end = '0.0.0.0'";
+            leaf key {
+                type string;
+            }
+            leaf ip-version {
+                type string;
+            }
+            leaf group-ipv4-address {
+                when "../ip-version = 'ipv4'";
+                type string;
+            }
+            leaf group-ipv4-address-end {
+                when "../ip-version = 'ipv4'";
+                type string;
+                default "0.0.0.0";
+            }
+        }
+    }
+
+}

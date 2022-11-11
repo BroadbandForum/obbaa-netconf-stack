@@ -16,79 +16,82 @@
 
 package org.broadband_forum.obbaa.netconf.api.utils.locks;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.api.util.Pair;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class ReentrantHashLocks<T> {
-		
-	// Set of objects on which the locks are currently granted
-	private Map<T,Pair<Long, Integer>> m_lockedObjects = new HashMap<T,Pair<Long, Integer>>();
+
+	private ConcurrentHashMap<T, ReentrantLockWrapper> m_lockedObjects = new ConcurrentHashMap<T, ReentrantLockWrapper>();
+
+	private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ReentrantHashLocks.class,
+			LogAppNames.NETCONF_LIB);
+
 	
-	 private static final Logger LOGGER = Logger.getLogger(ReentrantHashLocks.class);
+	protected static class ReentrantLockWrapper {
+		protected ReentrantLock lock = new ReentrantLock();
+		protected int accessCount = 0;
+	}
+	
+	public <RT> RT executeWithLock(T object, Callable<RT> protectedArea) throws Exception {
+		boolean locked = false;
+		try {
+			lockOn(object);
+			locked = true;
+			return protectedArea.call();
+		} finally {
+			if (locked) {
+				unlock(object);
+			}
+		}
+	}
 
-	/**
-	 * Grants lock 
-	 * 		if the {@code object} is not already present in locked  Objects list.
-	 *		if the {@code object} is already present in locked  Objects list and currently owned by same thread (reentrant request)
-	 * @param object
-	 *            Object on which the lock is sought
-	 * @throws InterruptedException 
-	 */
-	 public void lockOn(T object) throws InterruptedException {
-		 synchronized (this) {
-			 if(null != object){
-				 Long id=Thread.currentThread().getId();
-				 while (m_lockedObjects.containsKey(object)) {
-					 Pair<Long, Integer> lockedThread=m_lockedObjects.get(object);
-					 if(lockedThread.getFirst().equals(id)){
-						 lockedThread.setSecond(lockedThread.getSecond()+1);
-						 return;
-					 }
-					 try {
-						 this.wait();
-					 } catch (InterruptedException e) {
-						 LOGGER.error("Thread got interuppted while waiting for Lock "+id, e);
-						 throw e;
-					 }
-				 }
+	private void lockOn(T object) {
+		if (null != object) {
+			ReentrantLockWrapper lockObject;
+			synchronized (object) {
+				lockObject = m_lockedObjects.computeIfAbsent(object, value -> new ReentrantLockWrapper());
+				lockObject.accessCount++;
+			}
+			try {
+				lockObject.lock.lock();
+			} catch (Exception e) {
+				lockObject.accessCount--;
+				throw e;
+			}
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Thread {} acquired  lockObject {}  with accessCount {} and  lockHash {}   ",
+						Thread.currentThread().getName(), object.toString(), lockObject.accessCount,
+						lockObject.lock.hashCode());
+			}
+		}
+	}
 
-				 Pair<Long, Integer> newOwnedThread=new Pair<Long, Integer>(id, 1);
-				 m_lockedObjects.put(object,newOwnedThread);
-			 }
-		 }
-	 }
+	private void unlock(T object) {
+		if (null != object) {
+			synchronized (object) {
+				ReentrantLockWrapper reentrantLockWrapper = m_lockedObjects.get(object);
+				if (null != reentrantLockWrapper) {
+					boolean hasQueuedThreadsBeforeUnlock = reentrantLockWrapper.lock.hasQueuedThreads();
+					reentrantLockWrapper.lock.unlock();
+					reentrantLockWrapper.accessCount--;
+					if (!hasQueuedThreadsBeforeUnlock && reentrantLockWrapper.accessCount <=0 && reentrantLockWrapper.lock.getHoldCount() == 0 && !reentrantLockWrapper.lock.isLocked()) {
+						if (LOGGER.isDebugEnabled()) {
+							LOGGER.debug(
+									"Remove lock object hasQueuedThreads: {} , islocked: {} , holdCount: {} , accessCount {} ,ThreadName: {} , lockHash {}, lockObject {} ",
+									hasQueuedThreadsBeforeUnlock, reentrantLockWrapper.lock.isLocked(),
+									reentrantLockWrapper.lock.getHoldCount(), reentrantLockWrapper.accessCount,
+									Thread.currentThread().getName(), reentrantLockWrapper.lock.hashCode(),object.toString());
+						}
+						m_lockedObjects.remove(object);
+					}
+				}
+			}
+		}
+	}
 
-	/**
-	 * Revokes the lock, if it was granted in past.
-	 *
-	 * @param object
-	 *            Object on which the lock was acquired.
-	 */
-	 public void unlock(T object) {
-		 synchronized (this) {
-			 if(null != object){
-				 if (m_lockedObjects.containsKey(object)) {
-					 Long id=Thread.currentThread().getId();
-					 Pair<Long, Integer> lockedThread=m_lockedObjects.get(object);
-					 if(lockedThread.getFirst().equals(id)){
-						 Integer lockCount=lockedThread.getSecond();
-						 lockCount--;
-						 if(lockCount==0){
-							 m_lockedObjects.remove(object);
-							 this.notifyAll();
-						 }else{
-							 lockedThread.setSecond(lockCount);
-							 return;
-						 }
-					 }else{
-						 throw new IllegalMonitorStateException();
-					 }
-				 }
-			 }
-		 }
-	 }
 }
-

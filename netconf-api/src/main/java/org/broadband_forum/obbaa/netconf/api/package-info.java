@@ -1,3 +1,6 @@
+/**
+ * Contains general netconf related classes.
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,7 +17,4 @@
  * limitations under the License.
  */
 
-/**
- * Contains general netconf related classes.
- */
 package org.broadband_forum.obbaa.netconf.api;

@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.server.tls;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.TcpConnectionListener;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfiguration;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerDispatcher;
@@ -24,6 +25,9 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
 import org.broadband_forum.obbaa.netconf.api.transport.ReverseTlsNetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.SSLContextUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -31,7 +35,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import org.apache.log4j.Logger;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.Callable;
@@ -52,7 +55,7 @@ import java.util.concurrent.Future;
  *
  */
 public class CallHomeTlsServerDispatcherImpl implements NetconfServerDispatcher {
-    private static final Logger LOGGER = Logger.getLogger(CallHomeTlsServerDispatcherImpl.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(CallHomeTlsServerDispatcherImpl.class, LogAppNames.NETCONF_LIB);
     private final ExecutorService m_executorService;// NOSONAR
 
     public CallHomeTlsServerDispatcherImpl(ExecutorService executorService) {// NOSONAR

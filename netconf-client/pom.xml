@@ -21,13 +21,14 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>netconf-client</artifactId>
     <packaging>bundle</packaging>
-    <name>netconf-lib/netconf-client</name>
+    <name>netconf-fwk/netconf-client</name>
+
     <dependencies>
         <!-- Internal -->
         <dependency>
@@ -46,8 +47,33 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
+            <artifactId>netconf-server-modelnode-fwk</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
+            <artifactId>netconf-server-modelnode-fwk</artifactId>
+            <version>${project.version}</version>
+           <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
+            <artifactId>netconf-api</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
 
         <!-- External -->
+        <dependency>
+          <groupId>xmlunit</groupId>
+          <artifactId>xmlunit</artifactId>
+         <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-buffer</artifactId>
@@ -78,14 +104,13 @@
             <artifactId>netty-codec</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.sshd</groupId>
-            <artifactId>sshd-core</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-osgi</artifactId>
         </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -125,9 +150,11 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <version>${bundle.plugin.version}</version>
                 <configuration>
                     <instructions>
                         <Import-Package>io.netty.util.internal,*</Import-Package>
+                        <_removeheaders>Import-Service,Export-Service</_removeheaders>
                     </instructions>
                 </configuration>
             </plugin>
@@ -141,7 +168,11 @@
                         </goals>
                         <configuration>
                             <failOnWarning>true</failOnWarning>
-                            <ignoredDependencies>io.netty:netty-tcnative:jar:${netty-tcnative.version}</ignoredDependencies>
+                            <ignoredDependencies>
+                                <ignoredDependency>io.netty:netty-tcnative:jar:${netty-tcnative.version}</ignoredDependency>
+                                <ignoredDependency>org.apache.logging.log4j:log4j-core:jar:${log4j2.version}</ignoredDependency>
+                                <ignoredDependency>org.broadband-forum.obbaa.netconf:netconf-server-modelnode-fwk:jar:${project.version}</ignoredDependency>
+                            </ignoredDependencies>
                             <outputXML>true</outputXML>
                         </configuration>
                     </execution>

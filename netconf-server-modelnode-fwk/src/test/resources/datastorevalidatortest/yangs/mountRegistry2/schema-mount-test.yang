@@ -1,0 +1,396 @@
+module shcema-mount-test {
+	
+	yang-version 1.1;
+    
+	namespace "schema-mount-test";
+	
+	prefix "smt";
+	
+	import test-interfaces {
+	    prefix if;
+	}
+	  
+	revision "2019-06-28" {
+	      description "Initial version.";
+	}
+	
+	feature pre-emption {
+	    description "Pre-emption is supported";
+	}
+	  
+	typedef interface-ref {
+		type leafref {
+		    path "/smt:schemaMount/smt:container1/smt:list1/smt:key";
+		}
+	}
+	
+	typedef hardware-ref {
+		type leafref {
+		    path "/smt:schemaMount1/smt:hardware/smt:name";
+		}
+	}
+	
+	typedef profile-ref {
+        type leafref {
+            path "/smt:schemaMount1/smt:profile/smt:name";
+        }
+    }
+    
+    identity vegetables {
+      description "Base for all vegetables";
+    }
+    
+    identity carrot {
+      base vegetables;
+    }
+    
+	list testStateList {
+        config false;
+            key "name";
+
+            leaf name {
+                type string;
+            }
+
+            leaf dummy-leaf1 {
+                type string;
+        }
+
+    }
+
+	container stateContainer {
+		config false;
+		list stateList {
+			key keyLeaf;
+			leaf keyLeaf {
+				type string;
+			}
+			leaf otherLeaf {
+				type string;
+			}
+		}
+	}
+	
+    grouping local-idref-grouping {
+	    leaf identityref-type {
+            type identityref {
+               base "if:languages";
+            }
+            default "if:english";
+        }
+           
+        leaf local-identityref-type {
+            type identityref {
+               base "vegetables";
+            }
+            default "carrot";
+        }
+        
+        leaf local-whenidentityref-type {
+            when "../../leaf1 = 'myleaf1'";
+            type identityref {
+               base "vegetables";
+            }
+            default "carrot";
+        }
+      }
+        
+	    container schemaMount {
+    	
+    	leaf leaf1 {
+    		type string;
+    	}
+    	
+    	leaf leaf2 {
+    	    type boolean;
+    	}
+    	
+    	leaf leaf3 {
+    	    type string;
+    	}
+    	
+    	container id-ref-container {
+    	     when "../leaf3 = 'leaf3'";
+    	     uses local-idref-grouping;
+    	     
+    	}
+    	
+    	container enableContainer {
+    	    when '../leaf2 = "true"';
+    	}
+    	container container1 {
+    		list list1 {
+    			key key;
+    			leaf key {
+    				type string;
+    			}
+    			
+    			leaf leaf1 {
+    				must "../../list1[current()]/leaf2 > 10";
+    				type string;
+    			}
+    			
+    			leaf leaf2 {
+    				type int8;
+    				must "current() > 0";
+    			}
+    			
+    			leaf leaf3 {
+    				type string;
+    			}
+    			
+    			leaf leaf4 {
+    				type leafref {
+    					path "/schemaMount/container1/list1/leaf3";
+    				}
+    			}
+    			leaf-list leafListMinElements {
+					min-elements 1;
+					type int8;
+				}
+    			
+    		    leaf type {
+    		        type string;
+    		    }
+    		}
+    		leaf test-auth-fail{
+                type string;
+        	}
+    	}
+        container stateContainer1 {
+            config false;
+            list stateList1 {
+                    key keyLeaf;
+                    leaf keyLeaf {
+                            type string;
+                    }
+                    leaf leaf1 {
+                            type string;
+                    }
+            }
+   		}
+       
+        container channelpair {
+            leaf channelgroup-ref {
+                type smt:interface-ref;
+                must "/smt:schemaMount/smt:container1/smt:list1[smt:key=current()]
+                      /smt:type='test'"{
+                   error-message "must reference a channelgroup";
+                }
+             }
+        }
+        
+        list interface-list {
+        	key "name";
+        	leaf name {
+        		type string;
+        	}
+        }
+    }
+    
+    container schemaMount1 {
+        leaf channelgroup-ref1 {
+            type smt:interface-ref;
+            must "/smt:schemaMount/smt:container1/smt:list1[smt:key=current()]
+                  /smt:type='test'"{
+               error-message "must reference a channelgroup";
+            }
+         }
+        container innerSchemaMount1 {
+        	leaf innerSchemaMountLeaf {
+        		type string;
+        	}
+        }
+        
+        container profile {
+			leaf name {
+				type string;
+			}
+		}
+        
+        list hardware {
+        	key "name";
+        	
+        	leaf name {
+        		type string;
+        	}
+        }
+    }
+    
+    augment "/schemaMount/interface-list" {
+    	leaf-list port-layer {
+    		type hardware-ref;
+    		min-elements 1;
+    	}
+    }
+    
+    augment "/schemaMount"{
+    	when "leaf1='test'";
+        container outer {
+        	leaf a {
+        		type string;
+        		mandatory true;
+        	}
+      
+        	leaf b {
+        		type string;
+        	}	
+        }
+    }
+
+    augment "/schemaMount/container1" {
+        leaf profile {
+          type profile-ref;
+        }
+      }
+    
+    augment "/schemaMount/container1" {
+        container trap {
+                leaf auth-fail{
+                        when "../../test-auth-fail='bbf'";
+                        type string;
+                        default "test";
+                }
+        }
+ 	}
+
+    augment "/if:interfaces/if:interface" {
+        container ipv4-security {
+            leaf prevent-ipv4-address-spoofing {
+                type boolean;
+                must '(count(/smt:schemaMount/smt:forwarding/smt:forwarder/smt:ports/smt:port'
+                +'[smt:sub-interface = current()/../../if:name]) > 0 and current() = "true")'
+                + ' or current() = "false"' {
+                    error-message "First attach the VLAN sub-interface to a forwarder";
+                }
+            }
+        }
+    }
+
+    augment "/smt:schemaMount/smt:container1" {
+
+        container choice-container {
+            list interface {
+                key 'name';
+                leaf name {
+                    type string;
+                }
+                uses tm-root;
+            }
+        }
+    }
+
+    grouping tm-root {
+
+        container tm-root {
+            choice children-type {
+                case queues {
+                    uses queues;
+                }
+            }
+        }
+    }
+
+    grouping queues {
+        list queue {
+            key "local-queue-id";
+
+            leaf local-queue-id {
+                type int8;
+            }
+            choice queue-scheduling-cfg-type {
+                case inline {
+                    leaf priority {
+                        type int8;
+                    }
+                }
+            }
+
+            leaf pre-emption {
+                if-feature "pre-emption";
+                type boolean;
+            }
+        }
+    }
+
+    augment "/smt:schemaMount/smt:container1/smt:choice-container/smt:interface/smt:tm-root/smt:children-type" {
+
+        case scheduler-node {
+
+            list scheduler-node {
+                key "name";
+                leaf name {
+                    type string;
+                }
+                leaf scheduling-level {
+                    type uint8;
+                    mandatory true;
+                }
+
+                choice children-type {
+                    case scheduler-node {
+                        list child-scheduler-nodes {
+                            key "name";
+                            leaf name {
+                                type leafref {
+                                    path '../../../scheduler-node/name';
+                                }
+
+                                must "../../../scheduler-node [name=current()]/scheduling-level > current()/../../scheduling-level" {
+                                    error-message "The scheduler-level should be bigger than the value of parent node.";
+                                }
+                            }
+                        }
+                    }
+                    case queue {
+                        leaf contains-queues {
+                            type boolean;
+                            default "true";
+                        }
+                        uses queues;
+                    }
+                }
+            }
+            list child-scheduler-nodes {
+                key "name";
+                leaf name {
+                    type leafref {
+                        path '../../scheduler-node/name';
+                    }
+                }
+            }
+        }
+    }
+    /*  RPC definitions used by wigig YANG module */
+
+    rpc select-station-ssid {
+    description
+      "Used for specific ssid for station of HOU or AP.";
+       input {
+       leaf wigig-interface {
+            type if:interface-ref;
+            must
+              "derived-from-or-self(/if:interfaces/if:interface
+               [if:name = current()]/if:type,
+               'if:ieee80211')" {
+              description
+                "The single incoming point shall be a
+                 ieee80211 type at the network side of the
+                 node.";
+            }
+            mandatory true;
+            description
+              "This object specifies the wigig interface
+               that select ssid.";
+          }
+        leaf ssid {
+          type string;
+          mandatory false;
+          description
+            "The name of the ssid which HOU or AP can assoicate, if this parameter is empty, it means AP indicate station to rescan SSID with ssid sequence list which is set before";
+         }
+
+       }// input
+
+    } //rpc set-station-ssid
+}

@@ -1,0 +1,14 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Greatest hits</name>
+                <song xc:operation="replace">
+                    <name>Are you gonne go my way</name>
+                    <singer>Michael</singer>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

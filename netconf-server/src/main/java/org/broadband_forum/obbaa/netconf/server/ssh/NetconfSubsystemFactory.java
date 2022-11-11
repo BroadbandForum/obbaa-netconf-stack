@@ -16,18 +16,19 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh;
 
+import java.io.IOException;
+import java.util.Set;
+
+import org.apache.sshd.server.channel.ChannelSession;
+import org.apache.sshd.server.command.Command;
+import org.apache.sshd.server.subsystem.SubsystemFactory;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfSessionIdProvider;
 import org.broadband_forum.obbaa.netconf.api.server.ServerCapabilityProvider;
 import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
-import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.Command;
-
-import java.util.Set;
-
-public final class NetconfSubsystemFactory implements NamedFactory<Command> {
+public final class NetconfSubsystemFactory implements SubsystemFactory {
     private ServerCapabilityProvider m_capabilityProvider;
     private NetconfServerMessageListener m_netconfServerMessageListener;
     private ServerMessageHandler m_serverMessageHandler;
@@ -50,17 +51,17 @@ public final class NetconfSubsystemFactory implements NamedFactory<Command> {
     }
 
     @Override
-    public Command create() {
+    public String getName() {
+        return NetconfResources.NETCONF_SUBSYSTEM_NAME;
+    }
+
+    @Override
+    public Command createSubsystem(ChannelSession channel) throws IOException {
         if (m_capabilityProvider != null) {
             return new NetconfSubsystem(m_netconfServerMessageListener, m_serverMessageHandler, m_capabilityProvider.getCapabilities(),
                     m_sessionIdProvider);
         } else {
             return new NetconfSubsystem(m_netconfServerMessageListener, m_serverMessageHandler, m_caps, m_sessionIdProvider);
         }
-    }
-
-    @Override
-    public String getName() {
-        return NetconfResources.NETCONF_SUBSYSTEM_NAME;
     }
 }

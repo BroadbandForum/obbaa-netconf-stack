@@ -1,0 +1,285 @@
+module ibn {
+    
+    namespace "http://www.test-company.com/solutions/ibn";
+    
+    prefix "ibn";
+    
+    import ietf-yang-types { prefix yang; }
+    
+    organization "Test Company";
+
+    revision "2017-11-28" {
+          description "Initial version.";
+          reference "ibn";
+    }
+    
+    container ibn {
+        list intent {
+        	key "target intent-type";
+        	min-elements 3;
+            reference "ibn";
+        	
+            leaf target {
+                type string;
+                mandatory true;
+                description "Uniquely identifies an intent within an intent-type";
+                reference "ibn";
+            }
+            
+            leaf intent-type {
+                type string;
+                mandatory true;
+                description "Name of the intent type";
+                must "../target = '1' and ../intent-type-version != 1";
+            }
+            
+            leaf intent-type-version {
+                mandatory true;
+                type uint16;
+                description "Version of intent type";
+            }
+
+            leaf required-network-state {
+                description "indicates the intended state of the network";
+                type enumeration {
+                  enum active {
+                    description "The intent must be resumed in the network";
+                  }
+                  enum suspend {
+                    description "The intent must be suspended in the network";
+                  }
+                  enum delete {
+                    description "The intent must be deleted from the network";
+                  }
+                }
+               default active;
+            }
+            
+            leaf sync-directly {
+                type boolean;
+                default false;
+                description "Indicates if a sync should be consequently executed,
+                           or it should be left out for a sync operation";
+            }
+            
+            leaf aligned {
+                config false;
+                type boolean;
+                description "Indicates if the network is aligned with the intent";
+            }
+            
+            leaf error {
+                config false;
+                type boolean;
+                description "Indicates if the last attempt to align the network encountered
+                                error";
+            }
+            
+            leaf error-code {
+                config false;
+                type string;
+                status deprecated;
+                description "The error code returned by the intent-type realization logic
+                                or by IBN system";
+             }
+            
+             leaf error-detail {
+               config false;
+               type string;
+               description "When error==true, then the error message will be available in
+                                this parameter";
+             }
+             
+             leaf error-timestamp {
+               config false;
+               type yang:date-and-time;
+               description "Indicates the date and time (UTC) when error occurred.";
+             }
+             
+             leaf sync-timestamp {
+                 config false;
+                 type yang:date-and-time;
+                 description "Indicates the last date and time (UTC) when IBN system attempted
+                                to align the network with intent";
+             }
+             
+            leaf-list intent-type-label { 
+                type string; 
+                min-elements 2;
+                max-elements 4;
+                when "../required-network-state = 'active'";
+            } 
+
+            container configuration {
+                description "intent configuration";
+            }
+
+            container state{
+            	config false; 
+                description "intent state attributes";
+            }
+        }
+    }
+    rpc audit-intent {
+    	  description
+    	    "Audit of one service instance";
+    	  input {
+    	    leaf intent-type {
+    	      type string;
+    	      mandatory true;
+    	    }
+    	    leaf intent-type-version {
+    	      type int16;
+    	    }
+    	    leaf target {
+    	      type string;
+    	      mandatory true;
+    	    }
+    	  }
+    	  output {
+    	    container audit-report {
+    	      description
+    	        "Audit report for the service instance";
+    	      leaf intent-type {
+    	        type string;
+    	        mandatory true;
+    	      }
+    	      leaf target {
+    	        type string;
+    	        mandatory true;
+    	      }
+    	      list misaligned-attribute {
+    	        key "name";
+    	        description
+    	          "misalignment report for attributes";
+    	        leaf name {
+    	          type string;
+    	          description
+    	            "Attribute name";
+    	        }
+    	        leaf expected-value {
+    	          type string;
+    	          description
+    	            "Expected attribute value";
+    	        }
+    	        leaf actual-value {
+    	          type string;
+    	          description
+    	            "Actual attribute value";
+    	        }
+    	      }
+    	      list misaligned-object {
+    	        key "object-id";
+    	        description
+    	          "Audit report for the misalignment of the internal objects. Later, non-argument attribute misalignments will be reported here.";
+    	        leaf object-id {
+    	          type string;
+    	          mandatory true;
+    	        }
+    	        leaf is-configured {
+    	          type boolean;
+    	          mandatory true;
+    	        }
+    	      }
+    	    }
+    	  }
+    	}
+	
+ 	grouping paging-input {
+        leaf page-number {
+            type uint64;
+            description "Starting page number";
+            default 0;
+        }
+        leaf page-size {
+            type uint32;
+            default 100;
+            description
+                        "If page-size is 0, all matching entries will be returned";
+        }
+    }
+
+    grouping paging-output {
+        leaf page-size {
+            type uint32;
+            description "The total number of entries in the current page";
+        }
+
+        leaf total-count {
+            type uint32;
+            description "The total number of entries matching the query";
+        }
+    }
+
+    rpc search-intents {
+        description "Searches service instances matching the input values";
+
+        input {
+            container filter {
+                leaf-list intent-type {
+                    type string;
+                }
+                leaf target {
+                    type string;
+                    description "Searches for instance label containing this input string";
+                }
+                leaf-list label {
+                    type string;
+                }
+                leaf admin-state {
+                    type enumeration {
+                        enum locked;
+                        enum unlocked;
+                    }
+                }
+                leaf predicate {
+                	type enumeration {
+                		enum MATCHES;
+                		enum CONTAINS;
+                	}
+                	default MATCHES;
+                }
+                leaf config-required {
+                    type boolean;
+                    default true;
+                }
+            }
+            uses paging-input;
+        }
+
+        output {
+            container intents {
+                list intent {
+                    key "intent-type target";
+
+                    leaf intent-type {
+                        type string;
+                    }
+
+                    leaf target {
+                        type string;
+                    }
+                    container configuration {
+                        description "intent configuration";
+                    }
+                }
+            }
+            uses paging-output;
+        }
+    }
+    
+    rpc synchronize-intent {
+        description
+          "runs the synchronize for specific intent";
+      input {
+			leaf intent-type {
+				type string;
+				mandatory true;
+			}
+			leaf target {
+				type string;
+				mandatory true;
+			}
+		} 
+   }
+}

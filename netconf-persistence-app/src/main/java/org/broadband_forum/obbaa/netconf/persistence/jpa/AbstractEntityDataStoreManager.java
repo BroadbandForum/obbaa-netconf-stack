@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.persistence.jpa;
 
+import static org.broadband_forum.obbaa.netconf.api.util.ReflectionUtils.getAllDeclaredFields;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,18 +44,20 @@ import javax.persistence.criteria.Selection;
 import javax.persistence.metamodel.Metamodel;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.messages.LogUtil;
+import org.broadband_forum.obbaa.netconf.api.util.StringUtil;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.PagingInput;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
  * Created by keshava on 2/19/16.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractEntityDataStoreManager implements EntityDataStoreManager {
-    private static final Logger LOGGER = Logger.getLogger(AbstractEntityDataStoreManager.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(AbstractEntityDataStoreManager.class, LogAppNames.NETCONF_LIB);
 
     private static final String DOT = ".";
     private static final String DOT_PATTERN = "\\.";
@@ -98,7 +102,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     }
 
     private void addOrderByAsc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, String orderByColumn) {
-        addOrderByAsc(all, criteriaBuilder, rootEntry, Arrays.asList(orderByColumn));
+        addOrderByAsc(all, criteriaBuilder, rootEntry, StringUtil.isEmpty(orderByColumn) ? Collections.EMPTY_LIST : Arrays.asList(orderByColumn));
     }
 
     private void addOrderByAsc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, List<String> orderByColumns) {
@@ -114,7 +118,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     }
 
     private void addOrderByDesc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, String orderByColumn) {
-        addOrderByDesc(all, criteriaBuilder, rootEntry, Arrays.asList(orderByColumn));
+        addOrderByDesc(all, criteriaBuilder, rootEntry, StringUtil.isEmpty(orderByColumn) ? Collections.EMPTY_LIST : Arrays.asList(orderByColumn));
     }
 
     private void addOrderByDesc(CriteriaQuery<?> all, CriteriaBuilder criteriaBuilder, Root<?> rootEntry, List <String> orderByColumns) {
@@ -200,6 +204,18 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         return logAndReturnQueryResult("findRange", pojoClass, allQuery);
     }
 
+    @Override
+    public <E> List<E> findRangeBetween(Class<E> pojoClass, String predicateColumn, Double lowerLimit, Double upperLimit) {
+        CriteriaBuilder cb = getEntityManager().getCriteriaBuilder();
+        CriteriaQuery<E> cq = cb.createQuery(pojoClass);
+        Root<E> rootEntry = cq.from(pojoClass);
+        CriteriaQuery<E> all = cq.select(rootEntry);
+        PredicateCondition condition = PredicateCondition.BETWEEN;
+        condition.addCondition(cb, all, rootEntry, predicateColumn, lowerLimit, upperLimit);
+        TypedQuery<E> allQuery = getEntityManager().createQuery(all);
+        return logAndReturnQueryResult("findRangeBetween", pojoClass, allQuery);
+    }
+
     private TypedQuery m_forTest;
     
     TypedQuery getTypedQuery(){
@@ -209,7 +225,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     	
     	LockModeType lockModeType = allQuery.getLockMode();
     	
-    	if (lockModeType == null || !lockModeType.equals(LockModeType.PESSIMISTIC_WRITE)){
+    	if (lockModeType == null){
     		allQuery.setLockMode(LockModeType.PESSIMISTIC_READ);
     	}
     	m_forTest = allQuery;
@@ -453,6 +469,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         Expression<Long> count = criteriaBuilder.count(rootEntry);
         criteriaQuery.select(count);
         TypedQuery<Long> query = getEntityManager().createQuery(criteriaQuery);
+        query.setLockMode(LockModeType.PESSIMISTIC_READ);
         return logAndReturnQuerySingleResult("countByMatchAndNotMatchValue", entityClass, query);
     }
     
@@ -661,7 +678,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     }
 
     private String getIdAttribute(Class entityClass) {
-        Field[] fields = entityClass.getDeclaredFields();
+        List<Field> fields = getAllDeclaredFields(entityClass);
         for (Field field : fields) {
             if (field.isAnnotationPresent(Id.class)) {
                 return field.getName();
@@ -762,7 +779,7 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         }
 
         List<Predicate> orPredicates = new ArrayList<>();
-        if (likeValues != null) {
+        if (likeValues != null && !likeValues.isEmpty()) {
             for (Entry<String, String> entry : likeValues.entrySet()) {
                 Path<Object> pathObject = getPathObject(rootEntry, entry.getKey());
                 if (pathObject == null){
@@ -771,12 +788,13 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
                 Predicate predicate = getOrPredicate(entry.getValue(), criteriaBuilder, pathObject);
                 orPredicates.add(predicate);
             }
+            Predicate orPredicate  = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
+            andPredicates.add(orPredicate);
         }
-        
-        Predicate orPredicate  = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
-        andPredicates.add(orPredicate);
-        
-        criteriaQuery.where(andPredicates.toArray(new Predicate[andPredicates.size()]));
+
+        if(!andPredicates.isEmpty()) {
+            criteriaQuery.where(andPredicates.toArray(new Predicate[andPredicates.size()]));
+        }
         CriteriaQuery<E> all = criteriaQuery.select(rootEntry);
 
         String orderByColumn = getIdAttribute(entity);
@@ -802,28 +820,8 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         CriteriaQuery<E> criteriaQuery = criteriaBuilder.createQuery(entity);
         Root<E> rootEntry = criteriaQuery.from(entity);
         
-        List<Predicate> andPredicates = new ArrayList<>();
-        
-        if (likeValues != null) {
-            for (Map<String, Object> mapEntry : likeValues) {
-                List<Predicate> orPredicates = new ArrayList<>();
-                for(Entry<String, Object> entry : mapEntry.entrySet()){
-                    if(entry.getValue() instanceof String){
-                        Predicate predicate = getOrPredicate((String)entry.getValue(), criteriaBuilder, rootEntry.get(entry.getKey()));
-                        orPredicates.add(predicate);
-                    }else{
-                        List<String> conditions = (List<String>)entry.getValue();
-                        for(int i = 0; i < conditions.size(); i++){
-                            Predicate predicate = criteriaBuilder.equal(rootEntry.get(entry.getKey()), conditions.get(i));
-                            orPredicates.add(predicate);
-                        }
-                    }
-                }
-                Predicate orPredicate  = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
-                andPredicates.add(orPredicate);
-            }
-        }
-        
+        List<Predicate> andPredicates = buildPredicatesForMultipleConditions(likeValues, rootEntry, criteriaBuilder);
+
         criteriaQuery.where(andPredicates.toArray(new Predicate[andPredicates.size()]));
         CriteriaQuery<E> all = criteriaQuery.select(rootEntry);
 
@@ -840,6 +838,58 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         }
         return logAndReturnQueryResult("findByMatchMultiConditions", entity, allQuery);
     }
+
+    @Override
+    public  Long countByMatchMultiConditions(Class entity, List<Map<String, Object>> likeValues) {
+        CriteriaBuilder criteriaBuilder = getEntityManager().getCriteriaBuilder();
+        CriteriaQuery<Long> criteriaQuery = criteriaBuilder.createQuery(entity);
+        Root rootEntry = criteriaQuery.from(entity);
+
+        List<Predicate> andPredicates = buildPredicatesForMultipleConditions(likeValues, rootEntry, criteriaBuilder);
+
+        criteriaQuery.where(andPredicates.toArray(new Predicate[andPredicates.size()]));
+        Expression<Long> count = criteriaBuilder.count(rootEntry);
+        criteriaQuery.select(count);
+        TypedQuery<Long> query = getEntityManager().createQuery(criteriaQuery);
+        return logAndReturnQuerySingleResult("countByMatchMultiConditions", entity, query);
+    }
+
+    private <E> List<Predicate> buildPredicatesForMultipleConditions(List<Map<String, Object>> values, Root<E> rootEntry, CriteriaBuilder criteriaBuilder) {
+        List<Predicate> andPredicates = new ArrayList<>();
+        if (values != null) {
+            for (Map<String, Object> mapEntry : values) {
+                List<Predicate> orPredicates = new ArrayList<>();
+                for(Entry<String, Object> entry : mapEntry.entrySet()){
+                    if(entry.getValue() instanceof String) {
+                        Path<Object> pathObject = getPathObjectWithKey(rootEntry, entry.getKey());
+                        Predicate predicate = getOrPredicate((String)entry.getValue(), criteriaBuilder, pathObject);
+                        orPredicates.add(predicate);
+                    } else if (entry.getValue() instanceof List) {
+                        List<String> conditions = (List<String>)entry.getValue();
+                        for(int i = 0; i < conditions.size(); i++){
+                            Path<Object> pathObject = getPathObjectWithKey(rootEntry, entry.getKey());
+                            Predicate predicate = criteriaBuilder.equal(pathObject, ConvertUtils.convert(entry.getValue(), pathObject.getJavaType()));
+                            orPredicates.add(predicate);
+                        }
+                    } else if (entry.getValue() instanceof Map) {
+                        Map<String, String> conditions = (Map<String, String>)entry.getValue();
+                        for(Entry<String, String> childEntry : conditions.entrySet()){
+                            Path<Object> pathObject = getPathObjectWithKey(rootEntry, childEntry.getKey());
+                            Predicate predicate = criteriaBuilder.equal(pathObject, ConvertUtils.convert(childEntry.getValue(), pathObject.getJavaType()));
+                            orPredicates.add(predicate);
+                        }
+                    } else if (entry.getValue() instanceof  Boolean) {
+                        Path<Object> pathObject = getPathObjectWithKey(rootEntry, entry.getKey());
+                        Predicate predicate = criteriaBuilder.equal(pathObject, ConvertUtils.convert(entry.getValue(), pathObject.getJavaType()));
+                        orPredicates.add(predicate);
+                    }
+                }
+                Predicate orPredicate  = criteriaBuilder.or(orPredicates.toArray(new Predicate[orPredicates.size()]));
+                andPredicates.add(orPredicate);
+            }
+        }
+        return andPredicates;
+    }
     
     private <E> Predicate getOrPredicate(String value, CriteriaBuilder criteriaBuilder, Path columnPath) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -848,6 +898,14 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
         stringBuilder.append("%");
         Predicate predicate = criteriaBuilder.like(criteriaBuilder.lower(columnPath), stringBuilder.toString());
         return predicate;
+    }
+
+    private Path<Object> getPathObjectWithKey(Root rootEntry, String queryPath){
+        Path<Object> pathObject = getPathObject(rootEntry, queryPath);
+        if (pathObject == null){
+            pathObject = rootEntry.get(queryPath);
+        }
+        return pathObject;
     }
 
     @Override
@@ -974,5 +1032,10 @@ public abstract class AbstractEntityDataStoreManager implements EntityDataStoreM
     @Override
     public void setCustomDbEnvValues() {
         //do nothing
+    }
+
+    @Override
+    public <E> List<E> findObjectByQuery(Class<E> entityClass, String query) {
+        return getEntityManager().createQuery(query, entityClass).getResultList();
     }
 }

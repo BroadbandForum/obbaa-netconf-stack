@@ -2,7 +2,7 @@ module xpath-evaluator-test {
 	
 	yang-version 1;
     
-	namespace "urn:org:bbf:pma:xe";
+	namespace "urn:org:bbf2:pma:xe";
 	
 	prefix "xe";
 	

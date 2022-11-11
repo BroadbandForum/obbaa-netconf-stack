@@ -16,12 +16,14 @@
 
 package org.broadband_forum.obbaa.netconf.driver.client;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcherException;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.w3c.dom.Document;
 
 import java.net.UnknownHostException;
@@ -34,7 +36,7 @@ import java.util.concurrent.ExecutionException;
  * Created by nhtoan on 3/23/16.
  */
 public class AutomationTest {
-    private static final Logger LOGGER = Logger.getLogger(AutomationTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(AutomationTest.class, LogAppNames.NETCONF_LIB);
 
     public static void main(String[] args) {
 

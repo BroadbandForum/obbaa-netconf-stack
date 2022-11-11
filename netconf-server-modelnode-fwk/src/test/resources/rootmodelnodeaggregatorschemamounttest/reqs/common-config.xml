@@ -1,0 +1,17 @@
+<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+    <edit-config>
+        <target>
+            <running/>
+        </target>
+        <test-option>set</test-option>
+        <config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <root xmlns="ns:ns">
+                <mp>
+                    <jukebox xmlns="http://example.com/ns/example-jukebox">
+                        <library/>
+                    </jukebox>
+                </mp>
+            </root>
+        </config>
+    </edit-config>
+</rpc>

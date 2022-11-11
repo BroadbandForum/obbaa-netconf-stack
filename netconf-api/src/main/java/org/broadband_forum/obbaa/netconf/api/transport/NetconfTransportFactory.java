@@ -26,7 +26,7 @@ public class NetconfTransportFactory {
 
         if (transportOrder.getTransportType().equals(NetconfTransportProtocol.SSH.name())) {
             return new SshNetconfTransport().setSocketAddrress(transportOrder.getServerSocketAddress())
-                    .setHostKeyPath(transportOrder.getServerSshHostKeyPath()).setHeartBeatInterval(transportOrder.getHeartbeatInterval());
+                    .setHostKeyPath(transportOrder.getServerSshHostKeyPath()).setHostKeyPassword(transportOrder.getServerSshHostKeyPassword()).setHeartBeatInterval(transportOrder.getHeartbeatInterval());
         } else {// validate() call above should take care of invalid transport protocols
             return new ReverseTlsNetconfTransport(transportOrder.getCallHomeIp(), transportOrder.getCallHomePort(),
                     transportOrder.getCallHomeListener(), transportOrder.isAllowSelfSigned(), transportOrder.getTrustChain(),

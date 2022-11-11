@@ -1,0 +1,16 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Circus</name>
+                <song xc:operation="replace">
+                    <name>Circus</name>
+                    <singer-ordered-by-user>Angelina</singer-ordered-by-user>
+                    <singer-ordered-by-user>Johnson</singer-ordered-by-user>
+                    <singer-ordered-by-user>Micheal</singer-ordered-by-user>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

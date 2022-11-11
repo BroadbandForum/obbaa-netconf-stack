@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import java.util.ArrayList;
@@ -9,10 +25,13 @@ import org.broadband_forum.obbaa.netconf.api.messages.EditConfigDefaultOperation
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.StringUtil;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.w3c.dom.Node;
 
 public class EditContainmentNode implements IndexedList.IndexableListEntry<ModelNodeId> {
     public static final String DUPLICATE_ELEMENTS_FOUND = "Duplicate elements in node ";
@@ -34,27 +53,49 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
 
     private String m_editOperation = EditConfigDefaultOperations.MERGE;
     private QName m_qname;
+    private SchemaPath m_schemaPath;
 
     private InsertOperation m_insertOperation; //for list node
 
     private EditContainmentNode m_parent;
 
     private ModelNodeId m_modelNodeId;
+    
+    private SchemaRegistry m_schemaRegistry;
+    private boolean m_hasChanged;
+    private Node m_domValue;
+    private Boolean m_visibility = true;
 
-    public EditContainmentNode(QName qname, String editOperation) {
-        this.m_qname = qname;
+    public Boolean isVisible() {
+        return m_visibility;
+    }
+
+    public void setVisibility(Boolean visibility) {
+        this.m_visibility = visibility;
+    }
+
+    public EditContainmentNode(SchemaPath schemaPath, String editOperation, SchemaRegistry schemaRegistry, Node domValue) {
+        this.m_schemaPath = schemaPath;
+        this.m_qname = schemaPath.getLastComponent();
+        this.m_domValue = domValue;
         this.m_name = m_qname.getLocalName();
         this.m_namespace = m_qname.getNamespace().toString();
         this.m_editOperation = editOperation;
+        m_schemaRegistry = schemaRegistry;
     }
 
     public EditContainmentNode(EditContainmentNode that) {
         this.m_name = that.getName();
         this.m_namespace = that.getNamespace();
+        this.m_schemaPath = that.getSchemaPath();
         this.m_qname = that.getQName();
         this.m_editOperation = that.getEditOperation();
         this.m_changeSource = that.getChangeSource();
+        this.m_visibility = that.isVisible();
         this.m_disabledDefaultCreationNodes = that.getDisabledDefaultCreationNodes();
+        m_schemaRegistry = that.getSchemaRegistry();
+        this.m_parent = that.getParent();
+        this.m_modelNodeId = that.getModelNodeId();
 
         for (EditMatchNode thatMatchNode : that.getMatchNodes()) {
             m_matchNodes.add(new EditMatchNode(thatMatchNode));
@@ -63,12 +104,14 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
         for (EditChangeNode thatChangeNode : that.getChangeNodes()) {
             m_changeNodes.add(new EditChangeNode(thatChangeNode));
         }
+
         for (EditContainmentNode thatChildNode : that.getChildren()) {
             EditContainmentNode childNode = new EditContainmentNode(thatChildNode);
             m_childNodes.add(childNode);
             childNode.setParent(this);
         }
         this.m_insertOperation = that.getInsertOperation();
+        this.m_domValue = that.getDomValue();
     }
 
     public EditContainmentNode() {
@@ -97,7 +140,6 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
         rpcError.setErrorPath(errorPath, null);
         throw new EditConfigException(rpcError);
     }
-
     public EditContainmentNode removeChild(EditContainmentNode childNode) {
         if (childNode != null) {
             this.m_childNodes.remove(childNode.getModelNodeId());
@@ -152,6 +194,14 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
         m_name = m_qname.getLocalName();
     }
 
+    public SchemaPath getSchemaPath() {
+        return m_schemaPath;
+    }
+
+    public void setSchemaPath(SchemaPath schemaPath) {
+        this.m_schemaPath = schemaPath;
+    }
+
     public EditContainmentNode setEditOperation(String editOperation) {
         this.m_editOperation = editOperation;
         return this;
@@ -179,6 +229,16 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
             }
         }
         return null;
+    }
+
+    public List<EditChangeNode> getChangeNodes(QName qName) {
+        List<EditChangeNode> changeNodes = new LinkedList<>();
+        for (EditChangeNode changeNode : m_changeNodes) {
+            if (changeNode.getQName().equals(qName)) {
+                changeNodes.add(changeNode);
+            }
+        }
+        return changeNodes;
     }
 
     public List<EditMatchNode> getMatchNodes() {
@@ -296,6 +356,16 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
         return null;
     }
 
+    public List<EditContainmentNode> getChildNodes(QName qName) {
+        List<EditContainmentNode> childNodes = new LinkedList<>();
+        for (EditContainmentNode child : m_childNodes.list()) {
+            if (child.getQName().equals(qName)) {
+                childNodes.add(child);
+            }
+        }
+        return childNodes;
+    }
+    
     public InsertOperation getInsertOperation() {
         return m_insertOperation;
     }
@@ -333,6 +403,10 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
         this.m_disabledDefaultCreationNodes = disabledDefaultCreationNodes;
     }
 
+
+    /**
+     * This API should not be used if the sole purpose is to identify the type of the node. For that getSchemaPath() should be used.
+     */
     public ModelNodeId getModelNodeId() {
         buildModelNodeId();
         return m_modelNodeId;
@@ -362,7 +436,15 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
         buildModelNodeId();
         m_modelNodeId.addRdn(rdn);
     }
+    
+    public void setSchemaRegistry(SchemaRegistry schemaRegistry){
+    	m_schemaRegistry = schemaRegistry;
+    }
 
+    public SchemaRegistry getSchemaRegistry(){
+    	return m_schemaRegistry;
+    }
+    
     public static void setParentForEditContainmentNode(EditContainmentNode node, EditContainmentNode parent) {
         node.setParent(parent);
         for (EditContainmentNode child : node.getChildren()) {
@@ -373,5 +455,17 @@ public class EditContainmentNode implements IndexedList.IndexableListEntry<Model
     @Override
     public ModelNodeId getKey() {
         return getModelNodeId();
+    }
+
+    public void setHasChanged(boolean hasChanged) {
+        m_hasChanged = hasChanged;
+    }
+
+    public boolean getHasChanged() {
+        return m_hasChanged;
+    }
+
+    public Node getDomValue() {
+        return m_domValue;
     }
 }

@@ -1,0 +1,910 @@
+module whenMustDSExprOnCoreLibraryFunction {
+	
+	yang-version 1.1;
+    
+	namespace "urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction";
+	
+	prefix "whenMust";
+	
+	revision "2015-12-14" {
+	   description "Initial version.";
+	}
+	
+	import test-interfaces {
+	    prefix if;
+	}
+	
+	container whenMustContainer {
+	    
+	    list combined-when-expressions-list{
+	        key name;
+	        
+	        leaf name{
+	            type string;
+	        }       
+	        
+	        leaf outer-leaf{
+	            type string;
+	        }
+	        
+	        list inner-list{
+	            key name;
+	            
+	            leaf name{
+	                type string;
+	            }
+	            
+	            container inner-container{
+	                
+	                leaf test-leaf{
+	                    type string;
+	                }
+	            }
+	        }
+	        
+	        container combined-when-expressions-container{
+	            
+	            leaf hardware-type{
+	                type string;
+	            }
+	            
+	            leaf when-combined-leaf1{
+	                when "../hardware-type[. != 'FX-I' and . != '']";
+	                type string;
+	            }
+	            
+	            leaf when-combined-leaf2{
+	                when "../hardware-type[. != 'FX-I' or . != 'FX-II']"; //This will always pass since a leaf cannot have two values at the same time.
+	                type string;
+	            }
+	            
+	            leaf combined-path-with-inner-path-leaf{
+	                when "../../inner-list[name='test' and inner-container/test-leaf[. = 'test' or . = 'test2']]";
+	                type string;
+	            }
+	            
+	            leaf self-axis-with-current{
+	                when "../../inner-list[name=current() and inner-container/test-leaf[. = current()/../hardware-type and . != '' or . = 'someValue']]";
+	                type string;
+	            }
+	            
+	            leaf self-axis-with-absolute-path{
+                    when "../../inner-list[name='test' and inner-container/test-leaf[. = /whenMust:whenMustContainer/whenMust:combined-when-expressions-list/whenMust:combined-when-expressions-container/whenMust:hardware-type and . != '']]";
+                    type string;
+                }
+	            
+	            leaf dummy-leaf{
+	                type string;
+	            }
+	        }
+	    }
+	    
+	 leaf containerLeafLocalNameReferSibling {
+		when "local-name(../leaf1) = 'leaf1'";
+		type string;
+	 }
+	 
+	 leaf leaf1 {
+	  type string;
+	 }
+	 
+	 container local-name-and-ns-uri1 {
+	  uses if:local-name-and-namespace-uri-grouping;
+	 }
+	 
+	 container local-name-and-ns-uri2 {
+	  uses if:local-name-and-namespace-uri-grouping;
+	 }
+	 
+	 container node-set-functions {
+	 
+	 leaf leaf1 {
+	  type string;
+	 }
+	 
+	 leaf localNameWhenRefersParent {
+		when "local-name(..) = 'node-set-functions'";
+		type string;
+	 }
+			
+	 leaf localNameWhenRefersDummyLeaf {
+		when "local-name(../leaf1) = 'leaf1'";
+		type string;
+	 }
+	 
+	 leaf localNameMustRefersParent {
+		must "local-name(..) = 'node-set-functions'";
+		type string;
+	 }
+			
+	 leaf localNameMustWithNoArg {
+		must "local-name() = 'localNameMustWithNoArg'";
+		type string;
+	 }
+			
+	 leaf localNameMustRefersDummyLeaf {
+		must "local-name(../leaf1) = 'leaf1'";
+		type string;
+	 }
+	 
+	 leaf when-parent-namespace-leaf {
+		when "namespace-uri(..) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+		type string;
+	 }
+			
+	 leaf when-no-arg-namespace-leaf {
+		when "namespace-uri() = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+		type string;
+	 }
+			
+     /* This is not working yet, so only the above trivial case currently works
+	 leaf when-sibling-namespace-leaf {
+		when "namespace-uri(../leaf1) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+		type string;
+	 } */
+	 
+	 leaf must-parent-namespace-leaf {
+		must "namespace-uri(..) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+		type string;
+	 }
+			
+	 leaf must-no-arg-namespace-leaf {
+		must "namespace-uri() = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+		type string;
+	 }
+			
+     /* This is not working yet, so only the above trivial case currently works
+	 leaf must-sibling-namespace-leaf {
+		must "namespace-uri(../leaf1) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+		type string;
+	 } */
+	 
+	 }
+	 
+	 container when-boolean-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf number1 {
+			    type int16;
+			}
+			leaf-list nodeset1 {
+			    type string;
+			}
+			leaf boolean-function-empty-string-arg {
+				when "boolean('')";
+				type string;
+			}
+			
+			leaf boolean-function-non-empty-string-arg {
+				when "boolean('test')";
+				type string;
+			}
+			
+			leaf boolean-function-non-zero-number-arg {
+				when "boolean(5)";
+				type string;
+			}
+			
+			leaf boolean-function-zero-number-arg {
+				when "boolean(0)";
+				type string;
+			}
+			
+			leaf boolean-function-leaf {
+				when "boolean(../string1)";
+				type string;
+			}
+			leaf not-function-leaf {
+				when "not(boolean(../string1))";
+				type string;
+			}
+			leaf true-function-leaf {
+				when "true()";
+				type string;
+			}
+			
+			leaf false-function-leaf {
+				when "not(false())";
+				type string;
+			}
+	        
+	        //boolean() with non-zero length string arg evaluates to true
+	        leaf boolean-function-not-equals1 {
+	            when "boolean('test') != boolean('test')";
+	            type string;
+	        }  
+	        
+	        //boolean() with non-zero length string arg evaluates to true
+	        leaf boolean-function-not-equals2 {
+	            when "boolean('test') != boolean('')";
+	            type string;
+	        }       
+		}
+		
+	    container must-boolean-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf number1 {
+			    type int16;
+			}
+			leaf-list nodeset1 {
+			    type string;
+			}
+			leaf boolean-function-empty-string-arg {
+				must "boolean('')";
+				type string;
+			}
+			
+			leaf boolean-function-non-empty-string-arg {
+				must "boolean('test')";
+				type string;
+			}
+			
+			leaf boolean-function-null-arg {
+				must "boolean(null)";
+				type string;
+			}
+			
+			leaf boolean-function-non-zero-number-arg {
+				must "boolean(5)";
+				type string;
+			}
+			
+			leaf boolean-function-zero-number-arg {
+				must "boolean(0)";
+				type string;
+			}
+			
+			leaf boolean-function-leaf {
+				must "boolean(../string1)";
+				type string;
+			}
+			leaf not-function-leaf {
+				must "not(boolean(../string1))";
+				type string;
+			}
+			leaf true-function-leaf {
+				must "true()";
+				type string;
+			}
+			
+			leaf false-function-leaf {
+				must "not(false())";
+				type string;
+			}           
+		}
+		
+				
+		container must-string-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf string2 {
+				type string;
+			}
+			leaf number1 {
+				type uint16;
+			}
+			
+			leaf-list string3 {
+				type string;
+			}
+			
+			leaf string-function-refers-leaflist {
+				must "string(../string3) != ''";
+				type string;
+			}
+			
+			leaf string-function-non-existent-leaf {
+				must "string(../string2) = ''";
+				type string;
+			}
+			leaf string-function-boolean-true-leaf {
+				must "string(true()) = 'true'";
+				type string;
+			}
+			
+			leaf string-function-boolean-false-leaf {
+				must "string(false()) = 'false'";
+				type string;
+			}
+			
+			leaf string-function-leaf {
+				must "string(../number1) = '42'";
+				type string;
+			}
+			leaf no-arg-string-function-leaf {
+				must "string() = string(current())";
+				type string;
+			}
+			leaf no-arg-string-length-function-leaf {
+				must "string-length() = string-length(current())";
+				type string;
+			}
+			leaf no-arg-normalize-space-function-leaf {
+				must "normalize-space() = normalize-space(current())";
+				type string;
+			}
+			leaf concat-function-leaf {
+				must "concat(../string1,../string2) = 'AB'";
+				type string;
+			}
+			leaf starts-with-function-leaf {
+				must "starts-with(../string1,'DSL')";
+				type string;
+			}
+			leaf contains-function-leaf {
+				must "contains(../string1,'DSL')";
+				type string;
+			}
+			leaf substring-function-leaf {
+				must "substring(../string1,2,3) = '234'";
+				type string;
+			}
+			leaf substring-function-with-decimal-args {
+				must "substring(../string1,1.5,2.6) = '234'";
+				type string;
+			}
+			leaf substring-function-leaf-no-length-arg {
+				must "substring(../string1,2) = '2345'";
+				type string;
+			}
+			leaf substring-before-function-leaf {
+				must "substring-before(../string1,'/') = '1999'";
+				type string;
+			}
+			leaf substring-before-function-not-exists {
+				must "substring-before(../string1,'-') = ''";
+				type string;
+			}
+			leaf substring-after-function-leaf {
+				must "substring-after(../string1,'/') = '04/01'";
+				type string;
+			}
+			leaf substring-after-function-not-exists {
+				must "substring-after(../string1,'-') = ''";
+				type string;
+			}
+			leaf string-length-function-leaf {
+				must "string-length(../string1) = 5";
+				type string;
+			}
+			leaf normalize-space-function-leaf {
+				must "normalize-space(../string1) = 'ITF 1'";
+				type string;
+			}
+			leaf translate-function-leaf {
+				must "translate(../string1,'abc-','ABC') = 'BAr'";
+				type string;
+			}
+		}
+		
+		container when-string-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf string2 {
+				type string;
+			}
+			leaf number1 {
+				type uint16;
+			}
+			
+			leaf-list string3 {
+				type string;
+			}
+			
+			leaf string-function-refers-leaflist {
+				when "string(../string3) != ''";
+				type string;
+			}
+			
+			leaf string-function-non-existent-leaf {
+				when "string(../string2) = ''";
+				type string;
+			}
+			leaf string-function-boolean-true-leaf {
+				when "string(true()) = 'true'";
+				type string;
+			}
+			
+			leaf string-function-boolean-false-leaf {
+				when "string(false()) = 'false'";
+				type string;
+			}
+			
+			leaf string-function-leaf {
+				when "string(../number1) = '42'";
+				type string;
+			}
+
+			leaf concat-function-leaf {
+				when "concat(../string1,../string2) = 'AB'";
+				type string;
+			}
+			leaf starts-with-function-leaf {
+				when "starts-with(../string1,'DSL')";
+				type string;
+			}
+			leaf contains-function-leaf {
+				when "contains(../string1,'DSL')";
+				type string;
+			}
+			leaf substring-function-leaf {
+				when "substring(../string1,2,3) = '234'";
+				type string;
+			}
+			leaf substring-function-with-decimal-args {
+				when "substring(../string1,1.5,2.6) = '234'";
+				type string;
+			}
+			leaf substring-function-leaf-no-length-arg {
+				when "substring(../string1,2) = '2345'";
+				type string;
+			}
+			leaf substring-before-function-leaf {
+				when "substring-before(../string1,'/') = '1999'";
+				type string;
+			}
+			leaf substring-before-function-not-exists {
+				when "substring-before(../string1,'-') = ''";
+				type string;
+			}
+			leaf substring-after-function-leaf {
+				when "substring-after(../string1,'/') = '04/01'";
+				type string;
+			}
+			leaf substring-after-function-not-exists {
+				when "substring-after(../string1,'-') = ''";
+				type string;
+			}
+			leaf string-length-function-leaf {
+				when "string-length(../string1) = 5";
+				type string;
+			}
+			leaf normalize-space-function-leaf {
+				when "normalize-space(../string1) = 'ITF 1'";
+				type string;
+			}
+			leaf translate-function-leaf {
+				when "translate(../string1,'abc-','ABC') = 'BAr'";
+				type string;
+			}
+		}
+		
+		container must-number-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf number1 {
+				type decimal64 {
+					fraction-digits 2;
+				}
+			}
+			leaf number-function-leaf {
+				must "number(../string1) = 42";
+				type string;
+			}
+			
+			//fails, pbm with jxpath function
+		    leaf number-function-boolean-true {
+				must "number(true()) = 1";
+				type string;
+			}
+			leaf no-arg-number-function-leaf {
+				must "number() = number(current())";
+				type string;
+			}
+			leaf floor-function-leaf {
+				must "floor(../number1) = 42";
+				type string;
+			}
+			leaf ceiling-function-leaf {
+				must "ceiling(../number1) = 42";
+				type string;
+			}
+			leaf round-function-leaf {
+				must "round(../number1) = 42";
+				type string;
+			}			
+		}
+		
+		container when-number-function-validation {
+			leaf string1 {
+				type string;
+			}
+			leaf number1 {
+				type decimal64 {
+					fraction-digits 2;
+				}
+			}
+			leaf number-function-leaf {
+				when "number(../string1) = 42";
+				type string;
+			}
+			
+			leaf number-function-both-when-must-leaf {
+				when "number(../string1) > 40";
+				must "number(../string1) < 50";
+				type string;
+			}
+			
+			//fails, pbm with jxpath function
+		    leaf number-function-boolean-true {
+				when "number(true()) = 1";
+				type string;
+			}
+
+			leaf floor-function-leaf {
+				when "floor(../number1) = 42";
+				type string;
+			}
+			leaf ceiling-function-leaf {
+				when "ceiling(../number1) = 42";
+				type string;
+			}
+			leaf round-function-leaf {
+				when "round(../number1) = 42";
+				type string;
+			}			
+		}
+	  
+	  container ipv6-test {
+	     leaf ipv6-leaf1 {
+	         must 'not((substring-before(current(),".") = 127) '
+	         +     'or (substring-before(current(),".") = 0) '
+	         +     'or (starts-with(current(),"192.0.0.")) '
+	         +     'or (starts-with(current(),"192.0.2.")) '
+	         +     'or (starts-with(current(),"198.51.100.")) '
+	         +     'or (starts-with(current(),"203.0.113.")) '
+	         +     'or ((substring-before(current(),".") >= 224) '
+	         +     'and (substring-before(current(),".") <= 255)) '
+	         +     'or (current() = "::") or (current() = "::1") '
+	         +     'or (starts-with(current(),"::ffff")) '
+	         +     'or (starts-with(current(),"ff")) '
+	         +     'or ((starts-with(current(),"2001")) '
+	         +     'and ((contains(substring(substring-after(current(),"2001"),2,3),"db8")) '
+	         +     'or (contains(substring(substring-after(current(),"2001"),2,3),":")))) '
+	         +     'or ((starts-with(current(),"2001")) '
+	         +     'and ((contains(substring(substring-after(current(),"2001"),1,2),":1")) '
+	         +     'and (contains(substring(substring-after(current(),"2001"),3,3),":")))))'
+	         {
+	             error-message "Invalid NTP IPv4/IPv6 address";
+	         }
+	         type string;
+	      }
+	   }
+	}
+	
+	
+	rpc testRpcInputMustNumber {
+        input {
+            container container1 {
+                container innerContainer {
+                    leaf innerLeaf {
+                        type string;
+                    }
+                    leaf number-function-leaf {
+                        when "number(../innerLeaf) = 45";
+                        type string;
+                    }
+                    leaf floor-function-leaf {
+                        when "floor(../innerLeaf) = 45";
+                        type string;
+                    }
+                    leaf ceiling-function-leaf {
+                        when "ceiling(../innerLeaf) = 45";
+                        type string;
+                    }
+                    leaf round-function-leaf {
+                        when "round(../innerLeaf) = 45";
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+ 
+    rpc testRpcInputBoolean {
+        input {
+            container container1 {
+                container innerContainer {
+                    leaf string1 {
+                        type string;
+                    }
+                    leaf string2 {
+                        type string;
+                    }
+
+                    leaf boolean-function-non-empty-string-arg {
+                        must "boolean('test')";
+                        type string;
+                    }
+
+                    leaf boolean-function-zero-number-arg {
+                        must "boolean(0)";
+                        type string;
+                    }
+
+                    leaf boolean-function-current-leaf {
+                        must "boolean(current()/../string1)";
+                        type string;
+                    }
+                    
+                    leaf boolean-function-leaf {
+                        must "boolean(../string1)";
+                        type string;
+                    }
+                    leaf boolean-function-or-leaf {
+                        must "boolean(../string1) or boolean(../string2)";
+                        type string;
+                    }
+                    leaf boolean-function-and-leaf {
+                        must "boolean(../string1) and boolean(../string2)";
+                        type string;
+                    }
+                    leaf not-function-leaf {
+                        must "not(boolean(../string1))";
+                        type string;
+                    }
+                    leaf true-function-leaf {
+                        must "true()";
+                        type string;
+                    }
+
+                    leaf false-function-leaf {
+                        must "not(false())";
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+    
+    rpc testRpcInputNamespace {
+        input {
+            container container1 {
+                leaf namespaceleaf {
+                    when "namespace-uri(..) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+                    type string;
+                }
+            }
+
+            container container2 {
+                leaf namespacenestedParent {
+                    when "namespace-uri(../..) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+                    type string;
+                }
+            }
+        }
+    }
+
+    rpc testRpcInputLocalName {
+        input {
+            container container1 {
+                leaf localnameleaf {
+                    type string;
+                }
+                leaf localNameWhenRefersParent {
+                    when "local-name(..) = 'container1'";
+                    type string;
+                }
+                leaf localNameWhenRefersDummyLeaf {
+                    when "local-name(../localnameleaf) = 'localnameleaf'";
+                    type string;
+                }
+                leaf localNameMustWithNoArg {
+                    must "local-name() = 'localNameMustWithNoArg'";
+                    type string;
+                }
+            }
+        }
+    }
+    
+    rpc testRpcInputString {
+        input {
+            container container1 {
+                container innerContainer {
+                    leaf number1 {
+                        type uint16;
+                    }
+                    leaf string1 {
+                        type string;
+                    }
+                    leaf string2 {
+                        type string;
+                    }
+                    leaf concat-function-leaf {
+                        must "concat(../string1,../string2) = 'HELLO'";
+                        type string;
+                    }
+                    leaf contains-function-leaf {
+                        when "contains(../string1,'BLACK')";
+                        type string;
+                    }
+                    leaf string-length-function-leaf {
+                        when "string-length(../string1) = 4";
+                        type string;
+                    }
+                    leaf substring-before-function-leaf {
+                        when "substring-before(../string1,'-') = '10'";
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+    rpc testRpcOutputMustNumber {
+        output {
+            container container1 {
+                container innerContainer {
+                    leaf innerLeaf {
+                        type string;
+                    }
+                    leaf number-function-leaf {
+                        when "number(../innerLeaf) = 45";
+                        type string;
+                    }
+                    leaf floor-function-leaf {
+                        when "floor(../innerLeaf) = 45";
+                        type string;
+                    }
+                    leaf ceiling-function-leaf {
+                        when "ceiling(../innerLeaf) = 45";
+                        type string;
+                    }
+                    leaf round-function-leaf {
+                        when "round(../innerLeaf) = 45";
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+    
+    rpc testRpcOutputBoolean {
+        output {
+            container container1 {
+                container innerContainer {
+                    leaf string1 {
+                        type string;
+                    }
+                    leaf string2 {
+                        type string;
+                    }
+
+                    leaf boolean-function-non-empty-string-arg {
+                        must "boolean('test')";
+                        type string;
+                    }
+
+                    leaf boolean-function-zero-number-arg {
+                        must "boolean(0)";
+                        type string;
+                    }
+
+                    leaf boolean-function-leaf {
+                        must "boolean(../string1)";
+                        type string;
+                    }
+                    leaf boolean-function-or-leaf {
+                        must "boolean(../string1) or boolean(../string2)";
+                        type string;
+                    }
+                    leaf boolean-function-and-leaf {
+                        must "boolean(../string1) and boolean(../string2)";
+                        type string;
+                    }
+                    leaf not-function-leaf {
+                        must "not(boolean(../string1))";
+                        type string;
+                    }
+                    leaf true-function-leaf {
+                        must "true()";
+                        type string;
+                    }
+
+                    leaf false-function-leaf {
+                        must "not(false())";
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+    
+    rpc testRpcOutputNamespace {
+        output {
+            container container1 {
+                leaf namespaceleaf {
+                    when "namespace-uri(..) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+                    type string;
+                }
+            }
+        }
+    }
+    
+    rpc testRpcOutputLocalName {
+        output {
+            container container1 {
+                leaf localnameleaf {
+                    type string;
+                }
+                leaf localNameWhenRefersParent {
+                    when "local-name(..) = 'container1'";
+                    type string;
+                }
+                leaf localNameWhenRefersDummyLeaf {
+                    when "local-name(../localnameleaf) = 'localnameleaf'";
+                    type string;
+                }
+                leaf localNameMustWithNoArg {
+                    must "local-name() = 'localNameMustWithNoArg'";
+                    type string;
+                }
+            }
+        }
+    }
+    
+    rpc testRpcOutputString {
+        output {
+            container container1 {
+                container innerContainer {
+                    leaf number1 {
+                        type uint16;
+                    }
+                    leaf string1 {
+                        type string;
+                    }
+                    leaf string2 {
+                        type string;
+                    }
+                    leaf concat-function-leaf {
+                        must "concat(../string1,../string2) = 'HELLO'";
+                        type string;
+                    }
+                    leaf contains-function-leaf {
+                        when "contains(../string1,'BLACK')";
+                        type string;
+                    }
+                    leaf string-length-function-leaf {
+                        when "string-length(../string1) = 4";
+                        type string;
+                    }
+                    leaf substring-before-function-leaf {
+                        when "substring-before(../string1,'-') = '10'";
+                        type string;
+                    }
+                }
+            }
+        }
+    }   
+    
+ rpc testRpcInputAnyXml {
+        input {
+            leaf leaf1 {
+                type string;
+            }
+            anyxml extraInfo {
+                description
+                    "xmlinfo.";
+            }
+        }
+    }
+
+    rpc testRpcOutputAnyXml {
+        output {
+            container container1 {
+                leaf leaf1 {
+                    type string;
+                }
+                anyxml extraInfo {
+                    description
+                        "xmlinfo.";
+                }
+            }
+        }
+    }    
+ }    

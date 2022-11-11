@@ -1,0 +1,94 @@
+module type-validator-pattern-modifier-tests {
+
+    yang-version 1.1;
+
+    namespace "urn:org:bbf2:pattern-modifier-test";
+
+    prefix "pattern-modifier-test";
+
+    import "ietf-yang-types" { prefix yang; }
+
+    revision 2019-01-24 {
+        description "Initial revision";
+    }
+    
+    typedef custom-type-pattern {
+    	type string {
+    		pattern '[a-z]';
+    	}
+    }
+
+    typedef custom-type-pattern-modifier {
+    	type string {
+    		pattern '[a-z]';
+    		pattern '[x-z]'{
+    			modifier invert-match;
+    		}
+    	}
+    }
+    container validation {
+
+        list type-validation {
+
+            key id;
+
+            leaf id {
+                type string;
+            }
+
+            leaf pattern-modifier-leaf {
+                type string {
+                    length "1..4" {
+                    	error-app-tag "length constraint error-app-tag";
+                        error-message "length constraint error-app-message";
+                    }
+                    pattern '[a-zA-Z0-9].*';
+                    pattern '[axX][blL].*';
+                    pattern '[0-9].*' {
+                        modifier invert-match;
+                    }
+                }
+            }
+
+            leaf rfc-pattern-modifier-leaf {
+                type string {
+                    length "1..max";
+                    pattern '[a-zA-Z_][a-zA-Z0-9\-_.]*';
+                    pattern '[xX][mM][lL].*' {
+                        modifier invert-match;
+                        error-app-tag "pattern modifier constraint error-app-tag";
+                        error-message "pattern modifier constraint error-app-message";
+                    }
+                }
+            }
+            
+            leaf custom-typedef-pattern-modifier-leaf {
+            	type custom-type-pattern-modifier {
+	            	pattern '[0-9]';
+	            	pattern '[^5-9]' {
+	            		modifier invert-match;
+	            	}
+            	}
+            }
+            
+            leaf custom-typedef-pattern-leaf {
+            	type custom-type-pattern;
+            }
+            
+            leaf custom-typedef-pattern-override-leaf {
+            	type custom-type-pattern{
+            		pattern '[0-9]';
+            	}
+            }
+            
+            leaf custom-typedef-pattern-modifier-leaf1 {
+            	type custom-type-pattern {
+            		pattern '[^5-9]' {
+	            		modifier invert-match;
+	            	}
+            	}
+            }
+        }
+    }
+
+}

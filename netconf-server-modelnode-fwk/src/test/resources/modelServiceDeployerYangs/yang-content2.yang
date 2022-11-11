@@ -1,0 +1,57 @@
+module mpls-access-ring-msi-infra {
+    yang-version 1.1;
+    namespace "http://www.test-company.com/solutions/mpls-access-ring-msi-infra";
+    prefix "MplsArMsiInfra";
+    import ibn { prefix "ibn"; }
+    revision 2017-03-01 {
+        description "Initial revision.";
+    }
+    
+    grouping configuration-details {
+        container mpls-access-ring-msi-infra {
+ 
+            leaf msisVlanId {
+                type int16 {
+                    range "1..4094";
+                }
+                description
+                                "ISP service Vlan identifier for HSI services";
+            }
+            leaf msiextendVlanStaticName {
+                type string;
+                description "ISP service Vlan Static Name";
+            }
+            leaf msiqosBandwidthProfileDelayTolerance {
+                type decimal64 {
+                    fraction-digits 3;
+                    range "0.125..30.000";
+                }
+                default "4";
+                units "ms";
+                description
+                                "Delay tolerance";
+            }
+            leaf msiqosBandwidthProfileEIR {
+                type int32 {
+                    range "0..10000000";
+                }
+                default "1000000";
+                units "Kb/s";
+                description
+                                "Excess Information Rate (EIR)";
+            }
+        }
+    }
+
+    
+    augment "/ibn:ibn/ibn:intent/ibn:configuration" {
+        when "../ibn:intent-type = 'mpls-access-ring-msi-infra'";
+        uses MplsArMsiInfra:configuration-details;
+    }
+    
+    augment "/ibn:search-intents/ibn:output/ibn:intents/ibn:intent/ibn:configuration" {
+        when "../ibn:intent-type = 'mpls-access-ring-msi-infra'";
+        uses MplsArMsiInfra:configuration-details;
+    }
+}
+

@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,10 +17,9 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package org.broadband_forum.obbaa.netconf.api.messages;
+
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.CLOSE_SESSION;
 
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
@@ -25,7 +27,7 @@ import org.w3c.dom.Document;
 /**
  * Netconf request to perform {@code <close-session>} operation.
  * 
- *
+ * 
  * 
  */
 public class CloseSessionRequest extends AbstractNetconfRequest {
@@ -34,6 +36,11 @@ public class CloseSessionRequest extends AbstractNetconfRequest {
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
         Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addCloseSessionElement().build();
         return doc;
+    }
+
+    @Override
+    public String getRpcType() {
+        return CLOSE_SESSION;
     }
 
 }

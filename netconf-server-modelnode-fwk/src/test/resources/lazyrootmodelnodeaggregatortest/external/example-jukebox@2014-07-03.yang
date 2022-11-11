@@ -245,6 +245,23 @@ module example-jukebox {
             "Time gap between each song";
         }
       }  // container player
+      
+      container platform {
+    	  
+    	  leaf internet {
+    		  type string;
+    	  }
+    	  
+    	  leaf laptop {
+    		  when "../internet = 'true'";
+    		  type string;
+    	  }
+    	  
+    	  leaf mobile {
+    		  type string;
+    	  }
+      }  // container platform
+      
     }  // container jukebox
 
     rpc play {

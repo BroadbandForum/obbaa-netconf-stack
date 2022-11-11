@@ -1,4 +1,4 @@
-<pma xmlns="urn:org:bbf:pma">
+<pma xmlns="urn:org:bbf2:pma">
 	<pmadevices>
 		<pmadevice>
             <name>ReverseSshdevice1</name>

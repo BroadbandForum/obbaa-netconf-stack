@@ -5,6 +5,6 @@
         <error-severity>error</error-severity>
         <error-app-tag>instance-required</error-app-tag>
         <error-path xmlns:policy-2="http://www.test-company.com/solutions/policy-engine-2">/policy-2:policy-engine-2/policy-2:policy-2[policy-2:name='test123']/policy-2:alarm/policy-2:alarm-addresses</error-path>
-        <error-message>Missing mandatory node</error-message>
+        <error-message>Missing mandatory node - alarm-addresses</error-message>
     </rpc-error>
 </rpc-reply>

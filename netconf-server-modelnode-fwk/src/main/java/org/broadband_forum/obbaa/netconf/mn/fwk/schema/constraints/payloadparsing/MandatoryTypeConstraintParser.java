@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing;
 
 import java.util.ArrayList;
@@ -92,7 +108,6 @@ public class MandatoryTypeConstraintParser {
                 }
             }
             else if (schemaNode instanceof ChoiceSchemaNode) {
-                // TODO: FNMS-10124 How to check if ancestor is not a case node
                 checkIfMandatoryChoiceNodeExists((ChoiceSchemaNode)schemaNode, dataNode, schemaRegistry, existingErrorPathPair);
             }
             else if (schemaNode instanceof AnyXmlSchemaNode) {
@@ -134,6 +149,19 @@ public class MandatoryTypeConstraintParser {
         }        
     }
     
+    private static void fillCaseChildren(Set<QName> casechildrenNodes, DataSchemaNode child) {
+        Collection<CaseSchemaNode> cases = ((ChoiceSchemaNode) child).getCases().values();
+        for (CaseSchemaNode caseNode : cases) {
+            for ( DataSchemaNode caseChild : caseNode.getChildNodes()){
+                if ( caseChild instanceof ChoiceSchemaNode){
+                    fillCaseChildren(casechildrenNodes, caseChild);
+                } else {
+                    casechildrenNodes.add(caseChild.getQName());
+                }
+            }
+        }
+    }
+    
     private static void checkIfMandatoryChoiceNodeExists(ChoiceSchemaNode schemaNode, Element dataNode, SchemaRegistry schemaRegistry, Pair<String, Map<String, String>> existingErrorPathPair) throws ValidationException {
         boolean mandatoryChoice = schemaNode.isMandatory();
         CaseSchemaNode actualCaseNode = null;
@@ -143,7 +171,11 @@ public class MandatoryTypeConstraintParser {
         for (CaseSchemaNode caseNode: schemaNode.getCases().values()) {
             Set<QName> caseChildNodes = new HashSet<>();
             for (DataSchemaNode caseChildNode: caseNode.getChildNodes()) {
-                caseChildNodes.add(caseChildNode.getQName());
+                if(caseChildNode instanceof ChoiceSchemaNode){
+                    fillCaseChildren(caseChildNodes, caseChildNode);
+                } else {
+                    caseChildNodes.add(caseChildNode.getQName());
+                }
             }
             if (ChoiceCaseNodeUtil.isDataNodeSuperSet(childNodes, caseChildNodes)) {
                 count++;

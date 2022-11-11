@@ -1,21 +1,41 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.load;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
 import static org.junit.Assert.assertEquals;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
-
+@RunWith(RequestScopeJunitRunner.class)
 public class EditConfigTreeBuildTest extends AbstractEditConfigTestSetup{
 	@SuppressWarnings("unused")
-	private final static Logger LOGGER = Logger.getLogger(EditConfigTreeBuildTest.class);
+	private final static Logger LOGGER = LogManager.getLogger(EditConfigTreeBuildTest.class);
 
 	@Before
-	public void initServer() throws SchemaBuildException {
+	public void initServer() throws SchemaBuildException, ModelNodeInitException {
 	    super.setup();
 	}
 

@@ -18,20 +18,19 @@ package org.broadband_forum.obbaa.netconf.client.tls;
 
 import java.net.SocketAddress;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.w3c.dom.Document;
-
+import org.broadband_forum.obbaa.netconf.api.ClosureReason;
 import org.broadband_forum.obbaa.netconf.api.LogAppNames;
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodec;
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodecImpl;
 import org.broadband_forum.obbaa.netconf.api.client.AbstractNetconfClientSession;
-import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+import org.broadband_forum.obbaa.netconf.api.client.NetconfResponseFuture;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.FrameAwareNetconfMessageCodecV2;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.FrameAwareNetconfMessageCodecV2Impl;
 import org.broadband_forum.obbaa.netconf.api.messages.PojoToDocumentTransformer;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.w3c.dom.Document;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -42,7 +41,7 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(TlsNettyChannelNetconfClientSession.class, LogAppNames.NETCONF_LIB);
     private final long m_creationTime;
     private SocketChannel m_serverChannel;
-    private FrameAwareNetconfMessageCodec m_codec = new FrameAwareNetconfMessageCodecImpl();
+    private FrameAwareNetconfMessageCodecV2 m_codec = new FrameAwareNetconfMessageCodecV2Impl();
 
     public TlsNettyChannelNetconfClientSession(SocketChannel ch) {// NOSONAR
         m_serverChannel = ch;
@@ -64,7 +63,7 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
     }
 
     @Override
-    public synchronized CompletableFuture<NetConfResponse> sendRpcMessage(final String currentMessageId, Document requestDocument, final long messageTimeOut) {
+    public synchronized NetconfResponseFuture sendRpcMessage(final String currentMessageId, Document requestDocument, final long messageTimeOut) {
         String xmlString = "";
         try {
             xmlString = new String(m_codec.encode(requestDocument));
@@ -74,7 +73,7 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
 
         m_serverChannel.writeAndFlush(xmlString);
 
-        TimeoutFutureResponse future = new TimeoutFutureResponse(messageTimeOut, TimeUnit.MILLISECONDS);
+        NetconfResponseFuture future = new NetconfResponseFuture(messageTimeOut, TimeUnit.MILLISECONDS);
         m_responseFutures.put(currentMessageId, future);
         return future;
     }
@@ -97,6 +96,7 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
         if (m_serverChannel.isOpen()) {
             m_serverChannel.close().sync();
         }
+        LOGGER.debug("Session {} has been closed", toString());
     }
 
     @Override
@@ -122,10 +122,12 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
     }
 
     @Override
-    public void closeAsync() {
+    public void closeAsync(ClosureReason closureReason) {
+        super.closeAsync(closureReason);
         if (m_serverChannel.isOpen()) {
             m_serverChannel.close();
         }
+        LOGGER.debug("Closed async session {}", toString());
     }
 
     @Override
@@ -138,7 +140,7 @@ public class TlsNettyChannelNetconfClientSession extends AbstractNetconfClientSe
         return sb.toString();
     }
 
-    public void setCodec(FrameAwareNetconfMessageCodec codec) {
+    public void setCodec(FrameAwareNetconfMessageCodecV2 codec) {
         m_codec = codec;
     }
 }

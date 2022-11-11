@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import java.util.ArrayList;
@@ -28,7 +44,10 @@ import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
@@ -41,7 +60,6 @@ public class ModelNodeDynaBeanFactory {
     private static final String MODIFIED_ATTRIBUTE_PREFIX = "_NAV";
     private static final String DYNABEAN_CACHE_KEY = "DYNABEAN_CACHE";
     public static final String ATTRIBUTE_LIST = "AttributeList";
-    
     static final String CHILD_REFRESH_LIST = "CHILD_REFRESH_LIST";
     
     private final static AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ModelNodeDynaBeanFactory.class, LogAppNames.NETCONF_STACK);
@@ -64,7 +82,7 @@ public class ModelNodeDynaBeanFactory {
          */
         switch (name) {
         case ATTRIBUTE_CLASS :
-            logDebug("found class in {}", name);
+            logDebug("found class in {}", LOGGER.sensitiveData(name));
             return name+MODIFIED_ATTRIBUTE_PREFIX;
         default:
             return name;
@@ -77,7 +95,7 @@ public class ModelNodeDynaBeanFactory {
         }
         switch (name) {
         case ATTRIBUTE_CLASS+MODIFIED_ATTRIBUTE_PREFIX:
-            logDebug(null, "found dyna attribute class_NAV in {}",name);
+            logDebug(null, "found dyna attribute class_NAV in {}", LOGGER.sensitiveData(name));
             return ATTRIBUTE_CLASS;
         default:
             return name;
@@ -95,19 +113,28 @@ public class ModelNodeDynaBeanFactory {
         }
         return cachedNodes;
     }
-    
-    public static boolean containsBeanForModelNode(ModelNodeId modelNodeId) {
-        return getCachedNodes().containsKey(modelNodeId.xPathString());
+
+    public static void clearDynaBeanCachedNodes() {
+        RequestScope currentScope = RequestScope.getCurrentScope();
+        HashMap<String, Object> cachedNodes = (HashMap<String, Object>) currentScope.getFromCache(DYNABEAN_CACHE_KEY);
+        if (cachedNodes != null) {
+            cachedNodes.clear();
+        }
+        currentScope.removeFromCache(DYNABEAN_CACHE_KEY);
     }
     
-    public static void removeFromCache(ModelNode modelNode){
-        removeFromCache(modelNode.getModelNodeId());
+    public static boolean containsBeanForModelNode(ModelNodeId modelNodeId, SchemaRegistry schemaRegistry) {
+        return getCachedNodes().containsKey(modelNodeId.xPathString(schemaRegistry, true, true));
     }
     
-    public static void removeFromCache(ModelNodeId modelNodeId) {
+    public static void removeFromCache(ModelNode modelNode, SchemaRegistry schemaRegistry){
+        removeFromCache(modelNode.getModelNodeId(), schemaRegistry);
+    }
+    
+    public static void removeFromCache(ModelNodeId modelNodeId, SchemaRegistry schemaRegistry) {
         HashMap<String, Object> cachedNodes = getCachedNodes();
-        cachedNodes.remove(modelNodeId.xPathString());
-        logDebug("removed dynaBean for {}", modelNodeId);
+        cachedNodes.remove(modelNodeId.xPathString(schemaRegistry, true, true));
+        logDebug("removed dynaBean for {}", LOGGER.sensitiveData(modelNodeId));
     }
     
     public static void resetCache() {
@@ -122,11 +149,12 @@ public class ModelNodeDynaBeanFactory {
     public static ModelNodeDynaBean getDynaBean(ModelNode modelNode, ModelNode parent) {
         HashMap<String, Object> cachedNodes = getCachedNodes();
 		ModelNodeId modelNodeId = modelNode.getModelNodeId();
-		if (cachedNodes.containsKey(modelNodeId.xPathString())) {
-			ModelNodeDynaBean dynaBean = (ModelNodeDynaBean) cachedNodes.get(modelNodeId.xPathString());
+		String modelNodeXPath = modelNodeId.xPathString(modelNode.getSchemaRegistry(), true, true);
+		if (cachedNodes.containsKey(modelNodeXPath)) {
+			ModelNodeDynaBean dynaBean = (ModelNodeDynaBean) cachedNodes.get(modelNodeXPath);
 			String namespace = modelNode.getQName().getNamespace().toString();
 			if (dynaBean.get(ModelNodeWithAttributes.NAMESPACE).equals(namespace)) {
-				logDebug("DynaBean available in cache {} for modelNodeId", dynaBean, modelNodeId);
+				logDebug("DynaBean available in cache {} for modelNodeId", LOGGER.sensitiveData(dynaBean), LOGGER.sensitiveData(modelNodeId));
 				return dynaBean;
 			} else {
 				return getDynaBean(Object.class, (ModelNodeWithAttributes) modelNode, cachedNodes, parent);
@@ -141,7 +169,7 @@ public class ModelNodeDynaBeanFactory {
             ModelNodeId leafId = new ModelNodeId(parentNode.getModelNodeId());
             leafId.addRdn(leafName, ns, leafValue);
             HashMap<String, Object> cachedNodes = getCachedNodes();
-            DynaBean object = (DynaBean) cachedNodes.get(leafId.xPathString());
+            DynaBean object = (DynaBean) cachedNodes.get(leafId.xPathString(parentNode.getSchemaRegistry(), true, true));
             if (object != null) {
                 return object;
             }
@@ -170,8 +198,9 @@ public class ModelNodeDynaBeanFactory {
             attributeList.add(ModelNodeWithAttributes.NAMESPACE);
             attributeList.add(ModelNodeWithAttributes.LEAF_VALUE);
             attributeList.add(CHILD_REFRESH_LIST);
+            attributeList.add(ModelNodeWithAttributes.PARENT_MODELNODE);
             attributeList.add(leafName);
-            cachedNodes.put(leafId.xPathString(), bean);
+            cachedNodes.put(leafId.xPathString(parentNode.getSchemaRegistry(), true, true), bean);
             return bean;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -202,13 +231,16 @@ public class ModelNodeDynaBeanFactory {
     private static ModelNodeDynaBean getDynaBean(Class<?> klass, ModelNodeWithAttributes modelNode, Map<String, Object> cachedNodes, ModelNode parent) {
         try {
             boolean addModelNode = true;
+            // add all localNames with different namespace
+            Set<String> attributesWithSameLocalNameDifferentNameSpace = new HashSet<>();
             Set<String> attributeList = new TreeSet<String>();
             
             // If the incoming map has an entry, indicates the bean is already built, use the same and 
             // dont build again
-			if (cachedNodes.containsKey(modelNode.getModelNodeId().xPathString())) {
+            String xpathString = modelNode.getModelNodeId().xPathString(modelNode.getSchemaRegistry(), true, true);
+            if (cachedNodes.containsKey(xpathString)) {
 				ModelNodeDynaBean dynaBean = (ModelNodeDynaBean) cachedNodes
-						.get(modelNode.getModelNodeId().xPathString());
+						.get(xpathString);
 				String namespace = modelNode.getQName().getNamespace().toString();
 				if (dynaBean.get(ModelNodeWithAttributes.NAMESPACE).equals(namespace)) {
 					return (ModelNodeDynaBean) dynaBean;
@@ -221,7 +253,8 @@ public class ModelNodeDynaBeanFactory {
             }
             
             // Build DynaBean properties
-            List<DynaProperty> properties = new ArrayList<DynaProperty>();
+            List<DynaProperty> properties = new ArrayList<>();
+            properties.add(new DynaProperty(ModelNodeWithAttributes.ATTRIBUTES_WITH_SAME_LOCAL_NAME, Set.class));
             properties.add(new DynaProperty(ModelNodeWithAttributes.CHILD_LISTS, Set.class));
             properties.add(new DynaProperty(ModelNodeWithAttributes.CHILD_CONTAINERS, Set.class));
             properties.add(new DynaProperty(ModelNodeWithAttributes.LEAF_LISTS, Set.class));
@@ -249,39 +282,84 @@ public class ModelNodeDynaBeanFactory {
             Set<Entry<QName, LinkedHashSet<ConfigLeafAttribute>>> leafListEntry = modelNode.getLeafLists().entrySet();
             Collection<DataSchemaNode> childSchemaNodes = new LinkedList<DataSchemaNode>();
             fetchChildNodes(modelNode, childSchemaNodes);
-            
-            /// add all the attributes/leaf as a property
-            for (Entry<QName, ConfigLeafAttribute> item : entry) {
-                // TODO FNMS-10121 everywhere here: we should use QNames as keys !!
-                DynaProperty property = new DynaProperty(getDynaBeanAttributeName(item.getKey().getLocalName()), String.class);
-                properties.add(property);
+
+            SchemaRegistry schemaRegistry = modelNode.getSchemaRegistry();
+
+            if(schemaRegistry.getAttributesWithSameLocalNameDifferentNameSpace(modelNode.getModelNodeSchemaPath()) == null) {
+
+                childSchemaNodes.forEach(schemaNode -> {
+                    if (childSchemaNodes.stream()
+                            .filter(compareSchemaNode -> compareSchemaNode.getQName().getLocalName()
+                                    .equals(schemaNode.getQName().getLocalName())).count() > 1) {
+                        attributesWithSameLocalNameDifferentNameSpace
+                                .add(schemaNode.getQName().getLocalName());
+                    }
+                });
+
+                schemaRegistry.registerAttributesWithSameLocalNameDifferentNameSpace(modelNode.getModelNodeSchemaPath(), attributesWithSameLocalNameDifferentNameSpace);
+            } else {
+                attributesWithSameLocalNameDifferentNameSpace.addAll(schemaRegistry.getAttributesWithSameLocalNameDifferentNameSpace(modelNode.getModelNodeSchemaPath()));
             }
-            
-            // add all leafList as a property
-            for (Entry<QName,LinkedHashSet<ConfigLeafAttribute>> leafList : leafListEntry){
-                DynaProperty property = new DynaProperty(getDynaBeanAttributeName(leafList.getKey().getLocalName()), Object.class);
-                properties.add(property);
-            }
-            
+
             // add all list names as a property
             Set<String> childListNames = new HashSet<String>();
 
             // add all child container names as a property
             Set<String> childContainerNames = new HashSet<String>();
-            
+
+            /// add all the attributes/leaf as a property
+            for (Entry<QName, ConfigLeafAttribute> item : entry) {
+                // TODO FNMS-10121 everywhere here: we should use QNames as keys !!
+                DynaProperty property = new DynaProperty(getDynaBeanAttributeName(item.getKey().getLocalName()), String.class);
+                properties.add(property);
+                boolean isSameNameWithDifferentNameSpace = attributesWithSameLocalNameDifferentNameSpace.contains(item.getKey().getLocalName());
+                if(isSameNameWithDifferentNameSpace) {
+                    String nameWithQname = item.getKey() + ":" + item.getKey().getLocalName();
+                    DynaProperty propertyNameWithQName = new DynaProperty(getDynaBeanAttributeName(nameWithQname), String.class);
+                    properties.add(propertyNameWithQName);
+                }
+            }
+
+            // add all leafList as a property
+            for (Entry<QName,LinkedHashSet<ConfigLeafAttribute>> leafList : leafListEntry){
+                boolean isSameNameWithDifferentNameSpace = attributesWithSameLocalNameDifferentNameSpace.contains(leafList.getKey().getLocalName());
+                DynaProperty property = new DynaProperty(getDynaBeanAttributeName(leafList.getKey().getLocalName()), Object.class);
+                properties.add(property);
+                if(isSameNameWithDifferentNameSpace) {
+                    String nameWithQname = leafList.getKey() + ":" + leafList.getKey().getLocalName();
+                    DynaProperty propertyNameWithQName = new DynaProperty(getDynaBeanAttributeName(nameWithQname), Object.class);
+                    properties.add(propertyNameWithQName);
+                }
+            }
+
             for (DataSchemaNode schemaNode: childSchemaNodes){
                 //TODO: FNMS-10121 use qname and not localName
                 String name = getDynaBeanAttributeName(schemaNode.getQName().getLocalName());
+                boolean isSameNameWithDifferentNameSpace = attributesWithSameLocalNameDifferentNameSpace.contains(name);
                 if (schemaNode instanceof ContainerSchemaNode){
+                    String nameWithQname = schemaNode.getQName() + ":" + name;
                     childContainerNames.add(name);
+                    if (isSameNameWithDifferentNameSpace) {
+                        childContainerNames.add(nameWithQname);
+                    }
                     if (addModelNode) {
+                        addDynaProperties(name, schemaNode, properties, ModelNode.class, schemaRegistry, isSameNameWithDifferentNameSpace);
                         properties.add(new DynaProperty(name, ModelNode.class));
                     } else {
+                        addDynaProperties(name, schemaNode, properties, Object.class, schemaRegistry, isSameNameWithDifferentNameSpace);
                         properties.add(new DynaProperty(name, Object.class));
                     }
                 } else if (schemaNode instanceof ListSchemaNode) {
+
+                    addDynaProperties(name, schemaNode, properties, List.class, schemaRegistry, isSameNameWithDifferentNameSpace);
+                    String nameWithQname = schemaNode.getQName() + ":" + name;
                     childListNames.add(name);
                     properties.add(new DynaProperty(name, List.class));
+                    if(isSameNameWithDifferentNameSpace) {
+                        childListNames.add(nameWithQname);
+                    }
+                } else if (schemaNode instanceof LeafSchemaNode) {
+                    addDynaProperties(name, schemaNode, properties, String.class, schemaRegistry, isSameNameWithDifferentNameSpace);
                 }
             }
             
@@ -290,11 +368,13 @@ public class ModelNodeDynaBeanFactory {
             ModelNodeDynaBean modelNodeBean = (ModelNodeDynaBean)dynaClass.newInstance();
             
             // add the dyna bean against the model node in the cached map
-            cachedNodes.put(modelNode.getModelNodeId().xPathString(), modelNodeBean);
+            cachedNodes.put(xpathString, modelNodeBean);
 
+            String nameSpace = modelNode.getQName().getNamespace().toString();
+            modelNodeBean.set(ModelNodeWithAttributes.ATTRIBUTES_WITH_SAME_LOCAL_NAME, attributesWithSameLocalNameDifferentNameSpace);
             modelNodeBean.set(ModelNodeWithAttributes.CHILD_LISTS, childListNames);
             modelNodeBean.set(ModelNodeWithAttributes.CHILD_CONTAINERS, childContainerNames);
-            modelNodeBean.set(ModelNodeWithAttributes.NAMESPACE, modelNode.getQName().getNamespace().toString());
+            modelNodeBean.set(ModelNodeWithAttributes.NAMESPACE, nameSpace);
             modelNodeBean.set(ModelNodeWithAttributes.MODEL_NODE, modelNode);
             modelNodeBean.set(ModelNodeWithAttributes.ADD_MODEL_NODE, addModelNode);
             modelNodeBean.set(ModelNodeWithAttributes.LEAF_COUNT, modelNode.getAttributes().size());
@@ -314,12 +394,30 @@ public class ModelNodeDynaBeanFactory {
             for (DynaProperty classProperty:classProperties) {
                 attributeList.add(classProperty.getName());
             }
-            logDebug("creating new bean {} for modelNode {}", modelNodeBean, modelNode);
-                    
+            logDebug("creating new bean {} for modelNode {}", LOGGER.sensitiveData(modelNodeBean), LOGGER.sensitiveData(modelNode));
+
             return modelNodeBean;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-        
+
+    private static void addDynaProperties(String name, SchemaNode schemaNode, List<DynaProperty> properties, Class<?> classArguement, SchemaRegistry schemaRegistry, boolean isSameNameWithDifferentNameSpace) {
+        String nameWithQname = schemaNode.getQName() + ":" + name;
+        Module module = schemaRegistry.getModuleByNamespace(
+            schemaNode.getQName().getModule().getNamespace().toString());
+        String moduleName = null;
+        if(module != null) {
+            moduleName = module.getName();
+        }
+        if(moduleName != null) {
+            properties.add(new DynaProperty(
+                moduleName + ModelNodeWithAttributes.MODULE_NAME_LOCAL_NAME_SEPARATOR + name,
+                ModelNode.class));
+        }
+        if (isSameNameWithDifferentNameSpace) {
+            properties.add(new DynaProperty(nameWithQname, classArguement));
+        }
+    }
+
 }

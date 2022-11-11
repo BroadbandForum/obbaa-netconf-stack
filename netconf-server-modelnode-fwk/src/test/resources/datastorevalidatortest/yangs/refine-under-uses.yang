@@ -1,0 +1,235 @@
+module refine-under-uses {
+
+    yang-version 1.1;
+
+    namespace "urn:org:bbf2:pma:refineUnderUses";
+
+    prefix "ref";
+
+    revision "2020-03-20" {
+        description "Initial version.";
+    }
+
+    typedef uri {
+        type string;
+        reference
+                "RFC 3986: Uniform Resource Identifier (URI): Generic Syntax";
+    }
+
+    container test-refine-under-uses {
+
+        container overridden-defaults {
+
+            uses for-overridden-defaults {
+                refine leaf1 {
+                    default 1;
+                }
+
+                refine choice1 {
+                    default caseB;
+                }
+            }
+        }
+
+        container overridden-description {
+
+            uses for-overridden-description-and-reference {
+                refine description-leaf {
+                    description "This is the changed description.";
+                    reference "This is the overridden reference.";
+                }
+            }
+        }
+
+        list overridden-mandatory {
+            key name;
+            leaf name {
+                type string;
+            }
+
+            uses for-overridden-mandatory {
+                refine masterName {
+                    mandatory true;
+                }
+                refine "course" {
+                    mandatory true;
+                }
+            }
+        }
+
+        list overridden-maxminelements {
+            key name;
+            leaf name {
+                type string;
+            }
+            uses for-overridden-maxminelements {
+                refine "maxminelements" {
+                    max-elements 4;
+                    min-elements 1;
+                }
+                refine "leaflistname" {
+                    max-elements 2;
+                    min-elements 1;
+                }
+            }
+        }
+
+        list overridden-presencecontainer {
+            key name;
+            leaf name {
+                type string;
+            }
+            uses for-overridden-presencecontainer {
+                refine "testcontainer" {
+                    presence "make testcontainer as presence";
+                }
+            }
+        }
+
+        list overridden-must {
+            key name;
+            leaf name {
+                type string;
+            }
+
+            uses for-overridden-must {
+                refine "leaf3" {
+                    must "../leaf1 = 'leaf1'";
+                }
+                refine "testcontainer" {
+                    must "../leaf2 = 'leaf2'";
+                }
+                refine "testlist" {
+                    must "../leaf3 = 'leaf3'";
+                }
+                refine "testleaflist" {
+                    must "../leaf4 = 'leaf4'";
+                }
+            }
+        }
+
+        list overridden-config {
+            key name;
+            leaf name {
+                type string;
+            }
+
+            uses for-overridden-config {
+                refine "config" {
+                    config false;
+                }
+            }
+        }
+    }
+
+    grouping for-overridden-must {
+        leaf leaf1 {
+            type string;
+        }
+        leaf leaf2 {
+            type string;
+        }
+        leaf leaf3 {
+            type string;
+        }
+        leaf leaf4 {
+            type string;
+        }
+        container testcontainer {
+        }
+        list testlist {
+            key name;
+            leaf name {
+                type string;
+            }
+        }
+        leaf-list testleaflist {
+            type string;
+        }
+    }
+
+    grouping for-overridden-config {
+        leaf config {
+            type string;
+            config false;
+        }
+    }
+
+    grouping for-overridden-presencecontainer {
+        container testcontainer {
+        }
+    }
+
+    grouping for-overridden-maxminelements {
+        list maxminelements {
+            key name;
+            leaf name {
+                type string;
+            }
+            max-elements 3;
+        }
+        leaf-list leaflistname {
+            type string;
+            max-elements 1;
+        }
+    }
+
+    grouping for-overridden-defaults {
+
+        leaf leaf1 {
+            type uint32;
+            default 0;
+        }
+
+        choice choice1 {
+            default caseA;
+
+            case caseA {
+                leaf leafA {
+                    type string;
+                    default "caseA";
+                }
+            }
+
+            case caseB {
+                leaf leafB {
+                    type string;
+                    default "caseB";
+                }
+            }
+        }
+    }
+
+    grouping for-overridden-description-and-reference {
+
+        leaf description-leaf {
+            type string;
+            description "Dummy description";
+            reference "Dummy reference";
+        }
+    }
+    grouping for-overridden-mandatory {
+
+        leaf studentName {
+            type string;
+            mandatory true;
+        }
+        leaf masterName {
+            type string;
+        }
+        choice course {
+
+            case language {
+                leaf programming {
+                    type string;
+                }
+            }
+
+            case database {
+                leaf relative {
+                    type string;
+                }
+            }
+        }
+    }
+}

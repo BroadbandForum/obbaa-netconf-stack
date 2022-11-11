@@ -61,7 +61,6 @@ public class ModuleElementUtil {
         requestFilter.addXmlFilter(filterElement);
         request.setFilter(requestFilter);
         request.setMessageId("1");
-        request.setReplyTimeout(10000);
         return request;
     }
 

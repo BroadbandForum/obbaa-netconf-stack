@@ -25,11 +25,15 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-public class KillSessionRequestTest {
+public class KillSessionRequestTest extends RpcTypeTest {
 
     private KillSessionRequest m_killSessionRequest = new KillSessionRequest();
     private String m_messageId = "101";
     private Integer m_sessionId = 4;
+
+    public KillSessionRequestTest() {
+        super(new KillSessionRequest());
+    }
 
     @Test
     public void testGetRequestDocument() throws NetconfMessageBuilderException, SAXException, IOException {

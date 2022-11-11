@@ -3,7 +3,7 @@ module alu-pma-statistics {
 	
 	yang-version 1;
 	
-    namespace "urn:org:bbf:pma:alu-pma-statistics";
+    namespace "urn:org:bbf2:pma:alu-pma-statistics";
     
     prefix "state";
 

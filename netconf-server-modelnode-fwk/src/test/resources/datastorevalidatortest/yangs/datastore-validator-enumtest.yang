@@ -1,0 +1,94 @@
+module datastore-validator-enumtest {
+	
+	yang-version 1.1;
+    
+	namespace "urn:org:bbf2:pma:enumvalidation-yang";
+	
+	prefix "enumvalidation";
+	
+	revision "2015-12-14" {
+	      description "Initial version.";
+	}
+		
+	feature test-feature {
+	description
+		"This feature means that the system support test-feature";
+	}
+	
+	feature test-feature1 {
+	description
+		"This feature means that the system support test-feature-1";
+	}	
+	
+	typedef custom-enum-type1 {
+       type enumeration {
+            enum one; 
+            enum two;             
+            enum three;
+            enum four;
+            enum A;
+       }
+       default four;
+    }
+    
+    typedef custom-enum-type2 {
+        type custom-enum-type1;
+    }
+    
+    typedef custom-enum-type3 {
+    	type enumeration {
+    		enum red {
+    		if-feature test-feature;
+    		}
+    		enum black;
+    	}
+    }
+    
+    typedef custom-enum-type4 {
+    	type enumeration {
+    		enum green {
+    		if-feature test-feature1;
+       		}
+       		enum yellow;     		
+    	}
+    }     
+    
+    augment "/enumvalidation:enum-validation" {
+        container enum-with-if-feature {
+    		leaf leaf-if-feature{
+    			type custom-enum-type3;
+    		}
+    	}
+    }
+	          
+    container enum-validation {  
+   
+    	leaf validation {
+    		type boolean;
+    		default 'true';
+    	}  
+    
+    	container enum-type-validation {
+    	 when '../validation = "true"';
+    		leaf validation1 {
+    			type custom-enum-type2 {
+            		enum four;
+            		enum A;	   		
+    			}
+    		default A; 
+    		}
+    		leaf validation2 {
+    			type custom-enum-type2 {
+            		enum four;
+            		enum three;	   		
+    			} 
+    		}    		
+    	}    	
+        
+    	container enum-with-if-feature1 {
+    		leaf leaf-if-feature{
+    			type custom-enum-type4;
+    		}
+    	} 
+    }   	 
+}

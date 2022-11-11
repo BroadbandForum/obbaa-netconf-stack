@@ -2,7 +2,7 @@ module datastore-validator-test-yang11 {
 	
 	yang-version 1.1;
     
-	namespace "urn:org:bbf:pma:validation-yang11";
+	namespace "urn:org:bbf2:pma:validation-yang11";
 	
 	prefix "validation11";
 	
@@ -16,8 +16,167 @@ module datastore-validator-test-yang11 {
 		base validation:identity2;
 	}
 	
+	identity identity7{
+		base validation:identity2;
+	}
+	
+	identity identity8{
+		base validation:identity2;
+	}
+	
+	augment '/validation11:validation-yang11/validation11:container-with-must' {
+	    
+
+	    leaf remove-mac-addresses-from-port-down {
+	      type boolean;
+	      default "false";
+	      
+	    }    
+	  }
+	
     container validation-yang11 {
-    	 
+        
+        container container-with-must{           
+            must "count(current()/validation11:list1/validation11:inner-list) <= 1024"; 
+            
+            list list1{
+                key name;
+                
+                leaf name{
+                    type string;
+                }
+                
+                list inner-list{
+                    key inner-list-name;
+                    
+                    leaf inner-list-name{
+                        type string;
+                    }
+                }
+            }
+        }
+    
+        list one-with-augment {
+    		key id;
+    			
+    		leaf id {
+    			type string;
+    		}
+    		
+    		container testForDefaultInAugment {
+    		  
+    		}
+    		
+    		leaf dummy-leaf {
+    		      type string;
+    		}
+    	
+    	}
+    	
+    	
+    	leaf test-leaf {
+    		type string;
+    	}
+
+        container test-count {
+
+            list tag {
+                key id;
+
+                leaf id {
+                    type uint32;
+                }
+            }
+
+            list pop-tag-list {
+                key name;
+
+                leaf name {
+                    type string;
+                }
+
+                leaf pop-tags {
+                    type uint32;
+                }
+            }
+
+            container match-criteria {
+
+                leaf count-check-leaf {
+                    must "current()/../../pop-tag-list[name=current()]/pop-tags <= count(current()/../../tag)";
+                    type string;
+                }
+                
+                leaf not-check-leaf{
+                    must "not(current()/../../pop-tag-list[name=current()]/pop-tags <= count(current()/../../tag))";
+                    type string;
+                }
+            }
+        }
+
+    	
+        // container tm-root has same leaf name scheduler-node with different namespace
+        // one namespace in this yang AND the other in datastore-validator-augment-test.yang
+        container tm-root {
+            choice children-type {
+
+            }
+        }
+
+    	container grouping-inside-container {
+    	 uses test-grouping1 {
+     		when "../test-leaf='test'";
+    	 }
+        }
+         container hardware {
+
+               list component {
+                   key "name";
+
+                   leaf name {
+                       type string;
+                       description
+                           "Administrative name for this component.  No restrictions
+                           apply.";
+                   }
+
+                   leaf class {
+                       type string;
+                       must    "current() != 'transceiver-link' or
+                           ( current() = 'transceiver-link' and
+                           (count(/validation-yang11/hardware/component[name = current()/../parent ]) = 1)) "
+                       {
+                           error-message "A transceiver-link port component is only supported when contained in a transceiver component by this system.";
+                       }
+
+                       must    "current()!= 'chassis' or
+                           (current()/../parent-rel-pos = '1')"
+                       {
+                           error-message "The parent relative position of a chassis component must be 1 for this system.";
+                       }
+
+                       must    "current() != 'board' or
+                           (current()= 'board' and
+                           (current()/../parent-rel-pos = '1'))"
+                       {
+                           error-message "The parent relative position of a board component must be 1 for this system.";
+                       }
+                   }
+
+                   leaf parent {
+                       type leafref {
+                           path "/validation/hardware/component/name";
+                           require-instance false;
+                       }
+                   }
+
+                   leaf parent-rel-pos {
+                      type int32 {
+                          range "0 .. 2147483647";
+                      }
+                   }
+               }
+           }
         container parent{
             list parent-list{
                 key name;
@@ -64,8 +223,8 @@ module datastore-validator-test-yang11 {
                 }
             }
             
-            leaf when-leaf{
-              when "../parent-list[current()]/inner-list1[current()]/inner-list2[current()]/type = 'test'";
+            leaf must-leaf{
+              must "../parent-list[current()]/inner-list1[current()]/inner-list2[current()]/type = 'test'";
                 type string;
             }
             
@@ -76,8 +235,8 @@ module datastore-validator-test-yang11 {
                     }                
             }
             
-            leaf when-leaf4{
-                when "../parent-list[current()]/inner-list1[current()]/inner-list2[current()]/inner-container1/inner-container2/last-leaf = 'last'";
+            leaf must-leaf4{
+                must "../parent-list[current()]/inner-list1[current()]/inner-list2[current()]/inner-container1/inner-container2/last-leaf = 'last'";
                 type string;
               }
         }
@@ -141,23 +300,199 @@ module datastore-validator-test-yang11 {
         	
         }
         }
-    grouping augmentedWhen{
-        leaf default-leaf {
+      grouping augmentedWhen{
+        leaf insideWhenAugmentedUsesDefaultLeaf {
               type uint8 {
                 range "0..2";
               }
    
             default "0";            
             }
+        container insideWhenAugmentedUses{
+        	leaf insideWhenAugmentedUsesLeaf {
+        		type string;
+        	}
+        }
       }
       
-      augment 'validation11:validation-yang11/validation11:leaf-ref-yang11' {
+      augment '/validation11:validation-yang11/validation11:leaf-ref-yang11' {
         
           when 'derived-from-or-self(../validation11:identity-leaf,
               "validation11:identity3")' {
           }
           
-       uses augmentedWhen;
-    }
+          leaf default-leaf {
+              type uint8 {
+                range "0..2";
+              }
+   
+            default "0";            
+            }
+          container insideAugmentedWhen{
+          	leaf insideAugmentedLeaf {
+          		type string;
+          	}
+          	
+          	list insideAugmentedList {
+          		key name;
+          		leaf name {
+          			type string;
+          		}
+          		
+          		leaf type {
+          			type string;
+          			default "type1";
+          		}
+          		
+          		leaf whenLeaf {
+          			when "../../insideAugmentedLeaf='check'";
+          			type string;
+          		}
+          	}
+          }
+      }
 
+    augment '/validation11:validation-yang11/validation11:tm-root/validation11:children-type' {
+
+          case scheduler-node {
+
+              list scheduler-node {
+                  key "name";
+
+                  leaf name{
+                    type string;
+                  }
+
+                  leaf scheduling-level {
+                    type uint8;
+                    mandatory true;
+                  }
+
+                  leaf if-name {
+                    type string;
+                  }
+
+                  choice children-type {
+                      case scheduler-node {
+
+                          list child-scheduler-nodes {
+                              key "name";
+                              leaf name {
+                                  type leafref {
+                                    path '/validation:validation'
+                                       + '/validation11:validation-yang11'
+                                       + '/validation11:tm-root'
+                                       + '/validation11:scheduler-node'
+                                       + '/name';
+                                  }
+
+                                  must "../../../validation11:scheduler-node
+                                       [name=current()]
+                                       /scheduling-level>
+                                       current()/../../scheduling-level" {
+
+                                    error-message
+                                     "The scheduler-level should be bigger than the
+                                       value of parent node.";
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      }
+
+      augment '/validation11:validation-yang11/validation11:leaf-ref-yang11' {
+          
+          when 'derived-from-or-self(../validation11:identity-leaf,
+              "validation11:identity8")' {
+          }
+          
+       uses augmentedWhen;
+      }
+      
+      augment '/validation11:validation-yang11/validation11:leaf-ref-yang11' {
+          uses when-uses-inside-augment {
+              when "../test-leaf='FNMS'";
+          }
+      }
+      
+      augment "/validation11:validation-yang11/validation11:one-with-augment/validation11:testForDefaultInAugment" {
+          when "../validation11:dummy-leaf = 'dummy'";
+
+           container test-container {
+       	      leaf leaf-with-default {
+       	      	  type string;
+       	      	  default "defaultLeaf1";
+       	      }
+           }
+
+           list list-with-default-leaf2 {
+           	  key key1;
+           	  leaf key1 {
+           	  	   type string;
+           	  }
+           	  
+              leaf leaf-with-default2 {
+       	      	  type string;
+       	      	  default "defaultLeaf2";
+              }
+              
+              leaf another-leaf {
+              	  type string;
+              }
+           }
+
+           container test-container2 {
+           	  list list-with-default-leaf3 {
+           	  	  key key2;
+           	  	  leaf key2 {
+           	  	  	  type string;	
+           	  	  }
+       	      	  leaf leaf-with-default3 {
+       	      	      must "../../../list-with-default-leaf2/another-leaf = 'mustleaf'";
+       	      	      type string;
+       	      	      default "defaultLeaf3";
+       	      	  }
+              }
+           }
+      }
+
+      grouping when-uses-inside-augment {
+          leaf when-uses-inside-augment-leaf1{
+              type string;
+              default "defaultLeaf1";
+          }
+          container when-uses-inside-augment-container {
+              leaf when-uses-inside-augment-leaf2{
+                  type string;
+                  default "defaultLeaf2";
+              } 
+          }
+      }
+      
+      grouping test-grouping1 {
+    	leaf grouping-leaf1{
+    		type string;
+    		default "grouping-leaf1";
+    	}
+    	
+      	list insideGroupingList {
+      		key name;
+      		leaf name {
+      			type string;
+      		}
+      		
+      		leaf type {
+      			type string;
+      			default "type1";
+      		}
+      		
+      		leaf whenLeaf {
+      			when "../../grouping-leaf1='grouping'";
+      			type string;
+      		}
+      	}
+      }
 }

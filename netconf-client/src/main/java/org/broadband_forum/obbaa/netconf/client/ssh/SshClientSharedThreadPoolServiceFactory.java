@@ -16,17 +16,18 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
+import java.io.IOException;
+import java.nio.channels.AsynchronousChannelGroup;
+
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.io.IoAcceptor;
 import org.apache.sshd.common.io.IoConnector;
 import org.apache.sshd.common.io.IoHandler;
+import org.apache.sshd.common.io.IoServiceEventListener;
 import org.apache.sshd.common.io.IoServiceFactory;
 import org.apache.sshd.common.io.nio2.Nio2Acceptor;
 import org.apache.sshd.common.io.nio2.Nio2Connector;
 import org.apache.sshd.common.util.closeable.AbstractCloseable;
-
-import java.io.IOException;
-import java.nio.channels.AsynchronousChannelGroup;
 
 /**
  * 
@@ -64,4 +65,13 @@ public class SshClientSharedThreadPoolServiceFactory extends AbstractCloseable i
         return new Nio2Acceptor(m_manager, handler, m_asyncChannelGroup);
     }
 
+    @Override
+    public IoServiceEventListener getIoServiceEventListener() {
+        return null;
+    }
+
+    @Override
+    public void setIoServiceEventListener(IoServiceEventListener ioServiceEventListener) {
+
+    }
 }

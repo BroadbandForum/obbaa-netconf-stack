@@ -1,6 +1,23 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder.fromString;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.EMPTY_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants.CFG_TYPE_PATH;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants.CHILDREN_TYPE_PATH;
@@ -15,7 +32,8 @@ import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entitie
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants.TM_ROOT_PATH;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants.WEIGHT;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants.WEIGHT_QNAME;
-import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ADMIN_LOCAL_NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ADMIN_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_SCHEMA_PATH;
@@ -45,6 +63,7 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -74,35 +93,11 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ListEntryInfo;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.common.Revision;
-import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.albumxmlsubtree.Album;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.albumxmlsubtree.Artist;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainer;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtree.Jukebox;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtree.Library;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.yangwithparentchildsameqname.Root;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.yangwithparentchildsameqname.RootList;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryTraverser;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
@@ -114,7 +109,26 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNode
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKeyBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.EntityRegistryBuilder;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ListEntryInfo;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.albumxmlsubtree.Album;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.albumxmlsubtree.Artist;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainer;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.embeddedchoicecase.RootContainerTestConstants;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtree.Jukebox;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.libraryxmlsubtree.Library;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.rootwithnodefaultchildren.RootEntity;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.yangwithparentchildsameqname.Root;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.yangwithparentchildsameqname.RootList;
+import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
+import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangAttribute;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangChild;
@@ -123,13 +137,22 @@ import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangList;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangListKey;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentId;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
-import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
-import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.w3c.dom.Document;
 
 /**
  * Created by sgs on 1/27/16.
  */
-
+@RunWith(RequestScopeJunitRunner.class)
 public class XmlSubtreeDSMTest {
 
     private static final String TEST_APPLICATION_CONTEXT_XML = "/xmlsubtreedsmtest/test-applicationContext.xml";
@@ -155,6 +178,9 @@ public class XmlSubtreeDSMTest {
     public static final String DEVICE_SP_STR = "(" + CHOICE_CASE_NS + "?revision=2015-12-14)," + "device-manager, device-holder, device";
     public static final String CONF_DEVICE_PROP_SP_STR = "(" + CHOICE_CASE_NS + "?revision=2015-12-14),"
             + "device-manager, device-holder, device, conn-type, non-call-home, configured-device-properties";
+
+    public static final String YWEC_NS = "urn:yang-with-empty-container";
+    public static final String YWEC_ROOT_SP_STR = "(" + YWEC_NS + "?revision=2016-07-11)," + "empty-container";
 
     public static final String YWPCSQ_NS = "urn:yang-with-parent-child-same-qname";
     public static final String YWPCSQ_ROOT_SP_STR = "(" + YWPCSQ_NS + "?revision=2016-07-11)," + "root";
@@ -193,22 +219,17 @@ public class XmlSubtreeDSMTest {
             .addRdn(new ModelNodeRdn(NAME_QNAME, ALBUM1_NAME));
     private ModelNodeId m_albumNodeId = new ModelNodeId(m_artist2NodeId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, ALBUM_LOCAL_NAME))
             .addRdn(new ModelNodeRdn(NAME_QNAME, ALBUM2_NAME));
+    private ModelNodeId m_adminNodeId = new ModelNodeId(m_albumNodeId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, ADMIN_LOCAL_NAME));
     public final ModelNodeId m_songNodeId = new ModelNodeId(m_albumNodeId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, SONG_LOCAL_NAME))
             .addRdn(new ModelNodeRdn(NAME_QNAME, "My Song"));
     public final ModelNodeId m_song1NodeId = new ModelNodeId(m_albumNodeId1).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, SONG_LOCAL_NAME))
             .addRdn(new ModelNodeRdn(NAME_QNAME, "song-name-1"));
     public final ModelNodeId m_song2NodeId = new ModelNodeId(m_albumNodeId1).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, SONG_LOCAL_NAME))
             .addRdn(new ModelNodeRdn(NAME_QNAME, "song-name-2"));
-
-    @BeforeClass
-    public static void setupClass(){
-        RequestScope.setEnableThreadLocalInUT(true);
-    }
+    private Document m_document = DocumentUtils.createDocument();
 
     @Before
     public void setUp() {
-
-        RequestScope.resetScope();
         m_context = new ClassPathXmlApplicationContext(TEST_APPLICATION_CONTEXT_XML);
 
         m_entityRegistry = (EntityRegistry) m_context.getBean("entityRegistry");
@@ -219,7 +240,7 @@ public class XmlSubtreeDSMTest {
         m_modelNodeHelperRegistry = (ModelNodeHelperRegistry) m_context.getBean("modelNodeHelperRegistry");
         m_modelNodeDSMRegistry = (ModelNodeDSMRegistry) m_context.getBean("modelNodeDSMRegistry");
         m_xmlModelNodeToXmlMapper = new XmlModelNodeToXmlMapperImpl(m_dsmCache, m_schemaRegistry, m_modelNodeHelperRegistry, m_subSystemRegistry,
-                m_entityRegistry);
+                m_entityRegistry, null);
         m_xmlSubtreeDSM = (ModelNodeDataStoreManager) m_context.getBean("xmlSubtreeDSM");
         SchemaRegistryTraverser traverser = new SchemaRegistryTraverser("JukeBox",
                 Collections.singletonList(m_entityModelNodeHelperDeployer), m_schemaRegistry,
@@ -234,11 +255,11 @@ public class XmlSubtreeDSMTest {
     public void testListNodesLibrarySubtree() throws AnnotationAnalysisException, DataStoreException {
 
         initialiseLibrarySubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         EntityDataStoreManager entityDataStoreManager = m_persistenceManagerUtil.getEntityDataStoreManager();
 
@@ -255,8 +276,8 @@ public class XmlSubtreeDSMTest {
             entityDataStoreManager.rollbackTransaction();
             throw e;
         }
-        assertEqualsWithScopeReset(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEqualsWithScopeReset(2, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEqualsWithScopeReset(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEqualsWithScopeReset(2, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     private void assertEqualsWithScopeReset(Object expected, Object actual) throws DataStoreException {
@@ -278,20 +299,26 @@ public class XmlSubtreeDSMTest {
     @Test
     public void testListNodesChoiceCase() throws Exception {
         initialiseChoiceCaseEntities();
-        assertEquals(1, m_aggregatedDSM.listNodes(fromString(DEVICE_MGR_SP_STR)).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(fromString(DEVICE_HDR_SP_STR)).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(fromString(DEVICE_SP_STR)).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR)).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(fromString(DEVICE_MGR_SP_STR), m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(fromString(DEVICE_HDR_SP_STR), m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(fromString(DEVICE_SP_STR), m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR), m_schemaRegistry).size());
     }
 
     @Test
     public void testListChildNodesAlbumSubtree() throws AnnotationAnalysisException, DataStoreException {
 
         initializeAlbumSubtreeEntity();
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
-        assertEquals(1, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist1NodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist1NodeId, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
+    }
+
+    @Test
+    public void testFindNonExistentEmptyRootContainer() throws Exception {//When xmlSubtree is empty
+        initializeRootNode();
+        assertNotNull(m_aggregatedDSM.findNode(fromString(YWEC_ROOT_SP_STR), ModelNodeKey.EMPTY_KEY, EMPTY_NODE_ID, m_schemaRegistry));
     }
 
     @Test
@@ -299,39 +326,39 @@ public class XmlSubtreeDSMTest {
         initialiseParentAndChildSameQName();
         ModelNodeId parentId = new ModelNodeId();
         parentId.addRdn(CONTAINER, YWPCSQ_NS, "root").addRdn(CONTAINER, YWPCSQ_NS, "same-qname1");
-        assertEquals(1, m_aggregatedDSM.listChildNodes(fromString(YWPCSQ_CLWSQ1_SP_STR), parentId).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(fromString(YWPCSQ_CLWSQ1_SP_STR), parentId, m_schemaRegistry).size());
 
         parentId = new ModelNodeId();
         parentId.addRdn(CONTAINER, YWPCSQ_NS, "root").addRdn(CONTAINER, YWPCSQ_NS, "same-qname2");
-        assertEquals(1, m_aggregatedDSM.listChildNodes(fromString(YWPCSQ_CCWSQ2_SP_STR), parentId).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(fromString(YWPCSQ_CCWSQ2_SP_STR), parentId, m_schemaRegistry).size());
     }
 
     @Test
     public void testFindNodeLibrarySubtree() throws DataStoreException, AnnotationAnalysisException {
 
         initialiseLibrarySubtreeEntity();
-        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, EMPTY_NODE_ID);
+        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, EMPTY_NODE_ID, m_schemaRegistry);
         assertTrue(jukeboxModelNode instanceof ModelNodeWithAttributes);
         assertEquals(JUKEBOX_LOCAL_NAME, jukeboxModelNode.getQName().getLocalName());
 
-        ModelNode libraryModelNode = m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, m_jukeboxNodeId);
+        ModelNode libraryModelNode = m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, m_jukeboxNodeId, m_schemaRegistry);
         assertTrue(libraryModelNode instanceof XmlModelNodeImpl);
         assertEquals(LIBRARY_LOCAL_NAME, libraryModelNode.getQName().getLocalName());
 
-        XmlModelNodeImpl artistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId);
+        XmlModelNodeImpl artistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId, m_schemaRegistry);
         assertTrue(artistModelNode instanceof XmlModelNodeImpl);
         Assert.assertEquals(ARTIST_SCHEMA_PATH, artistModelNode.getModelNodeSchemaPath());
         assertEquals(2, artistModelNode.getChildren().get(ALBUM_QNAME).size());
         Assert.assertEquals(1, artistModelNode.getAttributes().size());
 
-        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
+        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId, m_schemaRegistry);
         assertTrue(albumModelNode instanceof XmlModelNodeImpl);
         Assert.assertEquals(ALBUM_SCHEMA_PATH, albumModelNode.getModelNodeSchemaPath());
         Assert.assertEquals(2, albumModelNode.getAttributes().size());
         Assert.assertEquals(ALBUM2_NAME, albumModelNode.getAttributes().get(NAME_QNAME).getStringValue());
         assertEquals(1, albumModelNode.getChildren().get(SONG_QNAME).size());
 
-        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         assertTrue(songModelNode instanceof XmlModelNodeImpl);
         Assert.assertEquals(SONG_SCHEMA_PATH, songModelNode.getModelNodeSchemaPath());
         Assert.assertEquals(SONG_NAME, songModelNode.getAttributes().get(NAME_QNAME).getStringValue());
@@ -342,7 +369,7 @@ public class XmlSubtreeDSMTest {
         initialiseChoiceCaseEntities();
         ModelNodeId deviceId = getDevice1Id();
 
-        ModelNode actualNode = m_aggregatedDSM.findNode(fromString(CONF_DEVICE_PROP_SP_STR), ModelNodeKey.EMPTY_KEY, deviceId);
+        ModelNode actualNode = m_aggregatedDSM.findNode(fromString(CONF_DEVICE_PROP_SP_STR), ModelNodeKey.EMPTY_KEY, deviceId, m_schemaRegistry);
         assertTrue(actualNode instanceof ModelNodeWithAttributes);
         assertEquals("configured-device-properties", actualNode.getQName().getLocalName());
     }
@@ -363,7 +390,7 @@ public class XmlSubtreeDSMTest {
         HashMap<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1948"));
 
-        List<ModelNode> albumModelNodes = m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, configAttributes, m_artist2NodeId);
+        List<ModelNode> albumModelNodes = m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, configAttributes, m_artist2NodeId, m_schemaRegistry);
         assertEquals(1, albumModelNodes.size());
         assertTrue(albumModelNodes.get(0) instanceof XmlModelNodeImpl);
         XmlModelNodeImpl albumNode = (XmlModelNodeImpl) albumModelNodes.get(0);
@@ -376,7 +403,7 @@ public class XmlSubtreeDSMTest {
         addAnother1948AlbumToLibrarySubtree();
 
         albumModelNodes = executeWithResetScope((ScopeTemplate<List>)
-                () -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, configAttributes, m_artist2NodeId));
+                () -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, configAttributes, m_artist2NodeId, m_schemaRegistry));
         assertTrue(albumModelNodes.get(0) instanceof XmlModelNodeImpl);
         albumNode = (XmlModelNodeImpl) albumModelNodes.get(0);
         Assert.assertEquals(ALBUM_SCHEMA_PATH, albumNode.getModelNodeSchemaPath());
@@ -410,20 +437,20 @@ public class XmlSubtreeDSMTest {
     public void testFindNodesAlbumSubtree() throws AnnotationAnalysisException, DataStoreException {
         initializeAlbumSubtreeEntity();
         HashMap<QName, ConfigLeafAttribute> keys = new HashMap<>();
-        List<ModelNode> jukeboxModelNodes = m_aggregatedDSM.findNodes(JUKEBOX_SCHEMA_PATH, keys, EMPTY_NODE_ID);
+        List<ModelNode> jukeboxModelNodes = m_aggregatedDSM.findNodes(JUKEBOX_SCHEMA_PATH, keys, EMPTY_NODE_ID, m_schemaRegistry);
         assertEquals(1, jukeboxModelNodes.size());
         ModelNode jukeboxModelNode = jukeboxModelNodes.get(0);
         assertTrue(jukeboxModelNode instanceof ModelNodeWithAttributes);
         assertEquals(JUKEBOX_LOCAL_NAME, jukeboxModelNode.getQName().getLocalName());
 
-        List<ModelNode> libraryModelNodes = m_aggregatedDSM.findNodes(LIBRARY_SCHEMA_PATH, keys, m_jukeboxNodeId);
+        List<ModelNode> libraryModelNodes = m_aggregatedDSM.findNodes(LIBRARY_SCHEMA_PATH, keys, m_jukeboxNodeId, m_schemaRegistry);
         assertEquals(1, libraryModelNodes.size());
         ModelNode libraryModelNode = libraryModelNodes.get(0);
         assertTrue(libraryModelNode instanceof ModelNodeWithAttributes);
         assertEquals(LIBRARY_LOCAL_NAME, libraryModelNode.getQName().getLocalName());
 
         keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, ARTIST2_NAME));
-        List<ModelNode> artistModelNodes = m_aggregatedDSM.findNodes(ARTIST_SCHEMA_PATH, keys, m_libraryNodeId);
+        List<ModelNode> artistModelNodes = m_aggregatedDSM.findNodes(ARTIST_SCHEMA_PATH, keys, m_libraryNodeId, m_schemaRegistry);
         assertEquals(1, artistModelNodes.size());
         ModelNode artistModelNode = artistModelNodes.get(0);
         assertTrue(artistModelNode instanceof ModelNodeWithAttributes);
@@ -431,11 +458,11 @@ public class XmlSubtreeDSMTest {
         assertEquals(ARTIST_SCHEMA_PATH, artistModelNode.getModelNodeSchemaPath());
 
         keys.clear();
-        artistModelNodes = m_aggregatedDSM.findNodes(ARTIST_SCHEMA_PATH, keys, m_libraryNodeId);
+        artistModelNodes = m_aggregatedDSM.findNodes(ARTIST_SCHEMA_PATH, keys, m_libraryNodeId, m_schemaRegistry);
         assertEquals(2, artistModelNodes.size());
 
         keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, ALBUM2_NAME));
-        List<ModelNode> albumModelNodes = m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys, m_artist2NodeId);
+        List<ModelNode> albumModelNodes = m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys, m_artist2NodeId, m_schemaRegistry);
         assertEquals(1, albumModelNodes.size());
         ModelNode albumModelNode = albumModelNodes.get(0);
         assertTrue(albumModelNode instanceof XmlModelNodeImpl);
@@ -444,7 +471,7 @@ public class XmlSubtreeDSMTest {
 
         keys.clear();
         keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Pocketful of Sunshine"));
-        List<ModelNode> songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
+        List<ModelNode> songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId, m_schemaRegistry);
         assertEquals(1, songModelNodes.size());
         XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) songModelNodes.get(0);
         Assert.assertEquals(SONG_SCHEMA_PATH, songModelNode.getModelNodeSchemaPath());
@@ -453,7 +480,7 @@ public class XmlSubtreeDSMTest {
 
         keys.clear();
         keys.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
-        songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
+        songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId, m_schemaRegistry);
         assertEquals(2, songModelNodes.size());
         songModelNode = (XmlModelNodeImpl) songModelNodes.get(0);
         Assert.assertEquals(2, songModelNode.getAttributes().size());
@@ -468,7 +495,7 @@ public class XmlSubtreeDSMTest {
         keys.clear();
         keys.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
         keys.put(LOCATION_QNAME, new GenericConfigAttribute(LOCATION, JB_NS, "somelocation"));
-        songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
+        songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId, m_schemaRegistry);
         assertEquals(1, songModelNodes.size());
         songModelNode = (XmlModelNodeImpl) songModelNodes.get(0);
         Assert.assertEquals(3, songModelNode.getAttributes().size());
@@ -479,13 +506,13 @@ public class XmlSubtreeDSMTest {
         keys.clear();
         keys.put(FORMAT_QNAME, new GenericConfigAttribute(FORMAT, JB_NS, "mp3"));
         keys.put(LOCATION_QNAME, new GenericConfigAttribute(LOCATION, JB_NS, "someOtherlocation"));
-        songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId);
+        songModelNodes = m_aggregatedDSM.findNodes(SONG_SCHEMA_PATH, keys, m_albumNodeId, m_schemaRegistry);
         assertEquals(0, songModelNodes.size());
 
         setAlbum22Year("1948");
         keys.clear();
         keys.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1948"));
-        albumModelNodes = executeWithResetScope(() -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys, m_artist2NodeId));
+        albumModelNodes = executeWithResetScope(() -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys, m_artist2NodeId, m_schemaRegistry));
         assertEquals(1, albumModelNodes.size());
         albumModelNode = albumModelNodes.get(0);
         assertTrue(albumModelNode instanceof XmlModelNodeImpl);
@@ -494,7 +521,7 @@ public class XmlSubtreeDSMTest {
 
         keys.clear();
         keys.put(YEAR_QNAME,new GenericConfigAttribute(YEAR, JB_NS, "2016"));
-        albumModelNodes = executeWithResetScope(() -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys, m_artist2NodeId));
+        albumModelNodes = executeWithResetScope(() -> m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, keys, m_artist2NodeId, m_schemaRegistry));
         assertEquals(0, albumModelNodes.size());
 
     }
@@ -503,14 +530,14 @@ public class XmlSubtreeDSMTest {
     public void testFindNodesWithNestedChildrenInAlbumSubtree() throws AnnotationAnalysisException, DataStoreException {
         initializeCDSubtreeEntity();
         HashMap<QName, ConfigLeafAttribute> keys = new HashMap<>();
-        List<ModelNode> cdModelNodes = m_aggregatedDSM.findNodes(CD_SCHEMA_PATH, keys, m_song2NodeId);
+        List<ModelNode> cdModelNodes = m_aggregatedDSM.findNodes(CD_SCHEMA_PATH, keys, m_song2NodeId, m_schemaRegistry);
         assertEquals(1, cdModelNodes.size());
         XmlModelNodeImpl cdModelNode = (XmlModelNodeImpl) cdModelNodes.get(0);
         Assert.assertEquals(CD_SCHEMA_PATH, cdModelNode.getModelNodeSchemaPath());
         Assert.assertEquals(1, cdModelNode.getAttributes().size());
         Assert.assertEquals("200", cdModelNode.getAttributes().get(STOCK_QNAME).getStringValue());
 
-        cdModelNodes = m_aggregatedDSM.findNodes(CD_SCHEMA_PATH, keys, m_song1NodeId);
+        cdModelNodes = m_aggregatedDSM.findNodes(CD_SCHEMA_PATH, keys, m_song1NodeId, m_schemaRegistry);
         assertEquals(1, cdModelNodes.size());
         XmlModelNodeImpl cdModelNode2 = (XmlModelNodeImpl) cdModelNodes.get(0);
         Assert.assertEquals(1, cdModelNode2.getAttributes().size());
@@ -519,33 +546,37 @@ public class XmlSubtreeDSMTest {
     }
 
     @Test
-    public void testFindNodeAlbumSubtree() throws AnnotationAnalysisException, DataStoreException {
+    public void testFindNodeAlbumSubtree() throws AnnotationAnalysisException, DataStoreException, ModelNodeGetException {
 
         initializeAlbumSubtreeEntity();
         Map<QName, String> keys = new LinkedHashMap<>();
-        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, new ModelNodeKey(keys), EMPTY_NODE_ID);
+        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, new ModelNodeKey(keys), EMPTY_NODE_ID, m_schemaRegistry);
         assertTrue(jukeboxModelNode instanceof ModelNodeWithAttributes);
         assertEquals(JUKEBOX_LOCAL_NAME, jukeboxModelNode.getQName().getLocalName());
 
-        ModelNode libraryModelNode = m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, new ModelNodeKey(keys), m_jukeboxNodeId);
+        ModelNode libraryModelNode = m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, new ModelNodeKey(keys), m_jukeboxNodeId, m_schemaRegistry);
         assertTrue(libraryModelNode instanceof ModelNodeWithAttributes);
         assertEquals(LIBRARY_LOCAL_NAME, libraryModelNode.getQName().getLocalName());
 
         keys.put(NAME_QNAME, ARTIST2_NAME);
-        ModelNode artistModelNode = m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, new ModelNodeKey(keys), m_libraryNodeId);
+        ModelNode artistModelNode = m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, new ModelNodeKey(keys), m_libraryNodeId, m_schemaRegistry);
         assertTrue(artistModelNode instanceof ModelNodeWithAttributes);
         assertEquals(1, ((ModelNodeWithAttributes) artistModelNode).getAttributes().size());
         assertEquals(ARTIST_SCHEMA_PATH, artistModelNode.getModelNodeSchemaPath());
 
         keys.put(NAME_QNAME, ALBUM2_NAME);
-        ModelNode albumModelNode = m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, new ModelNodeKey(keys), m_artist2NodeId);
+        ModelNode albumModelNode = m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, new ModelNodeKey(keys), m_artist2NodeId, m_schemaRegistry);
         assertTrue(albumModelNode instanceof XmlModelNodeImpl);
         Assert.assertEquals(1, ((XmlModelNodeImpl) albumModelNode).getAttributes().size());
         assertEquals(ALBUM_SCHEMA_PATH, albumModelNode.getModelNodeSchemaPath());
-
+        
+        DataSchemaNode childSchemaNode = m_schemaRegistry.getDataSchemaNode(ADMIN_SCHEMA_PATH);
+        ModelNode adminNode = DataStoreValidationUtil.getChildContainerModelNode(albumModelNode, childSchemaNode );
+        assertNotNull(adminNode);
+        
         keys.put(NAME_QNAME, "Pocketful of Sunshine");
         XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, new ModelNodeKey(keys),
-                m_albumNodeId);
+                m_albumNodeId, m_schemaRegistry);
         Assert.assertEquals(SONG_SCHEMA_PATH, songModelNode.getModelNodeSchemaPath());
         Assert.assertEquals(3, songModelNode.getAttributes().size());
         Assert.assertEquals("Pocketful of Sunshine", songModelNode.getAttributes().get(NAME_QNAME).getStringValue());
@@ -556,51 +587,51 @@ public class XmlSubtreeDSMTest {
 
         // Initialise Jukebox with Library having XML Subtree and verify the node count
         initialiseLibrarySubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 1: Add one artist to existing library container
         XmlModelNodeImpl libraryModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH,
-                new ModelNodeKey(new LinkedHashMap<>()), m_jukeboxNodeId);
+                new ModelNodeKey(new LinkedHashMap<>()), m_jukeboxNodeId, m_schemaRegistry);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist"));
-        XmlModelNodeImpl artistModelNode = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl artistModelNode = new XmlModelNodeImpl(m_document, ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(artistModelNode, m_libraryNodeId);
-        assertEquals(3, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 2: Add one album to existing artist list
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME, ARTIST2_NAME);
         XmlModelNodeImpl updatedArtistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, new ModelNodeKey(keys),
-                m_libraryNodeId);
+                m_libraryNodeId, m_schemaRegistry);
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album23"));
-        XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(m_document, ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 updatedArtistModelNode, m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(albumModelNode, m_artist2NodeId);
-        assertEquals(4, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(4, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 3: Add one song to existing album list
         keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME, ALBUM2_NAME);
         XmlModelNodeImpl updatedAlbumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, new ModelNodeKey(keys),
-                m_artist2NodeId);
+                m_artist2NodeId, m_schemaRegistry);
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Pocketful of Sunshine"));
-        XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(m_document, SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(songModelNode, m_albumNodeId);
-        assertEquals(2, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     @Test
@@ -608,11 +639,11 @@ public class XmlSubtreeDSMTest {
 
         // Initialise Jukebox with Album having XML Subtree and verify the node count
         initializeAlbumSubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
 
         // Case 1: Add one artist to existing library container
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
@@ -622,29 +653,29 @@ public class XmlSubtreeDSMTest {
         artistModelNode.setAttributes(configAttributes);
 
         m_aggregatedDSM.createNode(artistModelNode, m_libraryNodeId);
-        assertEquals(3, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
+        assertEquals(3, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
 
         // Case 2: Add one album to existing artist list
         configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album23"));
-        XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(), null,
-                m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, null);
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album24"));
+        XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(m_document, ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(), null,
+                m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(albumModelNode, m_artist2NodeId);
-        assertEquals(3, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
+        assertEquals(4, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
 
         // Case 3: Add one song to existing album list
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME, ALBUM2_NAME);
         XmlModelNodeImpl updatedAlbumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, new ModelNodeKey(keys),
-                m_artist2NodeId);
+                m_artist2NodeId, m_schemaRegistry);
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Cake by the ocean"));
-        XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(m_document, SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
         m_aggregatedDSM.createNode(songModelNode, m_albumNodeId);
-        assertEquals(3, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(3, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
     }
 
     @Test
@@ -652,21 +683,21 @@ public class XmlSubtreeDSMTest {
 
         // Initialise Jukebox with Library having XML Subtree and verify the node count
         initialiseLibrarySubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 1a: Add one artist at position 0 to existing library container
-        List<ModelNode> listArtistNodes = m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH);
+        List<ModelNode> listArtistNodes = m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry);
         XmlModelNodeImpl libraryModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH,
-                new ModelNodeKey(new LinkedHashMap<>()), m_jukeboxNodeId);
+                new ModelNodeKey(new LinkedHashMap<>()), m_jukeboxNodeId, m_schemaRegistry);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist"));
-        XmlModelNodeImpl artistModelNode = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl artistModelNode = new XmlModelNodeImpl(m_document, ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(artistModelNode, m_libraryNodeId, 0);
 
@@ -674,7 +705,7 @@ public class XmlSubtreeDSMTest {
         expectedArtistList.add(artistModelNode);
         expectedArtistList.addAll(listArtistNodes);
 
-        List<ModelNode> actualArtistList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH));
+        List<ModelNode> actualArtistList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry));
         assertEquals(3, actualArtistList.size());
 
         for (int i = 0; i < actualArtistList.size(); i++) {
@@ -684,15 +715,15 @@ public class XmlSubtreeDSMTest {
         // Case 1b: Add one more artist in between to existing library container
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist-in-between"));
-        XmlModelNodeImpl artistModelNode1 = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl artistModelNode1 = new XmlModelNodeImpl(m_document, ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(artistModelNode1, m_libraryNodeId, 2);
 
         expectedArtistList.add(2, artistModelNode1);
 
-        actualArtistList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH));
+        actualArtistList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry));
         assertEquals(4, actualArtistList.size());
 
         for (int i = 0; i < actualArtistList.size(); i++) {
@@ -702,15 +733,15 @@ public class XmlSubtreeDSMTest {
         // Case 1c: Add one more artist at last position to existing library container
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "new-artist-again"));
-        XmlModelNodeImpl artistModelNode2 = new XmlModelNodeImpl(ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl artistModelNode2 = new XmlModelNodeImpl(m_document, ARTIST_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 libraryModelNode, m_libraryNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
-        m_aggregatedDSM.createNode(artistModelNode2, m_libraryNodeId, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
+        m_aggregatedDSM.createNode(artistModelNode2, m_libraryNodeId, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
 
         expectedArtistList.add(artistModelNode2);
 
-        actualArtistList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH));
+        actualArtistList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry));
         assertEquals(5, actualArtistList.size());
 
         for (int i = 0; i < actualArtistList.size(); i++) {
@@ -720,14 +751,14 @@ public class XmlSubtreeDSMTest {
         // Case 2a: Add one album at position 0 to existing artist list
         SortedMap<QName, String> keys = new TreeMap<>();
         keys.put(NAME_QNAME, ARTIST2_NAME);
-        List<ModelNode> listAlbumNodes = m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId);
+        List<ModelNode> listAlbumNodes = m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry);
         XmlModelNodeImpl updatedArtistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, new ModelNodeKey(keys),
-                m_libraryNodeId);
+                m_libraryNodeId, m_schemaRegistry);
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album23"));
-        XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl albumModelNode = new XmlModelNodeImpl(m_document, ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 updatedArtistModelNode, m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(albumModelNode, m_artist2NodeId, 0);
 
@@ -735,7 +766,7 @@ public class XmlSubtreeDSMTest {
         expectedAlbumList.add(albumModelNode);
         expectedAlbumList.addAll(listAlbumNodes);
 
-        List<ModelNode> actualAlbumList = new ArrayList<ModelNode>(m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId));
+        List<ModelNode> actualAlbumList = new ArrayList<ModelNode>(m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry));
         assertEquals(3, actualAlbumList.size());
 
         for (int i = 0; i < actualAlbumList.size(); i++) {
@@ -746,24 +777,24 @@ public class XmlSubtreeDSMTest {
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "album24"));
 
-        XmlModelNodeImpl albumModelNode1 = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl albumModelNode1 = new XmlModelNodeImpl(m_document, ALBUM_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 updatedArtistModelNode, m_artist2NodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(albumModelNode1, m_artist2NodeId, 0);
-        assertEquals(5, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(5, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 3a: Add one song at position 0 to existing album list
         keys = new TreeMap<>();
         keys.put(NAME_QNAME, ALBUM2_NAME);
-        List<ModelNode> listSongNodes = m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH);
+        List<ModelNode> listSongNodes = m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry);
         XmlModelNodeImpl updatedAlbumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, new ModelNodeKey(keys),
-                m_artist2NodeId);
+                m_artist2NodeId, m_schemaRegistry);
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Pocketful of Sunshine"));
-        XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl songModelNode = new XmlModelNodeImpl(m_document, SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(songModelNode, m_albumNodeId, 0);
 
@@ -771,7 +802,7 @@ public class XmlSubtreeDSMTest {
         expectedSongList.add(songModelNode);
         expectedSongList.addAll(listSongNodes);
 
-        List<ModelNode> actualSongList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH));
+        List<ModelNode> actualSongList = new ArrayList<ModelNode>(m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry));
         assertEquals(2, actualSongList.size());
 
         for (int i = 0; i < actualSongList.size(); i++) {
@@ -781,18 +812,18 @@ public class XmlSubtreeDSMTest {
         // Case 3b: Add one more song at position 0 to existing album list
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "One more Pocketful of Sunshine"));
-        XmlModelNodeImpl songModelNode1 = new XmlModelNodeImpl(SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+        XmlModelNodeImpl songModelNode1 = new XmlModelNodeImpl(m_document, SONG_SCHEMA_PATH, configAttributes, Collections.emptyList(),
                 updatedAlbumModelNode, m_albumNodeId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry,
-                m_subSystemRegistry, null);
+                m_subSystemRegistry, null, null, true, null);
 
         m_aggregatedDSM.createNode(songModelNode1, m_albumNodeId, 0);
-        assertEquals(3, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     @Test
     public void testUpdateModelNodeLibrarySubtree() throws AnnotationAnalysisException, DataStoreException {
         initialiseLibrarySubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
         testUpdateModelNode();
         testUpdateModelNodeWithInsertIndex();
     }
@@ -800,24 +831,24 @@ public class XmlSubtreeDSMTest {
     @Test
     public void testUpdateModelNodeAlbumSubtree() throws AnnotationAnalysisException, DataStoreException {
         initializeAlbumSubtreeEntity();
-        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
         testUpdateModelNode();
 
         //test update of entity attributes as well as xml attrbutes
-        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
+        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId, m_schemaRegistry);
         assertNull(albumModelNode.getAttribute(YEAR_QNAME));
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.clear();
         configAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1947"));
         m_aggregatedDSM.updateNode(albumModelNode, m_artist2NodeId, configAttributes, null, false);
-        albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
+        albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId, m_schemaRegistry);
         Assert.assertEquals("1947", albumModelNode.getAttribute(YEAR_QNAME).getStringValue());
     }
 
     @Test
     public void testUpdateModelNodeChoiceCase() throws Exception {
         initialiseChoiceCaseEntities();
-        List<ModelNode> modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR));
+        List<ModelNode> modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR), m_schemaRegistry);
         assertEquals(1, modelNodes.size());
         ModelNodeWithAttributes cdpNode = (ModelNodeWithAttributes) modelNodes.get(0);
         assertEquals("127.0.0.1", cdpNode.getAttribute(IP_ADDRESS_QNAME).getStringValue());
@@ -827,7 +858,7 @@ public class XmlSubtreeDSMTest {
         configAttrs.put(IP_ADDRESS_QNAME, new GenericConfigAttribute("ip-address", CHOICE_CASE_NS, "135.249.45.153"));
         m_aggregatedDSM.updateNode(cdpNode, getDevice1Id(), configAttrs, null, false);
 
-        modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR));
+        modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR), m_schemaRegistry);
         assertEquals(1, modelNodes.size());
         cdpNode = (ModelNodeWithAttributes) modelNodes.get(0);
         assertEquals("135.249.45.153", cdpNode.getAttribute(IP_ADDRESS_QNAME).getStringValue());
@@ -842,14 +873,14 @@ public class XmlSubtreeDSMTest {
         ModelNodeKey modelNodeKey = new ModelNodeKeyBuilder().appendKey(keyQname, "key-value").build();
         ModelNodeId parentId = new ModelNodeId();
         parentId.addRdn(CONTAINER, YWPCSQ_NS, "root").addRdn(CONTAINER, YWPCSQ_NS, "same-qname1");
-        XmlModelNodeImpl listNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(fromString(YWPCSQ_CLWSQ1_SP_STR), modelNodeKey, parentId);
+        XmlModelNodeImpl listNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(fromString(YWPCSQ_CLWSQ1_SP_STR), modelNodeKey, parentId, m_schemaRegistry);
         QName leafQname = QName.create(YWPCSQ_NS, YWPCSQ_REV, "value-leaf");
         Assert.assertEquals("leaf-value", listNode.getAttribute(leafQname).getStringValue());
 
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.put(leafQname, new GenericConfigAttribute("value-leaf", YWPCSQ_NS, "leaf-value2"));
         m_aggregatedDSM.updateNode(listNode, parentId, configAttributes, null, false);
-        listNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(fromString(YWPCSQ_CLWSQ1_SP_STR), modelNodeKey, parentId);
+        listNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(fromString(YWPCSQ_CLWSQ1_SP_STR), modelNodeKey, parentId, m_schemaRegistry);
         Assert.assertEquals("leaf-value2", listNode.getAttributes().get(leafQname).getStringValue());
     }
 
@@ -858,62 +889,62 @@ public class XmlSubtreeDSMTest {
 
         initialiseParentAndChildSameQName();
         createRootListEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_SP_STR)).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_SP_STR), m_schemaRegistry).size());
 
         try{
-            m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_LIST));
+            m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_LIST), m_schemaRegistry);
             fail("Expected an exception");
         }catch (Exception e){
             //expected
             assertEquals("Stored schema node is a list node, hence listNodes API will not work here, use findNodes API instead", e.getCause().getCause().getMessage());
         }
         XmlModelNodeImpl rootListModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(fromString(YWPCSQ_ROOT_LIST),
-                ModelNodeKey.EMPTY_KEY, new ModelNodeId());
+                ModelNodeKey.EMPTY_KEY, new ModelNodeId(), m_schemaRegistry);
         m_aggregatedDSM.removeNode(rootListModelNode, new ModelNodeId());
-        assertEquals(1, m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_SP_STR)).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_SP_STR), m_schemaRegistry).size());
         try{
-            m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_LIST));
+            m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_LIST), m_schemaRegistry);
             fail("Expected an exception");
         }catch (Exception e){
             //expected
             assertEquals("Stored schema node is a list node, hence listNodes API will not work here, use findNodes API instead", e.getCause().getCause().getMessage());
         }
         XmlModelNodeImpl rootContainerModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(fromString(YWPCSQ_ROOT_SP_STR),
-                ModelNodeKey.EMPTY_KEY, new ModelNodeId());
+                ModelNodeKey.EMPTY_KEY, new ModelNodeId(), m_schemaRegistry);
         m_aggregatedDSM.removeNode(rootContainerModelNode, new ModelNodeId());
-        assertEquals(0, m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_SP_STR)).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(fromString(YWPCSQ_ROOT_SP_STR), m_schemaRegistry).size());
     }
 
     @Test
     public void testRemoveModelNodeLibrarySubtree() throws AnnotationAnalysisException, DataStoreException {
 
         initialiseLibrarySubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
-        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeNode(songModelNode, m_albumNodeId);
-        assertEquals(0, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
-        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
+        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId, m_schemaRegistry);
         m_aggregatedDSM.removeNode(albumModelNode, m_artist2NodeId);
-        assertEquals(2, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
-        XmlModelNodeImpl artistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId);
+        XmlModelNodeImpl artistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeNode(artistModelNode, m_libraryNodeId);
-        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
 
         XmlModelNodeImpl libraryModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY,
-                m_jukeboxNodeId);
+                m_jukeboxNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeNode(libraryModelNode, m_jukeboxNodeId);
-        assertEquals(0, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
 
-        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, new ModelNodeId());
+        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, new ModelNodeId(), m_schemaRegistry);
         m_aggregatedDSM.removeNode(jukeboxModelNode, new ModelNodeId());
-        assertEquals(0, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
 
     }
 
@@ -921,42 +952,42 @@ public class XmlSubtreeDSMTest {
     public void testRemoveModelNodeAlbumSubtree() throws AnnotationAnalysisException, DataStoreException {
 
         initializeAlbumSubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
 
-        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeNode(songModelNode, m_albumNodeId);
-        assertEquals(1, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
 
-        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
+        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId, m_schemaRegistry);
         long currentMillis = System.currentTimeMillis();
         m_aggregatedDSM.removeNode(albumModelNode, m_artist2NodeId);
         assertTrue(Album.c_lastSetXmlSubtreeCall >= currentMillis);
         assertEquals("", Album.c_lastSetXmlSubtreeStr);
-        assertEquals(1, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
 
-        ModelNode artistModelNode = m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId);
+        ModelNode artistModelNode = m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeNode(artistModelNode, m_libraryNodeId);
-        assertEquals(1, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
 
-        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, new ModelNodeId());
+        ModelNode jukeboxModelNode = m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, new ModelNodeId(), m_schemaRegistry);
         m_aggregatedDSM.removeNode(jukeboxModelNode, new ModelNodeId());
-        assertEquals(0, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     @Test
     public void testRemoveModelNodeChoiceCase() throws Exception {
         initialiseChoiceCaseEntities();
-        List<ModelNode> modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR));
+        List<ModelNode> modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR), m_schemaRegistry);
         assertEquals(1, modelNodes.size());
         ModelNodeWithAttributes cdpNode = (ModelNodeWithAttributes) modelNodes.get(0);
 
         m_aggregatedDSM.removeNode(cdpNode, getDevice1Id());
 
-        modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR));
+        modelNodes = m_aggregatedDSM.listNodes(fromString(CONF_DEVICE_PROP_SP_STR), m_schemaRegistry);
         assertEquals(0, modelNodes.size());
     }
 
@@ -964,33 +995,33 @@ public class XmlSubtreeDSMTest {
     public void testRemoveAllModelNodeLibrarySubtree() throws AnnotationAnalysisException, DataStoreException {
 
         initialiseLibrarySubtreeEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
-        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
+        XmlModelNodeImpl albumModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId, m_schemaRegistry);
         m_aggregatedDSM.removeAllNodes(albumModelNode, SONG_SCHEMA_PATH, m_artist2NodeId);
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(0, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
-        XmlModelNodeImpl artistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId);
+        XmlModelNodeImpl artistModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeAllNodes(artistModelNode, ALBUM_SCHEMA_PATH, m_libraryNodeId);
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         XmlModelNodeImpl libraryModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY,
-                m_jukeboxNodeId);
+                m_jukeboxNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeAllNodes(libraryModelNode, ARTIST_SCHEMA_PATH, m_jukeboxNodeId);
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(0, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
 
     }
 
@@ -999,47 +1030,47 @@ public class XmlSubtreeDSMTest {
 
         initializeAlbumSubtreeEntity();
 
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
 
-        ModelNode albumModelNode = m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId);
+        ModelNode albumModelNode = m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH, ALBUM2_KEY, m_artist2NodeId, m_schemaRegistry);
         m_aggregatedDSM.removeAllNodes(albumModelNode, SONG_SCHEMA_PATH, m_artist2NodeId);
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
-        assertEquals(0, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(3, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
+        assertEquals(0, m_aggregatedDSM.listChildNodes(SONG_SCHEMA_PATH, m_albumNodeId, m_schemaRegistry).size());
 
-        ModelNode artistModelNode = m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId);
+        ModelNode artistModelNode = m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH, ARTIST2_KEY, m_libraryNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeAllNodes(artistModelNode, ALBUM_SCHEMA_PATH, m_libraryNodeId);
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
-        assertEquals(0, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(0, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, m_artist2NodeId, m_schemaRegistry).size());
 
-        ModelNode libraryModelNode = m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, m_jukeboxNodeId);
+        ModelNode libraryModelNode = m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH, ModelNodeKey.EMPTY_KEY, m_jukeboxNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeAllNodes(libraryModelNode, ARTIST_SCHEMA_PATH, m_jukeboxNodeId);
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(0, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(0, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
     }
 
     @Test
     public void testEmbeddedChoiceCase() throws AnnotationAnalysisException, DataStoreException {
         initialiseEmbeddedChoiceCase();
-        assertEquals(1,m_aggregatedDSM.listNodes(ROOT_CONTAINER_PATH).size());
-        assertEquals(1,m_aggregatedDSM.listNodes(TCONTS_PATH).size());
-        assertEquals(1,m_aggregatedDSM.listNodes(TM_ROOT_PATH).size());
-        assertEquals(2,m_aggregatedDSM.listNodes(QUEUE_PATH).size());
+        assertEquals(1,m_aggregatedDSM.listNodes(ROOT_CONTAINER_PATH, m_schemaRegistry).size());
+        assertEquals(1,m_aggregatedDSM.listNodes(TCONTS_PATH, m_schemaRegistry).size());
+        assertEquals(1,m_aggregatedDSM.listNodes(TM_ROOT_PATH, m_schemaRegistry).size());
+        assertEquals(2,m_aggregatedDSM.listNodes(QUEUE_PATH, m_schemaRegistry).size());
 
         ModelNodeId parentId = new ModelNodeId("/container=root-container/container=tconts/name=tcont-1-1-1/container=tm-root", NS);
         Map<QName, String> keys = new TreeMap<>();
         keys.put(ID_QNAME, "0");
         ModelNodeKey key = new ModelNodeKey(keys);
-        ModelNodeWithAttributes initialQueue = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(QUEUE_PATH,key,parentId);
+        ModelNodeWithAttributes initialQueue = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(QUEUE_PATH,key,parentId, m_schemaRegistry);
         assertEquals("3", initialQueue.getAttribute(PRIORITY_QNAME).getStringValue());
         assertEquals("1",initialQueue.getAttribute(WEIGHT_QNAME).getStringValue());
 
@@ -1047,18 +1078,28 @@ public class XmlSubtreeDSMTest {
         configAttrs.put(WEIGHT_QNAME,new GenericConfigAttribute(WEIGHT, NS, "2"));
         m_aggregatedDSM.updateNode(initialQueue,parentId,configAttrs,null, false);
 
-        ModelNodeWithAttributes updatedQueue = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(QUEUE_PATH,key,parentId);
+        ModelNodeWithAttributes updatedQueue = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(QUEUE_PATH,key,parentId, m_schemaRegistry);
         assertEquals("2", updatedQueue.getAttribute(WEIGHT_QNAME).getStringValue());
         assertEquals("3", initialQueue.getAttribute(PRIORITY_QNAME).getStringValue());
     }
 
     @Test
-    public void testFindNodesLikeLikeWorksWithPrefixMatch() throws AnnotationAnalysisException, DataStoreException {
+    public void testFindVisibleNodesLikeReturnsOnlyVisibleNodesInfo() throws AnnotationAnalysisException, DataStoreException {
+        initializeAlbumSubtreeEntity();
+        Map<QName, String> keys = new LinkedHashMap<>();
+        keys.clear();
+        keys.put(NAME_QNAME, "album2");
+        List<ListEntryInfo> matchingNodes = m_aggregatedDSM.findVisibleNodesLike(ALBUM_SCHEMA_PATH, m_artist2NodeId, keys, 5, m_schemaRegistry);
+        assertEquals(2, matchingNodes.size());
+    }
+
+    @Test
+    public void testFindVisibleNodesLikeLikeWorksWithPrefixMatch() throws AnnotationAnalysisException, DataStoreException {
 
         initializeAlbumSubtreeEntity();
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME, "album2");
-        List<ListEntryInfo> matchingNodes = m_aggregatedDSM.findNodesLike(ALBUM_SCHEMA_PATH, m_artist2NodeId, keys, 2);
+        List<ListEntryInfo> matchingNodes = m_aggregatedDSM.findVisibleNodesLike(ALBUM_SCHEMA_PATH, m_artist2NodeId, keys, 2, m_schemaRegistry);
         assertEquals(2, matchingNodes.size());
         assertTrue(matchingNodes.get(0).getKeys().values().iterator().next().startsWith("album2"));
         assertEquals("name", matchingNodes.get(0).getKeys().keySet().iterator().next().getKeyLocalName());
@@ -1070,23 +1111,23 @@ public class XmlSubtreeDSMTest {
     }
 
     @Test
-    public void testFindNodesLikeLikeWorksWithExactMatch() throws AnnotationAnalysisException, DataStoreException {
+    public void testFindVisibleNodesLikeLikeWorksWithExactMatch() throws AnnotationAnalysisException, DataStoreException {
 
         initializeAlbumSubtreeEntity();
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME, "album22");
-        List<ListEntryInfo> matchingNodes = m_aggregatedDSM.findNodesLike(ALBUM_SCHEMA_PATH, m_artist2NodeId, keys, 2);
+        List<ListEntryInfo> matchingNodes = m_aggregatedDSM.findVisibleNodesLike(ALBUM_SCHEMA_PATH, m_artist2NodeId, keys, 2, m_schemaRegistry);
         assertEquals(1, matchingNodes.size());
         assertTrue(matchingNodes.get(0).getKeys().values().iterator().next().equalsIgnoreCase("album22"));
     }
 
     @Test
-    public void testFindNodesLikeLikeHonorsMaxResult() throws AnnotationAnalysisException, DataStoreException {
+    public void testFindVisibleNodesLikeLikeHonorsMaxResult() throws AnnotationAnalysisException, DataStoreException {
         initializeAlbumSubtreeEntity();
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.clear();
         keys.put(NAME_QNAME, "album2");
-        List<ListEntryInfo> matchingNodes = m_aggregatedDSM.findNodesLike(ALBUM_SCHEMA_PATH, m_artist2NodeId, keys, 1);
+        List<ListEntryInfo> matchingNodes = m_aggregatedDSM.findVisibleNodesLike(ALBUM_SCHEMA_PATH, m_artist2NodeId, keys, 1, m_schemaRegistry);
         assertEquals(1, matchingNodes.size());
     }
 
@@ -1146,6 +1187,35 @@ public class XmlSubtreeDSMTest {
     }
 
     // Helper methods
+    private void initializeRootNode() throws Exception {
+        final String componentId = "Root";
+        List<Class> classes = new ArrayList<>();
+        classes.add(RootEntity.class);
+        Map<SchemaPath, Class> rootNodeMap = new HashMap<>();
+        rootNodeMap.put(fromString(YWEC_ROOT_SP_STR), RootEntity.class);
+        m_entityRegistry.addSchemaPaths(componentId, rootNodeMap);
+        m_modelNodeDSMRegistry.register(componentId, fromString(YWEC_ROOT_SP_STR), m_xmlSubtreeDSM);
+        EntityRegistryBuilder.updateEntityRegistry(componentId, classes, m_entityRegistry,
+                m_schemaRegistry, m_persistenceManagerUtil.getEntityDataStoreManager(), m_modelNodeDSMRegistry);
+        createRootNodeWithEmptyXmlSubtree();
+    }
+
+    private void createRootNodeWithEmptyXmlSubtree() {
+        EntityDataStoreManager entityDataStoreManager = m_persistenceManagerUtil.getEntityDataStoreManager();
+        entityDataStoreManager.beginTransaction();
+        try {
+            RootEntity root = new RootEntity();
+            root.setParentId(EMPTY_NODE_ID.getModelNodeIdAsString());
+            String subtree = "";
+            root.setXmlSubtree(subtree);
+            entityDataStoreManager.create(root);
+            entityDataStoreManager.commitTransaction();
+        } catch (Exception e) {
+            entityDataStoreManager.rollbackTransaction();
+            throw e;
+        }
+    }
+
     private void initialiseParentAndChildSameQName() throws Exception {
         List<Class> classes = new ArrayList<>();
         classes.add(Root.class);
@@ -1257,23 +1327,23 @@ public class XmlSubtreeDSMTest {
     }
 
     private void testUpdateModelNode() throws DataStoreException {
-        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         QName locationQname = QName.create(JB_NS, JB_REVISION, "location");
         assertNull(songModelNode.getAttribute(locationQname));
 
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.put(locationQname, new GenericConfigAttribute(LOCATION, JB_NS, "somelocation"));
         m_aggregatedDSM.updateNode(songModelNode, m_albumNodeId, configAttributes, null, false);
-        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         Assert.assertEquals("somelocation", songModelNode.getAttributes().get(locationQname).getStringValue());
 
         configAttributes.put(locationQname, null);
         m_aggregatedDSM.updateNode(songModelNode, m_albumNodeId, configAttributes, null, false);
-        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         assertNull(songModelNode.getAttribute(locationQname));
 
         // Verify there is no singer
-        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         assertNull(songModelNode.getLeafList(SINGER_QNAME));
 
         // Update with one singer
@@ -1282,13 +1352,13 @@ public class XmlSubtreeDSMTest {
         values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
         leafLists.put(SINGER_QNAME, values);
         m_aggregatedDSM.updateNode(songModelNode, m_albumNodeId, null, leafLists, false);
-        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         Assert.assertEquals(1, songModelNode.getLeafList(SINGER_QNAME).size());
     }
 
     private void testUpdateModelNodeWithInsertIndex() throws DataStoreException {
 
-        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
         List<ConfigLeafAttribute> valuesList = new ArrayList<>();
@@ -1296,18 +1366,18 @@ public class XmlSubtreeDSMTest {
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>(valuesList);
         leafLists.put(SINGER_QNAME, values);
         m_aggregatedDSM.updateNode(getSingerModelNode("Singer1", m_songNodeId), m_songNodeId, null, leafLists, 0, false);
-        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId);
+        XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH, SONG_KEY, m_albumNodeId, m_schemaRegistry);
         Assert.assertEquals(1, songModelNode.getLeafList(SINGER_QNAME).size());
     }
 
     private XmlModelNodeImpl getSingerModelNode(String singerName, ModelNodeId parentId) throws DataStoreException {
         Map<QName, ConfigLeafAttribute> configAttributes;
         XmlModelNodeImpl songModelNode = (XmlModelNodeImpl) m_aggregatedDSM.findNode(SONG_SCHEMA_PATH,
-                new ModelNodeKeyBuilder().appendKey(NAME_QNAME, "My Song").build(), m_albumNodeId);
+                new ModelNodeKeyBuilder().appendKey(NAME_QNAME, "My Song").build(), m_albumNodeId, m_schemaRegistry);
         configAttributes = new HashMap<>();
         configAttributes.put(SINGER_QNAME, new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, singerName));
-        XmlModelNodeImpl singerModelNode = new XmlModelNodeImpl(SINGER_SCHEMA_PATH, configAttributes, Collections.emptyList(),
-                songModelNode, parentId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, null);
+        XmlModelNodeImpl singerModelNode = new XmlModelNodeImpl(m_document, SINGER_SCHEMA_PATH, configAttributes, Collections.emptyList(),
+                songModelNode, parentId, m_xmlModelNodeToXmlMapper, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, null, null, true, null);
         return singerModelNode;
     }
 
@@ -1367,6 +1437,7 @@ public class XmlSubtreeDSMTest {
         modelNodeDSMRegistry.register("Jukebox", LIBRARY_SCHEMA_PATH, m_xmlSubtreeDSM);
         modelNodeDSMRegistry.register("Jukebox", ARTIST_SCHEMA_PATH, m_xmlSubtreeDSM);
         modelNodeDSMRegistry.register("Jukebox", ALBUM_SCHEMA_PATH, m_xmlSubtreeDSM);
+        modelNodeDSMRegistry.register("Jukebox", ADMIN_SCHEMA_PATH, m_xmlSubtreeDSM);
         modelNodeDSMRegistry.register("Jukebox", SONG_SCHEMA_PATH, m_xmlSubtreeDSM);
         modelNodeDSMRegistry.register("Jukebox", SINGER_SCHEMA_PATH, m_xmlSubtreeDSM);
         modelNodeDSMRegistry.register("Jukebox", CD_SCHEMA_PATH, m_xmlSubtreeDSM);
@@ -1416,8 +1487,18 @@ public class XmlSubtreeDSMTest {
         album22.setInsertOrder(2);
         String albumSubtree = TestUtil.loadAsString(ALBUM_SUBTREE_XML);
         album22.setXmlSubtree(albumSubtree);
+
+        Album album23 = new Album();
+        album23.setParentId(m_artist2NodeId.getModelNodeIdAsString());
+        album23.setSchemaPath(SchemaPathUtil.toStringNoRev(ALBUM_SCHEMA_PATH));
+        album23.setName("album23");
+        album23.setInsertOrder(3);
+        album23.setVisibility(false);
+
         albums.add(album21);
         albums.add(album22);
+        albums.add(album23);
+
         artist2.setAlbums(albums);
 
         List<Artist> artists = new ArrayList<>();
@@ -1497,7 +1578,7 @@ public class XmlSubtreeDSMTest {
     }
 
     @YangContainer(name = "device-manager", namespace = CHOICE_CASE_NS, revision = "2015-12-14")
-    @Entity
+    @Entity(name = "DM")
     @Table(name = "DM")
     class DeviceManager {
         @Id
@@ -1575,7 +1656,7 @@ public class XmlSubtreeDSMTest {
     }
 
     @YangList(name = "device-holder", namespace = CHOICE_CASE_NS, revision = "2015-12-14")
-    @Entity
+    @Entity(name = "DH")
     @IdClass(value = DeviceHolderPK.class)
     @Table(name = "DH")
     class DeviceHolder {
@@ -1667,7 +1748,7 @@ public class XmlSubtreeDSMTest {
     }
 
     @YangList(name = "device", namespace = CHOICE_CASE_NS, revision = "2015-12-14")
-    @Entity
+    @Entity(name = "D")
     @IdClass(DevicePK.class)
     @Table(name = "D")
     class Device {
@@ -1747,7 +1828,7 @@ public class XmlSubtreeDSMTest {
     }
 
     @YangContainer(name = "configured-device-properties", namespace = CHOICE_CASE_NS, revision = "2015-12-14")
-    @Entity
+    @Entity(name = "CDP")
     @Table(name = "CDP")
     class ConfiguredDeviceProperties {
         @Id
@@ -1798,16 +1879,6 @@ public class XmlSubtreeDSMTest {
         public void setIpPort(String ipPort) {
             this.ipPort = ipPort;
         }
-    }
-
-    @After
-    public void tearDown(){
-        RequestScope.resetScope();
-    }
-
-    @AfterClass
-    public static void tearDownClass(){
-        RequestScope.setEnableThreadLocalInUT(false);
     }
 
     private interface ScopeTemplate<T> {

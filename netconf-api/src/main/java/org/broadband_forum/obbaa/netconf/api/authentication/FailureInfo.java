@@ -25,6 +25,7 @@ public class FailureInfo {
     private PointOfFailure m_pointOfFailure;
     
     private X509Certificate m_peerCertificate;
+    private boolean m_channelClosed = false;
 
     public String getIp() {
         return m_ip;
@@ -99,4 +100,11 @@ public class FailureInfo {
         return this;
     }
 
+    public void setChannelClosed(boolean channelClosed) {
+        m_channelClosed = channelClosed;
+    }
+
+    public boolean isChannelClosed() {
+        return m_channelClosed;
+    }
 }

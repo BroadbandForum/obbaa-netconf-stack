@@ -1,6 +1,6 @@
 <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
 	<data>
-		<validation:validation xmlns:validation="urn:org:bbf:pma:validation">
+		<validation:validation xmlns:validation="urn:org:bbf2:pma:validation">
 			<validation:choicecase>
 				<validation:leaf-case1>Default value 1</validation:leaf-case1>
 				<validation:name>create leaf of empty type</validation:name>

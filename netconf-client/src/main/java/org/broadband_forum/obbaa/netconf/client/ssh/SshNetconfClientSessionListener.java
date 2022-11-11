@@ -16,59 +16,81 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
-import java.io.ByteArrayOutputStream;
+import static org.broadband_forum.obbaa.netconf.api.util.ByteBufUtils.reInitializeByteBuf;
+import static org.broadband_forum.obbaa.netconf.api.util.ByteBufUtils.releaseByteBuf;
+
 import java.io.IOException;
 
 import org.apache.sshd.client.channel.ChannelSubsystem;
 import org.apache.sshd.common.future.SshFutureListener;
 import org.apache.sshd.common.io.IoReadFuture;
 import org.apache.sshd.common.util.buffer.Buffer;
-import org.w3c.dom.Document;
-
 import org.broadband_forum.obbaa.netconf.api.LogAppNames;
-import org.broadband_forum.obbaa.netconf.api.MessageToolargeException;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.w3c.dom.Document;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import io.netty.buffer.ByteBuf;
 
 public class SshNetconfClientSessionListener implements SshFutureListener<IoReadFuture> {
-    ByteArrayOutputStream m_baosOut = new ByteArrayOutputStream();
+    private ByteBuf m_byteBuf;
     private ChannelSubsystem m_clientChannel;
     private SshNetconfClientSession m_clientSession;
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SshNetconfClientSessionListener.class, LogAppNames.NETCONF_LIB);
 
 
-    public SshNetconfClientSessionListener(ChannelSubsystem channel, SshNetconfClientSession clientSession) {
+    public SshNetconfClientSessionListener(ChannelSubsystem channel, SshNetconfClientSession clientSession, ByteBuf byteBuf) {
         this.m_clientChannel = channel;
         this.m_clientSession = clientSession;
+        m_byteBuf = byteBuf;
     }
 
     @Override
     public void operationComplete(IoReadFuture future) {
-        try {
-            if (!(m_clientChannel.isClosed() || m_clientChannel.isClosing())) {
+        if (!(m_clientChannel.isClosed() || m_clientChannel.isClosing())) {
+            Buffer buffer = null;
+            try {
                 future.verify();
-                Buffer buffer = future.getBuffer();
-                m_baosOut.write(buffer.array(), buffer.rpos(), buffer.available());
-                String rpcReply = m_baosOut.toString();
-                Document replyDoc = null;
+                buffer = future.getBuffer();
+                m_byteBuf.writeBytes(buffer.array(), buffer.rpos(), buffer.available());
                 try {
-                    replyDoc = m_clientSession.getCodec().decode(rpcReply);
-                    if (replyDoc != null) {
-                        m_clientSession.responseRecieved(replyDoc);
-                        m_baosOut = new ByteArrayOutputStream();
+                    boolean readFurther = true;
+                    while (readFurther) {
+                        DocumentInfo documentInfo = m_clientSession.getCodec().decode(m_byteBuf);
+                        if (documentInfo != null && documentInfo.getDocument() != null) {
+                            m_clientSession.responseRecieved(documentInfo);
+                        } else {
+                            readFurther = false;
+                        }
                     }
-                } catch (MessageToolargeException e) {
-                    LOGGER.warn("Closing netconf session, incoming message too long to decode", e);
-                    m_clientSession.close();
+                } catch (NetconfMessageBuilderException e) {
+                    LOGGER.error("Error - got malformed XML from {}", m_clientSession ,e);
                 }
-                buffer.rpos(buffer.rpos() + buffer.available());
-                buffer.compact();
+            } catch (Exception e) {
+                LOGGER.error("Error while processing message, closing the session", e);
+                try {
+                    m_clientSession.close();
+                    releaseByteBuf(m_byteBuf);
+                } catch (IOException ex) {
+                    LOGGER.error("Error while closing the session", ex);
+                }
+            } finally {
+                if (buffer != null) {
+                    buffer.rpos(buffer.rpos() + buffer.available());
+                    buffer.compact();
+                }
+                m_byteBuf = reInitializeByteBuf(m_byteBuf);
                 m_clientChannel.getAsyncOut().read(buffer).addListener(this);
             }
-        } catch (NetconfMessageBuilderException | IOException e) {
-            LOGGER.error("Error while processing request ", e);
         }
     }
 
+    @VisibleForTesting
+    public ByteBuf getByteBuf() {
+        return m_byteBuf;
+    }
 }

@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-public class GetConfigRequestTest {
+public class GetConfigRequestTest extends RpcTypeTest{
 
     public static final String RUNNING_DATA_STORE = StandardDataStores.RUNNING;
     private String m_source = RUNNING_DATA_STORE;
@@ -36,6 +36,10 @@ public class GetConfigRequestTest {
     private int m_depth = 1;
     private int m_withDelay = 1;
     private String m_messageId = "101";
+
+    public GetConfigRequestTest() {
+        super(new GetConfigRequest().setSourceRunning());
+    }
 
     @Test
     public void testSetAndGetSource() {

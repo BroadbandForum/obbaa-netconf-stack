@@ -5,7 +5,7 @@
     </target>
     <test-option>set</test-option>
     <config>
-      <pma:pma xmlns:pma="urn:org:bbf:pma" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+      <pma:pma xmlns:pma="urn:org:bbf2:pma" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
         <pma:pma-list yang:insert="after" yang:key="[ex:key1='1']">
 	    	<pma:key1>1</pma:key1>
 	        <pma:key2>2</pma:key2>

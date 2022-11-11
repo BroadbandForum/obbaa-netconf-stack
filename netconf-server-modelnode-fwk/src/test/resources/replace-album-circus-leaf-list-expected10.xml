@@ -1,0 +1,66 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+   <data>
+      <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">
+         <jbox:library>
+            <jbox:artist>
+               <jbox:name>Lenny</jbox:name>
+               <jbox:album>
+                  <jbox:name>Greatest hits</jbox:name>
+                  <jbox:genre>jbox:jazz</jbox:genre>
+                  <jbox:year>2000</jbox:year>
+                  <jbox:song>
+                     <jbox:name>Are you gonne go my way</jbox:name>
+                     <jbox:format>mp3</jbox:format>
+                     <jbox:length>320</jbox:length>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:singer>Michael</jbox:singer>
+                     <jbox:singer>Anderson</jbox:singer>
+                     <jbox:singer>Jackson</jbox:singer>
+                  </jbox:song>
+                  <jbox:song>
+                     <jbox:name>Fly Away</jbox:name>
+                     <jbox:format>flac</jbox:format>
+                     <jbox:length>480</jbox:length>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:singer>Jackson</jbox:singer>
+                     <jbox:singer>Madona</jbox:singer>
+                  </jbox:song>
+                  <jbox:admin>
+                     <jbox:catalogue-number>521</jbox:catalogue-number>
+                     <jbox:label>Sony</jbox:label>
+                  </jbox:admin>
+               </jbox:album>
+               <jbox:album>
+                  <jbox:name>Circus</jbox:name>
+                  <jbox:genre>jbox:rock</jbox:genre>
+                  <jbox:year>1995</jbox:year>
+                  <jbox:song>
+                     <jbox:name>Rock and roll is dead</jbox:name>
+                     <jbox:format>amr</jbox:format>
+                     <jbox:length>600</jbox:length>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:singer>Peter</jbox:singer>
+                  </jbox:song>
+                  <jbox:song>
+                     <jbox:name>Circus</jbox:name>
+                     <jbox:singer-ordered-by-user>Angelina</jbox:singer-ordered-by-user>
+                     <jbox:singer-ordered-by-user>Johnson</jbox:singer-ordered-by-user>
+                     <jbox:singer-ordered-by-user>Micheal</jbox:singer-ordered-by-user>
+                  </jbox:song>
+                  <jbox:song>
+                     <jbox:name>Beyond the 7th Sky</jbox:name>
+                     <jbox:format>mp3</jbox:format>
+                     <jbox:length>420</jbox:length>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:singer>Julie</jbox:singer>
+                  </jbox:song>
+                  <jbox:admin>
+                     <jbox:catalogue-number>8421</jbox:catalogue-number>
+                     <jbox:label>Sony</jbox:label>
+                  </jbox:admin>
+               </jbox:album>
+            </jbox:artist>
+         </jbox:library>
+      </jbox:jukebox>
+   </data>
+</rpc-reply>

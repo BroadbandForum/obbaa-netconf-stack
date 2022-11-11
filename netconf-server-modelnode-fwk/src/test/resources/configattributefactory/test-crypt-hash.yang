@@ -1,0 +1,59 @@
+module test-crypt-hash {
+  yang-version 1;
+  namespace "unit:test:caft:test-crypt-hash";
+  prefix tch;
+
+  import iana-crypt-hash {
+    prefix ianach;
+  }
+
+  revision 2020-04-23 {
+    description
+      "Initial version.";
+  }
+
+  typedef hashWrapType {
+      type ianach:crypt-hash;
+    }
+
+  container tch-container {
+      leaf crypt-hash-leaf {
+        type ianach:crypt-hash;
+      }
+
+      leaf crypt-hash-leaf-default {
+        default "$0$default";
+        type ianach:crypt-hash;
+      }
+
+      leaf crypt-hash-leaf-default-hashed {
+        default "$1$P2IlIQXd$YS2.pz1dxDGOh9g2PlGct.";
+        type ianach:crypt-hash;
+      }
+
+     leaf-list crypt-hash-leaf-list {
+        type ianach:crypt-hash;
+     }
+
+     leaf crypt-hash-union {
+        type union {
+           type ianach:crypt-hash;
+           type int32;
+        }
+     }
+
+     list crypt-hash-for-list {
+       key "crypt-hash-under-list";
+        leaf crypt-hash-under-list {
+           type ianach:crypt-hash;
+        }
+        leaf-list leaf-list-under-list {
+           type ianach:crypt-hash;
+        }
+     }
+
+     leaf crypt-hash-with-wrap {
+        type hashWrapType;
+     }
+  }
+}

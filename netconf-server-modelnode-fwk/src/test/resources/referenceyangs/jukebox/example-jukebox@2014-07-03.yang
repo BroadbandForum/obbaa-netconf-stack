@@ -242,6 +242,25 @@ module example-jukebox {
           }  // list album
         }  // list artist
 
+        list mixed-genres {
+           key "genre genre2";
+             ordered-by user;
+             description
+               "add new genre mixes";
+
+            leaf genre {
+             type identityref {
+               base genre;
+              }
+            }
+
+            leaf genre2 {
+              type identityref {
+                base gn:base-genre2;
+              }
+            }
+          } // list mixed-genres
+
         leaf artist-count {
           type uint32;
           units "songs";

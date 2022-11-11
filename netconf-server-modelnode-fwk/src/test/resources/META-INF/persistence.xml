@@ -69,7 +69,7 @@
       <property name="hibernate.c3p0.idle_test_period" value="2000" />
 
       <!--  Second Level Ehcache Configuration -->
-      <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory"/>
+      <property name="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.internal.SingletonEhcacheRegionFactory"/>
       <property name="hibernate.cache.use_second_level_cache" value="true"/>
       <property name="hibernate.cache.provider_configuration_file_resource_path" value="ehcache.xml" />
     </properties>

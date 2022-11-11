@@ -34,6 +34,11 @@ public class NetconfClientInfo {
 
     private ContextSetter m_clientContextSetter = new ContextSetter() {
         @Override
+        public Serializable getSessionId() {
+            return "";
+        }
+
+        @Override
         public void setContext() {
         }
 

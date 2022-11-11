@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
@@ -17,8 +33,17 @@ import org.broadband_forum.obbaa.netconf.api.parser.YangParserUtil;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterMatchNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
@@ -27,20 +52,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterMatchNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterUtil;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-
+@RunWith(RequestScopeJunitRunner.class)
 public class SubtreeFilterUtilTest {
 
     private static final String INTF_NS = "urn:ietf:params:xml:ns:yang:ietf-interfaces";
     private static final String DEVICE_HOLDER_NS = "http://www.test-company.com/solutions/anv-device-holders";
 
-    public static final String UNIVERSE1 = "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+    public static final String UNIVERSE1 = "    <universe xmlns=\"http://test-company/country-universe\">\n" +
             "        <name>universe 1</name>\n" +
             "        <galaxy>\n" +
             "            <name>Milky way</name>\n" +
@@ -114,13 +132,13 @@ public class SubtreeFilterUtilTest {
             "        </galaxy>\n" +
             "    </universe>\n";
     
-    private static final String SPACE_TIME = "<space-time xmlns=\"http://test-company.test/country-universe\">\n"+
+    private static final String SPACE_TIME = "<space-time xmlns=\"http://test-company/country-universe\">\n"+
                                             "<type>black-hole</type>"+
                                             "<mass>10000</mass>"+
                                             "<angular-momentum>600000</angular-momentum>"+
                                             "</space-time>"; 
     
-    private static final String SPACE_TIME2 = "<space-time xmlns=\"http://test-company.test/country-universe\">\n"+
+    private static final String SPACE_TIME2 = "<space-time xmlns=\"http://test-company/country-universe\">\n"+
             "<type>black-hole</type>"+
             "<mass>10000</mass>"+
             "<angular-momentum>600000</angular-momentum>"+
@@ -129,7 +147,7 @@ public class SubtreeFilterUtilTest {
             "</charge>"+            
             "</space-time>";
     
-    private static final String SPACE_TIME3 = "<space-time xmlns=\"http://test-company.test/country-universe\">\n"+
+    private static final String SPACE_TIME3 = "<space-time xmlns=\"http://test-company/country-universe\">\n"+
             "<type>black-hole</type>"+            
             "<charge>"+
             "<type>negative</type>"+
@@ -140,7 +158,7 @@ public class SubtreeFilterUtilTest {
     
     private static final String FULL_DS_STR = "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +             
             UNIVERSE1 +
-            "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+            "    <universe xmlns=\"http://test-company/country-universe\">\n" +
             "        <name>parallel universe</name>\n" +
             "        <galaxy>\n" +
             "            <name>Milky way</name>\n" +
@@ -174,7 +192,7 @@ public class SubtreeFilterUtilTest {
             "            </planetary-system>\n" +
             "        </galaxy>\n" +
             "    </universe>\n" +
-            "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+            "    <world xmlns=\"http://test-company/country-universe\">\n" +
             "        <no-of-countires>2</no-of-countires>\n" +
             "        <country>\n" +
             "            <country-name>India</country-name>\n" +
@@ -244,12 +262,12 @@ public class SubtreeFilterUtilTest {
         Element unfilteredXml = getFullDsXml();
         Element filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\"/>\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\"/>\n" +
                         "</filter>");
         Element filteredXml = m_util.filter(unfilteredXml, filter);
         String expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <no-of-countires>2</no-of-countires>\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
@@ -308,14 +326,14 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country/>\n" +
                         "    </world>\n" +
                         "</filter>");
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
                         "            <no-of-states>2</no-of-states>\n" +
@@ -363,7 +381,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name/>\n" +
                         "            <no-of-states/>\n" +
@@ -373,7 +391,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
                         "            <no-of-states>2</no-of-states>\n" +
@@ -388,7 +406,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name/>\n" +
                         "        </country>\n" +
@@ -397,7 +415,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
                         "        </country>\n" +
@@ -422,7 +440,7 @@ public class SubtreeFilterUtilTest {
         unfilteredXml.appendChild(childElement);        
         Element filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <space-time xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <space-time xmlns=\"http://test-company/country-universe\">\n" +
                         "<charge>"+
                         "<type/>"+
                         "</charge>"+
@@ -434,7 +452,7 @@ public class SubtreeFilterUtilTest {
         
         String expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"+
-        "<space-time xmlns=\"http://test-company.test/country-universe\">"+
+        "<space-time xmlns=\"http://test-company/country-universe\">"+
         "<type>black-hole</type>"+
         "<angular-momentum>600000</angular-momentum>"+
         "<mass>10000</mass>"+
@@ -458,7 +476,7 @@ public class SubtreeFilterUtilTest {
         
         Element filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <space-time xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <space-time xmlns=\"http://test-company/country-universe\">\n" +
                         "<charge>"+
                         "<type/>"+
                         "</charge>"+
@@ -467,7 +485,7 @@ public class SubtreeFilterUtilTest {
                         "</filter>");
         
         String expectedXmlStr = "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"+
-                "<space-time xmlns=\"http://test-company.test/country-universe\">"+
+                "<space-time xmlns=\"http://test-company/country-universe\">"+
                 "<type>black-hole</type>"+
                 "<charge>"+
                 "<type>negative</type>"+
@@ -491,7 +509,7 @@ public class SubtreeFilterUtilTest {
         unfilteredXml.appendChild(childElement);        
         Element filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <space-time xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <space-time xmlns=\"http://test-company/country-universe\">\n" +
                         "<charge>"+
                         "<type/>"+
                         "</charge>"+
@@ -503,7 +521,7 @@ public class SubtreeFilterUtilTest {
                         "</filter>");       
         
         String expectedXmlStr = "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"+
-                "<space-time xmlns=\"http://test-company.test/country-universe\">"+
+                "<space-time xmlns=\"http://test-company/country-universe\">"+
                 "<type>black-hole</type>"+
                 "<charge>"+
                 "<type>negative</type>"+
@@ -521,12 +539,12 @@ public class SubtreeFilterUtilTest {
         Element unfilteredXml = getFullDsXml();
         Element filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\"/>\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\"/>\n" +
                         "</filter>");
         Element filteredXml = m_util.filter(unfilteredXml, filter);
         String expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>universe 1</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -599,7 +617,7 @@ public class SubtreeFilterUtilTest {
                         "            </planetary-system>\n" +
                         "        </galaxy>\n" +
                         "    </universe>\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>parallel universe</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -648,14 +666,14 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <galaxy/>\n" +
                         "    </universe>\n" +
                         "</filter>");
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>universe 1</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -728,7 +746,7 @@ public class SubtreeFilterUtilTest {
                         "            </planetary-system>\n" +
                         "        </galaxy>\n" +
                         "    </universe>\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>parallel universe</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -767,7 +785,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <galaxy>\n" +
                         "            <name/>\n" +
                         "            <pet-name/>\n" +
@@ -777,7 +795,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
                         "            <pet-name>My home galaxy</pet-name>\n" +
@@ -788,7 +806,7 @@ public class SubtreeFilterUtilTest {
                         "        </galaxy>\n" +
                         "        <name>universe 1</name>\n" +
                         "    </universe>\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
                         "            <pet-name>My home galaxy</pet-name>\n" +
@@ -800,7 +818,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <galaxy>\n" +
                         "            <pet-name/>\n" +
                         "        </galaxy>\n" +
@@ -809,7 +827,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
                         "            <pet-name>My home galaxy</pet-name>\n" +
@@ -820,7 +838,7 @@ public class SubtreeFilterUtilTest {
                         "        </galaxy>\n" +
                         "        <name>universe 1</name>\n" +
                         "    </universe>\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
                         "            <pet-name>My home galaxy</pet-name>\n" +
@@ -837,7 +855,7 @@ public class SubtreeFilterUtilTest {
         Element unfilteredXml = getFullDsXml();
         Element filter = getElement(
                 "<filter type=\"subtree\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
                         "        </country>\n" +
@@ -846,7 +864,7 @@ public class SubtreeFilterUtilTest {
         Element filteredXml = m_util.filter(unfilteredXml, filter);
         String expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
                         "            <no-of-states>2</no-of-states>\n" +
@@ -881,7 +899,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" type=\"subtree\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <state>\n" +
                         "                <district>\n" +
@@ -894,7 +912,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
                         "            <state>\n" +
@@ -911,7 +929,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" type=\"subtree\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <state>\n" +
                         "                <district>\n" +
@@ -924,7 +942,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <country-name>India</country-name>\n" +
                         "            <state>\n" +
@@ -951,7 +969,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" type=\"subtree\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <state>\n" +
                         "                <district>\n" +
@@ -971,14 +989,14 @@ public class SubtreeFilterUtilTest {
         Element unfilteredXml = getFullDsXml();
         Element filter = getElement(
                 "<filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>parallel universe</name>\n" +
                         "    </universe>\n" +
                         "</filter>");
         Element filteredXml = m_util.filter(unfilteredXml, filter);
         String expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>parallel universe</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -1017,7 +1035,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>universe 1</name>\n" +
                         "        <galaxy>\n" +
                         "            <pet-name>My home galaxy</pet-name>\n" +
@@ -1027,7 +1045,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>universe 1</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -1066,9 +1084,9 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<nc:filter xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <ut:universe xmlns:ut=\"http://test-company.test/country-universe\">\n" +
+                        "    <ut:universe xmlns:ut=\"http://test-company/country-universe\">\n" +
                         "        <ut:name>universe 1</ut:name>\n" +
-                        "        <galaxy xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "        <galaxy xmlns=\"http://test-company/country-universe\">\n" +
                         "            <name>Milky way</name>\n" +
                         "            <pet-name>My home galaxy</pet-name>\n" +
                         "            <planetary-system/>\n" +
@@ -1078,7 +1096,7 @@ public class SubtreeFilterUtilTest {
         filteredXml = m_util.filter(unfilteredXml, filter);
         expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>universe 1</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -1117,7 +1135,7 @@ public class SubtreeFilterUtilTest {
 
         filter = getElement(
                 "<filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>universe 1</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -1138,7 +1156,7 @@ public class SubtreeFilterUtilTest {
         Element unfilteredXml = getFullDsXml();
         Element filter = getElement(
                 "<filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "    <world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <world xmlns=\"http://test-company/country-universe\">\n" +
                         "        <country>\n" +
                         "            <state>\n" +
                         "                <district>\n" +
@@ -1147,14 +1165,14 @@ public class SubtreeFilterUtilTest {
                         "            </state>\n" +
                         "        </country>\n" +
                         "    </world>" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>parallel universe</name>\n" +
                         "    </universe>\n" +
                         "</filter>");
         Element filteredXml = m_util.filter(unfilteredXml, filter);
         String expectedXmlStr =
                 "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "<world xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "<world xmlns=\"http://test-company/country-universe\">\n" +
                         "    <country>\n" +
                         "        <country-name>India</country-name>\n" +
                         "        <state>\n" +
@@ -1166,7 +1184,7 @@ public class SubtreeFilterUtilTest {
                         "        </state>\n" +
                         "    </country>\n" +
                         "</world>" +
-                        "    <universe xmlns=\"http://test-company.test/country-universe\">\n" +
+                        "    <universe xmlns=\"http://test-company/country-universe\">\n" +
                         "        <name>parallel universe</name>\n" +
                         "        <galaxy>\n" +
                         "            <name>Milky way</name>\n" +
@@ -1223,9 +1241,9 @@ public class SubtreeFilterUtilTest {
                         "</filter>");
         FilterNode filterNode = new FilterNode();
         FilterUtil.processFilter(filterNode, DocumentUtils.getChildElements(filter), m_schemaRegistry);
-        SchemaPath universeSp = SchemaPathBuilder.fromString("(http://test-company.test/country-universe?revision=2017-06-14)universe");
+        SchemaPath universeSp = SchemaPathBuilder.fromString("(http://test-company/country-universe?revision=2017-06-14)universe");
         Document document = DocumentUtils.getNewDocument();
-        Element outputNode = document.createElementNS("http://test-company.test/country-universe",
+        Element outputNode = document.createElementNS("http://test-company/country-universe",
                 "universe");
         m_util.doFilter(document, filterNode, m_schemaRegistry.getDataSchemaNode(universeSp), unfilteredXml, outputNode);
         String expectedResponse = "<data xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"/>";

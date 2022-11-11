@@ -1,21 +1,41 @@
 /**
- *
+ * 
  */
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.transaction.Transactional;
 import javax.transaction.Transactional.TxType;
 
+import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
@@ -23,12 +43,19 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
+import org.broadband_forum.obbaa.netconf.mn.fwk.AttributeIndex;
+import org.broadband_forum.obbaa.netconf.mn.fwk.ChangeTreeNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.ChangeTreeNodeImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.WritableChangeTreeNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.ChoiceCaseNodeUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ActionException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ConfigAttributeGetContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CopyConfigException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
@@ -44,18 +71,20 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NoopSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NotificationContext;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NotificationExecutor;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.StateAttributeGetContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubsystemNotificationExecutor;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.TimingLogger;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.Operation;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.SchemaMountUtil;
+import org.broadband_forum.obbaa.netconf.server.ssh.auth.AccessDeniedException;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
@@ -75,27 +104,25 @@ import org.w3c.dom.NodeList;
  *
  */
 public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
-    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(RootModelNodeAggregatorImpl.class, LogAppNames.NETCONF_STACK);
+	private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(RootModelNodeAggregatorImpl.class, LogAppNames.NETCONF_STACK);
 
-    private Map<SchemaPath, ChildContainerHelper> m_rootContainerHelpers = new HashMap<>();
-    private List<ModelNode> m_moduleRoots = new ArrayList<ModelNode>();
+    protected Map<SchemaPath, ChildContainerHelper> m_rootContainerHelpers = new ConcurrentHashMap<>();
+    private List<ModelNode> m_moduleRoots = new CopyOnWriteArrayList<ModelNode>();
     private ModelNodeHelperRegistry m_modelNodeHelperRegistry;
-    private Map<SchemaPath, ChildListHelper> m_rootListHelpers= new HashMap<>();
+    protected Map<SchemaPath, ChildListHelper> m_rootListHelpers= new ConcurrentHashMap<>();
     private final SchemaRegistry m_schemaRegistry;
-    private Map<String, List<ModelNode>> m_componentRoots = new HashMap<>();
+    private Map<String, List<ModelNode>> m_componentRoots = new ConcurrentHashMap<>();
     private final ModelNodeDataStoreManager m_dsm;
-    private NotificationExecutor m_editNotificationExecutor;
     private SubSystemRegistry m_subsystemRegistry;
 
     public RootModelNodeAggregatorImpl(SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry,
-                                       ModelNodeDataStoreManager dataStoreManager, SubSystemRegistry subsystemRegistry) {
+            ModelNodeDataStoreManager dataStoreManager, SubSystemRegistry subsystemRegistry) {
         m_schemaRegistry = schemaRegistry;
         m_modelNodeHelperRegistry = modelNodeHelperRegistry;
         m_dsm = dataStoreManager;
-        m_editNotificationExecutor = new SubsystemNotificationExecutor();
         m_subsystemRegistry = subsystemRegistry;
     }
-
+    
     @Override
     public synchronized RootModelNodeAggregator addModelServiceRoot(String componentId, ModelNode modelNode) {
 
@@ -103,6 +130,11 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         List<ModelNode> rootsFromComponent = getComponentRoots(componentId);
         rootsFromComponent.add(modelNode);
         return this;
+    }
+
+    @Override
+    public SubSystemRegistry getSubsystemRegistry() {
+        return m_subsystemRegistry;
     }
 
     private List<ModelNode> getComponentRoots(String componentId) {
@@ -120,7 +152,7 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
             addModelServiceRoot(componentId, modelNode);
         }
     }
-
+    
     @Override
     public List<ModelNode> getModelServiceRoots() {
         List<ModelNode> rootNodes = new ArrayList<>();
@@ -182,16 +214,9 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         }
         return rootNodes;
     }
-
+    
     private List<ModelNode> getModuleRootsFromHelpers() {
         List<ModelNode> rootNodes = new ArrayList<>();
-        /*
-         * Below filtering is required until we have both legacy as well as schemaMount mode.
-         * Once legacy mode is removed , then this check will also be removed.
-         */
-        if(!SchemaRegistryUtil.isMountPointEnabled()){
-            removeSchemaMountRootNodeHelpers();
-        }
         for(ChildContainerHelper helper : m_rootContainerHelpers.values()){
             ModelNode rootNode = null;
             try {
@@ -222,21 +247,14 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         return rootNodes;
     }
 
-    private void removeSchemaMountRootNodeHelpers() {
-        SchemaPath schemaMountsPath = SchemaPath.create(true,
-                QName.create("urn:ietf:params:xml:ns:yang:ietf-yang-schema-mount", "2017-10-09", "schema-mounts"));
-        removeModelServiceRootHelpers(schemaMountsPath);
-    }
-
-    @Override
+	@Override
     public List<Element> get(GetContext getContext, NetconfQueryParams params) throws GetException {
         List<Element> result = getConfigAndFillStateContext(getContext, params);
 
-        Map<ModelNodeId, List<Element>> elements = getAllStateElementsFromSubSystems(getContext.getStateAttributeContext(), params);
+        Map<ModelNodeId, List<Element>> elements = getAllStateElementsFromSubSystems(getContext.getClient(), getContext.getConfigGetContext(), getContext.getStateAttributeContext(), params);
         mergeAllStateElementsAtRightPlaces(getContext.getDoc(), result, elements);
         return result;
     }
-
 
     @Transactional(value=TxType.REQUIRED,rollbackOn={GetException.class,RuntimeException.class,Exception.class})
     public List<Element> getConfigAndFillStateContext(GetContext getContext, NetconfQueryParams params) throws GetException {
@@ -281,15 +299,28 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
     }
 
     @Override
-    public List<Element> action(ActionRequest actionRequest) throws ActionException {
-        SubSystem subsystem = m_subsystemRegistry.lookupSubsystem(actionRequest.getActionTargetpath());
-        if ( subsystem instanceof NoopSubSystem){
-            SubSystemRegistry subSystemRegistry = (SubSystemRegistry) RequestScope.getCurrentScope().getFromCache(SchemaRegistryUtil.MOUNT_CONTEXT_SUBSYSTEM_REGISTRY);
-            if ( subSystemRegistry != null){
+    public List<Element> action(ActionRequest actionRequest, NetconfClientInfo clientInfo, SchemaRegistry registry) throws ActionException {
+        SchemaPath schemaPath = actionRequest.getActionTargetpath();
+        SubSystem subsystem = m_subsystemRegistry.lookupSubsystem(schemaPath);
+        if (subsystem instanceof NoopSubSystem) {
+            SubSystemRegistry subSystemRegistry = SchemaMountUtil.getSubSystemRegistry(registry);
+            if (subSystemRegistry != null) {
                 subsystem = subSystemRegistry.lookupSubsystem(actionRequest.getActionTargetpath());
             }
         }
+
+        checkRequiredPermissions(actionRequest, clientInfo, schemaPath, subsystem);
+
         return subsystem.executeAction(actionRequest);
+    }
+
+    private void checkRequiredPermissions(ActionRequest actionRequest, NetconfClientInfo clientInfo, SchemaPath schemaPath, SubSystem subsystem) throws ActionException {
+        try {
+            subsystem.checkRequiredPermissions(clientInfo, actionRequest.getActionQName().getLocalName());
+        } catch (AccessDeniedException e) {
+            LOGGER.error("User '{}' is not permitted to access SchemaPath '{}' from subsystem '{}'", LOGGER.sensitiveData(clientInfo.getUsername()), schemaPath, subsystem, e);
+            throw new ActionException(e.getRpcError());
+        }
     }
 
     @Override
@@ -308,7 +339,7 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         }
         return result;
     }
-
+    
     /**
      * Iterates through child nodes to merge state Nodes at right places.
      * @param doc
@@ -327,10 +358,10 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
     private void mergeStateDataToRootElements(List<Element> rootElements, Map<ModelNodeId, List<Element>> elements) {
         Set<SchemaPath> rootSchemaPaths = getSchemaRegistry().getRootSchemaPaths();
         for (Element rootElement : rootElements) {
-            SchemaPath schemaPath = getSchemaPathForElement(rootElement, rootSchemaPaths);
-            if (schemaPath != null) {
+            SchemaPath rootSchemaPath = getSchemaPathForElement(rootElement, rootSchemaPaths);
+            if (rootSchemaPath != null) {
                 try {
-                    delegateToChildElement(rootElement, schemaPath, elements, new ModelNodeId(), m_schemaRegistry);
+                    delegateToChildElement(rootElement, rootSchemaPath, elements, new ModelNodeId(), m_schemaRegistry);
                 } catch (ValidationException e) {
                     LOGGER.error("Error while merging state attributes ", e);
                 }
@@ -343,7 +374,7 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         for(ModelNodeId nodeId : elements.keySet()){
             if(nodeId.isRootNodeId()){
                 if(isStateNode(nodeId, rootDataSchemaNodes)){
-                    ModelNodeRdn firstRdn = nodeId.getRdns().get(0);
+                    ModelNodeRdn firstRdn = nodeId.getRdnsReadOnly().get(0);
                     rootElements.add(doc.createElementNS(firstRdn.getNamespace(), firstRdn.getRdnValue()));
                 }
             }
@@ -351,7 +382,7 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
     }
 
     private boolean isStateNode(ModelNodeId nodeId, Collection<DataSchemaNode> rootDataSchemaNodes) {
-        ModelNodeRdn firstRdn = nodeId.getRdns().get(0);
+        ModelNodeRdn firstRdn = nodeId.getRdnsReadOnly().get(0);
         for(DataSchemaNode schemaNode : rootDataSchemaNodes){
             QName qName = schemaNode.getQName();
             if(qName.getNamespace().toString().equals(firstRdn.getNamespace()) &&
@@ -364,18 +395,23 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
 
     /**
      * Iterates through Map<SubSystem, Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>>> to get state elements from corresponding subsystem.
-     * @param params
+     * @param params 
      * @return Map<ModelNodeId, List<Element>>
      */
-    private Map<ModelNodeId, List<Element>> getAllStateElementsFromSubSystems(StateAttributeGetContext stateContext, NetconfQueryParams params) throws GetException {
+    private Map<ModelNodeId, List<Element>> getAllStateElementsFromSubSystems(NetconfClientInfo clientInfo, ConfigAttributeGetContext configContext, StateAttributeGetContext stateContext, NetconfQueryParams params) throws GetException {
         Map<ModelNodeId, List<Element>> nodeIds = stateContext.getStateMatchNodes();
 
         for (Entry<SubSystem, Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>>> subSystemEntry : stateContext.getSubSystems().entrySet()) {
+            SubSystem subSystem = subSystemEntry.getKey();
             try {
-                SubSystem subSystem = subSystemEntry.getKey();
+                // check permission
+                if (!configContext.isSubSystemAuthorized(subSystem)) {
+                    subSystem.checkRequiredPermissions(clientInfo, Operation.GET.getType());
+                }
+
                 Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>> attributes = subSystemEntry.getValue();
                 // call retrieveStateAttributes only once for each SubSystem
-                Map<ModelNodeId, List<Element>> stateAttributeValues = subSystem.retrieveStateAttributes(attributes, params);
+                Map<ModelNodeId, List<Element>> stateAttributeValues = subSystem.retrieveStateAttributes(attributes, params,stateContext);
 
                 for (Entry<ModelNodeId, List<Element>> entry : stateAttributeValues.entrySet()) {
                     ModelNodeId nodeId = entry.getKey();
@@ -391,6 +427,8 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
                 GetException exception = new GetException(netconfRpcError);
                 exception.addSuppressed(e);
                 throw exception;
+            } catch (AccessDeniedException e) {
+                LOGGER.warn(null, "User '{}' is not permitted to access subsystem '{}'", LOGGER.sensitiveData(clientInfo.getUsername()), subSystem);
             }
 
         }
@@ -400,7 +438,10 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
     private ModelNodeId getModelNodeId(Element element, ModelNodeId parentNodeId, DataSchemaNode schemaNode) {
         ModelNodeId modelNodeId = new ModelNodeId(parentNodeId);
         modelNodeId.addRdn(ModelNodeRdn.CONTAINER, schemaNode.getQName().getNamespace().toString(), getContainerName(schemaNode));
-        Set<QName> keys = m_modelNodeHelperRegistry.getNaturalKeyHelpers(schemaNode.getPath()).keySet();
+        List<QName> keys = Collections.EMPTY_LIST;
+        if (schemaNode instanceof ListSchemaNode) {
+            keys = ((ListSchemaNode) schemaNode).getKeyDefinition();
+        }
 
         if (keys != null) {
             for (QName key : keys) {
@@ -408,12 +449,11 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
                 for (int i = 0; i < childNodes.getLength(); i++) {
                     Node child = childNodes.item(i);
                     if (child.getNodeType() == Node.ELEMENT_NODE) {
-                        QName childQName = SchemaRegistryUtil.getChildQname(child, schemaNode, m_schemaRegistry);
-                        if (childQName != null) {
-                            if (key.equals(childQName)) {
-                                modelNodeId.addRdn(childQName.getLocalName(), childQName.getNamespace().toString(), child.getTextContent());
-                                break;
-                            }
+                        String localName = key.getLocalName();
+                        String ns = key.getNamespace().toString();
+                        if (localName.equals(child.getLocalName()) && ns.equals(child.getNamespaceURI())) {
+                            modelNodeId.addRdn(localName, ns, child.getTextContent());
+                            break;
                         }
                     }
                 }
@@ -452,8 +492,9 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
                 }
             }
         }
-        if(AnvExtensions.MOUNT_POINT.isExtensionIn(schemaNode) && SchemaRegistryUtil.getMountRegistry() != null) {
-            schemaRegistry = SchemaRegistryUtil.getMountRegistry();
+        if(AnvExtensions.MOUNT_POINT.isExtensionIn(schemaNode)) {
+        	Element rootElement = getRootParentNode(element);
+        	schemaRegistry = SchemaRegistryUtil.getMountRegistryFromXmlRequest(rootElement, schemaRegistry);
         }
         // go though children
         NodeList nodes = element.getChildNodes();
@@ -472,7 +513,18 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         }
     }
 
-    private boolean isKey(List<QName> keyQNames, Element e) {
+    private Element getRootParentNode(Element element) {
+
+    	Element parent = element;
+    	Element rootElement = parent;
+    	while ( parent != null){
+    		rootElement = parent;
+    		parent = (Element) parent.getParentNode();
+    	}
+    	return rootElement;
+	}
+
+	private boolean isKey(List<QName> keyQNames, Element e) {
         for(QName keyQname : keyQNames){
             if(e.getLocalName().equals(keyQname.getLocalName()) && e.getNamespaceURI().equals(keyQname.getNamespace().toString())){
                 return true;
@@ -484,7 +536,14 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
     private Collection<SchemaPath> getSchemaPathsForNodes(Collection<DataSchemaNode> nodes) {
         List<SchemaPath> schemaPaths = new ArrayList<>();
         for (DataSchemaNode node : nodes) {
-            schemaPaths.add(node.getPath());
+            if(ChoiceCaseNodeUtil.isChoiceSchemaNode(node)) {
+                Collection<DataSchemaNode> choiceNodes = ChoiceCaseNodeUtil.getImmediateChildrenOfChoice((ChoiceSchemaNode) node);
+                for(DataSchemaNode dataSchemaNode : choiceNodes){
+                    schemaPaths.add(dataSchemaNode.getPath());
+                }
+            } else {
+                schemaPaths.add(node.getPath());
+            }
         }
         return schemaPaths;
     }
@@ -508,9 +567,17 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
             throws EditConfigException {
         List<EditContainmentNode> editTrees = new ArrayList<EditContainmentNode>();
         //go over the list of items to edit, and choose the right node to edit and let it edit itself.
+        TimingLogger.startPhase("createEditTree.getModelServiceRootsForEdit");
         List<ModelNode> modelNodeListForEdit = getModelServiceRootsForEdit(request);
+        TimingLogger.endPhase("createEditTree.getModelServiceRootsForEdit", false);
+        Map<SchemaPath, Map<ModelNodeId, ChangeTreeNode>> nodesOfType = new HashMap<>();
+        Map<SchemaPath, Map<ModelNodeId, ChangeTreeNode>> nodesOfTypeWithinSchemaMount = new HashMap<>();
+        Map<AttributeIndex, Set<ChangeTreeNode>> attributeIndex = new HashMap<>();
+        Map<String, Object> contextMap = new HashMap<>();
+        Set<SchemaPath> changedNodeSPs = new HashSet<>();
+        WritableChangeTreeNode aggregatorCTN = new ChangeTreeNodeImpl(null, null, new ModelNodeId(),null, nodesOfType, attributeIndex, changedNodeSPs, contextMap, nodesOfTypeWithinSchemaMount);
         for(Element rootElement : request.getConfigElement().getConfigElementContents()){
-            SchemaRegistryUtil.resetSchemaRegistryCache();
+            TimingLogger.startPhase("createEditTree.LookingUpRootNodes");
             ModelNode modelNode = null;
             try {
                 modelNode = getMatchingRootNode(rootElement , modelNodeListForEdit);
@@ -518,6 +585,8 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
                 LOGGER.error("Error while getting matching root node", e);
                 throw new EditConfigException(e.getRpcError());
             }
+            TimingLogger.endPhase("createEditTree.LookingUpRootNodes", false);
+            TimingLogger.startPhase("createEditTree.CreateRootNodes");
             if(modelNode == null){
                 try {
                     modelNode = createRootModelNode(rootElement);
@@ -526,28 +595,38 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
                             "Error while creating root node"));
                 }
             }
+            TimingLogger.endPhase("createEditTree.CreateRootNodes", false);
             EditContainmentNode editTree = new EditContainmentNode();
+            editTree.setSchemaRegistry(m_schemaRegistry);
             editTrees.add(editTree);
             if(request.getDefaultOperation()!= null){
                 editTree.setEditOperation(request.getDefaultOperation());
             }
             try{
                 m_dsm.beginModify();
+                TimingLogger.startPhase("createEditTree.prepareEditSubTree");
                 //prepare tree for this root node and let it edit itself
                 modelNode.prepareEditSubTree(editTree, rootElement);
+                TimingLogger.endPhase("createEditTree.prepareEditSubTree", false);
+
                 EditContext editContext = new EditContext(editTree, notificationContext, request.getErrorOption(),
                         request.getClientInfo());
-                modelNode.editConfig(editContext);
+
+                TimingLogger.startPhase("createEditTree.makeChangesInDataStore");
+                modelNode.editConfig(editContext, aggregatorCTN);
 
                 //call end modify so that the Subsystems can access the backing store to validate changes.
                 m_dsm.endModify();
+                TimingLogger.endPhase("createEditTree.makeChangesInDataStore", false);
 
             } catch (ValidationException e) {
                 LOGGER.error("Validation constraints failed due to: ", e);
                 throw new EditConfigException(e.getRpcError());
             }
         }
+        notificationContext.addChangeTreeNode(aggregatorCTN);
         return editTrees;
+
     }
 
     private ModelNode createRootModelNode(Element rootElement) throws ModelNodeCreateException {
@@ -569,10 +648,12 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
                     if(keyNode != null) {
                         ConfigLeafAttribute configAttribute = null;
                         try {
-                            configAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, null,
-                                    rootNodeQname, keyNode);
+                            DataSchemaNode keySN = m_schemaRegistry.getChild(rootSchemaPath, keyQName);
+                            configAttribute = ConfigAttributeFactory.getConfigAttribute(m_schemaRegistry, keySN, keyNode);
                         } catch (InvalidIdentityRefException e) {
                             throw new ModelNodeCreateException(e.getRpcError());
+                        } catch (NetconfMessageBuilderException e) {
+                            throw new ModelNodeCreateException(e);
                         }
                         KeyValues.put(keyQName, configAttribute);
                     }
@@ -591,7 +672,7 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
 
     private void deleteRootModelNode(ModelNode node, SchemaPath nodeSchemaPath) throws CopyConfigException {
         SchemaRegistry registry = SchemaRegistryUtil.getSchemaRegistry(node, m_schemaRegistry);
-        SchemaNode schemaNode = registry.getDataSchemaNode(nodeSchemaPath);
+    	SchemaNode schemaNode = registry.getDataSchemaNode(nodeSchemaPath);
         if(schemaNode instanceof ContainerSchemaNode){
             ChildContainerHelper childContainerHelper = m_rootContainerHelpers.get(nodeSchemaPath);
             if (childContainerHelper!=null) {
@@ -688,7 +769,7 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         for (ModelNode modelNode : getModelServiceRoots()) {
             if(isConfigurationNode(modelNode) && rootNodeToConfigElementMap.containsKey(modelNode.getModelNodeSchemaPath())) {
                 modelNode.copyConfig(rootNodeToConfigElementMap.get(modelNode.getModelNodeSchemaPath()));
-
+                
             }
         }
         m_dsm.endModify();
@@ -718,22 +799,6 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
         }
     }
 
-    @Override
-    public List<Pair<String, String>> getRootNodeNsLocalNamePairs() {
-        List<Pair<String, String>> pairs = new ArrayList<>();
-        for (ChildContainerHelper helper : m_rootContainerHelpers.values()) {
-            QName qName = helper.getSchemaNode().getQName();
-            Pair<String, String> pair = new Pair<>(qName.getNamespace().toString(), qName.getLocalName());
-            pairs.add(pair);
-        }
-        for (ChildListHelper helper : m_rootListHelpers.values()) {
-            QName qName = helper.getSchemaNode().getQName();
-            Pair<String, String> pair = new Pair<>(qName.getNamespace().toString(), qName.getLocalName());
-            pairs.add(pair);
-        }
-        return pairs;
-    }
-
     private void checkEachCopyConfigElementHasRootNode(List<Element> copyConfigElements, Map<SchemaPath, Element> rootNodeToConfigElementMap) throws CopyConfigException {
         for(Element copyConfigElement : copyConfigElements){
             if(!rootNodeToConfigElementMap.containsValue(copyConfigElement)){
@@ -743,7 +808,7 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
                 } catch (ModelNodeCreateException e) {
                     LOGGER.error("Error while creating rootnode" ,e);
                     throw new CopyConfigException(NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED,
-                            "Error while creating root node"));
+                           "Error while creating root node"));
                 }
             }
         }
@@ -775,6 +840,19 @@ public class RootModelNodeAggregatorImpl implements RootModelNodeAggregator {
             }
         }
         return rootNodeToConfigElementMap;
+    }
+    
+    public Set<SchemaPath> getRootNodeSchemaPaths(){
+        Set<SchemaPath> rootSchemaPaths = new HashSet<>();
+        rootSchemaPaths.addAll(m_rootContainerHelpers.keySet());
+        rootSchemaPaths.addAll(m_rootListHelpers.keySet());
+        return rootSchemaPaths;
+    }
+
+    @Override
+    public List<ModelNode> getModuleRootFromHelpers(String requiredElementNamespace, String requiredElementLocalName,
+            ModelNode modelNode) {
+        return getModuleRootFromHelpers(requiredElementNamespace, requiredElementLocalName);
     }
 
 }

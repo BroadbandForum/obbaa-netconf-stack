@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation;
 
 import static org.junit.Assert.assertEquals;
@@ -7,17 +23,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.SomeList;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.TestSlicing;
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.EntityRegistryBuilder;
@@ -25,14 +33,26 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContai
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeFactoryException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootEntityContainerModelNodeHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.SomeInnerList;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.SomeList;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.TestSlice;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.TestSlicing;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.TestVno;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.TestVnos;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.Validation;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
 @SuppressWarnings("deprecation")
+@RunWith(RequestScopeJunitRunner.class)
 public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 
 	private static final String FANS_VALIDATION_TEST_REVISION = "2017-07-11";
@@ -63,15 +83,14 @@ public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 		m_rootModelNode = m_rootModelNodeAggregator.getModelServiceRoots().get(0);
 	}
 
-	protected void getSchemaRegistry(List<YangTextSchemaSource> yangFiles) throws SchemaBuildException {
-		m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), new NoLockService());
-	}
+	@BeforeClass
+    public static void initializeOnce() throws SchemaBuildException {
+        List<YangTextSchemaSource> yangFiles = TestUtil.getByteSources(getYang());
+        m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        m_schemaRegistry.setName(SchemaRegistry.GLOBAL_SCHEMA_REGISTRY);
+    }
 
-	protected List<YangTextSchemaSource> getYangs() {
-		return TestUtil.getByteSources(getYangFiles());
-	}
-
-	protected List<String> getYangFiles() {
+	protected static List<String> getYang() {
 		List<String> fileNames = new LinkedList<String>();
 		fileNames.add("/datastorevalidatortest/yangs/dummy-extension.yang");
 		fileNames.add("/datastorevalidatortest/yangs/ietf-yang-schema-mount@2017-10-09.yang");
@@ -112,7 +131,7 @@ public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 	public void testDeleteListWithSlice() throws Exception {
 		// create two vno lists
 		String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation:validation xmlns:validation= \"urn:org:bbf:pma:validation\">"
+				+ "<validation:validation xmlns:validation= \"urn:org:bbf2:pma:validation\">"
 				+ " <test-vnos xmlns=\"urn:opendaylight:fans-validation-test\">" 
 				+ "  <test-vno>"
 				+ "   <name>vno1</name>" 
@@ -126,7 +145,7 @@ public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 
 		// create someList and someInnerList
 		requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation:validation xmlns:validation= \"urn:org:bbf:pma:validation\">"
+				+ "<validation:validation xmlns:validation= \"urn:org:bbf2:pma:validation\">"
 				+ " <validation:someList>" 
 				+ "  <validation:someKey>TestFANS</validation:someKey>"
 				+ "   <validation:someInnerList>" 
@@ -138,7 +157,7 @@ public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 
 		// create slice
 		requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation:validation xmlns:validation= \"urn:org:bbf:pma:validation\">"
+				+ "<validation:validation xmlns:validation= \"urn:org:bbf2:pma:validation\">"
 				+ " <validation:someList>" 
 				+ "  <validation:someKey>TestFANS</validation:someKey>"
 				+ "   <validation:someInnerList>" 
@@ -156,7 +175,7 @@ public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 
 		// delete vno1 list
 		requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation:validation xmlns:validation= \"urn:org:bbf:pma:validation\">"
+				+ "<validation:validation xmlns:validation= \"urn:org:bbf2:pma:validation\">"
 				+ " <test-vnos xmlns=\"urn:opendaylight:fans-validation-test\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
 				+ "  <test-vno  xc:operation='delete'>" 
 				+ "   <name>vno1</name>" 
@@ -177,7 +196,7 @@ public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 	public void testDeleteListWithOutSlice() throws Exception {
 		// create two vno lists
 		String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation:validation xmlns:validation= \"urn:org:bbf:pma:validation\">"
+				+ "<validation:validation xmlns:validation= \"urn:org:bbf2:pma:validation\">"
 				+ " <test-vnos xmlns=\"urn:opendaylight:fans-validation-test\">" + "  <test-vno>"
 				+ "   <name>vno1</name>" 
 				+ "  </test-vno>" 
@@ -189,7 +208,7 @@ public class FansYangXmlSubTreeValidationTest extends AbstractRootModelTest {
 
 		// delete vno1 and vno2 list
 		requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation:validation xmlns:validation= \"urn:org:bbf:pma:validation\">"
+				+ "<validation:validation xmlns:validation= \"urn:org:bbf2:pma:validation\">"
 				+ " <test-vnos xmlns=\"urn:opendaylight:fans-validation-test\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
 				+ "  <test-vno  xc:operation='delete'>" 
 				+ "   <name>vno1</name>" 

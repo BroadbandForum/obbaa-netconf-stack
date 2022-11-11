@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
@@ -8,17 +24,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.xml.sax.SAXException;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
@@ -30,7 +37,7 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NbiNotificationHelperImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetConfServerImpl;
@@ -53,24 +60,34 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityR
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.SingleXmlObjectDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.ModelNodeHelperDeployer;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangContainer;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentId;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangXmlSubtree;
-import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.xml.sax.SAXException;
 
 @Ignore("This fails only in jenkins, comemnting out for sometime")
 public class SingleXmlObjectStackTest {
-    private static final Logger LOGGER = Logger.getLogger(SingleXmlObjectStackTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(SingleXmlObjectStackTest.class);
     private NetConfServerImpl m_server;
     private NetconfClientInfo m_clientInfo;
 
     private RootModelNodeAggregator m_rootModelNodeAggregator;
     private SchemaRegistry m_schemaRegistry;
     private DataStore m_dataStore;
-    private SubSystemRegistry m_subsystemRegistry;
+    private SubSystemRegistry m_subSystemRegistry;
     private TestXml m_xmlObject;
     @Mock
     private PersistenceManagerUtil m_persistenceUtil;
@@ -83,7 +100,8 @@ public class SingleXmlObjectStackTest {
         MockitoAnnotations.initMocks(this);
         m_modelNodeDsmRegistry = new ModelNodeDSMRegistryImpl();
 
-        m_subsystemRegistry = new SubSystemRegistryImpl();
+        m_subSystemRegistry = new SubSystemRegistryImpl();
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_clientInfo = new NetconfClientInfo("ut", 1);
         m_schemaRegistry = new SchemaRegistryImpl(TestUtil.getByteSources(Arrays.asList("/singlexmlobjectstacktest/test.yang")), new NoLockService());
         m_server = new NetConfServerImpl(m_schemaRegistry);
@@ -91,15 +109,15 @@ public class SingleXmlObjectStackTest {
         ModelNodeHelperRegistry modelNodeHelperRegistry = new ModelNodeHelperRegistryImpl(m_schemaRegistry);
         m_xmlObject = new TestXml();
         SingleXmlObjectDSM modelNodeDsm = new SingleXmlObjectDSM<>(m_xmlObject, m_persistenceUtil, m_entityRegistry,
-                m_schemaRegistry, modelNodeHelperRegistry, m_subsystemRegistry, m_modelNodeDsmRegistry);
+                m_schemaRegistry, modelNodeHelperRegistry, m_subSystemRegistry, m_modelNodeDsmRegistry);
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, modelNodeHelperRegistry, modelNodeDsm,
-                m_subsystemRegistry);
+                m_subSystemRegistry);
         m_modelNodeHelperDeployer = new EntityModelNodeHelperDeployer(modelNodeHelperRegistry, m_schemaRegistry, modelNodeDsm,
-                m_entityRegistry, m_subsystemRegistry);
+                m_entityRegistry, m_subSystemRegistry);
         ModelServiceDeployerImpl modelServiceDeployer = new ModelServiceDeployerImpl(m_modelNodeDsmRegistry, modelNodeHelperRegistry,
-                m_subsystemRegistry, new RpcRequestHandlerRegistryImpl(), m_modelNodeHelperDeployer, m_schemaRegistry, new NoLockService());
+                m_subSystemRegistry, new RpcRequestHandlerRegistryImpl(), m_modelNodeHelperDeployer, m_schemaRegistry, new NoLockService());
         modelServiceDeployer.setRootModelNodeAggregator(m_rootModelNodeAggregator);
-        m_dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subsystemRegistry);
+        m_dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry);
         m_dataStore.setNbiNotificationHelper(new NbiNotificationHelperImpl());
         m_server.setRunningDataStore(m_dataStore);
 

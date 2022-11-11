@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory;
 
 import java.util.ArrayList;
@@ -67,7 +83,7 @@ public class InMemoryDSM implements ModelNodeDataStoreManager {
     }
 
     @Override
-    public List<ModelNode> listNodes(SchemaPath nodeType) {
+    public List<ModelNode> listNodes(SchemaPath nodeType, SchemaRegistry mountRegistry) {
     	LOGGER.debug("DSM: {} -listNodes with childType: {}", m_dsmName, nodeType);
         List<ModelNode> listNodes = new ArrayList<>();
         Map<InMemoryNodeKey, ModelNodeWithAttributes> nodesOfType = m_nodes.get(nodeType);
@@ -80,7 +96,7 @@ public class InMemoryDSM implements ModelNodeDataStoreManager {
     }
 
     @Override
-    public List<ModelNode> listChildNodes(SchemaPath childType, ModelNodeId parentId) throws DataStoreException {
+    public List<ModelNode> listChildNodes(SchemaPath childType, ModelNodeId parentId, SchemaRegistry mountRegistry) throws DataStoreException {
     	LOGGER.debug("DSM: {} -listChildNodes with childType: {} parentId: {}", m_dsmName, childType, parentId);
         ConcurrentHashMap<SchemaPath, List<ModelNodeWithAttributes>> allChildren = getAllChildren(parentId);
         if(allChildren != null){
@@ -93,7 +109,7 @@ public class InMemoryDSM implements ModelNodeDataStoreManager {
     }
 
     @Override
-    public ModelNode findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId) throws DataStoreException {
+    public ModelNode findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId, SchemaRegistry mountRegistry) throws DataStoreException {
     	LOGGER.debug("DSM: {} -findNode with nodeType: {} key: {} parentId: {}", m_dsmName, nodeType, key, parentId);
         InMemoryNodeKey inMemoryNodeKey = new InMemoryNodeKey(key,parentId);
         Map<InMemoryNodeKey, ModelNodeWithAttributes> nodesOfType = getNodesOfType(nodeType);
@@ -105,7 +121,7 @@ public class InMemoryDSM implements ModelNodeDataStoreManager {
     }
 
     @Override
-    public List<ModelNode> findNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId) throws DataStoreException {
+    public List<ModelNode> findNodes(SchemaPath nodeType, Map<QName, ConfigLeafAttribute> matchCriteria, ModelNodeId parentId, SchemaRegistry mountRegistry) throws DataStoreException {
     	LOGGER.debug("DSM: {} -findNodes with nodeType: {} matchCriteria: {} parentId: {}", m_dsmName, nodeType,
                 matchCriteria, parentId);
         List<ModelNode> nodes = new ArrayList<>();
@@ -153,6 +169,23 @@ public class InMemoryDSM implements ModelNodeDataStoreManager {
             	childrenOfType.add(insertIndex, childNode);
             } else {
             	childrenOfType.add(childNode);
+            }
+        }
+    }
+
+
+    @Override
+    public void updateIndex(ModelNode modelNode, ModelNodeId parentId, int newIndex) {
+        ModelNodeWithAttributes childNode = (ModelNodeWithAttributes)modelNode;
+        ConcurrentHashMap<SchemaPath, List<ModelNodeWithAttributes>> allChildren = getAllChildren(parentId);
+        //all children can be null when the node being added is root node
+        if(allChildren != null){
+            List<ModelNodeWithAttributes> childrenOfType = getChildrenOfType(childNode.getModelNodeSchemaPath(), allChildren);
+            if (newIndex >= 0 && newIndex < childrenOfType.size()) {
+                childrenOfType.remove(childNode);
+                childrenOfType.add(newIndex, childNode);
+            } else {
+                throw new DataStoreException("Specified index is invalid");
             }
         }
     }
@@ -209,7 +242,7 @@ public class InMemoryDSM implements ModelNodeDataStoreManager {
                 m_dsmName, modelNode, parentId, configAttributes, leafListAttributes, insertIndex);
         SchemaRegistry registry = SchemaRegistryUtil.getSchemaRegistry(modelNode, m_schemaRegistry);
     	ModelNodeWithAttributes freshNode = (ModelNodeWithAttributes) findNode(modelNode.getModelNodeSchemaPath(),
-                MNKeyUtil.getModelNodeKey(modelNode, registry), parentId);
+                MNKeyUtil.getModelNodeKey(modelNode, registry), parentId, modelNode.getSchemaRegistry());
         if(freshNode !=null){
             if(configAttributes != null) {
                 freshNode.updateConfigAttributes(configAttributes);
@@ -313,23 +346,23 @@ public class InMemoryDSM implements ModelNodeDataStoreManager {
     }
     
     @Override
-    public boolean isChildTypeBigList(SchemaPath nodeType) {
-        return false;
+    public boolean isChildTypeBigList(SchemaPath nodeType, SchemaRegistry mountRegistry) {
+        return (mountRegistry != null && mountRegistry.isChildBigList(nodeType));
     }
 
     @Override
-    public List<ListEntryInfo> findNodesLike(SchemaPath nodeType, ModelNodeId parentId, Map<QName, String>
-            keysLike, int maxResults) {
+    public List<ListEntryInfo> findVisibleNodesLike(SchemaPath nodeType, ModelNodeId parentId, Map<QName, String>
+            keysLike, int maxResults, SchemaRegistry mountRegistry) {
         throw new IllegalArgumentException(String.format("Nodes of type {} cannot be searched", nodeType));
     }
 
     @Override
-    public List findByMatchValues(SchemaPath nodeType, Map<String, Object> matchValues) {
+    public List findByMatchValues(SchemaPath nodeType, Map<String, Object> matchValues, SchemaRegistry mountRegistry) {
         return null;
     }
 
     @Override
-    public EntityRegistry getEntityRegistry(SchemaPath nodeType) {
+    public EntityRegistry getEntityRegistry(SchemaPath nodeType, SchemaRegistry mountRegistry) {
         return null;
     }
 

@@ -4,7 +4,7 @@
         <error-tag>data-missing</error-tag>
         <error-severity>error</error-severity>
         <error-path xmlns:policy="http://www.test-company.com/solutions/policy-engine">/policy:policy-engine/policy:policy[policy:name='test123']/policy:action/policy:object-type</error-path>
-        <error-message>Mandatory leaf object-type is missing</error-message>
+        <error-message>Mandatory leaf 'object-type' is missing</error-message>
         <error-info>
             <missing-leaf>object-type</missing-leaf>
         </error-info>

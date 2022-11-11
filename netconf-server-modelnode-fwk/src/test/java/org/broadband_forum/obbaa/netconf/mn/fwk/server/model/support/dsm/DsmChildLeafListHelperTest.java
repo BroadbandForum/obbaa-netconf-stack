@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.dsm;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
@@ -27,16 +43,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
@@ -45,27 +51,40 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.SetAttributeException;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class DsmChildLeafListHelperTest {
 
     private static final String EXAMPLE_JUKEBOX_YANGFILE = "/dsmchildleaflisthelpertest/example-jukebox.yang";
     private static final String EXAMPLE_JUKEBOX_YANGTYPES = "/dsmchildleaflisthelpertest/example-jukebox-types.yang";
-    public static final String SINGER_ORDERED_BY_USER_LOCALNAME = "singer-ordered-by-user";
-    public static final QName SINGER_ORDERED_BY_USER_QNAME = QName.create(JB_NS, SINGER_ORDERED_BY_USER_LOCALNAME);
-    private SchemaRegistry m_schemaRegistry;
-    ModelNodeDataStoreManager m_modelNodeDSM;
     private static final String ARTIST_NAME = "Artist";
     private static final String ALBUM_NAME = "album";
+    public static final String SINGER_ORDERED_BY_USER_LOCALNAME = "singer-ordered-by-user";
+    public static final QName SINGER_ORDERED_BY_USER_QNAME = QName.create(JB_NS, SINGER_ORDERED_BY_USER_LOCALNAME);
+
     private ModelNodeId m_jukeboxNodeId = new ModelNodeId().addRdn(new ModelNodeRdn(CONTAINER, JB_NS, JUKEBOX_LOCAL_NAME));
     private ModelNodeId m_libraryNodeId = new ModelNodeId(m_jukeboxNodeId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, LIBRARY_LOCAL_NAME));
     private ModelNodeId m_artistNodeId = new ModelNodeId(m_libraryNodeId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, ARTIST_LOCAL_NAME))
             .addRdn(new ModelNodeRdn(NAME_QNAME, ARTIST_NAME));
     private ModelNodeId m_albumNodeId = new ModelNodeId(m_artistNodeId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, ALBUM_LOCAL_NAME))
             .addRdn(new ModelNodeRdn(NAME_QNAME, ALBUM_NAME));
+
+    private SchemaRegistry m_schemaRegistry;
+    private ModelNodeDataStoreManager m_modelNodeDSM;
 
     @Before
     public void setup() throws SchemaBuildException {
@@ -78,7 +97,7 @@ public class DsmChildLeafListHelperTest {
 
     @Test
     public void testAddChild() throws SetAttributeException, GetAttributeException {
-        DsmChildLeafListHelper childLeafListHelper = Mockito.spy(new DsmChildLeafListHelper(mock(LeafListSchemaNode.class), SINGER_QNAME,
+        DsmChildLeafListHelper childLeafListHelper = spy(new DsmChildLeafListHelper(mock(LeafListSchemaNode.class), SINGER_QNAME,
                 m_modelNodeDSM, m_schemaRegistry));
 
         ModelNodeWithAttributes albumModelNode = new ModelNodeWithAttributes(ALBUM_SCHEMA_PATH, m_albumNodeId,
@@ -90,7 +109,7 @@ public class DsmChildLeafListHelperTest {
         populateValuesInModelNode(albumModelNode1);
         updateModelNode(albumModelNode1);
 
-        when(m_modelNodeDSM.findNode(any(SchemaPath.class), any(ModelNodeKey.class), any(ModelNodeId.class))).
+        when(m_modelNodeDSM.findNode(any(SchemaPath.class), any(ModelNodeKey.class), any(ModelNodeId.class), any(SchemaRegistry.class))).
                 thenReturn(albumModelNode).thenReturn(albumModelNode1);
         
         when(albumModelNode.getParent()).thenReturn(null);
@@ -331,7 +350,7 @@ public class DsmChildLeafListHelperTest {
         Map<QName, String> keys = new HashMap<>();
         keys.put(NAME_QNAME, ALBUM_NAME);
         ModelNodeKey modelNodeKey = new ModelNodeKey(keys);
-        when(m_modelNodeDSM.findNode(ALBUM_SCHEMA_PATH, modelNodeKey, m_artistNodeId)).
+        when(m_modelNodeDSM.findNode(ALBUM_SCHEMA_PATH, modelNodeKey, m_artistNodeId, m_schemaRegistry)).
                 thenReturn(albumModelNode);
         return albumModelNode;
     }

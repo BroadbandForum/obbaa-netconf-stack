@@ -22,17 +22,18 @@ import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class NetconfRpcError {
 
-    private static final Logger LOGGER = Logger.getLogger(NetconfRpcError.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfRpcError.class, LogAppNames.NETCONF_LIB);
     private NetconfRpcErrorType m_errorType;
     private NetconfRpcErrorTag m_errorTag;
     private NetconfRpcErrorSeverity m_errorSeverity;
@@ -315,5 +316,10 @@ public class NetconfRpcError {
     public static NetconfRpcError getApplicationError(String errorMsg) {
         return new NetconfRpcError(NetconfRpcErrorTag.OPERATION_FAILED, NetconfRpcErrorType.Application, NetconfRpcErrorSeverity.Error,
                 errorMsg);
+    }
+    public static NetconfRpcError getInvalidXMLError(String errorMsg, NetconfRpcErrorType errorType) {
+        return new NetconfRpcError(NetconfRpcErrorTag.GENERAL_ERROR, errorType, NetconfRpcErrorSeverity.Error, String.format(
+                NetconfRpcErrorMessages.INVALID_XML_SYNTAX, errorMsg )).addErrorInfoElement(
+                NetconfRpcErrorInfo.ErrElement, errorMsg);
     }
 }

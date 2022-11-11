@@ -1,0 +1,20 @@
+<restaurant xmlns="http://example.com/ns/example-restaurant">
+    <name>Guru</name>
+    <location>10 Ky Dong, Ward 9, Distrist 3, HCM City, Viet Nam</location>
+    <opening-time>10:10-00:00</opening-time>
+    <owner>The</owner>
+    <menu>
+        <name>breakfast</name>
+        <viand>
+            <name>Crawfish pasta</name>
+            <price>180</price>
+        </viand>
+        <viand>
+            <name>Salmon herb</name>
+            <price>200</price>
+        </viand>
+    </menu>
+    <table>
+        <tableNumber>10</tableNumber>
+    </table>
+</restaurant>

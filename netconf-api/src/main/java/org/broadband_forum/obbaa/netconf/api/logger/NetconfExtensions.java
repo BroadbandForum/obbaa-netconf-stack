@@ -83,4 +83,7 @@ public enum NetconfExtensions {
         return false;
     }
 
+    public String getModuleName() {
+        return m_moduleName;
+    }
 }

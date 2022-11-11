@@ -1,0 +1,200 @@
+
+#38
+<?xml version="1.0" encoding="UTF-8"?>
+#1
+
+
+#13
+<notification
+#56
+ xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0"
+#1
+>
+#1
+
+
+#51
+    <eventTime>1970-01-02T13:47:31.550Z</eventTime>
+#1
+
+
+#27
+    <sros-log-generic-event
+#52
+ xmlns="urn:test1.com:sros:ns:yang:sr:notifications"
+#1
+>
+#1
+
+
+#48
+        <sequence-number>24165</sequence-number>
+#1
+
+
+#37
+        <severity>critical</severity>
+#1
+
+
+#41
+        <application>logger</application>
+#1
+
+
+#33
+        <event-id>2002</event-id>
+#1
+
+
+#50
+        <event-name>tmnxLogTraceError</event-name>
+#1
+
+
+#39
+        <router-name>Base</router-name>
+#1
+
+
+#46
+        <subject>1:IOM:UNUSUAL_ERROR</subject>
+#1
+
+
+#93
+          <message>Slot 1: ~NPAPI_MAC_ENTRY:
+ Sap Associated to the MAC is NULL !!!</message>
+#1
+
+
+#21
+        <event-params
+#1
+>
+#1
+
+
+#85
+            <tmnxLogTraceErrorTitle>Slot 1: ~NPAPI_MAC_ENTRY</tmnxLogTraceErrorTitle>
+#1
+
+
+#84
+            <tmnxLogTraceErrorMessage>1:IOM:UNUSUAL_ERROR</tmnxLogTraceErrorMessage>
+#1
+
+
+#23
+        </event-params>
+#1
+
+
+#29
+    </sros-log-generic-event>
+#1
+
+
+#15
+</notification>
+##
+
+#38
+<?xml version="1.0" encoding="UTF-8"?>
+#1
+
+
+#13
+<notification
+#56
+ xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0"
+#1
+>
+#1
+
+
+#51
+    <eventTime>1970-01-02T13:47:31.550Z</eventTime>
+#1
+
+
+#27
+    <sros-log-generic-event
+#52
+ xmlns="urn:test1.com:sros:ns:yang:sr:notifications"
+#1
+>
+#1
+
+
+#48
+        <sequence-number>24166</sequence-number>
+#1
+
+
+#37
+        <severity>critical</severity>
+#1
+
+
+#41
+        <application>logger</application>
+#1
+
+
+#33
+        <event-id>2002</event-id>
+#1
+
+
+#50
+        <event-name>tmnxLogTraceError</event-name>
+#1
+
+
+#39
+        <router-name>Base</router-name>
+#1
+
+
+#46
+        <subject>1:IOM:UNUSUAL_ERROR</subject>
+#1
+
+
+#93
+          <message>Slot 1: ~NPAPI_MAC_ENTRY:
+ Sap Associated to the MAC is NULL !!!</message>
+#1
+
+
+#21
+        <event-params
+#1
+>
+#1
+
+
+#85
+            <tmnxLogTraceErrorTitle>Slot 1: ~NPAPI_MAC_ENTRY</tmnxLogTraceErrorTitle>
+#1
+
+
+#84
+            <tmnxLogTraceErrorMessage>1:IOM:UNUSUAL_ERROR</tmnxLogTraceErrorMessage>
+#1
+
+
+#23
+        </event-params>
+#1
+
+
+#29
+    </sros-log-generic-event>
+#1
+
+
+#15
+</notification>
+##

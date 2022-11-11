@@ -2,7 +2,7 @@ module deviation-test-no-revision-dev {
 	
 	yang-version 1;
     
-	namespace "urn:org:bbf:pma:deviation:test";
+	namespace "urn:org:bbf2:pma:deviation:test";
 	
 	prefix "devTest";
 	

@@ -8,11 +8,21 @@
 	    </layout>
 	</appender>
 	<root>
-		<level value="ERROR" />
+		<level value="WARN" />
 		<appender-ref ref="console" />
 	</root>
 	
 	<category name="org.hibernate.type">
     	<priority value="DEBUG"/>
+	</category>
+
+	<category name="org.broadband_forum.obbaa.netconf.mn.fwk.validation.BigEditTest">
+		<priority value="DEBUG"/>
+	</category>
+	<category name="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreValidatorImpl">
+		<priority value="INFO"/>
+	</category>
+	<category name="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ImpactHintsAnalyserTest">
+		<priority value="INFO"/>
 	</category>
 </log4j:configuration>

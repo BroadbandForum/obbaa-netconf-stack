@@ -48,10 +48,11 @@ public class NotificationSessionInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String methodName = method.getName();
+        String userName =((NotificationSessionImpl) m_notificationSession).getClientInfo().getUsername();
         LOGGER.info(null, "Invoking method: {} with args: {}", methodName, args);
         if (methodName.equals(NotificationSession.SEND_NOTIFICATION_METHOD)) {
             LOGGER.info(null, "Notification counter should be increased by 1");
-            m_nbiNotificationsCounterInterceptor.increaseNumberOfNotifications();
+            m_nbiNotificationsCounterInterceptor.increaseNumberOfNotificationsForUsers(userName);
             m_nbiNotificationsCounterInterceptor.increaseOutNotifications(m_sessionId);
         }
         return method.invoke(m_notificationSession, args);

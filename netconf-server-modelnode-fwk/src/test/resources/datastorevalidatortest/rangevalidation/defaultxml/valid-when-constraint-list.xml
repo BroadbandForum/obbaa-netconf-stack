@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<validation xmlns="urn:org:bbf:pma:validation">
+<validation xmlns="urn:org:bbf2:pma:validation">
 	<when-validation>
 		<result-list>10</result-list>
+		<list-type>
+			<list-id>1</list-id>
+			<list-value>value</list-value>
+		</list-type>
+		<list-type>
+			<list-id>2</list-id>
+			<list-value>value</list-value>
+		</list-type>
+		<list-type1>
+			<list-id>1</list-id>
+			<list-value>value</list-value>
+		</list-type1>
+		<list-type1>
+			<list-id>2</list-id>
+			<list-value>value</list-value>
+		</list-type1>
 	</when-validation>
 </validation>

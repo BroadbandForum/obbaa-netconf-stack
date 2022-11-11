@@ -2,7 +2,7 @@ module alu-pma-certificates {
 
 	yang-version 1;
 	
-	namespace "urn:org:bbf:pma:alu-pma-certificates";
+	namespace "urn:org:bbf2:pma:alu-pma-certificates";
 	
 	prefix "cert";
 

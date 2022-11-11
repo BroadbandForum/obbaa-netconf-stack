@@ -1,0 +1,8 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name/>
+        </artist>
+        <case2-leaf/>
+    </library>
+</jukebox>

@@ -5,7 +5,7 @@
     </target>
     <test-option>set</test-option>
     <config>
-      <pma:pma2 xmlns:pma="urn:org:bbf:pma">
+      <pma:pma2 xmlns:pma="urn:org:bbf2:pma">
       </pma:pma2>
     </config>
   </edit-config>

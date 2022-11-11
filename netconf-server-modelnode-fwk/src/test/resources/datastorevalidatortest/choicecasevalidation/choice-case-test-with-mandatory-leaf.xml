@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<validation xmlns="urn:org:bbf:pma:validation">
+<validation xmlns="urn:org:bbf2:pma:validation">
     <mandatory-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
     	<non-mandatory-leaf>Test</non-mandatory-leaf>
     </mandatory-validation>

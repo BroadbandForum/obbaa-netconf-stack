@@ -43,11 +43,12 @@ public class IndexedList<KeyType,  ValueType extends IndexedList.IndexableListEn
         m_index.put(value.getKey(), value);
     }
 
-    public void remove(KeyType key) {
+    public ValueType remove(KeyType key) {
         ValueType value = m_index.remove(key);
         if(value != null){
             m_list.remove(value);
         }
+        return value;
     }
 
     public void clear() {

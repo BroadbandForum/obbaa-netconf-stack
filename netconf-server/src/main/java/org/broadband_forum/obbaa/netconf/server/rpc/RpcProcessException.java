@@ -16,11 +16,11 @@
 
 package org.broadband_forum.obbaa.netconf.server.rpc;
 
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 
 /**
  * This exception is thrown by the RPC handlers when custom RPC processing/execution fails
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  *
  */
 
-public class RpcProcessException extends Exception {
+public class RpcProcessException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

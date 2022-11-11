@@ -20,13 +20,14 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>netconf-api</artifactId>
-    <name>netconf-lib/netconf-api</name>
+    <name>netconf-fwk/netconf-api</name>
     <packaging>bundle</packaging>
+
     <dependencies>
         <!-- Internal -->
         <dependency>
@@ -58,6 +59,10 @@
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
+            <artifactId>netty-codec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
             <artifactId>netty-tcnative</artifactId>
             <version>${netty-tcnative.version}</version>
             <classifier>${tcnative.classifier.ubuntu}</classifier>
@@ -65,23 +70,35 @@
         </dependency>
         <dependency>
             <groupId>org.apache.sshd</groupId>
-            <artifactId>sshd-core</artifactId>
+            <artifactId>sshd-osgi</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>xmlunit</groupId>
             <artifactId>xmlunit</artifactId>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.servicemix.bundles</groupId>
+            <artifactId>org.apache.servicemix.bundles.saxon</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -94,6 +111,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
         <dependency>
             <groupId>org.opendaylight.yangtools</groupId>
@@ -129,7 +147,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- Excluding stax-api as it is GPL based , and should not be delivered with product as FOSS policy -->
         <dependency>
             <groupId>org.codehaus.woodstox</groupId>
             <artifactId>woodstox-core-asl</artifactId>
@@ -154,6 +171,18 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
@@ -166,6 +195,10 @@
                             <ignoredDependencies>
                                 <ignoredDependency>io.netty:netty-tcnative:jar:${netty-tcnative.version}</ignoredDependency>
                                 <ignoredDependency>org.codehaus.woodstox:woodstox-core-asl:jar:${woodstox.core.asl.version}</ignoredDependency>
+                                <ignoredDependency>org.apache.logging.log4j:log4j-slf4j-impl:jar:${slf4j.log4j.impl.version}</ignoredDependency>
+                                <ignoredDependency>org.apache.logging.log4j:log4j-core:jar:${log4j2.version}</ignoredDependency>
+                                <ignoredDependency>net.sf.saxon:Saxon-HE:jar:${saxon.he.version}</ignoredDependency>
+				                <ignoredDependency>org.apache.servicemix.bundles:org.apache.servicemix.bundles.saxon:jar:9.9.1-6_1</ignoredDependency>
                             </ignoredDependencies>
                             <outputXML>true</outputXML>
                         </configuration>

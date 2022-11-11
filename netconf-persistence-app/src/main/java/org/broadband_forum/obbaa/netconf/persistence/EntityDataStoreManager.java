@@ -55,6 +55,8 @@ public interface EntityDataStoreManager {
  
     public <E> List<E> findRange(Class<E> pojoClass, String predicateColumn, PredicateCondition condition, Double value);
 
+    public <E> List<E> findRangeBetween(Class<E> pojoClass, String predicateColumn, Double lowerLimit, Double upperLimit);
+
     public <E> List<E> findWithPaging(Class<E> entityClass, PagingInput pagingInput);
 
     public <E> List<E> findWithPaging(Class<E> entityClass, PagingInput pagingInput, List<String> columnNames);
@@ -100,6 +102,8 @@ public interface EntityDataStoreManager {
     public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput pagingInput);
     
     public <E> List<E> findByMatchMultiConditions(Class<E> entity, List<Map<String, Object>> likeValues, PagingInput pagingInput, String orderBy);
+
+    public Long countByMatchMultiConditions(Class entity, List<Map<String, Object>> likeValues);
 
     public <E> boolean merge(E entity);
 
@@ -168,5 +172,7 @@ public interface EntityDataStoreManager {
     void setCustomDbEnvValues();
 
     void persist(Object entity);
+
+    <E> List<E> findObjectByQuery(Class<E> entityClass, String query);
 
 }

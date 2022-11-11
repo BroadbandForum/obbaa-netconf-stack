@@ -1,3 +1,6 @@
+/**
+ * Netconf transport related classes
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,7 +17,4 @@
  * limitations under the License.
  */
 
-/**
- * Netconf transport related classes
- */
 package org.broadband_forum.obbaa.netconf.api.transport;

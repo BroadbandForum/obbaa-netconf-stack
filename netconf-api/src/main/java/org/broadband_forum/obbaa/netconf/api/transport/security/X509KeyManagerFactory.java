@@ -23,7 +23,7 @@ import java.security.Provider;
 /**
  * A X509 KeyManagerFactory which lets the users supply an implementation of {@link KeyManager} via {@link X509KeyManagerFactorySpi}.
  * 
- *
+ * 
  * 
  */
 public class X509KeyManagerFactory extends KeyManagerFactory {

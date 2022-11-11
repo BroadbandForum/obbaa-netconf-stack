@@ -7,7 +7,7 @@
 		<test-option>set</test-option>
 		<error-option>stop-on-error</error-option>
 		<config>
-			<pma xmlns="urn:org:bbf:pma">
+			<pma xmlns="urn:org:bbf2:pma">
 				<pmadevices>
 					<pmadevice>
 						<deviceId>device0</deviceId>

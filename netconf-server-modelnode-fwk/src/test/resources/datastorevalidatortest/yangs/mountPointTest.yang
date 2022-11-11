@@ -2,7 +2,7 @@ module mount-point-test {
 	
 	yang-version 1;
     
-	namespace "urn:org:bbf:pma:mountPointTest";
+	namespace "urn:org:bbf2:pma:mountPointTest";
 	
 	prefix "mpt";
 	

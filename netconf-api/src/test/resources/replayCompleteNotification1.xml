@@ -1,5 +1,5 @@
 <notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
-    <eventTime>2016-04-26T16:13:01+07:00</eventTime>
+    <eventTime>2016-04-26T16:13:01.789+07:00</eventTime>
     <parent-node xmlns="urn:ietf:params:xml:ns:test">
         <replayComplete xmlns="urn:ietf:params:xml:ns:netmod:notification" />
     </parent-node>

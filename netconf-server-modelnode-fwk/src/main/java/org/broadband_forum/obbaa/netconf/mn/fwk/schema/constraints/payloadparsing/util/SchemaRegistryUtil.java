@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil.excludeFirstStep;
@@ -14,44 +30,69 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.jxpath.ri.compiler.Expression;
 import org.apache.commons.jxpath.ri.compiler.LocationPath;
 import org.apache.commons.jxpath.ri.compiler.NodeNameTest;
 import org.apache.commons.jxpath.ri.compiler.Step;
 import org.broadband_forum.obbaa.netconf.api.parser.FileYangSource;
 import org.broadband_forum.obbaa.netconf.api.parser.YangParserUtil;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.ModuleIdentifier;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaMountRegistryProvider;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.ValidationHint;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.MountProviderInfo;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.SchemaContextUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.HelperDrivenModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationMountContext;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationPathBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath.JXPathUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.ReadWriteLockService;
 import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.dom4j.dom.DOMNodeHelper;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ElementCountConstraint;
+import org.opendaylight.yangtools.yang.model.api.ElementCountConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
+import org.opendaylight.yangtools.yang.model.api.MustConstraintAware;
+import org.opendaylight.yangtools.yang.model.api.MustDefinition;
+import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
+import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.UnknownSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.UsesNode;
+import org.opendaylight.yangtools.yang.model.api.WhenConditionAware;
+import org.opendaylight.yangtools.yang.model.api.meta.ModelStatement;
+import org.opendaylight.yangtools.yang.model.api.type.LeafrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -61,28 +102,18 @@ public class SchemaRegistryUtil {
     private static final String EQUAL_TO = "=";
     private static final String EQUAL_WITH_SPACES = " = ";
     private static final String SLASH = "/";
-	public static final String YANG_EXTENSION = ".yang";
+    public static final String YANG_EXTENSION = ".yang";
     private static final String COLON = ":";
     public static final String SINGLE_QUOTE = "'";
     public static final String APOSTROPHE_XML_ENTITY = "&apos;";
     public static final String SINGLE_QUOTE_XML_ENTITY = "&quot;";
-    
-    public static final String ENABLE_MOUNT_POINT = "ENABLE_MOUNT_POINT";
-    public static final String MOUNT_CONTEXT_SCHEMA_REGISTRY = "MOUNT_CONTEXT_SCHEMA_REGISTRY";
+
     public static final String MOUNT_CONTEXT_SUBSYSTEM_REGISTRY = "MOUNT_CONTEXT_SUBSYSTEM_REGISTRY";
     public static final String MOUNT_CONTEXT_PROVIDER = "MOUNT_CONTEXT_PROVIDER";
     public static final String MOUNT_PATH = "MOUNT_PATH";
-
-    public static boolean isMountPointEnabled() {
-        Boolean returnValue = (Boolean) RequestScope.getCurrentScope().getFromCache(ENABLE_MOUNT_POINT);
-        if (returnValue == null) {
-            returnValue = System.getenv().containsKey(ENABLE_MOUNT_POINT) ? Boolean.parseBoolean(System.getenv(ENABLE_MOUNT_POINT))
-                    : System.getProperties().containsKey(ENABLE_MOUNT_POINT) ? Boolean.parseBoolean(System.getProperty(ENABLE_MOUNT_POINT))
-                            : true;
-            RequestScope.getCurrentScope().putInCache(ENABLE_MOUNT_POINT, returnValue);
-        }
-        return returnValue;
-    }
+    public static final String WILDCARD = "*";
+    public static final String ARROW_OPERATOR = "->";
+    private static final String VALIDATION_HINTS_REGEX_PATTERN = "([^\\s]+(\\s)*->(\\s)*SKIP_IMPACT_ON_CREATE|[^\\s]+(\\s)*->(\\s)*SKIP_VALIDATION|[^\\s]+(\\s)*->(\\s)*SKIP_IMPACT_VALIDATION)+";
 
     public static QName getChildQname(Node dataNode, DataSchemaNode schemaNode, SchemaRegistry schemaRegistry) {
         DataSchemaNode childSchemaNode = getChildSchemaNode(dataNode, schemaNode.getPath(), schemaRegistry);
@@ -95,6 +126,17 @@ public class SchemaRegistryUtil {
 
     public static DataSchemaNode getChildSchemaNode(Node dataNode, SchemaPath path, SchemaRegistry schemaRegistry) {
         return getChildSchemaNode(dataNode.getNamespaceURI(), dataNode.getLocalName(), path, schemaRegistry);
+    }
+
+    public static NotificationDefinition getChildNotificationDefinition(String namespaceURI, String localName, SchemaPath path, SchemaRegistry schemaRegistry) {
+        Set<NotificationDefinition> notifications = schemaRegistry.retrieveAllNotificationDefinitions();
+        for (NotificationDefinition notification : notifications) {
+            QName childQname = notification.getQName();
+            if (localName.equals(childQname.getLocalName()) && namespaceURI.equals(childQname.getNamespace().toString()) && path.equals(notification.getPath().getParent())) {
+                return notification;
+            }
+        }
+        return null;
     }
 
     public static DataSchemaNode getChildSchemaNode(String childNs, String childLocalName, SchemaPath path, SchemaRegistry schemaRegistry) {
@@ -166,7 +208,7 @@ public class SchemaRegistryUtil {
         }
         return null;        
     }
-    
+
     public static String getPathWithPrefix(Node element, DataSchemaNode schemaNode, SchemaRegistry schemaRegistry, String childName) {
         if (schemaNode == null) {
             return "";
@@ -234,7 +276,7 @@ public class SchemaRegistryUtil {
         Map<String, String> prefixToNSMap = new HashMap<>();
         StringBuilder errorPath = new StringBuilder();
         if (schemaNode != null) {
-        	errorPath.append(buildErrorPath(element, schemaNode, schemaRegistry, prefixToNSMap));
+            errorPath.append(buildErrorPath(element, schemaNode, schemaRegistry, prefixToNSMap));
 
             DataSchemaNode parentSchemaNode = schemaRegistry.getNonChoiceParent(schemaNode.getPath());
             Node parentNode = element.getParentNode();
@@ -251,7 +293,7 @@ public class SchemaRegistryUtil {
         }
 
         if (childElement != null) {
-        	String childNodeName = fillPrefixToNSMapAndReturnNodeName((Element)childElement, schemaRegistry, prefixToNSMap);
+            String childNodeName = fillPrefixToNSMapAndReturnNodeName((Element)childElement, schemaRegistry, prefixToNSMap);
             errorPath.append(SLASH).append(childNodeName);
         }
 
@@ -264,7 +306,7 @@ public class SchemaRegistryUtil {
     }
 
     public static Pair<String, Map<String, String>> getErrorPath(Pair<String, Map<String, String>> existingErrorPathPair, Node element, DataSchemaNode schemaNode, SchemaRegistry schemaRegistry) {
-    	StringBuilder errorPathSB = new StringBuilder(existingErrorPathPair.getFirst());
+        StringBuilder errorPathSB = new StringBuilder(existingErrorPathPair.getFirst());
         if (schemaNode != null) {
             errorPathSB.append(buildErrorPath(element, schemaNode, schemaRegistry, existingErrorPathPair.getSecond()));
         }
@@ -276,10 +318,10 @@ public class SchemaRegistryUtil {
         StringBuilder errorItem = new StringBuilder();
         String elementName = dataSchemaNode.getQName().getLocalName();
         if (element != null && elementName.equals(element.getLocalName())) {
-        	elementName = fillPrefixToNSMapAndReturnNodeName((Element)element, schemaRegistry, prefixToNSMap);
+            elementName = fillPrefixToNSMapAndReturnNodeName((Element)element, schemaRegistry, prefixToNSMap);
         } else {
-        	String ns = dataSchemaNode.getQName().getNamespace().toString();
-        	elementName = fillPrefixToNsMapAndReturnNodeName(schemaRegistry, prefixToNSMap, elementName, ns);
+            String ns = dataSchemaNode.getQName().getNamespace().toString();
+            elementName = fillPrefixToNsMapAndReturnNodeName(schemaRegistry, prefixToNSMap, elementName, ns);
         }
         errorItem.append(SLASH).append(elementName);
         if (dataSchemaNode instanceof ListSchemaNode) {
@@ -307,102 +349,103 @@ public class SchemaRegistryUtil {
         return errorItem.toString();
     }
 
-	private static void fillPrefixToNSMap(String prefix, String ns,  Map<String, String> prefixToNSMap) {
-		if(prefixToNSMap.get(prefix) == null){
-			prefixToNSMap.put(prefix, ns);
-		}
-	}
-
-	private static String fillPrefixToNSMapAndReturnNodeName(Element element, SchemaRegistry schemaRegistry, Map<String, String> prefixToNSMap){
-        String elementName = element.getNodeName();
-		String[] splits = elementName.split(COLON);
-
-		if(splits.length == 2){
-			String prefix = elementName.split(COLON)[0];
-			String ns = element.lookupNamespaceURI(prefix);
-        	fillPrefixToNSMap(prefix, ns, prefixToNSMap);
-        } else {
-        	String ns = element.getNamespaceURI();
-        	elementName = fillPrefixToNsMapAndReturnNodeName(schemaRegistry, prefixToNSMap, elementName, ns);
+    private static void fillPrefixToNSMap(String prefix, String ns,  Map<String, String> prefixToNSMap) {
+        if(prefixToNSMap.get(prefix) == null){
+            prefixToNSMap.put(prefix, ns);
         }
-		return elementName;
-	}
+    }
 
-	private static String fillPrefixToNsMapAndReturnNodeName(SchemaRegistry schemaRegistry,
-			Map<String, String> prefixToNSMap, String elementName, String ns) {
-		String prefix = schemaRegistry.getPrefix(ns);
-		if(prefix != null && ns != null) {
-			elementName = prefix + COLON +elementName;
-			fillPrefixToNSMap(prefix, ns, prefixToNSMap);
-		}
-		return elementName;
-	}
+    private static String fillPrefixToNSMapAndReturnNodeName(Element element, SchemaRegistry schemaRegistry, Map<String, String> prefixToNSMap){
+        String elementName = element.getNodeName();
+        String[] splits = elementName.split(COLON);
+
+        if(splits.length == 2){
+            String prefix = elementName.split(COLON)[0];
+            String ns = element.lookupNamespaceURI(prefix);
+            fillPrefixToNSMap(prefix, ns, prefixToNSMap);
+        } else {
+            String ns = element.getNamespaceURI();
+            elementName = fillPrefixToNsMapAndReturnNodeName(schemaRegistry, prefixToNSMap, elementName, ns);
+        }
+        return elementName;
+    }
+
+    private static String fillPrefixToNsMapAndReturnNodeName(SchemaRegistry schemaRegistry,
+            Map<String, String> prefixToNSMap, String elementName, String ns) {
+        String prefix = schemaRegistry.getPrefix(ns);
+        if(prefix != null && ns != null) {
+            elementName = prefix + COLON +elementName;
+            fillPrefixToNSMap(prefix, ns, prefixToNSMap);
+        }
+        return elementName;
+    }
 
     /**
      * Returns all the children of type ContainerSchemaNode and are not configuration nodes.
      *
-     * @param schemaRegistry
+     * @param modelNode
      * @param nodeSchemaPath
      * @return
      */
-    public static List<QName> getStateChildContainers(SchemaRegistry schemaRegistry, SchemaPath nodeSchemaPath) {
-    	List<QName> stateContainerChildren = new ArrayList<>();
-    	Set<DataSchemaNode> childNodes = new HashSet<>();
-    	DataSchemaNode node = schemaRegistry.getDataSchemaNode(nodeSchemaPath);
-    	if (node instanceof DataNodeContainer) {
-    		DataNodeContainer container = (DataNodeContainer) node;
-    		childNodes.addAll(container.getChildNodes());
-    		childNodes.addAll(getMountPointChildNodes(nodeSchemaPath, node));
-    		for (DataSchemaNode child : childNodes) {
-    			if (child instanceof ContainerSchemaNode && !child.isConfiguration()) {
-    				stateContainerChildren.add(child.getQName());
-    			}
-    			if (child instanceof ChoiceSchemaNode) {
-    				stateContainerChildren.addAll(getStateChildCases(schemaRegistry, (ChoiceSchemaNode) child));
-    			}
-    		}
-    	}
-    	return stateContainerChildren;
+    public static List<QName> getStateChildContainers(HelperDrivenModelNode modelNode, SchemaPath nodeSchemaPath) {
+        SchemaRegistry schemaRegistry = modelNode.getSchemaRegistryForParent();
+        List<QName> stateContainerChildren = new ArrayList<>();
+        Set<DataSchemaNode> childNodes = new HashSet<>();
+        DataSchemaNode node = schemaRegistry.getDataSchemaNode(nodeSchemaPath);
+        if (node instanceof DataNodeContainer) {
+            DataNodeContainer container = (DataNodeContainer) node;
+            childNodes.addAll(container.getChildNodes());
+            childNodes.addAll(getMountPointChildNodes(modelNode.getSchemaRegistry(), nodeSchemaPath, node));
+            for (DataSchemaNode child : childNodes) {
+                if (child instanceof ContainerSchemaNode && !child.isConfiguration()) {
+                    stateContainerChildren.add(child.getQName());
+                }
+                if (child instanceof ChoiceSchemaNode) {
+                    stateContainerChildren.addAll(getStateChildCases(schemaRegistry, (ChoiceSchemaNode) child));
+                }
+            }
+        }
+        return stateContainerChildren;
     }
 
     /**
      * Returns all the children of type ListSchemaNode and are not configuration nodes.
      *
-     * @param schemaRegistry
+     * @param modelNode
      * @param nodeSchemaPath
      * @return
      */
-    public static List<QName> getStateChildLists(SchemaRegistry schemaRegistry, SchemaPath nodeSchemaPath) {
-    	List<QName> stateListChildren = new ArrayList<>();
-    	Set<DataSchemaNode> childNodes = new HashSet<>();
-    	DataSchemaNode node = schemaRegistry.getDataSchemaNode(nodeSchemaPath);
-    	if (node instanceof DataNodeContainer) {
-    		DataNodeContainer container = (DataNodeContainer) node;
-    		childNodes.addAll(container.getChildNodes());
-    		childNodes.addAll(getMountPointChildNodes(nodeSchemaPath, node));
-    		for (DataSchemaNode child : childNodes) {
-    			if (child instanceof ListSchemaNode && !child.isConfiguration()) {
-    				stateListChildren.add(child.getQName());
-    			}
-    		}
-    	}
-    	return stateListChildren;
+    public static List<QName> getStateChildLists(HelperDrivenModelNode modelNode, SchemaPath nodeSchemaPath) {
+        SchemaRegistry schemaRegistry = modelNode.getSchemaRegistryForParent();
+        List<QName> stateListChildren = new ArrayList<>();
+        Set<DataSchemaNode> childNodes = new HashSet<>();
+        DataSchemaNode node = schemaRegistry.getDataSchemaNode(nodeSchemaPath);
+        if (node instanceof DataNodeContainer) {
+            DataNodeContainer container = (DataNodeContainer) node;
+            childNodes.addAll(container.getChildNodes());
+            childNodes.addAll(getMountPointChildNodes(modelNode.getSchemaRegistry(), nodeSchemaPath, node));
+            for (DataSchemaNode child : childNodes) {
+                if (child instanceof ListSchemaNode && !child.isConfiguration()) {
+                    stateListChildren.add(child.getQName());
+                }
+            }
+        }
+        return stateListChildren;
     }
 
-    private static Collection<DataSchemaNode> getMountPointChildNodes(SchemaPath nodeSchemaPath, DataSchemaNode node) {
-    	Collection<DataSchemaNode> children = new HashSet<>();
-    	if (AnvExtensions.MOUNT_POINT.isExtensionIn(node)) {
-    		SchemaRegistry mountRegistry = getMountRegistry();
-    		if (mountRegistry != null) {
-    			children = mountRegistry.getChildren(nodeSchemaPath);
-    		}
-    	}
-    	return children;
+    private static Collection<DataSchemaNode> getMountPointChildNodes(SchemaRegistry mountRegistry, SchemaPath nodeSchemaPath, DataSchemaNode node) {
+        Collection<DataSchemaNode> children = new HashSet<>();
+        if (AnvExtensions.MOUNT_POINT.isExtensionIn(node)) {
+            if (mountRegistry != null) {
+                children = mountRegistry.getChildren(nodeSchemaPath);
+            }
+        }
+        return children;
     }
 
     public static Set<QName> getStateAttributes(SchemaPath nodeSchemaPath, SchemaRegistry registry) {
         Set<QName> stateAttrs = new TreeSet<>();
-        Collection<DataSchemaNode> children = getSchemaRegistry(registry).getChildren(nodeSchemaPath);
+        Collection<DataSchemaNode> children = registry.getChildren(nodeSchemaPath);
         for (DataSchemaNode child : children) {
             if (child instanceof ChoiceSchemaNode) {
                 Collection<CaseSchemaNode> cases = ((ChoiceSchemaNode) child).getCases().values();
@@ -413,24 +456,24 @@ public class SchemaRegistryUtil {
                     }
                 }
             }
-            if (!child.isConfiguration() && !(child instanceof DataNodeContainer)) {
+            if (!child.isConfiguration() && !(child instanceof DataNodeContainer) && !(child instanceof ChoiceSchemaNode)) {
                 stateAttrs.add(child.getQName());
             }
         }
         return stateAttrs;
     }
 
-	public static Set<QName> getStateLeafListAttributes(SchemaPath nodeSchemaPath, SchemaRegistry registry) {
-		Set<QName> stateAttrs = new TreeSet<>();
-		Collection<DataSchemaNode> children = getSchemaRegistry(registry).getChildren(nodeSchemaPath);
-		for(DataSchemaNode child :children){
-			if(!child.isConfiguration() && (child instanceof LeafListSchemaNode) ){
-				stateAttrs.add(child.getQName());
-			}
-		}
-		return stateAttrs;
-	}
-    
+    public static Set<QName> getStateLeafListAttributes(SchemaPath nodeSchemaPath, SchemaRegistry registry) {
+        Set<QName> stateAttrs = new TreeSet<>();
+        Collection<DataSchemaNode> children = registry.getChildren(nodeSchemaPath);
+        for(DataSchemaNode child :children){
+            if(!child.isConfiguration() && (child instanceof LeafListSchemaNode) ){
+                stateAttrs.add(child.getQName());
+            }
+        }
+        return stateAttrs;
+    }
+
     public static List<QName> getStateChildCases(SchemaRegistry schemaRegistry, ChoiceSchemaNode choiceSchemaNode) {
         List<QName> stateContainerCasesChildren = new ArrayList<>();
         for (CaseSchemaNode choiceNode : choiceSchemaNode.getCases().values()) {
@@ -567,50 +610,42 @@ public class SchemaRegistryUtil {
         return null;
     }
 
-	public static ChoiceSchemaNode getChoiceParentSchemaNode(SchemaPath schemaPath, SchemaRegistry schemaRegistry) {
-		SchemaPath parentSchemaPath = schemaPath.getParent();
-		while (parentSchemaPath != null) {
-			DataSchemaNode parentSchemaNode = schemaRegistry.getDataSchemaNode(parentSchemaPath);
-			if (parentSchemaNode instanceof ChoiceSchemaNode) {
-				return (ChoiceSchemaNode) parentSchemaNode;
-			}
-			parentSchemaPath = parentSchemaPath.getParent();
-		}
-		return null;
-	}
+    public static SchemaRegistry createSchemaRegistry(Collection<String> resourcesDirs, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibrarySupportedInHelloMessage, ReadWriteLockService readWriteLockService) throws SchemaBuildException {
+        List<YangTextSchemaSource> yangSchemaSources = getYangSchemaSources(resourcesDirs);
+        return new SchemaRegistryImpl(yangSchemaSources, supportedFeatures, supportedDeviations, isYangLibrarySupportedInHelloMessage, readWriteLockService);
+    }
 
-	public static SchemaRegistry createSchemaRegistry(Collection<String> resourcesDirs, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibrarySupportedInHelloMessage, ReadWriteLockService readWriteLockService) throws SchemaBuildException {
-		Set<File> files = new HashSet<>();
-		for (String resourcesDir : resourcesDirs) {
-			File folder = new File(resourcesDir);
-			listFilesForFolder(folder, files, YANG_EXTENSION);
-		}
-		List<YangTextSchemaSource> list = getYtss(files);
-		return new SchemaRegistryImpl(list, supportedFeatures, supportedDeviations, isYangLibrarySupportedInHelloMessage, readWriteLockService);
-	}
+    public static List<YangTextSchemaSource> getYangSchemaSources(Collection<String> resourcesDirs){
+        Set<File> files = new HashSet<>();
+        for (String resourcesDir : resourcesDirs) {
+            File folder = new File(resourcesDir);
+            listFilesForFolder(folder, files, YANG_EXTENSION);
+        }
+        return getYtss(files);
+    }
+    
+    public static void listFilesForFolder(final File folder, Set<File> matchingFiles, String extension) {
+        for (final File fileEntry : folder.listFiles()) {
+            if (fileEntry.isDirectory()) {
+                listFilesForFolder(fileEntry, matchingFiles, extension);
+            } else {
+                if (extension == null) {
+                    matchingFiles.add(fileEntry);
+                } else if (fileEntry.getName().endsWith(extension)) {
+                    matchingFiles.add(fileEntry);
+                }
 
-	public static void listFilesForFolder(final File folder, Set<File> matchingFiles, String extension) {
-		for (final File fileEntry : folder.listFiles()) {
-			if (fileEntry.isDirectory()) {
-				listFilesForFolder(fileEntry, matchingFiles, extension);
-			} else {
-				if (extension == null) {
-					matchingFiles.add(fileEntry);
-				} else if (fileEntry.getName().endsWith(extension)) {
-					matchingFiles.add(fileEntry);
-				}
+            }
+        }
+    }
 
-			}
-		}
-	}
-
-	public static List<YangTextSchemaSource> getYtss(Set<File> files) {
-		List<YangTextSchemaSource> list = new ArrayList<YangTextSchemaSource>();
-		for (File file : files) {
-			list.add(new FileYangSource(file));
-		}
-		return list;
-	}
+    public static List<YangTextSchemaSource> getYtss(Set<File> files) {
+        List<YangTextSchemaSource> list = new ArrayList<YangTextSchemaSource>();
+        for (File file : files) {
+            list.add(new FileYangSource(file));
+        }
+        return list;
+    }
 
     public static boolean containsWhen(DataSchemaNode child) {
         if (child != null) {
@@ -622,9 +657,81 @@ public class SchemaRegistryUtil {
         return false;
     }
 
-    public static boolean hasDefaults(DataSchemaNode node) {
-        if (node instanceof LeafSchemaNode && ((LeafSchemaNode) node).getType().getDefaultValue().isPresent() && !AnvExtensions.IGNORE_DEFAULT.isExtensionIn(node)) {
+    public static boolean containsAugmentWhen(DataSchemaNode child, SchemaRegistry registry) {
+        Optional<RevisionAwareXPath> xpath = getWhenOnAugment(child, registry);
+        if(xpath.isPresent()){
             return true;
+        }
+        return false;
+    }
+
+    private static Optional<RevisionAwareXPath> getWhenOnAugment(DataSchemaNode child, SchemaRegistry registry) {
+        if (child != null && child.isAugmenting()) {
+            DataSchemaNode parentSchemaNode = registry.getNonChoiceParent(child.getPath());
+            if (parentSchemaNode != null) {
+                Pair<AugmentationSchemaNode, SchemaPath> augmentNodeAndItsResidingNode = DataStoreValidationUtil.getAugmentationSchema(registry, parentSchemaNode, child);
+                AugmentationSchemaNode augSchema = augmentNodeAndItsResidingNode == null ? null : augmentNodeAndItsResidingNode.getFirst();
+                if (augSchema != null) {
+                    Optional<RevisionAwareXPath> xpath = augSchema.getWhenCondition();
+                    if (xpath.isPresent()) {
+                        return xpath;
+                    }
+                    //else try the parent.
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    public static boolean containsUsesWhen(DataSchemaNode child, SchemaRegistry registry) {
+        if (child != null && child.isAddedByUses()) {
+            DataSchemaNode parentSchemaNode = registry.getNonChoiceParent(child.getPath());
+            if(parentSchemaNode != null){
+                Pair<UsesNode,SchemaPath> usesNodeAndItsResidingNode = SchemaContextUtil.getUsesSchema(registry, parentSchemaNode, child);
+                UsesNode usesNode = usesNodeAndItsResidingNode == null? null : usesNodeAndItsResidingNode.getFirst();
+                if (usesNode != null) {
+                    Optional<RevisionAwareXPath> xpath = usesNode.getWhenCondition();
+                    if (xpath.isPresent()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean hasDefaults(DataSchemaNode node) {
+        if ( !AnvExtensions.IGNORE_DEFAULT.isExtensionIn(node)) {
+            if (node instanceof LeafSchemaNode && ((LeafSchemaNode) node).getType().getDefaultValue().isPresent()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean needsMMNCheck(DataSchemaNode node) {
+        if (node instanceof LeafSchemaNode) {
+            if ( ((LeafSchemaNode) node).isMandatory() || hasDefaults(node)) {
+                return true;
+            }
+        } else if (node instanceof ChoiceSchemaNode) {
+            if ( ((ChoiceSchemaNode) node).isMandatory() || ((ChoiceSchemaNode) node).getDefaultCase().isPresent()) {
+                return true;
+            }
+        } else if (node instanceof ElementCountConstraintAware){
+            Optional<ElementCountConstraint> optElementCountConstraint = ((ElementCountConstraintAware) node).getElementCountConstraint();
+            if (optElementCountConstraint.isPresent()) {
+                ElementCountConstraint elementCountConstraint = optElementCountConstraint.get();
+                if (elementCountConstraint.getMinElements() != null && elementCountConstraint.getMinElements() > 0) {
+                    return true;
+                }
+            }
+        } else if ( node instanceof ContainerSchemaNode && !((ContainerSchemaNode) node).isPresenceContainer()){
+            for ( DataSchemaNode childNode  : ((ContainerSchemaNode) node).getChildNodes()){
+                if ( needsMMNCheck(childNode)){
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -633,19 +740,31 @@ public class SchemaRegistryUtil {
      * Checks if the give node is a choice/case and returns the next proper DataSchemaNode which is not a case/choice
      * If the input is not a choice/case, returns the same
      */
-    public static DataSchemaNode getEffectiveParentNode(DataSchemaNode schemaNode, SchemaRegistry schemaRegistry) {
-
+    public static DataSchemaNode getEffectiveParentNode(SchemaNode schemaNode, SchemaRegistry schemaRegistry) {
+        if(schemaNode == null){
+            return null;
+        }
         DataSchemaNode returnNode = SchemaRegistryUtil.getDataSchemaNode(schemaRegistry, schemaNode.getPath().getParent()).getDataSchemaNode();
-        if (returnNode == null && schemaNode.getPath().getParent().getLastComponent() == null) {
-            SchemaRegistry mountRegistry = getMountRegistry();
-            SchemaPath mountPath = mountRegistry == null ? null : mountRegistry.getMountPath();
+        if (returnNode == null && schemaNode.getPath().getParent().getLastComponent() == null && schemaRegistry.getMountPath() != null) {
+            SchemaPath mountPath = schemaRegistry.getMountPath();
             if (mountPath != null) {
-                DataSchemaNode rootNode = mountRegistry.getChild(mountPath, schemaNode.getQName());
+                SchemaNode rootNode = schemaRegistry.getChild(mountPath, schemaNode.getQName());
                 if (rootNode != null && rootNode.equals(schemaNode)) {
-                    return schemaRegistry.getDataSchemaNode(mountPath);
+                    return schemaRegistry.getParentRegistry().getDataSchemaNode(mountPath);
                 }
             }
         }
+        // If parent schemaNode is Action Definition, then get parent data schema node of action definition
+        if (returnNode == null) {
+            ActionDefinition actionDefinition = schemaRegistry
+                    .getActionDefinitionNode(DataPathUtil.convertToDataPath(schemaNode.getPath().getParent()));
+            if (actionDefinition != null) {
+                SchemaPath parentDataSchemaPath = schemaNode.getPath().getParent().getParent();
+                DataSchemaNode parentSchemaNode = schemaRegistry.getDataSchemaNode(parentDataSchemaPath);
+                returnNode = getEffectiveParentNode(parentSchemaNode, schemaRegistry);
+            }
+        }
+
         if (returnNode instanceof ChoiceSchemaNode || returnNode instanceof CaseSchemaNode) {
             returnNode = getEffectiveParentNode(returnNode, schemaRegistry);
         }
@@ -662,7 +781,7 @@ public class SchemaRegistryUtil {
 
 
     public static DataSchemaNode getSchemaNode(SchemaRegistry registry, ModelNodeId nodeId) {
-        List<ModelNodeRdn> rdns = nodeId.getRdns();
+        List<ModelNodeRdn> rdns = nodeId.getRdnsReadOnly();
 
         if(rdns.isEmpty()){
             return null;
@@ -704,22 +823,22 @@ public class SchemaRegistryUtil {
     }
 
     public static SchemaRegistry getSchemaRegistry(ModelNode modelNode, SchemaRegistry schemaRegistry){    	
-    	SchemaRegistry registry = schemaRegistry;
-    	if(modelNode.hasSchemaMount() || modelNode.isSchemaMountImmediateChild()){
-    		registry = modelNode.getMountRegistry();
-    	} else {
-    		ModelNode grandParent = modelNode.getParent();
-    		while(grandParent != null){
-    			if(grandParent.hasSchemaMount() || grandParent.isSchemaMountImmediateChild()){
-    	    		registry = modelNode.getMountRegistry();
-    				break;
-    			}
-    			grandParent = grandParent.getParent();
-    		}
-    	}
+        SchemaRegistry registry = schemaRegistry;
+        if(modelNode.hasSchemaMount() || modelNode.isSchemaMountImmediateChild()){
+            registry = modelNode.getMountRegistry();
+        } else {
+            ModelNode grandParent = modelNode.getParent();
+            while(grandParent != null){
+                if(grandParent.hasSchemaMount() || grandParent.isSchemaMountImmediateChild()){
+                    registry = modelNode.getMountRegistry();
+                    break;
+                }
+                grandParent = grandParent.getParent();
+            }
+        }
         return registry;
     }
-    
+
     private static DataSchemaNode getMatchingSchemaNode(Collection<DataSchemaNode> dataSchemaNodes, ModelNodeRdn rdn) {
         for(DataSchemaNode node : dataSchemaNodes){
             if(nodesMatch(node.getQName(), rdn)){
@@ -732,57 +851,27 @@ public class SchemaRegistryUtil {
     private static boolean nodesMatch(QName qname, ModelNodeRdn rdn) {
         return qname.getNamespace().toString().equals(rdn.getNamespace()) && qname.getLocalName().equals(rdn.getRdnValue());
     }
-    
-    public static SchemaRegistry getSchemaRegistry(SchemaRegistry globalSchemaRegistry) {
-        SchemaRegistry mountRegistry = getMountRegistry();
-        if (mountRegistry != null) {
-            return mountRegistry;
+
+    public static DSValidationMountContext getDataSchemaNode(SchemaRegistry schemaRegistry, SchemaPath schemaPath) {
+        DataSchemaNode schemaNode = schemaRegistry.getDataSchemaNode(schemaPath);
+        if ( schemaNode == null && schemaRegistry.getParentRegistry() != null){
+            schemaNode = schemaRegistry.getParentRegistry().getDataSchemaNode(schemaPath);
         }
-        return globalSchemaRegistry;
-    }
-    
-    public static DSValidationMountContext getDataSchemaNode(SchemaRegistry globalRegistry, SchemaPath schemaPath) {
-        DataSchemaNode schemaNode = globalRegistry.getDataSchemaNode(schemaPath);
         DSValidationMountContext context = new DSValidationMountContext();
-        SchemaRegistry mountRegistry = null;
-        if (schemaNode == null) {
-            mountRegistry = getMountRegistry();
-            schemaNode = mountRegistry == null ? null : mountRegistry.getDataSchemaNode(schemaPath);
-            
-        }
-        context.setSchemaRegistry(mountRegistry != null ? mountRegistry : globalRegistry);
+        context.setSchemaRegistry(schemaRegistry);
         context.setDataSchemaNode(schemaNode);
         context.setSchemaPath(schemaNode != null ? schemaNode.getPath() : null);
         return context;
     }
-    
-    public static SchemaRegistry getMountRegistry() {
-        SchemaRegistry mountRegistry = (SchemaRegistry) RequestScope.getCurrentScope().getFromCache(MOUNT_CONTEXT_SCHEMA_REGISTRY);
-        return mountRegistry;
-    }
-    
-    public static void resetSchemaRegistryCache(){
-    	RequestScope.getCurrentScope().putInCache(SchemaMountRegistryProvider.PLUG_CONTEXT, null);
-    	RequestScope.getCurrentScope().putInCache(MOUNT_CONTEXT_SCHEMA_REGISTRY, null);
-    }
-    
-    public static void setMountRegistry(SchemaRegistry registry) {
-    	if ( registry != null && registry.getMountPath() != null){
-    		RequestScope.getCurrentScope().putInCache(MOUNT_CONTEXT_SCHEMA_REGISTRY, registry);
-    	}
-    }
-    
-    public static void setMountCurrentScope(Map<String, Object> mountCurrentScope){
-    	RequestScope.getCurrentScope().putInCache(SchemaMountRegistryProvider.MOUNT_CURRENT_SCOPE, mountCurrentScope);
-    	setMountRegistry( (SchemaRegistry) mountCurrentScope.get(SchemaMountRegistryProvider.MOUNT_SCHEMA_REGISTRY));
-    }
-    
-    @SuppressWarnings("unchecked")
-	public static Map<String, Object> getMountCurrentScope(){
-    	return (Map<String, Object>) RequestScope.getCurrentScope().getFromCache(SchemaMountRegistryProvider.MOUNT_CURRENT_SCOPE);
+
+    public static SchemaRegistry getMountRegistryFromXmlRequest(Element request, SchemaRegistry globalRegistry) {
+        MountProviderInfo info = getMountProviderInfo(request, globalRegistry);
+        if ( info != null){
+            return info.getMountedRegistry();
+        }
+        return null;
     }
 
-    
     public static MountProviderInfo getMountProviderInfo(Element request, SchemaRegistry globalRegistry) {
         if (request != null) {
             QName rootQname = QName.create(request.getNamespaceURI(), request.getLocalName());
@@ -796,7 +885,7 @@ public class SchemaRegistryUtil {
             }
             if ( globalRegistry.getMountRegistry() != null && rootDsn != null){
                 SchemaMountRegistryProvider mrp = globalRegistry.getMountRegistry().getProvider(rootDsn.getPath());
-                return getMountRegistryProviderRecursively(request, mrp, rootDsn, globalRegistry);    
+                return getMountRegistryProviderRecursively(request, mrp, rootDsn, globalRegistry);
             }
         }
         return null;
@@ -811,13 +900,16 @@ public class SchemaRegistryUtil {
                     for ( int index=0; index<childNodes.getLength(); index++){
                         Node childNode = childNodes.item(index);
                         if ( childNode.getNodeType()==Node.ELEMENT_NODE){
-                            if ( childDataSchemaNode.getQName().getNamespace().toString().equals(childNode.getNamespaceURI().toString()) &&
+                            if ( childDataSchemaNode.getQName().getNamespace().toString().equals(childNode.getNamespaceURI()) &&
                                     childDataSchemaNode.getQName().getLocalName().equals(childNode.getLocalName())){
                                 mountRegistryProvider = globalRegistry.getMountRegistry().getProvider(childDataSchemaNode.getPath());
                                 if ( mountRegistryProvider != null){
-                                    return new MountProviderInfo(mountRegistryProvider, childNode, childDataSchemaNode);
+                                    return new MountProviderInfo(mountRegistryProvider, (Element)childNode, childDataSchemaNode);
                                 } else {
-                                    return getMountRegistryProviderRecursively(childNode, mountRegistryProvider, childDataSchemaNode, globalRegistry);
+                                    MountProviderInfo mountRegistryProviderRecursively = getMountRegistryProviderRecursively(childNode, mountRegistryProvider, childDataSchemaNode, globalRegistry);
+                                    if ( mountRegistryProviderRecursively != null ){
+                                        return mountRegistryProviderRecursively;
+                                    }
                                 }
                             }
                         }
@@ -827,6 +919,283 @@ public class SchemaRegistryUtil {
         }
         return null;
     }
+
+    public static Map<SchemaPath, HintDetails> getHintDetails(Module module, SchemaRegistry schemaRegistry, DataStoreValidationPathBuilder pathBuilder){
+        Map<SchemaPath, HintDetails> referringSPHintDetails = new HashMap<>();
+        Set<HintDetails> hintDetailsSet = new HashSet<>();
+        List<UnknownSchemaNode> unknownNodes = module.getUnknownSchemaNodes();
+        for(UnknownSchemaNode unknownNode : unknownNodes){
+            if(AnvExtensions.VALIDATION_HINTS.isExtensionIn(unknownNode.getExtensionDefinition())){
+                DataSchemaNode schemaNode = null;
+                Expression targetNodeExpr = null;
+                if(unknownNode instanceof ModelStatement) {
+                    String targetNode = ((ModelStatement)unknownNode).argument().toString();
+                    schemaNode = getDataSchemaNode(targetNode, module, schemaRegistry);
+                    if(schemaNode == null){
+                        throw new RuntimeException(String.format("Invalid targetNode '%s' in the validationHint Extension", targetNode));
+                    }
+                }
+                List<UnknownSchemaNode> unknownChildExtns = unknownNode.getUnknownSchemaNodes();
+                UnknownSchemaNode expressionNode = getExpressionExtension(unknownChildExtns);
+                RevisionAwareXPath matchedXpath = null;
+                boolean isExpressionMatched = false;
+                if(expressionNode != null && expressionNode instanceof ModelStatement){
+                    String expression = ((ModelStatement)expressionNode).argument().toString();
+                    targetNodeExpr = JXPathUtils.getExpression(expression);
+                    if (schemaNode instanceof WhenConditionAware) {
+                        Optional<RevisionAwareXPath> optWhenCondition = schemaNode.getWhenCondition();
+                        matchedXpath = compareExpressionWithXPath(targetNodeExpr, optWhenCondition);
+                        if(matchedXpath != null) {
+                            isExpressionMatched = true;
+                        }
+                    }
+                    if (!isExpressionMatched && schemaNode instanceof MustConstraintAware) {
+                        Collection<MustDefinition> mustConstraints = ((MustConstraintAware) schemaNode).getMustConstraints();
+                        for(MustDefinition mustConstraint : mustConstraints) {
+                            RevisionAwareXPath mustCondition = mustConstraint.getXpath();
+                            String xpath = mustCondition.getOriginalString();
+                            Expression mustExpression = JXPathUtils.getExpression(xpath);
+                            if(targetNodeExpr.toString().equals(mustExpression.toString())){
+                                isExpressionMatched = true;
+                                matchedXpath = mustCondition;
+                            }
+                        }
+                    }
+                    if(!isExpressionMatched && schemaNode.isAugmenting()) {
+                        Optional<RevisionAwareXPath> optWhenCondition = getWhenOnAugment(schemaNode, schemaRegistry);
+                        matchedXpath = compareExpressionWithXPath(targetNodeExpr, optWhenCondition);
+                        if(matchedXpath != null) {
+                            isExpressionMatched = true;
+                        }
+                    }
+                }
+                if(!isExpressionMatched){
+                    throw new RuntimeException(String.format("Expression %s not present in the target schemapath %s " , targetNodeExpr.toString(), ((ModelStatement)unknownNode).argument().toString()));
+                }
+                SchemaPath referringSP = schemaNode.getPath();
+                UnknownSchemaNode hintsNode = getHintsExtension(unknownChildExtns);
+                Map<SchemaPath, ValidationHint> parsedHints = null;
+                boolean isSkipValidation = false;
+                if(hintsNode != null && hintsNode instanceof ModelStatement){
+                    String hints = ((ModelStatement)hintsNode).argument().toString();
+                    Map<SchemaPath,ArrayList<String>> constraints = pathBuilder.getSchemaPathsFromXPath(schemaNode, matchedXpath.getOriginalString(), null);
+                    Pair<Map<SchemaPath, ValidationHint>, Boolean> hintsPair = parseHints(constraints.keySet(), hints, schemaRegistry, module);
+                    parsedHints = hintsPair.getFirst();
+                    isSkipValidation = hintsPair.getSecond();
+                }
+                HintDetails hintDetails = new HintDetails();
+                hintDetails.setReferringSP(referringSP);
+                hintDetails.setTargetNodeExpression(targetNodeExpr);
+                hintDetails.setReferredSPToHints(parsedHints);
+                hintDetails.setIsSkipValidation(isSkipValidation);
+                hintDetailsSet.add(hintDetails);
+                referringSPHintDetails.put(referringSP, hintDetails);
+            }
+        }
+        return referringSPHintDetails;
+    }
+
+    private static RevisionAwareXPath compareExpressionWithXPath(Expression targetNodeExpr, Optional<RevisionAwareXPath> condition) {
+        RevisionAwareXPath matchedXpath = null;
+        if (condition != null && condition.isPresent()) {
+            String xpath = condition.get().getOriginalString();
+            Expression whenExpression = JXPathUtils.getExpression(xpath);
+            if(targetNodeExpr.toString().equals(whenExpression.toString())){
+                matchedXpath = condition.get();
+            }
+        }
+        return matchedXpath;
+    }
+
+    private static DataSchemaNode getDataSchemaNode(String node, Module module, SchemaRegistry schemaRegistry){
+        List<QName> qnames = new ArrayList<>();
+        String[] paths = node.trim().split(SLASH);
+        for(String path : paths){
+            if(!path.isEmpty()) {
+                QName qname = buildQName(path, module, schemaRegistry);
+                qnames.add(qname);
+            }
+        }
+        return schemaRegistry.getDataSchemaNode(SchemaPath.create(qnames, true));
+    }
+
+    private static QName buildQName(String name, Module module, SchemaRegistry schemaRegistry){
+        QName qname = null;
+        String[] nameWithPrefix = name.split(COLON);
+        String localName = null;
+        if(nameWithPrefix.length == 2){
+            Module qnameModule = null;
+            if(module.getPrefix().equals(nameWithPrefix[0])){
+                qnameModule = module;
+            }else {
+                Set<ModuleImport> moduleImports = module.getImports();
+                for (ModuleImport moduleImport : moduleImports) {
+                    if (moduleImport.getPrefix().equals(nameWithPrefix[0])) {
+                        String moduleName = moduleImport.getModuleName();
+                        qnameModule = schemaRegistry.getModule(moduleName).get();
+                        break;
+                    }
+                }
+            }
+            localName = nameWithPrefix[1];
+            qname = QName.create(qnameModule.getNamespace(), qnameModule.getRevision(), localName);            
+        } else {
+            qname = QName.create(module.getNamespace(), module.getRevision(), localName);            
+        }
+        return qname;
+    }
+
+    private static UnknownSchemaNode getExpressionExtension(Collection<UnknownSchemaNode> unknownNodes){
+        for(UnknownSchemaNode unknownNode : unknownNodes){
+            if(AnvExtensions.EXPRESSION.isExtensionIn(unknownNode.getExtensionDefinition())){
+                return unknownNode;
+            }
+        }
+        return null;
+    }
+
+    private static UnknownSchemaNode getHintsExtension(Collection<UnknownSchemaNode> unknownNodes){
+        for(UnknownSchemaNode unknownNode : unknownNodes){
+            if(AnvExtensions.HINTS.isExtensionIn(unknownNode.getExtensionDefinition())){
+                return unknownNode;
+            }
+        }
+        return null;
+    }
+
+    public static Pair<Map<SchemaPath, ValidationHint>, Boolean> parseHints(Set<SchemaPath> allReferredSPs, String hintStr, SchemaRegistry schemaRegistry, Module module) {
+    	Map<SchemaPath, ValidationHint> hints = new HashMap<>();
+    	boolean isSkipValidation = false;
+
+        Pattern pattern = Pattern.compile(VALIDATION_HINTS_REGEX_PATTERN);
+        Matcher matcher = pattern.matcher(hintStr);
+        List<String> hintsForSps = new ArrayList();
+        String unMatchedHintString = hintStr;
+        while(matcher.find()) {
+            String matchedString = hintStr.substring(matcher.start(), matcher.end());
+            hintsForSps.add(matchedString);
+            unMatchedHintString = unMatchedHintString.replace(matchedString, "");
+        }
+        if(hintsForSps.isEmpty()){
+            throw new IllegalArgumentException("Hints should not be empty");
+        }
+        if(unMatchedHintString.trim().length() > 0){
+            throw new IllegalArgumentException("Cannot parse part of hint : "+hintStr);
+        }
+    	for(String hintForSp : hintsForSps){
+    		if(hintForSp.isEmpty()){
+    			throw new IllegalArgumentException("Hints should not be empty");
+    		} else {
+    			String [] split = hintForSp.trim().split(ARROW_OPERATOR);
+    			if(split.length > 2){
+    				throw new IllegalArgumentException("Cannot parse part of extension argument: "+hintForSp);
+    			}
+    			String spStr = split[0].trim();
+    			String hint = split[1].trim();
+    			ValidationHint validationHint = ValidationHint.valueOf(hint);
+    			if(!isSkipValidation && validationHint.equals(ValidationHint.SKIP_VALIDATION)){
+    			    isSkipValidation = true;
+    			}
+    			if(WILDCARD.equals(spStr)){
+    				hints.clear();
+    				for (SchemaPath referredSP : allReferredSPs) {
+    					hints.put(referredSP, validationHint);
+    				}
+    				break;
+    			}
+    			boolean isReferredSPExist = true;
+    			try {
+                    DataSchemaNode referredSchemaNode = getDataSchemaNode(spStr, module,
+                        schemaRegistry);
+                    if (referredSchemaNode == null) {
+                        isReferredSPExist = false;
+                    } else {
+                        SchemaPath sp = referredSchemaNode.getPath();
+                        hints.put(sp, validationHint);
+                    }
+                }
+    			catch (IllegalArgumentException e) {
+                    isReferredSPExist = false;
+                }
+    			if(!isReferredSPExist) {
+                    throw new IllegalArgumentException("ReferredSP does not exists for hint: "+spStr);
+                }
+    		}
+    	}
+    	return new Pair<Map<SchemaPath,ValidationHint>, Boolean>(hints, isSkipValidation);
+    }
+
+    public static SchemaPath getSchemaPathFromSchemaNodeId(SchemaRegistry schemaRegistry, Map<String, String> prefixToNsMap, String pathStr){
+        List<QName> qnames = new ArrayList<>();
+        String[] paths = pathStr.split(DocumentUtils.SEPARATED);
+        for(String path : paths){
+            if(!path.isEmpty()) {
+                String prefix = null;
+                String namespace = null;
+                String localName = null;
+                Module module = null;
+                QName qname = null;
+                Revision revision = null;
+                SchemaRegistry coreSchemaRegistry = null;
+                String[] pathWithPrefix = path.split(DocumentUtils.COLON);
+                if(pathWithPrefix.length > 2){
+                    throw new RuntimeException(String.format("Invalid path %s specified in the schemapath string %s", path, pathStr));
+                }else if(pathWithPrefix.length == 2){
+                    prefix = pathWithPrefix[0];
+                    localName = pathWithPrefix[1];
+                } else {
+                    localName = pathWithPrefix[0];
+                    prefix = DocumentUtils.XMLNS;
+                }
+                namespace = prefixToNsMap.get(prefix);
+                if(namespace != null) {
+                   module = schemaRegistry.getModuleByNamespace(namespace);
+                   if(module == null) {
+                       coreSchemaRegistry  = schemaRegistry.getParentRegistry();
+                       if(coreSchemaRegistry == null) {
+                           throw new RuntimeException(String.format("Could not find the module for the namespace %s because of missing parent registry for the plugSchemaRegistry %s", namespace, schemaRegistry.getName()));
+                       }
+                       module = coreSchemaRegistry.getModuleByNamespace(namespace);
+                   }
+                   if(module == null){
+                       throw new RuntimeException(String.format("Could not find the module for the namespace %s in the plugSchemaRegistry %s and in the parentSchemaRegistry %s", namespace, schemaRegistry.getName(), coreSchemaRegistry.getName()));
+                   }
+                   revision = module.getRevision().get();
+                   if(revision != null) {
+                       qname = QName.create(namespace, localName, revision);
+                       qnames.add(qname);
+                   } else {
+                       qname = QName.create(namespace, localName);
+                       qnames.add(qname);
+                   }
+                } else {
+                    throw new RuntimeException(String.format("Could not find the namespace for the prefix %s in the pathStr %s", prefix, pathStr));
+                }
+            }
+        }
+        return SchemaPath.create(qnames, true);
+    }
+
+    public static boolean hasDefaultOrHasChildWithDefaults(SchemaRegistry schemaRegistry, DataSchemaNode dataSchemaNode) {
+        return getSubtreeNodeWithDefaults(schemaRegistry, dataSchemaNode) != null;
+    }
+
+    public static DataSchemaNode getSubtreeNodeWithDefaults(SchemaRegistry schemaRegistry, DataSchemaNode dataSchemaNode) {
+        if(hasDefaults(dataSchemaNode)){
+            return dataSchemaNode;
+        }
+        Collection<DataSchemaNode> children = schemaRegistry.getNonChoiceChildren(dataSchemaNode.getPath());
+        for (DataSchemaNode child : children) {
+            // we don't auto-instantiate list entries, so we need not go deep once we hit a list entry
+            if (!(child instanceof ListSchemaNode)&& hasDefaultOrHasChildWithDefaults(schemaRegistry, child)){
+                return child;
+            }
+        }
+
+        return null;
+    }
+
+
     public static boolean isLeafListOrderedByUser(QName qName, SchemaPath parentSP, SchemaRegistry schemaRegistry) {
         LeafListSchemaNode leafListSchemaNode = getLeafListSchemaNode(qName, parentSP, schemaRegistry);
         return leafListSchemaNode.isUserOrdered();
@@ -841,11 +1210,89 @@ public class SchemaRegistryUtil {
                     leafListSchemaNode = (LeafListSchemaNode) dataSchemaNode;
                     break;
                 }
+            }else if (dataSchemaNode instanceof ChoiceSchemaNode) {
+                LeafListSchemaNode leafListFromNestedChoice = ChoiceCaseNodeUtil.getLeafListSchemaNodeFromNestedChoice(dataSchemaNode, qName);
+                if (leafListFromNestedChoice != null) {
+                    return leafListFromNestedChoice;
+                }
             }
         }
         if (leafListSchemaNode == null) {
             throw new RuntimeException(String.format("Cannot get the schema node for '%s'", qName));
         }
         return leafListSchemaNode;
+    }
+
+    public static boolean isListOrderedByUser(QName qName, SchemaPath parentSP, SchemaRegistry schemaRegistry) throws ModelNodeGetException {
+        boolean isOrderedByUser = false;
+        ListSchemaNode listSchemaNode = getListSchemaNode(qName, parentSP, schemaRegistry);
+        if (listSchemaNode != null) {
+            isOrderedByUser = listSchemaNode.isUserOrdered();
+        }
+        return isOrderedByUser;
+    }
+
+    public static ListSchemaNode getListSchemaNode(QName qName, SchemaPath parentSP, SchemaRegistry schemaRegistry) throws ModelNodeGetException {
+        Collection<DataSchemaNode> schemaNodes = schemaRegistry.getChildren(parentSP);
+        ListSchemaNode listSchemaNode = null;
+        for (DataSchemaNode dataSchemaNode : schemaNodes) {
+            if (dataSchemaNode.getQName().equals(qName)) {
+                if (dataSchemaNode instanceof ListSchemaNode) {
+                    listSchemaNode = (ListSchemaNode)dataSchemaNode;
+                    break;
+                }
+            }
+            if (dataSchemaNode instanceof ChoiceSchemaNode) {
+                ListSchemaNode nestedListSchemaNode = ChoiceCaseNodeUtil.getListSchemaNodeFromNestedChoice(dataSchemaNode, qName);
+                if(nestedListSchemaNode != null){
+                    listSchemaNode = nestedListSchemaNode;
+                    break;
+                }
+            }
+        }
+        if (listSchemaNode == null) {
+            throw new ModelNodeGetException(String.format("Cannot get the schema node for '%s'", qName));
+        }
+        return listSchemaNode;
+    }
+
+    public static Set<TypedDataSchemaNode> getConfigLeafsLeafListsInSubtreeOfLeafrefType(DataSchemaNode dataSchemaNode, SchemaRegistry schemaRegistry) {
+        Set<TypedDataSchemaNode> children = new HashSet<>();
+        for (DataSchemaNode child : schemaRegistry.getNonChoiceChildren(dataSchemaNode.getPath())) {
+            if(child.isConfiguration()){
+                if(child instanceof LeafSchemaNode || child instanceof LeafListSchemaNode){
+                    if(((TypedDataSchemaNode)child).getType() instanceof LeafrefTypeDefinition){
+                        children.add((TypedDataSchemaNode) child);
+                    }
+                } else if(child instanceof DataNodeContainer) {
+                    children.addAll(getConfigLeafsLeafListsInSubtreeOfLeafrefType(child, schemaRegistry));
+                }
+            }
+        }
+        return children;
+    }
+
+    public static SchemaRegistry retrievePossibleMountRegistry(Element element, SchemaPath schemaPath, SchemaRegistry schemaRegistry){
+        return retrievePossibleMountRegistry(element, schemaPath, schemaRegistry,false);
+    }
+
+    public static SchemaRegistry retrievePossibleMountRegistry(Element element, SchemaPath schemaPath, SchemaRegistry schemaRegistry,
+                                                               boolean resetCache) {
+        if (AnvExtensions.MOUNT_POINT.isExtensionIn(schemaRegistry.getDataSchemaNode(schemaPath))) {
+            SchemaMountRegistryProvider provider = schemaRegistry.getMountRegistry().getProvider(schemaPath);
+            if (provider != null) {
+                SchemaRegistry mountRegistry = null;
+                try {
+                    mountRegistry = provider.getSchemaRegistry(element);
+                    if(resetCache) {
+                        RequestScope.getCurrentScope().putInCache(SchemaRegistry.CHILD_NODE_INDEX_CACHE, null);
+                    }
+                } catch (GetException e) {
+                    throw new ValidationException(e.getRpcError());
+                }
+                schemaRegistry = mountRegistry != null ? mountRegistry : schemaRegistry;
+            }
+        }
+        return schemaRegistry;
     }
 }

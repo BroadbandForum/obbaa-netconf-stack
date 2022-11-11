@@ -19,8 +19,7 @@ package org.broadband_forum.obbaa.netconf.nc.stack.examples;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
@@ -29,12 +28,14 @@ import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
  * Simple Utility to demonstrate working with RPC requests/responses.
  */
 public class ClientUtil {
-    private static final Logger LOGGER = Logger.getLogger(ClientUtil.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ClientUtil.class, LogAppNames.NETCONF_LIB);
 
     public static void runNetconfRequests(NetconfClientSession clientSession) {
         try {

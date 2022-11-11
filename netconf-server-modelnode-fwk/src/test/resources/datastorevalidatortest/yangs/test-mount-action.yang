@@ -1,25 +1,444 @@
 module test-mount-action {
-   	yang-version 1.1;
-   	namespace "urn:example:test-mount-action";
-   	prefix "test-mount";
+    yang-version 1.1;
+    namespace "urn:example:test-mount-action";
+    prefix "test-mount";
 
-	revision "2018-01-03" {
-		description "Initial version.";
-	}
-	container test-mount-action-container {
-   		action mount-container-reset {
-       		input {
-         		leaf reset-at {
-           			type string;
-           			mandatory true;
-          		}
-        	}
-        	output {
-          		leaf reset-finished-at {
-            		type string;
-            		mandatory true;
-          		}
-        	}
-		}
-	}
+    revision "2018-01-03" {
+        description "Initial version.";
+    }
+
+    identity some-identity {
+    }
+
+    identity identity1 {
+        base some-identity;
+    }
+
+    identity identity11 {
+        base identity1;
+    }
+
+    identity identity2 {
+        base some-identity;
+    }
+
+    typedef interface-state-ref {
+        type leafref {
+            path "/test-mount:interfaces-state/test-mount:interface/test-mount:name";
+        }
+    }
+
+    typedef interface-ref {
+        type leafref {
+            path "/test-mount:interfaces/test-mount:interface/test-mount:name";
+        }
+    }
+
+    container test-action-with-mandatory1 {
+
+        leaf outer-mandatory-leaf {
+            type string;
+            mandatory true;
+        }
+
+        action mandatory-leaf-in-container1 {
+            input {
+                container container1 {
+                    leaf mandatory-leaf {
+                        type string;
+                        mandatory true;
+                    }
+                }
+            }
+        }
+
+    }
+
+    list test-action-with-mandatory-list {
+
+        key name;
+        leaf name {
+            type string;
+        }
+
+        leaf outer-mandatory-leaf {
+            type string;
+            mandatory true;
+        }
+        action mandatory-leaf-in-list {
+
+            input {
+                container container1 {
+                    leaf mandatory-leaf {
+                        type string;
+                        mandatory true;
+                    }
+                }
+            }
+        }
+    }
+    container test-action-maxminvalidation-leaflistandlist {
+        action movies {
+            input {
+                container minmax {
+                    leaf-list noOfSongs {
+                        type uint64;
+                        min-elements 2;
+                        max-elements 3;
+                    }
+                    list testlist {
+                        key testname;
+                        leaf testname {
+                            type string;
+                        }
+                        container testcontainer {
+                            list songs {
+                                key name;
+                                leaf name {
+                                    type string;
+                                }
+                                min-elements 2;
+                                max-elements 3;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    container test-action-with-mandatory {
+        action mandatory-leaf-in-container {
+
+            input {
+                container container1 {
+                    leaf mandatory-leaf {
+                        type string;
+                        mandatory true;
+                    }
+                }
+            }
+        }
+
+        action mandatory-leaf-action {
+
+            input {
+                leaf mandatory-leaf {
+                    type string;
+                    mandatory true;
+                }
+                leaf leaf1 {
+                    type string;
+                }
+
+                choice choice1 {
+                    mandatory true;
+                    case case1 {
+                        leaf leaf-case1 {
+                            type string;
+                        }
+                    }
+                    case case2 {
+                        leaf leaf-case2 {
+                            type string;
+                        }
+                    }
+                }
+
+                list list1 {
+                    key key1;
+                    leaf key1 {
+                        type string;
+                    }
+
+                    leaf mandatory-leaf-in-list {
+                        type string;
+                        mandatory true;
+                    }
+                }
+            }
+        }
+
+        action mandatory-leaf-in-list {
+
+            input {
+                list list1 {
+                    key name;
+                    leaf name {
+                        type string;
+                    }
+
+                    leaf mandatory-leaf {
+                        type string;
+                        mandatory true;
+                    }
+                }
+            }
+        }
+
+        action mandatory-leaf-with-nested-list {
+
+            input {
+                list list1 {
+                    key name;
+                    leaf name {
+                        type string;
+                    }
+
+                    list list2 {
+                        key key1;
+                        leaf key1 {
+                            type string;
+                        }
+                        leaf mandatory-leaf {
+                            type string;
+                            mandatory true;
+                        }
+                    }
+                }
+            }
+        }
+        action mandatory-leaf-with-nested-container {
+
+            input {
+                container container1 {
+                    leaf name {
+                        type string;
+                    }
+
+                    container container2 {
+                        leaf leaf1 {
+                            type string;
+                        }
+                        leaf mandatory-leaf {
+                            type string;
+                            mandatory true;
+                        }
+
+                        list list1 {
+                            key key1;
+                            leaf key1 {
+                                type string;
+                            }
+
+                            leaf mandatory-leaf1 {
+                                type string;
+                                mandatory true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        action mandatory-leaf-choice {
+            input {
+                container container1 {
+                    choice choice1 {
+                        case case1 {
+                            leaf leaf1 {
+                                type string;
+                            }
+                            leaf mandatory-leaf {
+                                type string;
+                                mandatory true;
+                            }
+                        }
+                        case case2 {
+                            leaf-list leaflist {
+                                type string;
+                            }
+
+                            choice choice2 {
+                                mandatory true;
+                                case case4 {
+                                    leaf leaf3 {
+                                        type string;
+                                    }
+                                    list list1 {
+
+                                        key key1;
+                                        leaf key1 {
+                                            type string;
+                                        }
+
+                                        leaf mandatory-leaf1 {
+                                            type string;
+                                            mandatory true;
+                                        }
+                                    }
+                                }
+                                case case5 {
+                                    leaf mandatory-leaf2 {
+                                        type string;
+                                        mandatory true;
+                                    }
+                                    leaf leaf4 {
+                                        type string;
+                                    }
+                                }
+                            }
+                        }
+                        case case3 {
+                            leaf name {
+                                type string;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    container test-mount-action-container {
+        action mount-container-reset {
+            input {
+                leaf reset-at {
+                    type string;
+                    mandatory true;
+                }
+            }
+            output {
+                leaf reset-finished-at {
+                    type string;
+                    mandatory true;
+                }
+            }
+        }
+
+        action action-with-must-validation {
+            input {
+                leaf interface {
+                    must "/test-mount:interfaces/test-mount:interface[test-mount:name=current()]/test-mount:type = 'type2'";
+                    type string;
+                    mandatory true;
+                }
+            }
+        }
+
+        action leafref-validation {
+            input {
+                leaf-list leaf1 {
+                    type interface-ref;
+                }
+            }
+        }
+    }
+
+    grouping track-grouping {
+        container file-container {
+            when "../track = 'true'";
+            action activate {
+            }
+        }
+        leaf track {
+            type boolean;
+        }
+
+        container config-container {
+            when "../../config-leaf = 'true'";
+            action deactivate {
+            }
+        }
+    }
+    container rollback-files {
+
+        list file {
+            key id;
+
+            leaf id {
+                type uint32;
+            }
+            leaf name {
+                type string;
+            }
+        }
+
+        container track-container {
+            config false;
+            leaf sample {
+                type string;
+            }
+            uses track-grouping;
+        }
+
+        leaf config-leaf {
+            type string;
+        }
+
+        grouping rollback-reference {
+            choice rollback {
+                leaf id {
+                    type leafref {
+                        path "/rollback-files/file/id";
+                    }
+                }
+            }
+        }
+
+        action apply-rollback-file {
+            input {
+                uses rollback-reference;
+                leaf-list city {
+                    must "count(/rollback-files/file) > 0";
+                    type string;
+                }
+            }
+        }
+    }
+
+    augment "/test-mount:test-mount-action-container" {
+        action test-action-must-with-state-value {
+            input {
+                uses must-with-state-data;
+                uses leafref-with-state-data;
+            }
+        }
+    }
+
+    grouping must-with-state-data {
+        leaf interface {
+            type string;
+            must "derived-from-or-self(/test-mount:interfaces-state/test-mount:interface[test-mount:name
+                        = current()]/test-mount:type,'test-mount:identity2') or derived-from-or-self(/test-mount:interfaces-state/test-mount:interface[test-mount:name
+                        = current()]/test-mount:type,'test-mount:identity1')";
+        }
+    }
+
+    grouping leafref-with-state-data {
+        leaf interface-ref {
+            type test-mount:interface-state-ref;
+        }
+    }
+
+    container interfaces {
+
+        list interface {
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+                mandatory true;
+            }
+            leaf enabled {
+                type boolean;
+                default true;
+            }
+        }
+    }
+
+    container interfaces-state {
+        config false;
+        list interface {
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type identityref {
+                    base some-identity;
+                }
+            }
+        }
+    }
 }

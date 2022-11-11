@@ -1,0 +1,432 @@
+module datastore-type-validator-test {
+    yang-version 1.1;
+
+    namespace "urn:org:bbf:pma:validation";
+
+    prefix "type-validator";
+
+    revision 2019-02-05 {
+        description "Initial revision";
+    }
+
+    typedef custom-string-type {
+        type string;
+        default "abc";
+    }
+
+    typedef custom-enum-type {
+        type enumeration {
+            enum "one";
+            enum "two";
+            enum "three";
+        }
+        default "two";
+    }
+
+    typedef custom-leafref-type {
+        type leafref {
+            path "type-validation/leafref-value";
+        }
+    }
+
+    typedef custom-union-type {
+        type union {
+            type int8;
+            type custom-string-type;
+            type custom-leafref-type;
+            type custom-enum-type;
+        }
+        default "three";
+    }
+
+    typedef custom-nested-union-type {
+        type union {
+            type int8 {
+                range "10..25";
+            }
+            type custom-leafref-type;
+            type custom-enum-type;
+        }
+        default "three";
+    }
+
+    container type-validation {
+
+        container union-type-validation {
+
+            list union-type-validation-list {
+
+                key id;
+                leaf id {
+                    type string;
+                }
+
+                leaf union-with-only-enum-type {
+                    type union {
+                        type enumeration {
+                            enum "union";
+                            enum "union1";
+                        }
+                    }
+                }
+                
+                container boolean-type-container {
+                 must "current()/union-with-boolean-enum-type = 'false'"{
+                     error-message "Only false is supported";
+                 }
+                 leaf union-with-boolean-enum-type {
+                    type union {
+                    	type boolean;
+                        type enumeration {
+                            enum "union";
+                            enum "union1";
+                        }
+                    }
+                 }
+                }
+
+                leaf union-with-boolean-enum-type {
+                    when "../enum-default-validation = 'true'";
+                    type union {
+                    	type boolean;
+                        type enumeration {
+                            enum "union";
+                            enum "union1";
+                        }
+                    }
+                    default "true";
+                 }
+                
+                leaf union-with-enum-type-default {
+                    when "../enum-default-validation = 'true'";
+                    type union {
+                        type enumeration {
+                            enum "union";
+                            enum "union1";
+                        }
+                    }
+                    default "union";
+                }
+
+                leaf enum-default-validation {
+                    type boolean;
+                }
+
+                leaf enum-custom-default-validation {
+                    type boolean;
+                }
+
+                leaf union-with-custom-enum-type-default {
+                    when "../enum-custom-default-validation = 'true'";
+                    type union {
+                    	type custom-enum-type;
+                    }
+                    default "one";
+                }
+
+                leaf union-with-only-string-type-leaf {
+                    type union {
+                        type string;
+                    }
+                }
+
+                leaf union-with-string-type-default-leaf {
+                    when "../string-type-default-validation = 'true'";
+                    type union {
+                        type string;
+                    }
+                    default "string-default";
+                }
+
+                leaf string-type-default-validation {
+                    type boolean;
+                }
+
+                leaf union-with-only-int-type-leaf {
+                    type union {
+                        type int8;
+                    }
+                }
+
+                leaf union-with-leafref-type {
+                    type union {
+                        type leafref {
+                            path "../ref-value";
+                        }
+                    }
+                }
+
+                leaf union-with-only-instance-identifier {
+                    type union {
+                        type instance-identifier {
+                            require-instance "true";
+                        }
+                    }
+                }
+
+                leaf ref-value {
+                    type int8;
+                }
+
+                leaf union-with-custom-leafref-type {
+                    type union {
+                        type custom-leafref-type;
+                    }
+                }
+
+                leaf union-leaf-without-string-type {
+                    type union {
+                        type int8 {
+                            range "10..25";
+                        }
+                        type enumeration {
+                            enum "union";
+                        }
+                        type leafref {
+                            path "../ref-value";
+                        }
+                    }
+                }
+
+                leaf union-leaf-without-string-type1 {
+                    type union {
+                        type leafref {
+                            path "../ref-value";
+                        }
+                        type int8 {
+                            range "10..25";
+                        }
+                        type enumeration {
+                            enum "union";
+                        }
+                    }
+                }
+
+                leaf union-without-int-type {
+                    type union {
+
+                        type enumeration {
+                            enum "union";
+                        }
+                        type leafref {
+                            path "../ref-string-value";
+                        }
+                        type custom-string-type;
+                    }
+                }
+
+                leaf all-type-default-validation {
+                    type boolean ;
+                }
+                leaf union-all-type-default {
+
+                    when "../all-type-default-validation = 'true'";
+                    type union {
+
+                        type enumeration {
+                            enum "union";
+                        }
+                        type leafref {
+                            path "../ref-string-value";
+                        }
+                        type custom-string-type;
+                    }
+
+                    default 'xyz';
+                }
+
+                leaf ref-string-value {
+                    type string;
+                }
+
+                leaf nested-union-type {
+                    type union {
+                        type custom-nested-union-type;
+                        type int16 {
+                            range "1000..1025";
+                        }
+                        type leafref {
+                            path "../ref-string-value";
+                        }
+                        type leafref {
+                            path "../leafref-container/leafref-string";
+                        }
+                    }
+                }
+                container leafref-container {
+                    leaf leafref-string {
+                        type string;
+                    }
+                    leaf instance-leaf {
+                        type string;
+                    }
+                }
+
+                leaf nested-custom-union-type-default {
+                    when "../default-validation = 'true'";
+                    type union {
+                        type custom-union-type;
+                        type leafref {
+                            path "../ref-string-value";
+                        }
+                    }
+                    default 10;
+                }
+
+                leaf custom-union-type-default {
+                    when "../default-validation = 'true'";
+                    type custom-union-type;
+                    default 10;
+                }
+
+                leaf default-validation {
+                    type boolean;
+                }
+
+                leaf union-with-instance-identifier {
+                    type union {
+                        type int8;
+                        type instance-identifier {
+                            require-instance "true";
+                        }
+                        type enumeration {
+                            enum "union";
+                            enum "union1";
+                        }
+                    }
+                }
+            }
+
+            container leaf-list-with-union-type {
+
+                leaf-list name {
+                    type union {
+
+                        type int8 {
+                            range "1..25";
+                        }
+                        type enumeration {
+                            enum "mumbai";
+                        }
+                        type string {
+                            pattern '[a-dS-X].*';
+                        }
+
+                        type instance-identifier {
+                            require-instance "true";
+                        }
+
+                        type leafref {
+                            path "../list1[id = current()/../name]/reference-leaf";
+                        }
+                    }
+                    max-elements 3;
+                }
+
+                leaf-list leaflist-with-nested-union {
+                    type union {
+                        type custom-nested-union-type;
+                        type int8 {
+                            range "1..5";
+                        }
+                        type enumeration {
+                            enum "chennai";
+                        }
+                        type string {
+                            pattern '[P-Z].*';
+                        }
+
+                        type instance-identifier {
+                            require-instance "true";
+                        }
+
+                        type leafref {
+                            path "../list1/id";
+                        }
+                    }
+                    max-elements 5;
+                }
+
+                leaf ref-value {
+                    type string;
+                }
+
+                list list1 {
+                    key id;
+                    leaf id {
+                        type int8;
+                    }
+
+                    leaf reference-leaf {
+                        type int8 {
+                            range "60..71";
+                        }
+                    }
+
+                    leaf instance-identifier-leaf {
+                        type string;
+                    }
+                }
+            }
+        }
+
+        leaf leafref-value {
+            type int8 ;
+        }
+
+        leaf leaf1 {
+            type string;
+        }
+        list unionWithEnumAndInt {
+	        key id;
+	
+	        leaf id {
+	            type int8;
+	        }
+	        leaf test {
+	            type int8;
+	        }
+			leaf max-address {
+	    		type union {
+		          type enumeration {
+	        		enum "no-limit";
+	    		  }
+	      		  type uint32;
+	    		}
+	    		default "no-limit";
+	   		}
+	   	}
+    }
+	list unionWithEnumAndInt {
+        key id;
+
+        leaf id {
+            type int8;
+        }
+        leaf test {
+            type int8;
+        }
+		leaf max-address {
+    		type union {
+	          type enumeration {
+        		enum "no-limit";
+    		  }
+      		  type uint32;
+    		}
+    		default "no-limit";
+   		}
+   	}
+	
+    container string-type-validation {
+
+        leaf custom-string-leaf {
+            when "../string-typevalidation = 'true'";
+            type custom-string-type;
+        }
+
+        leaf string-typevalidation {
+            type boolean ;
+        }
+    }
+}
+}

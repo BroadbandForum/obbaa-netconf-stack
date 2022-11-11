@@ -107,12 +107,14 @@ module datastore-derived-from {
 				}
 				
 				leaf leaf4 {
-					when 'derived-from-or-self(/validation:validation/validation:xml-subtree/augmentTest/list1[current()]/leaf3,"identity1") = true';
-					type string;
+					when "derived-from-or-self(/validation:validation/validation:xml-subtree/augmentTest/list1[current()]/leaf3,'identity1') = 'true'";
+					type leafref {
+					    path "../../list1/leaf1";
+					}
 				}
 				
 				list list2 {
-					when 'derived-from(../../list1[current()]/leaf3, "some-identity")';
+					when 'derived-from(../../list1[leaf1 = current()/../list2/leaf1]/leaf3, "some-identity")';
 					key leaf1;
 					
 					leaf leaf1 {

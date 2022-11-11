@@ -49,6 +49,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by kbhatk on 7/27/16.
  */
+@Ignore
 public class SSLContextUtilTest {
     static HashSet<String> m_caps = new HashSet<String>();
     static {

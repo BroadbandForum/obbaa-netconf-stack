@@ -1,12 +1,28 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence;
 
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.CA_CERT_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.CERT_MGMT_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.EMPTY_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.HOME_ADDRESS_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.OFFICE_ADDRESS_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.PMA_CERT_NODE_ID;
-import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ADDRESS_NAME_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ADDRESS_NAME_Q_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ADDRESS_Q_NAME;
@@ -52,6 +68,7 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.SONG_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.TELEPHONE_NUMBER_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.TELEPHONE_TYPE_QNAME;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.setUpUnwrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
@@ -68,24 +85,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.annotation.dao.JukeboxDao;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.addresses.HomeAddress;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.addresses.OfficeAddress;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.addresses.TelephoneNumber;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.CertMgmt;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.Certificate;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.PmaCerts;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.TrustedCaCerts;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
@@ -110,7 +110,14 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.Annotat
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TestTxUtils;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.annotation.dao.JukeboxDao;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.addresses.HomeAddress;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.addresses.OfficeAddress;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.addresses.TelephoneNumber;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.CertMgmt;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.Certificate;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.PmaCerts;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.TrustedCaCerts;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
@@ -119,10 +126,22 @@ import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Arti
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Jukebox;
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Library;
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Song;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * Created by keshava on 4/12/15.
  */
+@RunWith(RequestScopeJunitRunner.class)
 public class ModelNodeDataStoreManagerTest {
 
     private ModelNodeDataStoreManager m_dataStoreManager;
@@ -178,6 +197,8 @@ public class ModelNodeDataStoreManagerTest {
         m_dataStoreManager = new AnnotationBasedModelNodeDataStoreManager(m_persistenceManagerUtil,m_entityRegistry, m_schemaRegistry, m_modelNodeHelperRegistry, null, m_modelNodeDSMRegistry);
         m_dataStoreManager = TestTxUtils.getTxDecoratedDSM(m_persistenceManagerUtil, m_dataStoreManager);
         createJukebox();
+        setUpUnwrap(m_modelNodeHelperRegistry);
+
     }
     private void createJukebox() {
         m_newJukebox = new Jukebox();
@@ -215,11 +236,11 @@ public class ModelNodeDataStoreManagerTest {
     @Test
     public void testListNodes() throws DataStoreException {
 
-        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         Jukebox jukebox = m_jukeboxDao.findByIdWithWriteLock(EMPTY_NODE_ID.getModelNodeIdAsString());
         Album refactorHits = new Album();
@@ -236,19 +257,19 @@ public class ModelNodeDataStoreManagerTest {
         jukebox.getLibrary().getArtists().get(0).getAlbums().add(refactorHits);
         m_jukeboxDao.create(jukebox);
 
-        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(2, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
     }
 
     @Test
     public void testListChildNodes() throws DataStoreException {
-        assertEquals(1, m_dataStoreManager.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId).size());
-        assertEquals(1, m_dataStoreManager.listChildNodes(ALBUM_SCHEMA_PATH, m_artistId).size());
-        assertEquals(1, m_dataStoreManager.listChildNodes(SONG_SCHEMA_PATH, m_albumId).size());
+        assertEquals(1, m_dataStoreManager.listChildNodes(ARTIST_SCHEMA_PATH, m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listChildNodes(ALBUM_SCHEMA_PATH, m_artistId, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listChildNodes(SONG_SCHEMA_PATH, m_albumId, m_schemaRegistry).size());
     }
 
     @Test
@@ -262,7 +283,7 @@ public class ModelNodeDataStoreManagerTest {
 
         ModelNodeId homeAddressNodeId = new ModelNodeId().addRdn(new ModelNodeRdn(CONTAINER, ADDR_NS, HOME_ADDRESS_LOCAL_NAME))
                 .addRdn(new ModelNodeRdn(ADDRESS_NAME_LOCAL_NAME, ADDR_NS, HOME_ADDRESS));
-        assertEquals(2, m_dataStoreManager.listChildNodes(HOME_TELPHONE_SCHEMA_PATH, homeAddressNodeId).size());
+        assertEquals(2, m_dataStoreManager.listChildNodes(HOME_TELPHONE_SCHEMA_PATH, homeAddressNodeId, m_schemaRegistry).size());
     }
 
     @Test
@@ -272,30 +293,30 @@ public class ModelNodeDataStoreManagerTest {
 
         Map<QName, String> keys = new LinkedHashMap<>();
         ModelNodeWithAttributes caCertContainerNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(CA_CERT_CONTAINER_SCHEMA_PATH,
-                new ModelNodeKey(keys), CERT_MGMT_NODE_ID);
+                new ModelNodeKey(keys), CERT_MGMT_NODE_ID, m_schemaRegistry);
         assertEquals(CA_CERT_CONTAINER_SCHEMA_PATH.getLastComponent(), caCertContainerNode.getQName());
 
         ModelNodeWithAttributes pmaCertContainerNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(PMA_CERT_CONTAINER_SCHEMA_PATH,
-                new ModelNodeKey(keys), CERT_MGMT_NODE_ID);
+                new ModelNodeKey(keys), CERT_MGMT_NODE_ID, m_schemaRegistry);
         assertEquals(PMA_CERT_CONTAINER_SCHEMA_PATH.getLastComponent(), pmaCertContainerNode.getQName());
 
         keys.put(QNAME_CERTIFICATE_ID, "pma-cert1");
-        ModelNodeWithAttributes pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(PMA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), PMA_CERT_NODE_ID);
+        ModelNodeWithAttributes pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(PMA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), PMA_CERT_NODE_ID, m_schemaRegistry);
         assertEquals(PMA_CERT_SCHEMA_PATH.getLastComponent(), pmaCertNode.getQName());
         assertEquals("pma-cert1-binary", pmaCertNode.getAttributes().get(QName.create(CERT_NS, REVISION, "cert-binary")).getStringValue());
 
         keys.put(QNAME_CERTIFICATE_ID, "pma-cert2");
-        pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(PMA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), PMA_CERT_NODE_ID);
+        pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(PMA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), PMA_CERT_NODE_ID, m_schemaRegistry);
         assertEquals(PMA_CERT_SCHEMA_PATH.getLastComponent(), pmaCertNode.getQName());
         assertEquals("pma-cert2-binary", pmaCertNode.getAttributes().get(QName.create(CERT_NS, REVISION, "cert-binary")).getStringValue());
 
         keys.put(QNAME_CERTIFICATE_ID, "ca-cert1");
-        pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(CA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), CA_CERT_NODE_ID);
+        pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(CA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), CA_CERT_NODE_ID, m_schemaRegistry);
         assertEquals(CA_CERT_SCHEMA_PATH.getLastComponent(), pmaCertNode.getQName());
         assertEquals("ca-cert1-binary", pmaCertNode.getAttributes().get(QName.create(CERT_NS, REVISION, "cert-binary")).getStringValue());
 
         keys.put(QNAME_CERTIFICATE_ID, "ca-cert2");
-        pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(CA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), CA_CERT_NODE_ID);
+        pmaCertNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(CA_CERT_SCHEMA_PATH, new ModelNodeKey(keys), CA_CERT_NODE_ID, m_schemaRegistry);
         assertEquals(CA_CERT_SCHEMA_PATH.getLastComponent(), pmaCertNode.getQName());
         assertEquals("ca-cert2-binary", pmaCertNode.getAttributes().get(QName.create(CERT_NS, REVISION, "cert-binary")).getStringValue());
     }
@@ -307,20 +328,20 @@ public class ModelNodeDataStoreManagerTest {
 
         ModelNodeKey homeAddressKey = new ModelNodeKeyBuilder().appendKey(ADDRESS_NAME_Q_NAME, HOME_ADDRESS).build();
         ModelNodeWithAttributes homeAddressNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(HOME_ADDRESSES_SCHEMA_PATH,
-                homeAddressKey, new ModelNodeId());
+                homeAddressKey, new ModelNodeId(), m_schemaRegistry);
         assertEquals(HOME_ADDRESSES_SCHEMA_PATH.getLastComponent(), homeAddressNode.getQName());
         assertEquals(MY_HOME_ADDRESS_KARNATAKA_560092, homeAddressNode.getAttributes().get(ADDRESS_Q_NAME).getStringValue());
 
         ModelNodeKey homeLandLineKey = new ModelNodeKeyBuilder().appendKey(TELEPHONE_TYPE_QNAME, LAND_LINE).build();
         ModelNodeWithAttributes homeTelephoneNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(HOME_TELPHONE_SCHEMA_PATH,
-                homeLandLineKey, HOME_ADDRESS_NODE_ID);
+                homeLandLineKey, HOME_ADDRESS_NODE_ID, m_schemaRegistry);
         assertEquals(HOME_TELPHONE_SCHEMA_PATH.getLastComponent(), homeTelephoneNode.getQName());
         assertEquals(LAND_LINE, homeTelephoneNode.getAttributes().get(TELEPHONE_TYPE_QNAME).getStringValue());
         assertEquals(HOME_LAND_LINE, homeTelephoneNode.getAttributes().get(TELEPHONE_NUMBER_QNAME).getStringValue());
 
         ModelNodeKey homeCellKey = new ModelNodeKeyBuilder().appendKey(TELEPHONE_TYPE_QNAME, CELL_PHONE).build();
         ModelNodeWithAttributes homeCellode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(HOME_TELPHONE_SCHEMA_PATH,
-                homeCellKey, HOME_ADDRESS_NODE_ID);
+                homeCellKey, HOME_ADDRESS_NODE_ID, m_schemaRegistry);
         assertEquals(HOME_TELPHONE_SCHEMA_PATH.getLastComponent(), homeCellode.getQName());
         assertEquals(CELL_PHONE, homeCellode.getAttributes().get(TELEPHONE_TYPE_QNAME).getStringValue());
         assertEquals(HOME_CELL, homeCellode.getAttributes().get(TELEPHONE_NUMBER_QNAME).getStringValue());
@@ -328,20 +349,20 @@ public class ModelNodeDataStoreManagerTest {
 
         ModelNodeKey officeAddressKey = new ModelNodeKeyBuilder().appendKey(ADDRESS_NAME_Q_NAME, OFFICE_ADDRESS).build();
         ModelNodeWithAttributes officeAddressNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(OFFICE_ADDRESSES_SCHEMA_PATH,
-                officeAddressKey, new ModelNodeId());
+                officeAddressKey, new ModelNodeId(), m_schemaRegistry);
         assertEquals(OFFICE_ADDRESSES_SCHEMA_PATH.getLastComponent(), officeAddressNode.getQName());
         assertEquals(CHENNAI_OFFICE_ADDRESS, officeAddressNode.getAttributes().get(ADDRESS_Q_NAME).getStringValue());
 
         ModelNodeKey officeLandLineKey = new ModelNodeKeyBuilder().appendKey(TELEPHONE_TYPE_QNAME, LAND_LINE).build();
         ModelNodeWithAttributes officeLandLineNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(OFFICE_TELPHONE_SCHEMA_PATH,
-                officeLandLineKey, OFFICE_ADDRESS_NODE_ID);
+                officeLandLineKey, OFFICE_ADDRESS_NODE_ID, m_schemaRegistry);
         assertEquals(OFFICE_TELPHONE_SCHEMA_PATH.getLastComponent(), officeLandLineNode.getQName());
         assertEquals(LAND_LINE, officeLandLineNode.getAttributes().get(TELEPHONE_TYPE_QNAME).getStringValue());
         assertEquals(OFFICE_LAND_LINE, officeLandLineNode.getAttributes().get(TELEPHONE_NUMBER_QNAME).getStringValue());
 
         ModelNodeKey officeCellKey = new ModelNodeKeyBuilder().appendKey(TELEPHONE_TYPE_QNAME, CELL_PHONE).build();
         ModelNodeWithAttributes officeCellNode = (ModelNodeWithAttributes) m_dataStoreManager.findNode(OFFICE_TELPHONE_SCHEMA_PATH,
-                officeCellKey, OFFICE_ADDRESS_NODE_ID);
+                officeCellKey, OFFICE_ADDRESS_NODE_ID, m_schemaRegistry);
         assertEquals(OFFICE_TELPHONE_SCHEMA_PATH.getLastComponent(), officeCellNode.getQName());
         assertEquals(CELL_PHONE, officeCellNode.getAttributes().get(TELEPHONE_TYPE_QNAME).getStringValue());
         assertEquals(OFFICE_CELL, officeCellNode.getAttributes().get(TELEPHONE_NUMBER_QNAME).getStringValue());
@@ -351,35 +372,35 @@ public class ModelNodeDataStoreManagerTest {
     // Test Write methods - Create and update
     @Test
     public void testCreateModelNodeJukebox() throws DataStoreException {
-        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         //Case 1: Add one artist to existing library container
         m_dataStoreManager.createNode(getArtistModelNode("new-artist"), m_libraryNodeId);
-        assertEquals(2, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
+        assertEquals(2, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 2 : Add one album to existing artist list
         ModelNodeId newArtistId = new ModelNodeId(m_libraryNodeId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, ARTIST_LOCAL_NAME))
                 .addRdn(new ModelNodeRdn("name", JB_NS, "new-artist"));
         m_dataStoreManager.createNode(getAlbumModelNode("new-album", newArtistId), newArtistId);
 
-        assertEquals(2, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(2, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 3 : Add one song to existing album list
         ModelNodeId newAlbumId = new ModelNodeId(newArtistId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, ALBUM_LOCAL_NAME))
                 .addRdn(new ModelNodeRdn("name", JB_NS, "new-album"));
         m_dataStoreManager.createNode(getSongModelNode("song-name", newAlbumId), newAlbumId);
 
-        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
     }
 
     @Test
     public void testCreateModelNodeJukeboxWithInsertIndex() throws DataStoreException {
-    	List<ModelNode> listArtistNodes = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH);
+    	List<ModelNode> listArtistNodes = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry);
 
     	//Case 1a: Add one artist as the first element to the existing library container
         ModelNode newArtistInFirstIndex = m_dataStoreManager.createNode(getArtistModelNode("new-artist-in-first-index"), m_libraryNodeId, 0);
@@ -387,7 +408,7 @@ public class ModelNodeDataStoreManagerTest {
         expectedArtistList.add(newArtistInFirstIndex);
         expectedArtistList.addAll(listArtistNodes);
 
-        List<ModelNode> actualArtistList = new ArrayList<ModelNode>(m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH));
+        List<ModelNode> actualArtistList = new ArrayList<ModelNode>(m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry));
         assertEquals(2, actualArtistList.size());
 
         for (int i = 0; i < actualArtistList.size(); i++) {
@@ -400,7 +421,7 @@ public class ModelNodeDataStoreManagerTest {
         expectedArtistList.addAll(actualArtistList);
         expectedArtistList.add(newArtistInLastIndex);
 
-        actualArtistList = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH);
+        actualArtistList = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry);
         assertEquals(3, actualArtistList.size());
         for (int i = 0; i < actualArtistList.size(); i++) {
         	assertEquals(0,((ModelNodeWithAttributes)expectedArtistList.get(i)).compareTo((ModelNodeWithAttributes)actualArtistList.get(i)));
@@ -414,7 +435,7 @@ public class ModelNodeDataStoreManagerTest {
         expectedArtistList.addAll(listArtistNodes);
         expectedArtistList.add(newArtistInLastIndex);
 
-        actualArtistList = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH);
+        actualArtistList = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry);
         assertEquals(4, actualArtistList.size());
         for (int i = 0; i < actualArtistList.size(); i++) {
         	assertEquals(0,((ModelNodeWithAttributes)expectedArtistList.get(i)).compareTo((ModelNodeWithAttributes)actualArtistList.get(i)));
@@ -429,7 +450,7 @@ public class ModelNodeDataStoreManagerTest {
         expectedArtistList.addAll(listArtistNodes);
         expectedArtistList.add(newArtistInLastIndex);
 
-        actualArtistList = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH);
+        actualArtistList = m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry);
         assertEquals(5, actualArtistList.size());
         for (int i = 0; i < actualArtistList.size(); i++) {
         	assertEquals(0,((ModelNodeWithAttributes)expectedArtistList.get(i)).compareTo((ModelNodeWithAttributes)actualArtistList.get(i)));
@@ -440,14 +461,14 @@ public class ModelNodeDataStoreManagerTest {
                 .addRdn(new ModelNodeRdn("name", JB_NS, "new-artist-in-first-index"));
         m_dataStoreManager.createNode(getAlbumModelNode("new-album", newArtistId), newArtistId, 0);
 
-        assertEquals(2, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(2, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 3 : Add one song to existing album list
         ModelNodeId newAlbumId = new ModelNodeId(newArtistId).addRdn(new ModelNodeRdn(CONTAINER, JB_NS, ALBUM_LOCAL_NAME))
                 .addRdn(new ModelNodeRdn("name", JB_NS, "new-album"));
         m_dataStoreManager.createNode(getSongModelNode("song-name", newAlbumId), newAlbumId, 0);
 
-        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
     }
 
@@ -457,7 +478,7 @@ public class ModelNodeDataStoreManagerTest {
         yangs.add(TestUtil.getByteSource("/yangs/addresses@2015-12-08.yang"));
         m_schemaRegistry.loadSchemaContext("address-model", yangs, Collections.emptySet(), Collections.emptyMap());
         //Case 1: Add one home address
-        assertEquals(0, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH, m_schemaRegistry).size());
 
         ModelNodeWithAttributes homeAddressModelNode = new ModelNodeWithAttributes(HOME_ADDRESSES_SCHEMA_PATH, null, null, null, m_schemaRegistry, m_dataStoreManager);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
@@ -467,10 +488,10 @@ public class ModelNodeDataStoreManagerTest {
 
         m_dataStoreManager.createNode(homeAddressModelNode, EMPTY_NODE_ID);
 
-        assertEquals(1, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 2: Add one telephone number to existing home address
-        assertEquals(0, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH, m_schemaRegistry).size());
 
         ModelNodeWithAttributes telephoneNumberModelNode = new ModelNodeWithAttributes(HOME_TELPHONE_SCHEMA_PATH, null, null, null, m_schemaRegistry, m_dataStoreManager);
         configAttributes  = new HashMap<>();
@@ -481,7 +502,7 @@ public class ModelNodeDataStoreManagerTest {
                 ModelNodeRdn(ADDRESS_NAME_Q_NAME, "new-home"));
 
         m_dataStoreManager.createNode(telephoneNumberModelNode, homeAddressNodeId);
-        assertEquals(1, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     @Test
@@ -490,7 +511,7 @@ public class ModelNodeDataStoreManagerTest {
         yangs.add(TestUtil.getByteSource("/yangs/addresses@2015-12-08.yang"));
         m_schemaRegistry.loadSchemaContext("address-model", yangs, Collections.emptySet(), Collections.emptyMap());
         //Case 1: Add one home address
-        assertEquals(0, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH, m_schemaRegistry).size());
 
         ModelNodeWithAttributes homeAddressModelNode = new ModelNodeWithAttributes(HOME_ADDRESSES_SCHEMA_PATH, null, null, null, m_schemaRegistry, m_dataStoreManager);
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
@@ -500,10 +521,10 @@ public class ModelNodeDataStoreManagerTest {
 
         m_dataStoreManager.createNode(homeAddressModelNode, EMPTY_NODE_ID);
 
-        assertEquals(1, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Case 2: Add one telephone number to existing home address
-        assertEquals(0, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH, m_schemaRegistry).size());
 
         ModelNodeWithAttributes telephoneNumberModelNode = new ModelNodeWithAttributes(HOME_TELPHONE_SCHEMA_PATH, null, null, null, m_schemaRegistry, m_dataStoreManager);
         configAttributes  = new HashMap<>();
@@ -514,37 +535,37 @@ public class ModelNodeDataStoreManagerTest {
                 ModelNodeRdn(ADDRESS_NAME_Q_NAME, "/new-home=address"));
 
         m_dataStoreManager.createNode(telephoneNumberModelNode, homeAddressNodeId);
-        assertEquals(1, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     // Test Remove method
     @Test
     public void testRemoveJukeboxModel() throws DataStoreException {
-        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Remove existing song
         m_dataStoreManager.removeNode(getSongModelNode("Entity Refactor", m_albumId), m_albumId);
-        assertEquals(0, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Remove existing album
         m_dataStoreManager.removeNode(getAlbumModelNode("Refactor Times", m_artistId), m_artistId);
-        assertEquals(0, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         //Remove existing artist
         m_dataStoreManager.removeNode(getArtistModelNode("keshava"), m_libraryNodeId);
-        assertEquals(0, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
 
         //Remove existing library
         ModelNodeWithAttributes libraryModelNode = new ModelNodeWithAttributes(LIBRARY_SCHEMA_PATH, null, null, null, m_schemaRegistry, m_dataStoreManager);
         m_dataStoreManager.removeNode(libraryModelNode, m_jukeboxNodeId);
-        assertEquals(0, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
 
         m_dataStoreManager.createNode(libraryModelNode, m_jukeboxNodeId);
-        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     @Test
@@ -555,8 +576,8 @@ public class ModelNodeDataStoreManagerTest {
 
         addHomeAddresses();
         addOfficeAddresses();
-        assertEquals(1, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH).size());
-        assertEquals(2, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(HOME_ADDRESSES_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH, m_schemaRegistry).size());
         //Remove one telephone number from home address
         ModelNodeWithAttributes telephoneNumberModelNode = new ModelNodeWithAttributes(HOME_TELPHONE_SCHEMA_PATH, null, null, null,
                 m_schemaRegistry, m_dataStoreManager);
@@ -564,41 +585,41 @@ public class ModelNodeDataStoreManagerTest {
         configAttributes.put(TELEPHONE_TYPE_QNAME, new GenericConfigAttribute("type", ADDR_NS, LAND_LINE));
         configAttributes.put(TELEPHONE_NUMBER_QNAME, new GenericConfigAttribute("number", ADDR_NS, HOME_LAND_LINE));
         telephoneNumberModelNode.setAttributes(configAttributes);
-
+        telephoneNumberModelNode.setModelNodeId(new ModelNodeId("/container=telephone-number", ADDR_NS));
         m_dataStoreManager.removeNode(telephoneNumberModelNode, HOME_ADDRESS_NODE_ID);
-        assertEquals(1, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(HOME_TELPHONE_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     @Test
     public void testRemoveAllJukeboxModel() throws DataStoreException {
-        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
-        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         // Add one song to existing album list
         m_dataStoreManager.createNode(getSongModelNode("song-name", m_albumId), m_albumId);
-        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(2, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         //Remove all songs from album
         m_dataStoreManager.removeAllNodes(getAlbumModelNode("Refactor Times", m_artistId), SONG_SCHEMA_PATH, m_artistId);
-        assertEquals(0, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         //Remove all albums from artist
         m_dataStoreManager.removeAllNodes(getArtistModelNode("keshava"), ALBUM_SCHEMA_PATH, m_libraryNodeId);
-        assertEquals(0, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         //Remove all artists from library
         ModelNodeWithAttributes libraryModelNode = new ModelNodeWithAttributes(LIBRARY_SCHEMA_PATH, m_jukeboxNodeId, null, null, m_schemaRegistry, m_dataStoreManager);
         m_dataStoreManager.removeAllNodes(libraryModelNode, ARTIST_SCHEMA_PATH, m_jukeboxNodeId);
-        assertEquals(0, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH).size());
+        assertEquals(0, m_dataStoreManager.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
     }
 
     @Test
     public void testUpdateNodeJukeboxModel() throws DataStoreException {
 
-        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME, "Entity Refactor");
@@ -606,7 +627,7 @@ public class ModelNodeDataStoreManagerTest {
         QName locationQname = QName.create(JB_NS, JB_REVISION, "location");
 
         //Verify location is null
-        ModelNodeWithAttributes modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId);
+        ModelNodeWithAttributes modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId, m_schemaRegistry);
         Map<QName, ConfigLeafAttribute> attributes = modelNodeWithAttributes.getAttributes();
         assertNull(attributes.get(locationQname));
 
@@ -614,19 +635,19 @@ public class ModelNodeDataStoreManagerTest {
         Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
         configAttributes.put(locationQname, new GenericConfigAttribute("location", JB_NS, "somelocation"));
         m_dataStoreManager.updateNode(getSongModelNode("Entity Refactor", m_albumId), m_albumId, configAttributes, null, false);
-        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId);
+        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId, m_schemaRegistry);
         attributes = modelNodeWithAttributes.getAttributes();
         assertEquals("somelocation", attributes.get(locationQname).getStringValue());
 
         //Set location back to null
         configAttributes.put(locationQname, null);
         m_dataStoreManager.updateNode(getSongModelNode("Entity Refactor", m_albumId), m_albumId, configAttributes, null, false);
-        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId);
+        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId, m_schemaRegistry);
         attributes = modelNodeWithAttributes.getAttributes();
         assertNull(attributes.get(locationQname));
 
         // Verify there is no singer
-        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId);
+        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId, m_schemaRegistry);
         assertNull(modelNodeWithAttributes.getLeafList(SINGER_QNAME));
 
         // Update with one singer
@@ -641,14 +662,14 @@ public class ModelNodeDataStoreManagerTest {
         values.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "Singer1"));
         leafLists.put(SINGER_QNAME, values);
         m_dataStoreManager.updateNode(getSingerModelNode("Singer1", m_songId),m_songId, null, leafLists, false);
-        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId);
+        modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId, m_schemaRegistry);
         assertEquals(1, modelNodeWithAttributes.getLeafList(SINGER_QNAME).size());
     }
 
     @Test
     public void testUpdateNodeWithInsertIndex() throws DataStoreException {
 
-        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH).size());
+        assertEquals(1, m_dataStoreManager.listNodes(SONG_SCHEMA_PATH, m_schemaRegistry).size());
 
         m_dataStoreManager.createNode(getSongModelNode("My Song", m_albumId), m_albumId, 0);
 
@@ -662,7 +683,7 @@ public class ModelNodeDataStoreManagerTest {
         LinkedHashSet<ConfigLeafAttribute> values = new LinkedHashSet<>(valuesList);
         leafLists.put(SINGER_QNAME, values);
         m_dataStoreManager.updateNode(getSingerModelNode("Singer1", m_songId),m_songId, null, leafLists, 0, false);
-        ModelNodeWithAttributes modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId);
+        ModelNodeWithAttributes modelNodeWithAttributes = (ModelNodeWithAttributes) m_dataStoreManager.findNode(SONG_SCHEMA_PATH, modelNodeKey, m_albumId, m_schemaRegistry);
         assertEquals(1, modelNodeWithAttributes.getLeafList(SINGER_QNAME).size());
 
     }
@@ -808,6 +829,7 @@ public class ModelNodeDataStoreManagerTest {
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, songName));
         songModelNode.setAttributes(configAttributes);
+        songModelNode.setModelNodeId(new ModelNodeId("/container=telephone-number", JB_NS));
         return songModelNode;
     }
 
@@ -817,6 +839,7 @@ public class ModelNodeDataStoreManagerTest {
         configAttributes = new HashMap<>();
         configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, albumName));
         albumModelNode.setAttributes(configAttributes);
+        albumModelNode.setModelNodeId(parentId);
         return albumModelNode;
     }
 

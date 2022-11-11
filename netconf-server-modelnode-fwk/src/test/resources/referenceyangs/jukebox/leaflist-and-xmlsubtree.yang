@@ -1,0 +1,71 @@
+module leaflist-and-xmlsubtree {
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-leaflist";
+
+    prefix jbox;
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+  container album {
+      leaf name {
+          type string {
+            length "1 .. max";
+          }
+          description
+            "The name of the album.";
+      }
+
+      list song {
+          key "name version";
+          description
+            "Represents one song resource within one
+            album resource, within the jukebox library.";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "The name of the song";
+          }
+
+          leaf version {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "The version of the song";
+          }
+
+          leaf-list singer {
+            type string;
+            description "A list of singers";
+          }
+
+          leaf-list genre {
+            type string;
+            description "Genres of the song";
+          }
+
+          container awards-and-nominations {
+            leaf-list award {
+              type string;
+              description "List of Awards";
+            }
+          }
+      }
+  }
+}

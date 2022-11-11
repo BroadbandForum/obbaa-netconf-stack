@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
@@ -183,6 +199,8 @@ public class FilterUtil {
      * Subsystem responsible for responding to the state attributes and state filter nodes are populated and queried.
      * Empty list is returned if any filter does not match.
      *
+     *
+     * @param stateContext
      * @param stateFilterMatchNodes
      * @param stateSubtreeFilterNodes
      * @param modelNodeId
@@ -192,7 +210,7 @@ public class FilterUtil {
      * @return
      * @throws GetAttributeException
      */
-    public static List<Element> checkAndGetStateFilterElements(List<FilterMatchNode> stateFilterMatchNodes, List<FilterNode>
+    public static List<Element> checkAndGetStateFilterElements(StateAttributeGetContext stateContext, List<FilterMatchNode> stateFilterMatchNodes, List<FilterNode>
             stateSubtreeFilterNodes, ModelNodeId modelNodeId, SchemaPath schemaPath, SchemaRegistry schemaRegistry,
                                                                SubSystemRegistry subSystemRegistry)
             throws GetAttributeException {
@@ -206,7 +224,7 @@ public class FilterUtil {
         for (Map.Entry<SubSystem, Pair<List<QName>, List<FilterNode>>> entry : stateAttributesPerSubSystem.entrySet()) {
             Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>> stateAttrs = new HashMap<>();
             stateAttrs.put(modelNodeId, new Pair<>(entry.getValue().getFirst(), entry.getValue().getSecond()));
-            Map<ModelNodeId, List<Element>> result = entry.getKey().retrieveStateAttributes(stateAttrs, NetconfQueryParams.NO_PARAMS);
+            Map<ModelNodeId, List<Element>> result = entry.getKey().retrieveStateAttributes(stateAttrs, NetconfQueryParams.NO_PARAMS,stateContext);
 
             List<Element> stateElementsFromSubsystem = result.get(modelNodeId);
 
@@ -241,7 +259,7 @@ public class FilterUtil {
                 }
 
             } else {
-                LOGGER.error("Couldn't fetch state attributes from SubSystem");
+                LOGGER.debug("Couldn't fetch state attributes for {} from SubSystem {}", entry.getValue().getSecond(), entry.getKey());
                 return Collections.emptyList();
             }
         }
@@ -304,7 +322,7 @@ public class FilterUtil {
     }
 
     public static FilterNode nodeIdToFilter(ModelNodeId nodeId) {
-        List<ModelNodeRdn> rdns = nodeId.getRdns();
+        List<ModelNodeRdn> rdns = nodeId.getRdnsReadOnly();
 
         if(rdns.size() >0){
             ModelNodeRdn firstRdn = rdns.get(0);

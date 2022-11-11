@@ -2,7 +2,7 @@ module rpc-output-augmentation-validation-test {
 
     yang-version 1;
 
-    namespace "urn:org:bbf:pma:rpc-output";
+    namespace "urn:org:bbf2:pma:rpc-output";
 
     prefix "rpcoutput";
     

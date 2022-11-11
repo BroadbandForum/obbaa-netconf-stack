@@ -28,7 +28,7 @@ import java.security.UnrecoverableKeyException;
 /**
  * A X509 KeyManagerFactory Service Provider which lets the users supply an implementation of {@link KeyManager}.
  * 
- *
+ * 
  * 
  */
 public class X509KeyManagerFactorySpi extends KeyManagerFactorySpi {

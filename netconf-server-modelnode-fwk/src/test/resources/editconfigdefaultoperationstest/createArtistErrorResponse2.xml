@@ -3,7 +3,7 @@
     <error-type>application</error-type>
     <error-tag>data-missing</error-tag>
     <error-severity>error</error-severity>
-    <error-path xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:library/jbox:artist[jbox:name='New artist']</error-path>
+    <error-path xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='New artist']</error-path>
     <error-message>Data does not exist</error-message>
   </rpc-error>
 </rpc-reply>

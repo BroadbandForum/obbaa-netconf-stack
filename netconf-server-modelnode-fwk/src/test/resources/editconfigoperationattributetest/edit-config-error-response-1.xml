@@ -3,7 +3,7 @@
     <error-type>application</error-type>
     <error-tag>data-exists</error-tag>
     <error-severity>error</error-severity>
-    <error-path xmlns:pma="urn:org:bbf:pma">/pma:operation-example/pma:list-a[pma:a1='a1']</error-path>
+    <error-path xmlns:pma="urn:org:bbf2:pma">/pma:operation-example/pma:list-a[pma:a1='a1']</error-path>
     <error-message>'list-a' already exists. Create request Failed.</error-message>
   </rpc-error>
 </rpc-reply>

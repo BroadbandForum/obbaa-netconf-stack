@@ -16,8 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.api.client;
 
+import org.broadband_forum.obbaa.netconf.api.ClosureReason;
+
 public interface NetconfClientSessionListener {
 
-    public void sessionClosed(int sessionId);
+    public void sessionClosed(int sessionId, ClosureReason closureReason);
 
 }

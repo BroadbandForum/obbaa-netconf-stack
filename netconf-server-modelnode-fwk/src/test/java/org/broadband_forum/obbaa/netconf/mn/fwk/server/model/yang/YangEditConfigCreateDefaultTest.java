@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
@@ -9,17 +25,12 @@ import static org.mockito.Mockito.mock;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NbiNotificationHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetConfServerImpl;
@@ -38,9 +49,17 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class YangEditConfigCreateDefaultTest extends AbstractYangValidationTestSetup{
     private NetConfServerImpl m_server;
     private ModelNodeWithAttributes m_model;
@@ -67,11 +86,12 @@ public class YangEditConfigCreateDefaultTest extends AbstractYangValidationTestS
         m_addDefaultDataInterceptor.destroy();
     }
     
-    private void createNonEmptyServer(SubSystem subSystem) throws ModelNodeInitException, ModelNodeFactoryException {
+    private void createNonEmptyServer(SubSystem subSystem) throws ModelNodeInitException, ModelNodeFactoryException, SchemaBuildException {
         m_server = new NetConfServerImpl(m_schemaRegistry);
         
         InMemoryDSM modelNodeDsm = new InMemoryDSM(m_schemaRegistry);
         m_model = (ModelNodeWithAttributes) YangUtils.createInMemoryModelNode(Arrays.asList(DEFAULTCAPABILITY_YANG_FILE_YANG, AUGMENTED_WHEN_CONDITION_YANG),subSystem, m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, modelNodeDsm);
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, modelNodeDsm, m_subSystemRegistry).addModelServiceRoot(m_componentId, m_model);
         DataStore dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry);
         NbiNotificationHelper nbiNotificationHelper = mock(NbiNotificationHelper.class);
@@ -80,7 +100,7 @@ public class YangEditConfigCreateDefaultTest extends AbstractYangValidationTestS
         YangUtils.loadXmlDataIntoServer(m_server,m_default_xmlFile);
     }
     
-    //@Test
+    @Test
     public void testCreate() throws Exception {
         NetConfResponse response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/defaultcapability/edit-config-create-request.xml"), "1");
         assertXMLEquals("/ok-response.xml", response);
@@ -97,7 +117,7 @@ public class YangEditConfigCreateDefaultTest extends AbstractYangValidationTestS
         assertXMLEquals("/ok-response.xml", response);
         verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/defaultcapability/get-config-withWhen-result.xml", "1");
     }
-    //@Test
+    @Test
     public void testReplace() throws Exception {
         NetConfResponse response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/defaultcapability/edit-config-replace-request.xml"), "1");
         
@@ -108,7 +128,7 @@ public class YangEditConfigCreateDefaultTest extends AbstractYangValidationTestS
         verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/defaultcapability/get-config-result.xml", "1");
     }
     
-    //@Test
+    @Test
     public void testMerge() throws Exception {
         NetConfResponse response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/defaultcapability/edit-config-merge-request.xml"), "1");
         

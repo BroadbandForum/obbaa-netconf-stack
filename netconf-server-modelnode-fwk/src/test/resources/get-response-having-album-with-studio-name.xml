@@ -1,0 +1,17 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+    <data>
+        <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox-list-multikeys">
+            <jbox:library>
+                <jbox:artist>
+                    <jbox:album>
+                        <jbox:name>AlbumWithStudio</jbox:name>
+                        <jbox:studio>
+                            <jbox:name>SomeStudio</jbox:name>
+                        </jbox:studio>
+                    </jbox:album>
+                    <jbox:name>Lenny</jbox:name>
+                </jbox:artist>
+            </jbox:library>
+        </jbox:jukebox>
+    </data>
+</rpc-reply>

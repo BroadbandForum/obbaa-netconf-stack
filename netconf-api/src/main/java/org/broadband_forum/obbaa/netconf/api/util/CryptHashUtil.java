@@ -16,7 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.api.util;
 
-import org.apache.log4j.Logger;
+
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -25,7 +28,7 @@ import java.util.Random;
 
 public class CryptHashUtil {
 
-    private static final Logger LOGGER = Logger.getLogger(CryptHashUtil.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(CryptHashUtil.class, LogAppNames.NETCONF_LIB);
 
     private static final String SHA1PRNG_ALGORITHM = "SHA1PRNG";
     private static final String DOLLAR = "$";

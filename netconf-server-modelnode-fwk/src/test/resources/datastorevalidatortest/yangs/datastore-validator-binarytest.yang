@@ -1,0 +1,51 @@
+module datastore-validator-binarytest {
+
+    yang-version 1.1;
+
+    namespace "urn:org:bbf2:pma:binaryvalidation-yang";
+
+    prefix "binaryvalidation";
+
+    revision "2020-03-26" {
+        description "Initial version.";
+    }
+
+    typedef custom-binary-type {
+        type binary {
+            length "6..8";
+        }
+    }
+
+    typedef custom-singlebinary-type {
+        type binary {
+            length "7";
+        }
+    }
+
+    container binary-validation {
+
+        list type-validation {
+            key id;
+
+            leaf id {
+                type string;
+            }
+            leaf binary-type {
+                type custom-binary-type {
+                    length "6 | 7";
+                }
+            }
+            leaf custom-binary-type {
+                type custom-binary-type {
+                    length "8" {
+                        error-app-tag "length constraint error-app-tag";
+                        error-message "length constraint error-app-message";
+                    }
+                }
+            }
+            leaf single-binary-type {
+                type custom-singlebinary-type;
+            }
+        }
+    }
+}

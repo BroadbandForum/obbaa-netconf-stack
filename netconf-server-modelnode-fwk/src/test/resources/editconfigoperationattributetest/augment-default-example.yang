@@ -1,6 +1,6 @@
 module augment-default-example {
 
-    namespace "urn:org:bbf:pma:augment";
+    namespace "urn:org:bbf2:pma:augment";
     prefix "ag";
     
     import default-example {

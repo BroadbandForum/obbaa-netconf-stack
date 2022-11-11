@@ -1,0 +1,94 @@
+module augment-module1 {
+  yang-version 1.1;
+  namespace "aug:module1";
+  prefix am;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+  import bbf-xpon-if-type {
+    prefix bbfxponift;
+  }
+  import augment-module2 {
+    prefix am2;
+  }
+
+  revision 2019-07-28;
+
+  container x {
+    leaf y {
+      type string;
+    }
+  }
+  augment "/if:interfaces/if:interface" {
+    when "if:type = 'y-value'";
+    container positive-container1;
+  }
+  augment "/if:interfaces/if:interface" {
+    when
+      "derived-from-or-self (if:type,
+             'bbfift:vlan-sub-interface')";
+    container positive-container2;
+  }
+  augment "/if:interfaces/if:interface" {
+    when
+      "derived-from(if:type,
+             'bbfift:vlan-sub-interface')";
+    container positive-container3;
+  }
+  augment "/if:interfaces" {
+    when "if:interface[name='xyz']";
+    container positive-container4;
+  }
+  augment "/if:interfaces/if:interface" {
+    when "derived-from-or-self (if:type, 'bbfxponift:channel-termination') or
+           derived-from-or-self (if:type, 'bbfxponift:ani')";
+    container positive-container5;
+  }
+  augment "/if:interfaces/if:interface" {
+    when "/x";
+    description
+      "Configuration of xPON channel-group.";
+    container negative-container1;
+  }
+  augment "/if:interfaces/if:interface" {
+    when "/if:interfaces/am2:type2 = 'some-value'";
+    container negative-container2;
+  }
+  augment "/if:interfaces/if:interface" {
+    when "/if:interfaces/if:interface[if:name='another-if']/if:type = 'y-value'";
+    container negative-container3;
+  }
+  augment "/if:interfaces/if:interface" {
+    when "derived-from(/if:interfaces/if:interface[if:name='another-if']/if:type ,
+        'bbfift:vlan-sub-interface')";
+    container negative-container4;
+  }
+  augment "/if:interfaces/if:interface" {
+    when "derived-from-or-self(/if:interfaces/if:interface[if:name='another-if']/if:type ,
+        'bbfift:vlan-sub-interface')";
+    container negative-container5;
+  }
+
+  augment "/if:interfaces/if:interface" {
+    when "some-random-fun(/if:type ,
+        'bbfift:vlan-sub-interface')";
+    container negative-container6;
+  }
+
+  augment "/if:interfaces/if:interface" {
+    when "count(/if:interfaces/if:interface) > 10";
+    container negative-container7;
+  }
+
+  augment "/if:interfaces/if:interface" {
+    when "/if:interfaces/if:interface/if:name = 'xyz'";
+    container negative-container8;
+  }
+
+  augment "/if:interfaces" {
+    when "if:interface[name='xyz']";
+    container negative-container9;
+  }
+
+}

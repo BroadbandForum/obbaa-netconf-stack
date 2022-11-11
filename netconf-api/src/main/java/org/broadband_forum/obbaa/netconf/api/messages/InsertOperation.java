@@ -22,16 +22,24 @@ public class InsertOperation {
 	public static final String LAST = "last";
 	public static final String BEFORE = "before";
 	public static final String AFTER = "after";
-
-    public static final InsertOperation FIRST_OP = new InsertOperation(FIRST, null);
-    public static final InsertOperation LAST_OP = new InsertOperation(LAST, null);
+	public static final InsertOperation FIRST_OP = new InsertOperation(FIRST, null);
+	public static final InsertOperation LAST_OP = new InsertOperation(LAST, null);
 
     private final String m_value;
     private final String m_name;
+    private String m_updatedValueForList;
 
-    public InsertOperation(String name, String value) {
+    private InsertOperation(String name, String value) {
         this.m_name = name;
         this.m_value = value;
+    }
+    
+    public String getValue() {
+        return this.m_value;
+    }
+
+    public String getName() {
+        return this.m_name;
     }
 
     public static InsertOperation get(String name, String value) {
@@ -42,12 +50,12 @@ public class InsertOperation {
         }
         return new InsertOperation(name, value);
     }
-    
-    public String getValue() {
-        return this.m_value;
+
+    public void setUpdatedValueForList(String updatedValue) {
+        m_updatedValueForList = updatedValue;
     }
 
-    public String getName() {
-        return this.m_name;
+    public String getUpdatedValueForList() {
+        return m_updatedValueForList;
     }
 }

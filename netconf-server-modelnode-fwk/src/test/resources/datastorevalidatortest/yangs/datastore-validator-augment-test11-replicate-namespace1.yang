@@ -1,0 +1,128 @@
+// Contents of "datastore-validator-augment-test"
+module datastore-validator-augment-test11-replicate-namespace1 {
+    yang-version 1.1;
+
+    namespace "urn:org:bbf2:datastore-validator-augment-test11-replicate-namespace1";
+    prefix "validation-augment11-replicate-namespace1";
+
+    import datastore-validator-test-yang11 { prefix "validation11"; }
+
+    import datastore-validator-test { prefix "validation"; }
+
+    revision 2018-03-07 {
+        description "Initial revision";
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root/validation11:children-type" {
+
+          case scheduler-node {
+
+              list scheduler-node {
+                  key "name";
+
+                  leaf name{
+                    type string;
+                  }
+
+                  leaf scheduling-level {
+                    type uint8;
+                    mandatory true;
+                  }
+
+                  leaf if-name_. {
+                    type string;
+                  }
+
+                  choice children-type {
+                      case scheduler-node {
+
+                          list child-scheduler-nodes {
+                              key "name";
+                              leaf name {
+                                  type leafref {
+                                    path '/validation:validation'
+                                       + '/validation11:validation-yang11'
+                                       + '/validation11:tm-root'
+                                       + '/validation-augment11-replicate-namespace1:scheduler-node'
+                                       + '/name';
+                                  }
+
+                                  must "../../../validation-augment11-replicate-namespace1:scheduler-node
+                                       [name=current()]
+                                       /scheduling-level>
+                                       current()/../../scheduling-level" {
+
+                                    error-message
+                                     "The scheduler-level should be bigger than the
+                                       value of parent node.";
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-leaf-to-leaf-replicate {
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf-list check-leaflist-to-leaflist-replicate {
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-leaf-to-leaflist-replicate {
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-leaf-to-list-replicate {
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf-list check-leaflist-to-container-replicate {
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        container check-container-to-container-replicate {
+            leaf somePropertyContainerNameSpace1 {
+                type int8 {
+                    range "1..5";
+                }
+            }
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        container check-container-to-list-replicate {
+            leaf someproperty {
+                type int8 {
+                    range "1..5";
+                }
+            }
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf leafforcorefunction {
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf-list check-leaflist-to-list-replicate {
+            type string;
+        }
+    }
+}

@@ -1,0 +1,11 @@
+
+#4
+<rpc
+#18
+message-id="102"
+
+#79
+    xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+ </close-session>
+</rpc>
+##

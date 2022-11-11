@@ -16,16 +16,13 @@
 
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
-import org.broadband_forum.obbaa.netconf.api.x509certificates.KeyUtil;
-import org.junit.Test;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.*;
 
 import java.security.KeyException;
 import java.security.PrivateKey;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 /**
  * Created by keshava on 4/29/15.
@@ -210,6 +207,33 @@ public class KeyUtilTest {
             + "06nMWvm39ien4GD8/YKl2DCNOlgHkeHqVlAtR+d3CwrLIH7tt+W48hEFkP6RVHnB\n"
             + "Ac+vm2DUbyvv/kVS+pnlWU5vAUVAeOE1yDV7mqEdmR0YYFc+wOBk6Iic/9rE6x4i\n" + "MJ99bBNs2Ja7d1AfgStJRTuyHvs=\n"
             + "-----END ENCRYPTED PRIVATE KEY-----";
+    private static final String DELIMITED_PRIVATE_KEY_WITH_SPACES = "-----BEGIN ENCRYPTED PRIVATE KEY-----  \n"
+            + "MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQDSnMtftTnT3wzG\n"
+            + "2Vr8rySgmlVlT03n4jnEObuaU4wnOWJiVFStwl8XhS5Eo8xrYyRFnR4Y+iMeQ7e8\n"
+            + "1RjPvzeg99NJKiDlgBVtaf/Yxw4+\tA4eGaq9QPZALVdXNk1mHYXzusn3+7BWn2Qnu\n"
+            + "TXhynuC2iSSUk1N+SXbSQdWnSc2AwPKJeWPM2MjddPnaaqXFh+oRgfNdC1/lvsxW\n"
+            + "y2b7ZQTza/5BqkBtc9X4QM5VkNhj1seb+lSVJzq8XUGLycl9FeFVyBlggaR9+xuf\n"
+            + "bbLUZU8bxUc1ANdj4wvgGILlC9YWt+H2pbekbGT9Dt9bgrRfIvn1KdEVDZGOyB8I\n"
+            + "mb0MOoSVAgMBAAECggEBAKeC1+rGfD\nj8le/uXoTNVKd8OOF8Iu2ErAdbF9BWFQn5\n"
+            + "hTvJ8RPGndVaMwOa9/KNhwLrRU3+XUIsAA5ruvE5GCiqE92EaWe/6Mr+XORw5e4C\n"
+            + "5p7NaaS7Yj7xxTxdrv6TVkePpdDEuzCl2lU0PtGDdh0YlQSq7ORrz9rJTAJjG9UD\n"
+            + "rqRUNmpLgNHlWgJskIG4BZqIf217s7eAPbLShvcAWOj5MMupaI3AhV7upjeq8P1a\n"
+            + "72VQQ1J2cv4w8o9dwq52+OIkO4G2ZJ5cgrEEP7k2Gfe1F/zCdqKGQhJGsChd+94K\n"
+            + "59E161smd7Z6rWK5o tv0HFu9EM2/CzFBRJSPtPhCb0ECgYEA/xPEs9BM00Ox8KiB\n"
+            + "pvP52RzrpWxiZFxcRq50z3uzMImQUTCDcdYx4Jmhiqkk38NI/wqBVsCVOErGIQxV\n"
+            + "UY3nrcAQi7FyOEdiLHQDHZATScDqm9SVGiUtPra4rVHK6maHXG4/BQIM570wSnf1\n"
+            + "TIDwE6oNkCSExcVjVbkhEL4EX0UCgYEA01/YsXeb3IvY7krIbJbIuZECt057/873\n"
+            + "y1afmA5cUe3lqq0KC6gkaWLnl4bp4hU9uJ1/QVPJwpML1Gz3pLWRbBViioQuMLCb\n"
+            + "gy2QF3tn9CqYgZymhTKVssuYRcDW3ZK31m+EXS7G/DI/o4hFeO6GJ2chynnKV5gp\n"
+            + "LdhRT8C1/RECgYEA6gtUb/zPkQVLLtseY3b3J/x+R4HEYfvQ+1W1fm8tAnsmfSh7\n"
+            + "Yyc7Cq9MZvM+D0abItCbzmLUSBtr4gTz/+mpy2YwiEyf1f3BmbI07Zo16HVnjuYm\n"
+            + "jR/RfPqhRv6Gpj6/MtNBZbH072lK9vlMjQ69uf1NhpXLcb/knlJIgZkoX9UCgYEA\n"
+            + "q/BlVkbTVB22AnB2hE5LTRd2PCHtn/J9grwd6hSUaFi535IOf9jwdYFsncey7KMW\n"
+            + "p9wFreA4WLxAfTV+ZE8F0gO7Oq223QhsF9KySUerEeSsVZJVqjexqdUPMn5gybAV\n"
+            + "NqtT4nCwkGlXdvDcgjiUi+zKged7/rDZnl8+FT/PSeECgYEAx08ZS4fcYHmpFXqJ\n"
+            + "06nMWvm39ien4GD8/YKl2DCNOlgHkeHqVlAtR+d3CwrLIH7tt+W48hEFkP6RVHnB\n"
+            + "Ac+vm2DUbyvv/kVS+pnlWU5vAUVAeOE1yDV7mqEdmR0YYFc+wOBk6Iic/9rE6x4i\n" + "MJ99bBNs2Ja7d1AfgStJRTuyHvs=  \n"
+            + "-----END ENCRYPTED PRIVATE KEY-----";
     private static final String DSA_ENCRYPTED_PRIVATE_KEY_PASS = "dsapass";
 
     private static final String DELIMITED_RSA_PRIVATE_KEY2 = "-----BEGIN RSA PRIVATE KEY-----\n" +
@@ -241,7 +265,7 @@ public class KeyUtilTest {
             "-----END RSA PRIVATE KEY-----";
 
     @Test
-    public void testIsDelimited(){
+    public void testIsDelimited() {
         assertTrue(KeyUtil.isDelimited(DELIMITED_RSA_PRIVATE_KEY));
         assertTrue(KeyUtil.isDelimited(DELIMITED_RSA_PRIVATE_KEY2));
         assertFalse(KeyUtil.isDelimited(RSA_ENCRYPTED_PRIVATE_KEY));
@@ -325,6 +349,13 @@ public class KeyUtilTest {
     public void testDelimiterBasedCertificateString() throws KeyException {
 
         PrivateKey privateKey = KeyUtil.getPrivateKeyWithDelimiter(DELIMITED_RSA_PRIVATE_KEY, "");
+        assertEquals("PKCS#8", privateKey.getFormat());
+        assertEquals("RSA", privateKey.getAlgorithm());
+    }
+
+    @Test
+    public void testPrivateKeyWithSpaces() throws KeyException {
+        PrivateKey privateKey = KeyUtil.getPrivateKeyWithDelimiter(DELIMITED_PRIVATE_KEY_WITH_SPACES, "");
         assertEquals("PKCS#8", privateKey.getFormat());
         assertEquals("RSA", privateKey.getAlgorithm());
     }

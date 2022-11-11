@@ -1,0 +1,10 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:ncext="http://www.test-company.com/solutions/nc-stack-extensions">
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album ncext:visibility="false" xc:operation="delete">
+				<name>Visible album</name>
+			</album>
+		</artist>
+	</library>
+</jukebox>

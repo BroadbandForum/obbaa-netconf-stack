@@ -1,8 +1,24 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.EMPTY_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.PMA_CERT_NODE_ID;
-import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ARTIST_QNAME;
@@ -35,6 +51,7 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.V3_PMA_CERT_CONTAINER_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.V3_PMA_CERT_NS;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.setUpUnwrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
@@ -46,24 +63,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
+import org.broadband_forum.obbaa.netconf.api.util.CryptUtil2;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.Certificate;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.PmaCerts;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.TrustedCaCerts;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v3.V3Certificate;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v3.V3PmaCerts;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
@@ -76,10 +83,15 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNode
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.EntityRegistryBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigAttributeHelper;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
-
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.Certificate;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.PmaCerts;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v2.TrustedCaCerts;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v3.V3Certificate;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.certificates.v3.V3PmaCerts;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Album;
@@ -88,10 +100,18 @@ import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Juke
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Library;
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Singer;
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.Song;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
 /**
  * Created by keshava on 5/12/15.
  */
+@RunWith(RequestScopeJunitRunner.class)
 public class EntityToModelNodeMapperTest {
 
     public static final String TEST_CERTIFICATES = "test:certificates";
@@ -142,6 +162,13 @@ public class EntityToModelNodeMapperTest {
         when(m_modelNodeHelperRegistry.getNaturalKeyHelpers(V3_CERT_SCHEMA_PATH)).thenReturn(helpers);
         m_entityToModelNodeMapper = new EntityToModelNodeMapperImpl(m_entityRegistry, m_modelNodeHelperRegistry, null, m_schemaRegistry);
         prepareNodeIds();
+        setUpUnwrap(m_modelNodeHelperRegistry);
+
+        String keyFilePath = getClass().getResource("/domvisitortest/keyfile.plain").getPath();
+        CryptUtil2 cryptUtil2 = new CryptUtil2();
+        cryptUtil2.setKeyFilePathForTest(keyFilePath);
+        cryptUtil2.initFile();
+
     }
 
     private void prepareNodeIds() {
@@ -153,13 +180,13 @@ public class EntityToModelNodeMapperTest {
         m_cert1NodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, V3_CERT_NS, CERT_MGMT_LOCAL_NAME));
         m_cert1NodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, V3_PMA_CERT_NS, PMA_CERTS_LOCAL_NAME));
         m_cert1NodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, V3_PMA_CERT_NS, CERTIFICATE_LOCAL_NAME));
-        m_cert1NodeId.addRdn(new ModelNodeRdn(V3_CERT_ID_QNAME.getLocalName(), V3_CERT_NS, "pma-cert1"));
+        m_cert1NodeId.addRdn(new ModelNodeRdn(V3_CERT_ID_QNAME.getLocalName(), V3_PMA_CERT_NS, "pma-cert1"));
 
         m_cert2NodeId = new ModelNodeId();
         m_cert2NodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, V3_CERT_NS, CERT_MGMT_LOCAL_NAME));
         m_cert2NodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, V3_PMA_CERT_NS, PMA_CERTS_LOCAL_NAME));
         m_cert2NodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, V3_PMA_CERT_NS, CERTIFICATE_LOCAL_NAME));
-        m_cert2NodeId.addRdn(new ModelNodeRdn(V3_CERT_ID_QNAME.getLocalName(), V3_CERT_NS, "pma-cert2"));
+        m_cert2NodeId.addRdn(new ModelNodeRdn(V3_CERT_ID_QNAME.getLocalName(), V3_PMA_CERT_NS, "pma-cert2"));
     }
 
     @Test
@@ -183,6 +210,8 @@ public class EntityToModelNodeMapperTest {
 
         TrustedCaCerts trustedCaCerts = new TrustedCaCerts();
         trustedCaCerts.setSchemaPath(SchemaPathUtil.toStringNoRev(CA_CERT_CONTAINER_SCHEMA_PATH));
+        trustedCaCerts.setVisibility(true);
+
         cert1 = new Certificate();
         cert1.setSchemaPath(SchemaPathUtil.toStringNoRev(CA_CERT_SCHEMA_PATH));
         cert1.setId("ca-cert1");
@@ -190,14 +219,22 @@ public class EntityToModelNodeMapperTest {
         trustedCaCerts.addCertificates(cert1);
 
         cert2 = new Certificate();
-        cert1.setId("ca-cert2");
-        cert1.setCerBinary("cert2-binary");
+        cert2.setSchemaPath(SchemaPathUtil.toStringNoRev(CA_CERT_SCHEMA_PATH));
+        cert2.setId("ca-cert2");
+        cert2.setCerBinary("cert2-binary");
         trustedCaCerts.addCertificates(cert2);
 
         modelNode = m_entityToModelNodeMapper.getModelNode(trustedCaCerts, null);
         QName caCertsQname = QName.create("test:certificates", "2015-12-08", "trusted-ca-certs");
-        assertEquals(modelNode.getQName(), caCertsQname);
+        assertEquals(caCertsQname, modelNode.getQName());
+        assertEquals(true, modelNode.isVisible());
 
+        trustedCaCerts = new TrustedCaCerts();
+        trustedCaCerts.setSchemaPath(SchemaPathUtil.toStringNoRev(CA_CERT_CONTAINER_SCHEMA_PATH));
+        trustedCaCerts.setVisibility(false);
+
+        modelNode = m_entityToModelNodeMapper.getModelNode(trustedCaCerts, null);
+        assertEquals(false, modelNode.isVisible());
     }
 
     @Test
@@ -269,13 +306,14 @@ public class EntityToModelNodeMapperTest {
         configAttributes.put(QName.create(TEST_CERTIFICATES, "2015-12-08", "id"), new GenericConfigAttribute("id", TEST_CERTIFICATES, "pma-cert3"));
         configAttributes.put(QName.create(TEST_CERTIFICATES, "2015-12-08", "cert-binary"),new GenericConfigAttribute("cert-binary", TEST_CERTIFICATES, "pma-cert3-binary"));
         certModelNode.setAttributes(configAttributes);
+        certModelNode.setVisibility(false);
 
         Object entity = m_entityToModelNodeMapper.getEntity(PMA_CERT_SCHEMA_PATH, certModelNode, Certificate.class, PMA_CERT_NODE_ID, -1);
         assertTrue(entity instanceof Certificate);
         Certificate certificate = (Certificate) entity;
         assertEquals("pma-cert3", certificate.getId());
         assertEquals("pma-cert3-binary", certificate.getCerBinary());
-
+        assertEquals(false, certificate.getVisibility());
     }
 
     @Test
@@ -355,19 +393,11 @@ public class EntityToModelNodeMapperTest {
 
     @Test
     public void testModelNodeToEntityJukebox3(){
-        ModelNodeWithAttributes songModelNode = new ModelNodeWithAttributes(SONG_SCHEMA_PATH, m_artistId, null, null, m_schemaRegistry, null);
-        Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
-        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, "Entity Refactor"));
-        songModelNode.setAttributes(configAttributes);
-        songModelNode.setModelNodeId(m_songId);
+        GenericConfigAttribute nameConfigAttr = new GenericConfigAttribute(NAME, JB_NS, "Entity Refactor");
+        GenericConfigAttribute singer1 = new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer1");
+        GenericConfigAttribute singer2 = new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer2");
 
-        Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
-        LinkedHashSet<ConfigLeafAttribute> singers = new LinkedHashSet<>();
-        singers.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer1"));
-        singers.add(new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer2"));
-        leafLists.put(QName.create(JB_NS,JB_REVISION, SINGER_LOCAL_NAME), singers);
-
-        songModelNode.setLeafLists(leafLists);
+        ModelNodeWithAttributes songModelNode = getSongModelNode(nameConfigAttr, singer1, singer2);
 
         Object songEntity = m_entityToModelNodeMapper.getEntity(SONG_SCHEMA_PATH, songModelNode, Song.class, m_artistId, -1);
         assertEquals(2, ((Song)songEntity).getSingers().size());
@@ -398,5 +428,41 @@ public class EntityToModelNodeMapperTest {
         assertTrue(((Song)songEntity).getSingers().contains(singer1));
         assertTrue(((Song)songEntity).getSingers().contains(singer2));
         assertEquals("Entity Refactor", ((Song)songEntity).getName());
+    }
+
+    @Test
+    public void testGetOrUpdateEntityEncryptsPasswords(){
+        GenericConfigAttribute nameConfigAttr = new GenericConfigAttribute(NAME, JB_NS, "dummysong");
+        GenericConfigAttribute singer1 = new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "$-0$xXIiL+xQgxTebSsvRs8RZspPklT/5f7eBsvWWssFV9M=");
+        GenericConfigAttribute singer2 = new GenericConfigAttribute(SINGER_LOCAL_NAME, JB_NS, "singer2");
+        ModelNodeWithAttributes songModelNode = getSongModelNode(nameConfigAttr, singer1, singer2);
+
+        nameConfigAttr.setIsPassword(true);
+        singer1.setIsPassword(true);
+        singer2.setIsPassword(true);
+
+        Song songEntity = (Song) m_entityToModelNodeMapper.getEntity(SONG_SCHEMA_PATH, songModelNode, Song.class, m_artistId, -1);
+        assertEquals(2, songEntity.getSingers().size());
+        assertEquals("dummysong", CryptUtil2.decrypt(songEntity.getName()));
+        Iterator<Singer> iterator = songEntity.getSingers().iterator();
+        assertEquals("$-0$xXIiL+xQgxTebSsvRs8RZspPklT/5f7eBsvWWssFV9M=", iterator.next().getSinger());
+        assertEquals("singer2", CryptUtil2.decrypt(iterator.next().getSinger()));
+    }
+
+    private ModelNodeWithAttributes getSongModelNode(GenericConfigAttribute nameConfigAttr, GenericConfigAttribute singer1, GenericConfigAttribute singer2) {
+        ModelNodeWithAttributes songModelNode = new ModelNodeWithAttributes(SONG_SCHEMA_PATH, m_artistId, null, null, m_schemaRegistry, null);
+        Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
+        configAttributes.put(NAME_QNAME, nameConfigAttr);
+        songModelNode.setAttributes(configAttributes);
+        songModelNode.setModelNodeId(m_songId);
+
+        Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = new HashMap<>();
+        LinkedHashSet<ConfigLeafAttribute> singers = new LinkedHashSet<>();
+        singers.add(singer1);
+        singers.add(singer2);
+        leafLists.put(QName.create(JB_NS, JB_REVISION, SINGER_LOCAL_NAME), singers);
+
+        songModelNode.setLeafLists(leafLists);
+        return songModelNode;
     }
 }

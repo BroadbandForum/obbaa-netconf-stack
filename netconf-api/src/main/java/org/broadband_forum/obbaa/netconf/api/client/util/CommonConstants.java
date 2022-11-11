@@ -33,6 +33,8 @@ public class CommonConstants {
     public static final String IETF_NETCONF_NOTIFICATIONS = "urn:ietf:params:xml:ns:yang:ietf-netconf-notifications";
     public static final String NETCONF_CAPABILITY_CHANGE = "netconf-capability-change";
     public static final String YANG_LIBRARY = "yang-library";
+    public static final String CONFORMANCE_TYPE = "conformance-type";
+    public static final String IMPLEMENT = "implement";
     public static final QName CAPS_CHANGE_NOTIFICATION_TYPE = QName.create(IETF_NETCONF_NOTIFICATIONS, NETCONF_CAPABILITY_CHANGE);
     public static final QName QNAME_YANG_LIBRARY = QName.create(IETF_YANG_LIBRARY_NS, MODULE_PARAM);
 }

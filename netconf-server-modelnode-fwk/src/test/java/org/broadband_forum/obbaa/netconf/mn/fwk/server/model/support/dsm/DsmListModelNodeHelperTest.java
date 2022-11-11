@@ -1,14 +1,30 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.dsm;
 
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGet;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfig;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfigWithOrder;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.JB_NS;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME_QNAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGet;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfig;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfigWithOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -21,25 +37,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.xml.sax.SAXException;
-
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilderException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
@@ -48,17 +52,31 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetConfServerImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.DataStoreException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class DsmListModelNodeHelperTest {
 
     private static final String MESSAGE_ID = "1";
@@ -70,7 +88,8 @@ public class DsmListModelNodeHelperTest {
     private static final String ALBUM_FILTER_WITH_ALLKEYS_ONE_ATT_REQUEST = "/dsmlistmodelnodehelpertest/album-filter-with-allkeys-oneAtt-req.xml";
     private static final String ALBUM_FILTER_WITH_ALLKEYS_ONE_ATTR_RESPONSE = "/dsmlistmodelnodehelpertest/album-filter-with-allkeys-oneAttr-res.xml";
     private static final String ALBUM_FILTER_WITH_WRONGKEYVALUE_REQUEST = "/dsmlistmodelnodehelpertest/album-filter-with-wrongkeyvalue-req.xml";
-    private static final String EMPTY_RESPONSE_XML = "/empty-response.xml";
+    private static final String RESPONSE_WITH_NAME_XML = "/response_with_name.xml";
+    private static final String RESPONSE_WITH_NAME_YEAR_XML = "/response_with_name_year.xml";
     private static final String ALBUM_FILTER_WITH_WRONGATTRVALUE_REQUEST = "/dsmlistmodelnodehelpertest/album-filter-with-wrongattrvalue-req.xml";
     private static final String ALBUM_FILTER_WITH_ONE_ATTR_ONELEAFLIST_REQUEST = "/dsmlistmodelnodehelpertest/album-filter-with-oneAttr-oneleaflist-req.xml";
     private static final String ALBUM_FILTER_WITH_ONE_ATTR_ONELEAFLIST_RESPONSE = "/dsmlistmodelnodehelpertest/album-filter-with-oneAttr-oneleaflist-res.xml";
@@ -124,6 +143,7 @@ public class DsmListModelNodeHelperTest {
         m_modelNodeDsmSpy = spy(m_modelNodeDsm);
         ModelNode yangModel = YangUtils.createInMemoryModelNode(m_yangFilePath, new LocalSubSystem(), m_modelNodeHelperRegistry,
                 m_subSystemRegistry, m_schemaRegistry, m_modelNodeDsmSpy);
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_modelNodeDsmSpy, m_subSystemRegistry);
         m_rootModelNodeAggregator.addModelServiceRoot(COMPONENT_ID, yangModel);
         DataStore dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry);
@@ -146,7 +166,7 @@ public class DsmListModelNodeHelperTest {
         keys.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "2000"));
         keys.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, albumName));
         // 3 including edits initially
-        verify(m_modelNodeDsmSpy, times(3)).findNodes(ALBUM_SCHEMA_PATH, keys, m_artistNodeId);
+        verify(m_modelNodeDsmSpy, times(3)).findNodes(ALBUM_SCHEMA_PATH, keys, m_artistNodeId, m_schemaRegistry);
 
     }
 
@@ -162,7 +182,14 @@ public class DsmListModelNodeHelperTest {
 
     @Test
     public void testListMergeOrderedByUser() throws ModelNodeInitException, SAXException, IOException, SchemaBuildException {
-        String xmlFilePath = TestUtil.class.getResource(LIST_EDITCONFIG_MERGE_ORDERED_BY_USER_REQUEST_XML).getPath();
+        String xmlFilePath = TestUtil.class.getResource(LIST_EDITCONFIG_CREATE_ORDERED_BY_USER_REQUEST_XML).getPath();
+        YangUtils.loadXmlDataIntoServer(m_netconfServer, xmlFilePath);
+
+        // verify get response with filter
+        verifyGetConfig(m_netconfServer, StandardDataStores.RUNNING, FILTER_ALBUM_ORDERED_BY_USER,
+                LIST_EDITCONFIG_CREATE_ORDERED_BY_USER_EXPECTED_XML, "1");
+
+        xmlFilePath = TestUtil.class.getResource(LIST_EDITCONFIG_MERGE_ORDERED_BY_USER_REQUEST_XML).getPath();
         YangUtils.loadXmlDataIntoServer(m_netconfServer, xmlFilePath);
 
         // verify get response with filter
@@ -234,17 +261,17 @@ public class DsmListModelNodeHelperTest {
         verifyGet(m_netconfServer, ALBUM_FILTER_WITH_ALLKEYS_ONE_ATT_REQUEST, ALBUM_FILTER_WITH_ALLKEYS_ONE_ATTR_RESPONSE, MESSAGE_ID);
 
         // Case 2: When filter has two keys and one attribute - one key does not match
-        verifyGet(m_netconfServer, ALBUM_FILTER_WITH_WRONGKEYVALUE_REQUEST, EMPTY_RESPONSE_XML, MESSAGE_ID);
+        verifyGet(m_netconfServer, ALBUM_FILTER_WITH_WRONGKEYVALUE_REQUEST, RESPONSE_WITH_NAME_XML, MESSAGE_ID);
 
         // Case 3: When filter has two keys and one attribute - one attribute does not match
-        verifyGet(m_netconfServer, ALBUM_FILTER_WITH_WRONGATTRVALUE_REQUEST, EMPTY_RESPONSE_XML, MESSAGE_ID);
+        verifyGet(m_netconfServer, ALBUM_FILTER_WITH_WRONGATTRVALUE_REQUEST, RESPONSE_WITH_NAME_XML, MESSAGE_ID);
 
         // Case 4: When filter has one leafList and one key - All values match
         verifyGet(m_netconfServer, ALBUM_FILTER_WITH_ONE_ATTR_ONELEAFLIST_REQUEST, ALBUM_FILTER_WITH_ONE_ATTR_ONELEAFLIST_RESPONSE,
                 MESSAGE_ID);
 
         // Case 5: When filter has one leafList and one attribute - attribute does not match
-        verifyGet(m_netconfServer, ALBUM_FILTER_WITH_WRONGATTR_ONELEAFLIST_REQUEST, EMPTY_RESPONSE_XML, MESSAGE_ID);
+        verifyGet(m_netconfServer, ALBUM_FILTER_WITH_WRONGATTR_ONELEAFLIST_REQUEST, RESPONSE_WITH_NAME_YEAR_XML, MESSAGE_ID);
     }
 
     @Test
@@ -283,13 +310,13 @@ public class DsmListModelNodeHelperTest {
         DsmListModelNodeHelper dsmListModelNodeHelper = new DsmListModelNodeHelper(mock(ListSchemaNode.class),
                 m_modelNodeHelperRegistry, m_modelNodeDsm ,m_schemaRegistry, m_subSystemRegistry);
 
-        InsertOperation insertOperation = new InsertOperation("after", "[name='just-test']");
+        InsertOperation insertOperation = InsertOperation.get("after", "[name='just-test']");
         Assert.assertEquals(2, dsmListModelNodeHelper.getChildInsertIndex(modelNodeList, insertOperation, albumModelNode1));
-        insertOperation = new InsertOperation("before", "[name='just-test']");
+        insertOperation = InsertOperation.get("before", "[name='just-test']");
         Assert.assertEquals(1, dsmListModelNodeHelper.getChildInsertIndex(modelNodeList, insertOperation, albumModelNode1));
-        insertOperation = new InsertOperation("first", null);
+        insertOperation = InsertOperation.FIRST_OP;
         Assert.assertEquals(0, dsmListModelNodeHelper.getChildInsertIndex(modelNodeList, insertOperation, null));
-        insertOperation = new InsertOperation("last", null);
+        insertOperation = InsertOperation.LAST_OP;
         Assert.assertEquals(2, dsmListModelNodeHelper.getChildInsertIndex(modelNodeList, insertOperation, null));
     }
 }

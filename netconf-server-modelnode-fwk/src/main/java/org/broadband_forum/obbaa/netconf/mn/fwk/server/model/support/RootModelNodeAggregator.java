@@ -1,14 +1,29 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import java.util.List;
+import java.util.Set;
 
-import org.broadband_forum.obbaa.netconf.api.util.Pair;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.w3c.dom.Element;
-
+import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ActionException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CopyConfigException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
@@ -18,6 +33,9 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NotificationContext;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.w3c.dom.Element;
 
 /**
  * An aggregator for multiple Root level ModelNodes.
@@ -27,6 +45,8 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NotificationContext
 public interface RootModelNodeAggregator {
 	RootModelNodeAggregator addModelServiceRoot(String componentId, ModelNode modelNode);
 
+	SubSystemRegistry getSubsystemRegistry();
+
 	void addModelServiceRoots(String componentId, List<ModelNode> modelNodes);
 
 	List<ModelNode> getModelServiceRoots();
@@ -34,10 +54,11 @@ public interface RootModelNodeAggregator {
 	List<ModelNode> getModelServiceRootsForEdit(EditConfigRequest request);
 
 	List<ModelNode> getModuleRootFromHelpers(String requiredElementNamespace, String requiredElementLocalName);
+	List<ModelNode> getModuleRootFromHelpers(String requiredElementNamespace, String requiredElementLocalName, ModelNode modelNode);
 
 	List<Element> get(GetContext getContext, NetconfQueryParams params) throws GetException;
     
-	List<Element> action(ActionRequest actionRequest) throws ActionException;
+	List<Element> action(ActionRequest actionRequest, NetconfClientInfo clientInfo, SchemaRegistry registry) throws ActionException;
 	
 	List<Element> getConfig(GetConfigContext getConfigContext, NetconfQueryParams params)
 			throws GetException;
@@ -55,5 +76,5 @@ public interface RootModelNodeAggregator {
 
     void removeModelServiceRoot(String componentId);
 
-	List<Pair<String,String>> getRootNodeNsLocalNamePairs();
+	Set<SchemaPath> getRootNodeSchemaPaths();
 }

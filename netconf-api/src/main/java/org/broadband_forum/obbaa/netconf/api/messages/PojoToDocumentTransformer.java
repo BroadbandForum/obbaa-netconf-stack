@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
+
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.List;
@@ -33,29 +35,30 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfMessage;
+import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.joda.time.DateTime;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
-
 /**
  * A utility class to transform a {@link NetconfMessage} to netconf {@link Document}.
  * 
- *
+ * 
  * 
  */
 public class PojoToDocumentTransformer {
 
-    private static final Logger LOGGER = Logger.getLogger(PojoToDocumentTransformer.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(PojoToDocumentTransformer.class, LogAppNames.NETCONF_LIB);
 
     private static final String RPC_ELEMENT_IS_NULL_CREATE_THE_RPC_ELEMENT_FIRST = "<rpc> Element is null, create the rpc element first";
 
@@ -90,12 +93,14 @@ public class PojoToDocumentTransformer {
     }
 
     public Document build() throws NetconfMessageBuilderException {
-        try {
-            DocumentUtils.prettyPrint(m_doc);
-        } catch (Exception e) {
-            LOGGER.error(ERROR_WHILE_BUILDING_DOCUMENT, e);
-            throw new NetconfMessageBuilderException(ERROR_WHILE_BUILDING_DOCUMENT, e);
-        }
+    	if(LOGGER.isTraceEnabled()) {
+    		try {
+    			DocumentUtils.prettyPrint(m_doc);
+    		} catch (Exception e) {
+    			LOGGER.error(ERROR_WHILE_BUILDING_DOCUMENT, e);
+    			throw new NetconfMessageBuilderException(ERROR_WHILE_BUILDING_DOCUMENT, e);
+    		}
+    	}
         return m_doc;
     }
 
@@ -104,6 +109,14 @@ public class PojoToDocumentTransformer {
             Element withDelayElement = m_doc.createElementNS(NetconfResources.WITH_DELAY_NS, NetconfResources.WITH_DELAY);
             withDelayElement.setTextContent(String.valueOf(withDelay));
             element.appendChild(withDelayElement);
+        }
+    }
+
+    private void addWithSliceOwnerElement(Element element, String sliceOwner) {
+        if (sliceOwner!=null) {
+            Element sliceOwnerElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, DocumentToPojoTransformer.SLICE_OWNER);
+            sliceOwnerElement.setTextContent(sliceOwner);
+            element.appendChild(sliceOwnerElement);
         }
     }
 
@@ -128,6 +141,18 @@ public class PojoToDocumentTransformer {
                 fieldsElement.appendChild(attributeElement);
             }
         }
+    }
+
+    public PojoToDocumentTransformer addUserContextAttributes(String userContext, String sessionId){
+        Node rpcNode = m_doc.getFirstChild();
+        if (StringUtils.isNotEmpty(userContext)) {
+            ((Element)rpcNode).setAttributeNS(XMLNS_NAMESPACE, NetconfResources.XMLNS_CTX, NetconfResources.EXTENSION_NS);
+            ((Element)rpcNode).setAttribute(NetconfResources.CTX_USER_CONTEXT, userContext);
+            if (StringUtils.isNotEmpty(sessionId)) {
+                ((Element)rpcNode).setAttribute(NetconfResources.CTX_SESSION_ID, sessionId);
+            }
+        }
+        return this;
     }
 
     public PojoToDocumentTransformer addGetConfigElement(String source, NetconfFilter netconfFilter, WithDefaults withDefaults, int withDelay, int depth, Map<String, List<QName>> fieldValues)
@@ -224,10 +249,18 @@ public class PojoToDocumentTransformer {
             if (netconfFilter.getType() != null && !netconfFilter.getType().isEmpty()) {
                 filterElementWrapper.setAttribute(NetconfResources.TYPE, netconfFilter.getType());
             }
-            List<Element> xmlFilterElements = netconfFilter.getXmlFilterElements();
-            if (xmlFilterElements != null) {
-                for (Element xmlFilterElement : xmlFilterElements) {
-                    filterElementWrapper.appendChild(m_doc.importNode(xmlFilterElement, true));
+            if (NetconfFilter.XPATH_TYPE.equals(netconfFilter.getType())) {
+                for(Entry<String, String> nsPrefixEntry : netconfFilter.getNsPrefixMap().entrySet()){
+                    filterElementWrapper.setAttributeNS(PojoToDocumentTransformer.XMLNS_NAMESPACE,
+                            PojoToDocumentTransformer.XMLNS+nsPrefixEntry.getValue(), nsPrefixEntry.getKey());
+                }
+                filterElementWrapper.setAttribute(NetconfResources.SELECT, netconfFilter.getSelectAttribute());
+            } else {
+                List<Element> xmlFilterElements = netconfFilter.getXmlFilterElements();
+                if (xmlFilterElements != null) {
+                    for (Element xmlFilterElement : xmlFilterElements) {
+                        filterElementWrapper.appendChild(m_doc.importNode(xmlFilterElement, true));
+                    }
                 }
             }
             getConfigElement.appendChild(filterElementWrapper);
@@ -244,12 +277,20 @@ public class PojoToDocumentTransformer {
         }
     }
 
-    public PojoToDocumentTransformer addEditConfigElement(String source, String defaultOperation, String testOption, String errorOption,
-            int withDelay, EditConfigElement configElement) throws NetconfMessageBuilderException {
+    public PojoToDocumentTransformer addEditConfigElement(Boolean withTransactionId, String source, String defaultOperation, String testOption, String errorOption,
+            int withDelay, EditConfigElement configElement, String userContext, String sessionId) throws NetconfMessageBuilderException {
 
         Node rpcNode = m_doc.getFirstChild();
         Element editConfigElement = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG);
         rpcNode.appendChild(editConfigElement);
+        if (StringUtils.isNotEmpty(userContext)) {
+            ((Element)rpcNode).setAttributeNS(XMLNS_NAMESPACE, NetconfResources.XMLNS_CTX, NetconfResources.EXTENSION_NS);
+            ((Element)rpcNode).setAttribute(NetconfResources.CTX_USER_CONTEXT, userContext);
+            if (StringUtils.isNotEmpty(sessionId)) {
+                ((Element)rpcNode).setAttribute(NetconfResources.CTX_SESSION_ID, sessionId);
+            }
+        }
+        
         if (source != null) {
             Element sourceElementWrapper = m_doc.createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.DATA_TARGET);
             editConfigElement.appendChild(sourceElementWrapper);
@@ -276,16 +317,19 @@ public class PojoToDocumentTransformer {
             editConfigElement.appendChild(errorOptionElement);
         }
 
+        if (withTransactionId) {
+            Element withTransactionIdElement = m_doc
+                    .createElementNS(NetconfResources.TRANSACTION_ID_NS, NetconfResources.WITH_TRANSACTION_ID);
+            editConfigElement.appendChild(withTransactionIdElement);
+        }
+
         addWithDelayElement(editConfigElement, withDelay);
 
         if (configElement == null) {
             throw new NetconfMessageBuilderException("empty/null <config> for <edit-config> :" + configElement);
         } else {
-            if (!validateEditConfigElement(configElement)) {
-                editConfigElement.appendChild(m_doc.importNode(configElement.getXmlElement(), true));
-            } else {
-                throw new NetconfMessageBuilderException("<config> element in <edit-config> is invalid :" + configElement);
-            }
+            validateEditConfigElement(configElement);
+            editConfigElement.appendChild(m_doc.importNode(configElement.getXmlElement(), true));
         }
         return this;
     }
@@ -356,8 +400,8 @@ public class PojoToDocumentTransformer {
         return configElement;
     }
 
-    public PojoToDocumentTransformer addCopyConfigElement(String source, boolean srcIsUrl, String target, boolean targetIsUrl,
-            Element config) throws NetconfMessageBuilderException {
+    public PojoToDocumentTransformer addCopyConfigElement(boolean withTransactionId, String source, boolean srcIsUrl, String target, boolean targetIsUrl,
+                                                          Element config) throws NetconfMessageBuilderException {
         if (source == null || source.isEmpty()) {
             if (config == null) {
                 throw new NetconfMessageBuilderException("<source> element not set for <copy-config>");
@@ -396,6 +440,12 @@ public class PojoToDocumentTransformer {
         }
         sourceElement.appendChild(sourceContentElement);        
         copyConfigElement.appendChild(sourceElement);
+
+        if(withTransactionId){
+            Element withTransactionIdElement = m_doc
+                    .createElementNS(NetconfResources.TRANSACTION_ID_NS, NetconfResources.WITH_TRANSACTION_ID);
+            copyConfigElement.appendChild(withTransactionIdElement);
+        }
 
         return this;
     }
@@ -474,7 +524,9 @@ public class PojoToDocumentTransformer {
      * @return
      * @throws NetconfMessageBuilderException
      */
-    public PojoToDocumentTransformer addGetElement(NetconfFilter filter, WithDefaults withDefaults, int withDelay, int depth, Map<String, List<QName>> fieldValues)
+    public PojoToDocumentTransformer addGetElement(NetconfFilter filter, String sliceOwner, WithDefaults withDefaults, int withDelay,
+                                                   int depth,
+                                                   Map<String, List<QName>> fieldValues)
             throws NetconfMessageBuilderException {
         // Add it right after "<rpc>"
         Node rpcNode = m_doc.getFirstChild();
@@ -505,6 +557,9 @@ public class PojoToDocumentTransformer {
         addWithDelayElement(getElement, withDelay);
         
         addDepthElement(getElement, depth);
+        if(sliceOwner!=null) {
+            addWithSliceOwnerElement(getElement, sliceOwner);
+        }
         addFieldElements(getElement, fieldValues);
         return this;
     }
@@ -632,6 +687,17 @@ public class PojoToDocumentTransformer {
         return this;
     }
 
+    public PojoToDocumentTransformer addTxId(String txId) throws NetconfMessageBuilderException {
+        Node rpcReplyNode = m_doc.getFirstChild();
+        if (rpcReplyNode == null) {
+            throw new NetconfMessageBuilderException("<rpc-reply> Element is null, create the rpc element first");
+        }
+        Element txIdElement = m_doc.createElementNS(NetconfResources.TRANSACTION_ID_NS, NetconfResources.TRANSACTION_ID);
+        txIdElement.setTextContent(txId);
+        rpcReplyNode.appendChild(m_doc.importNode(txIdElement, true));
+        return this;
+    }
+
     public PojoToDocumentTransformer addData(Element data) throws NetconfMessageBuilderException {
         Node rpcReplyNode = m_doc.getFirstChild();
         if (rpcReplyNode == null) {
@@ -642,6 +708,27 @@ public class PojoToDocumentTransformer {
         }
         return this;
     }
+    
+	public PojoToDocumentTransformer addNcExtensionsResponses(Map<QName, List<Element>> ncExtensionResponses)
+			throws NetconfMessageBuilderException {
+		Node rpcReplyNode = m_doc.getFirstChild();
+        if (rpcReplyNode == null) {
+            throw new NetconfMessageBuilderException("<rpc-reply> Element is null, create the rpc element first");
+        }
+        if (ncExtensionResponses != null && !ncExtensionResponses.isEmpty()) {
+        	for (Entry<QName, List<Element>> entry : ncExtensionResponses.entrySet()) {
+				Element ncExtensionElement = m_doc.createElementNS(NetconfResources.EXTENSION_NS,
+						String.format(NetconfResources.RPC_REPLY_EXTENSION_RESULT, entry.getKey().getLocalName()));
+        		if (entry.getValue() != null) {
+					for (Element element : entry.getValue()) {
+						ncExtensionElement.appendChild(m_doc.importNode(element, true));
+					}
+					rpcReplyNode.appendChild(m_doc.importNode(ncExtensionElement, true));
+				}
+			}
+        }
+        return this;
+	}
 
     public PojoToDocumentTransformer addRpcErrors(List<NetconfRpcError> rpcErrors) throws NetconfMessageBuilderException {
         for (NetconfRpcError rpcError : rpcErrors) {
@@ -921,20 +1008,35 @@ public class PojoToDocumentTransformer {
                 changesInfoElement.appendChild(targetElement);
 
                 List<ChangedLeafInfo> changedLeafInfos = stateChangeInfo.getChangedLeafInfos();
-                int changedLeafKey = 1;
+                int changedLeafItem = 1;
                 for (ChangedLeafInfo changedLeafInfo : changedLeafInfos) {
-                    //get key
-                    Element changedLeafKeyElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.KEY);
-                    changedLeafKeyElement.setTextContent(String.valueOf(changedLeafKey));
-                    changedLeafKey++;
-                    //get anyxml content
+
+                    // output
+                    // <changed-leaf>
+                    //   <item>1</item>
+                    //   <value>
+                    //      <swmgmt:software-targets-aligned xmlns:swmgmt="http://www.test-company.com/solutions/anv-software">false</swmgmt:software-targets-aligned>
+                    //   </value>
+                    // </changed-leaf>
+
+                    // create item
+                    Element changedLeafItemElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.ITEM);
+                    changedLeafItemElement.setTextContent(String.valueOf(changedLeafItem));
+                    changedLeafItem++;
+
+                    //create anyxml content
                     Element changeValuesAnyXml = m_doc.createElementNS(changedLeafInfo.getNamespace(), changedLeafInfo.getName());
                     changeValuesAnyXml.setPrefix(changedLeafInfo.getPrefix());
                     changeValuesAnyXml.setTextContent(changedLeafInfo.getChangedValue());
-                    //append key and anyxml into changed-leaf element
+
+                    // create value and append anyxml element into value element
+                    Element changedLeafValueElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.VALUE);
+                    changedLeafValueElement.appendChild(changeValuesAnyXml);
+
+                    //append item and value into changed-leaf element
                     Element changedLeafElement = m_doc.createElementNS(NetconfResources.NC_STACK_NS, NetconfResources.CHANGED_LEAF);
-                    changedLeafElement.appendChild(changedLeafKeyElement);
-                    changedLeafElement.appendChild(changeValuesAnyXml);
+                    changedLeafElement.appendChild(changedLeafItemElement);
+                    changedLeafElement.appendChild(changedLeafValueElement);
                     changesInfoElement.appendChild(changedLeafElement);
                 }
 
@@ -947,5 +1049,4 @@ public class PojoToDocumentTransformer {
         }
 
     }
-
 }

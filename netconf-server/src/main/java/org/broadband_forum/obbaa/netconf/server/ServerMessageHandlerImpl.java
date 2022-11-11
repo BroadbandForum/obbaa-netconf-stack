@@ -19,6 +19,9 @@ package org.broadband_forum.obbaa.netconf.server;
 import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
+import org.broadband_forum.obbaa.netconf.api.logger.ual.NCUserActivityLogHandler;
+import org.broadband_forum.obbaa.netconf.server.util.MessageHandlerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.ual.UALLogger;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
@@ -33,42 +36,45 @@ public class ServerMessageHandlerImpl implements ServerMessageHandler {
     protected RequestScheduler m_requestScheduler;
     private NotificationService m_notificationService;
     private final NetconfLogger m_netconfLogger;
+    private final NCUserActivityLogHandler m_ncUserActivityLogHandler;
+    private UALLogger m_ualLogger;
+    private RequestTaskPostRequestExecuteListener requestTaskPostRequestExecuteListener;
 
     public ServerMessageHandlerImpl(NetconfServerMessageListener serverMessageListener, RequestScheduler requestScheduler,
-                                    NotificationService notificationService, NetconfLogger netconfLogger) {
+                                    NotificationService notificationService, NetconfLogger netconfLogger,
+                                    NCUserActivityLogHandler ncUserActivityLogHandler, UALLogger ualLogger) {
         m_serverMessageListener = serverMessageListener;
         m_requestScheduler = requestScheduler;
         m_notificationService = notificationService;
         m_netconfLogger = netconfLogger;
+        m_ncUserActivityLogHandler = ncUserActivityLogHandler;
+        m_ualLogger = ualLogger;
     }
     
     RequestTask getRequestTask(NetconfClientInfo clientInfo, AbstractNetconfRequest request, final ResponseChannel channel) {
-        return new RequestTask(clientInfo, request, channel, m_serverMessageListener, m_netconfLogger);
+        return new RequestTask(clientInfo, request, channel, m_serverMessageListener, m_netconfLogger,m_ncUserActivityLogHandler, m_ualLogger);
     }
     
     @Override
     public void processRequest(NetconfClientInfo clientInfo, AbstractNetconfRequest request, final ResponseChannel channel) {
-        RequestTask requestTask = getRequestTask(clientInfo, request, channel);
+		try {
+			RequestTask requestTask = getRequestTask(clientInfo, request, channel);
+			requestTask.setRequestTaskPostRequestListener(requestTaskPostRequestExecuteListener);
+			MessageHandlerUtil.updateRequestTask(clientInfo, request, requestTask, m_notificationService, m_ualLogger);
 
-        //Adding request context to Request Task
-        Object requestCatgoryObj = RequestScope.getCurrentScope().getFromCache(RequestContext.REQUEST_CATEGORY_NAME);
-        RequestCategory requestCategoryFromCache = RequestCategory.class.cast(requestCatgoryObj);
-        
-        //Make the default request category as NBI, if no category is setting in RequestScope
-        RequestCategory requestCategory = requestCategoryFromCache == null ? RequestCategory.NBI : requestCategoryFromCache;
-        RequestContext requestContext = new RequestContext(requestCategory);
-        requestTask.setNotificationService(m_notificationService);
-        requestTask.setRequestContext(requestContext);
-        
-        // submit request task to requestScheduler for queuing and processing
-        if(LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Scheduling a incoming request from: {} with message-id: {} ", clientInfo, request.getMessageId());
-        }
-        m_requestScheduler.scheduleTask(requestTask);
-        if(LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Scheduled a incoming request from: {} with message-id: {} successfully.", clientInfo,
-                    request.getMessageId());
-        }
+			// submit request task to requestScheduler for queuing and processing
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("Scheduling a incoming request from: {} with message-id: {} ", clientInfo,
+						request.getMessageId());
+			}
+			m_requestScheduler.scheduleTask(requestTask);
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("Scheduled a incoming request from: {} with message-id: {} successfully.", clientInfo,
+						request.getMessageId());
+			}
+		} finally {
+			m_ualLogger.resetCanLog();
+		}
     }
 
     @Override
@@ -81,4 +87,7 @@ public class ServerMessageHandlerImpl implements ServerMessageHandler {
         m_serverMessageListener = listener;
     }
 
+    public void setRequestTaskPostRequestExecuteListener(RequestTaskPostRequestExecuteListener requestTaskPostRequestExecuteListener) {
+        this.requestTaskPostRequestExecuteListener = requestTaskPostRequestExecuteListener;
+    }
 }

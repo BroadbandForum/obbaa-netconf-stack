@@ -1,4 +1,23 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
+
+import static org.broadband_forum.obbaa.netconf.api.util.CryptUtil2.ENCR_STR_PATTERN;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.DSMUtils.setVisibility;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -10,6 +29,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.broadband_forum.obbaa.netconf.api.util.CryptUtil2;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
@@ -58,7 +78,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             if(parentIdStr!=null ){
                 parentId = new ModelNodeId(parentIdStr, m_entityRegistry.getQName(klass)
                         .getNamespace().toString());
-                if (parentId.getRdnsReadOnly().size() > 0) {
+                if(parentId.getRdnsReadOnly().size() > 0){
                     DataSchemaNode nonChoiceParent = m_schemaRegistry.getNonChoiceParent(schemaPath);
                     if(nonChoiceParent != null){
                         parentSchemaPath = nonChoiceParent.getPath();
@@ -103,9 +123,10 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafLists = DSMUtils.getConfigLeafListsFromEntity(m_schemaRegistry, schemaPath,
                 m_entityRegistry, klass, entityObject);
         node.setLeafLists(leafLists);
+        setVisibility(m_entityRegistry, entityObject, node);
         return node;
     }
-    
+
     @Override
     public void updateEntity(Object entity, SchemaPath nodeSchemaPath, ModelNode modelNode, Class klass, ModelNodeId parentId, int insertIndex) {
         try {
@@ -115,7 +136,7 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
             Map<QName, Method> attributeSetters = m_entityRegistry.getAttributeSetters(klass);
             for(Map.Entry<QName, Method> configAttribute : attributeSetters.entrySet()){
                 ConfigLeafAttribute configLeafAttribute = configValues.get(configAttribute.getKey());
-                if(configLeafAttribute!=null){
+                if(configLeafAttribute!=null) {
                     String leafValue = getConfigValue(configLeafAttribute);
                     configAttribute.getValue().invoke(entity, leafValue);
                 }else{
@@ -148,7 +169,15 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
                     ((Collection)leafListQNameGetterEntry.getValue().invoke(entity)).addAll(updatedEntities);
                 }
             }
-            
+
+            // Set Visibility attribute only if the node is invisible
+            if(!modelNode.isVisible()) {
+                Method yangVisibilityControllerSetter = m_entityRegistry.getYangVisibilityControllerSetter(klass);
+                if (yangVisibilityControllerSetter != null) {
+                    yangVisibilityControllerSetter.invoke(entity, false);
+                }
+            }
+
             if (insertIndex != -1) {
                 Method orderByUserSetter = m_entityRegistry.getOrderByUserSetter(klass);
                 if (orderByUserSetter != null) {
@@ -163,6 +192,9 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
 
     private String getConfigValue(ConfigLeafAttribute configLeafAttribute) {
         String value = configLeafAttribute.getStringValue();
+        if (configLeafAttribute.isPassword() && !ENCR_STR_PATTERN.matcher(value).matches()) {
+            value = CryptUtil2.encrypt(value);
+        }
         return value;
     }
 
@@ -211,9 +243,9 @@ public class EntityToModelNodeMapperImpl implements EntityToModelNodeMapper {
     private void updateLeafListIndex(ConfigLeafAttribute configLeafAttribute, Class<?> leafListKlass,
                                      Object leafListEntity, boolean isLeafListOrderedByUser)
             throws InvocationTargetException, IllegalAccessException {
-        if (isLeafListOrderedByUser) {
+        if(isLeafListOrderedByUser){
             Method orderByUserSetter = m_entityRegistry.getOrderByUserSetter(leafListKlass);
-            if (orderByUserSetter != null) {
+            if(orderByUserSetter != null){
                 orderByUserSetter.invoke(leafListEntity, configLeafAttribute.getInsertIndex());
             }
         }

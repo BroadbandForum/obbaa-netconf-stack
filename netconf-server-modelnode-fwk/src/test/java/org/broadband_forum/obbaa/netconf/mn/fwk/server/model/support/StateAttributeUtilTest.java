@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import static org.junit.Assert.assertEquals;
@@ -33,33 +49,33 @@ public class StateAttributeUtilTest {
         TestUtil.assertXMLEquals(getXml(), input.get(getNodeId()).get(0));
         
         input = getInput();
-        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(4, true)); //4-rdncount=1
+        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(5, true)); //5-rdncount=1
         TestUtil.assertXMLEquals(getXmlWithDepth1(), input.get(getNodeId()).get(0));
         
         input = getInput();
-        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(5, true)); 
+        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(6, true)); 
         TestUtil.assertXMLEquals(getXmlWithDepth2(), input.get(getNodeId()).get(0));
         
         input = getInput();
-        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(6, true)); 
+        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(7, true)); 
         TestUtil.assertXMLEquals(getXmlWithDepth3(), input.get(getNodeId()).get(0));
         
         input = new HashMap<ModelNodeId, List<Element>>();
         input.put(getNodeId(), Arrays.asList(getInputXml()));
-        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(4, true));
+        StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(5, true));
         TestUtil.assertXMLEquals(getOutputXml(), input.get(getNodeId()).get(0));
     }
     
     @Test
     public void testTrimResultBelowDepthForRootDepth() throws Exception {
-    	ModelNodeRdn pmaRdn = new ModelNodeRdn("container", "urn:org:bbf:pma", "pma");
+    	ModelNodeRdn pmaRdn = new ModelNodeRdn("container", "urn:org:bbf2:pma", "pma");
     	List<ModelNodeRdn> rdns = Arrays.asList(pmaRdn);
     	ModelNodeId nodeId = new ModelNodeId(rdns);
     	Map<ModelNodeId, List<Element>> input = new HashMap<ModelNodeId, List<Element>>();
     	String data = "<pma:hierarchy1 xmlns:pma=\"http://test-company.com/pma\" name=\"one\">\n"
     			+ "</pma:hierarchy1>";
     	input.put(nodeId, Arrays.asList(DocumentUtils.stringToDocument(data).getDocumentElement()));
-    	StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(1, true));
+    	StateAttributeUtil.trimResultBelowDepth(input, new NetconfQueryParams(2, true));
     	assertEquals(Collections.EMPTY_LIST, input.get(nodeId));
     }
     
@@ -72,9 +88,9 @@ public class StateAttributeUtilTest {
     
     private ModelNodeId getNodeId(){
         
-        ModelNodeRdn pmaRdn = new ModelNodeRdn("container", "urn:org:bbf:pma", "pma");
-        ModelNodeRdn dhRdn = new ModelNodeRdn("container", "urn:org:bbf:pma", "device-holder");
-        ModelNodeRdn dRdn = new ModelNodeRdn("container", "urn:org:bbf:pma", "device");
+        ModelNodeRdn pmaRdn = new ModelNodeRdn("container", "urn:org:bbf2:pma", "pma");
+        ModelNodeRdn dhRdn = new ModelNodeRdn("container", "urn:org:bbf2:pma", "device-holder");
+        ModelNodeRdn dRdn = new ModelNodeRdn("container", "urn:org:bbf2:pma", "device");
         List<ModelNodeRdn> rdns = Arrays.asList(pmaRdn, dhRdn,dRdn);
         return new ModelNodeId(rdns);
     }

@@ -1,0 +1,119 @@
+module nc-stack-extensions {
+    yang-version 1;
+
+    namespace "http://www.test-company.com/solutions/nc-stack-extensions";
+    prefix "ncext";
+
+    description "YANG extensions to be used in applications on top of NC stack";
+
+    revision "2020-09-09" {
+        description "Support for UAL.";
+    }
+
+    revision "2020-04-15" {
+        description "New extension statement for user management and access restrictions.";
+    }
+
+    revision "2019-11-01" {
+        description
+          "Add support for validation hints";
+        reference "kafka";
+    }
+
+    revision "2018-06-28" {
+        description "Initial version.";
+    }
+
+    extension big-list {
+        description
+            "The big-list statement can be added to a list to indicate that
+            un-filtered retrieval of the entries in this list will lead to
+            a big response or a too-big rpc error.";
+    }
+    extension searchable {
+        description
+            "The searchable statement can be added to a list to indicate that
+            the list can be searched using the like queries";
+    }
+    extension requires-permission {
+        description
+          "This indicates that while accessing the yang elements which follows this statement requires a specific user scope defined in the Idenitity Management System. When there is no explicit extension statement specified, then the system expects that user has NBI_RESIDUAL scope.";
+        argument target-scope;
+    }
+
+    extension validation-hints-on-node {
+        description
+          "Gives a hint to the netconf server to optimize the impact validation on the node where the extension is attached
+          The argument of this extension are hints which are of the form  schema-path -> hint, where
+           schema-path can be either
+             1.* In this case the hint applies to app impacting nodes of the expression
+             2. a schema path that identifies a impacting schema node.
+           hint can take one of the following values
+             1. SKIP_IMPACT_VALIDATION
+             2. SKIP_IMPACT_ON_CREATE
+        	 3. SKIP_VALIDATION
+           The prefixes used in the hints have to be declared in the YANG model.
+
+           When schema-path is *, then
+           eg 1: A hint that applies to all impacting nodes
+             *->SKIP_IMPACT_ON_CREATE
+           eg 2: A hint that applies to a single impacting node
+             /if:interfaces/if:interface/if:type->SKIP_IMPACT_ON_CREATE
+           eg 3: A hint that applies to 2 impacting nodes.
+             /if:interfaces/if:interface/if:type->SKIP_IMPACT_ON_CREATE /if:interfaces/if:interface/xi:channel-pair/xi:channel-partition-ref->SKIP_IMPACT_VALIDATION";
+        argument hints;
+     }
+
+     extension validation-hints {
+        description
+          "Gives a hint to the netconf server to optimize the impact validation.
+           Accepts the schema path of a node on which hint is to be used.
+           The prefixes used in the target-node path have to be defined in the YANG model.
+           eg:
+           /bm:multicast/bm:mgmd/bm:multicast-vpn/bm:multicast-interface-to-host/bm:data-path-vlan-sub-interface";
+        argument target-node;
+      }
+
+      extension expression {
+        description
+          "The expression on which the hint is applicable, it could be a must expression, when expression";
+        argument expression;
+      }
+
+      extension hints {
+        description
+          "The actual hints which are of the form  schema-path -> hint, where
+           schema-path can be either
+             1.* In this case the hint applies to app impacting nodes of the expression
+             2. a schema path that identifies a impacting schema node.
+           hint can take one of the following values
+             1. SKIP_IMPACT_VALIDATION
+             2. SKIP_IMPACT_ON_CREATE
+        	 3. SKIP_VALIDATION
+           The prefixes used in the hints have to be declared in the YANG model.
+
+           When schema-path is *, then
+           eg 1: A hint that applies to all impacting nodes
+             *->SKIP_IMPACT_ON_CREATE
+           eg 2: A hint that applies to a single impacting node
+             /if:interfaces/if:interface/if:type->SKIP_IMPACT_ON_CREATE
+           eg 3: A hint that applies to 2 impacting nodes.
+             /if:interfaces/if:interface/if:type->SKIP_IMPACT_ON_CREATE /if:interfaces/if:interface/xi:channel-pair/xi:channel-partition-ref->SKIP_IMPACT_VALIDATION";
+        argument hints-value;
+      }
+
+      extension description {
+        argument explanation;
+      }
+
+    extension ual-disabled {
+        description
+            "The ual-disabled statement can be added to a RPC or action to indicate that
+            the RPC should not be logged in user activity log.";
+    }
+    extension ual-application {
+        description
+          "This statement can be added to a list to indicate that the list belongs to the application specified in the argument application-name.";
+        argument application-name;
+    }
+}

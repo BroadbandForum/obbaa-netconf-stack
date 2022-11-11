@@ -20,13 +20,13 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>netconf-notification-app</artifactId>
     <packaging>bundle</packaging>
-    <name>netconf-lib/netconf-notification-app</name>
+    <name>netconf-fwk/netconf-notification-app</name>
     <dependencies>
         <!-- Internal -->
         <dependency>
@@ -69,10 +69,12 @@
         <dependency>
             <groupId>org.apache.sshd</groupId>
             <artifactId>sshd-core</artifactId>
+            <version>${mina.version}</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
+            <version>${netty.version}</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -85,14 +87,13 @@
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.log4j.version}</version>
         </dependency>
-
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -101,7 +102,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
         </dependency>
-
     </dependencies>
     <build>
         <plugins>

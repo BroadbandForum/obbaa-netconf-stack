@@ -1,0 +1,14 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <library-specific-data>
+            <specific-container1>
+                <container1-leaf1>c1l1</container1-leaf1>
+                <container1-leaf2>c1l2</container1-leaf2>
+            </specific-container1>
+            <specific-container2>
+                <container2-leaf1>c2l1</container2-leaf1>
+                <container2-leaf2>c2l2</container2-leaf2>
+            </specific-container2>
+        </library-specific-data>
+    </library>
+</jukebox>

@@ -1,0 +1,18 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+	<library>
+		<artist>
+			<name>Lenny</name><!-- Matcher -->
+			<album>
+				<name>Circus</name><!-- Matcher -->
+				<year>1995</year> <!-- Matcher -->
+				<song xc:operation="replace">
+					<name>Circus</name>
+					<singer-ordered-by-user yang:insert="last">singerA</singer-ordered-by-user>
+					<singer-ordered-by-user yang:insert="first">singerD</singer-ordered-by-user>
+					<singer-ordered-by-user yang:insert="after" yang:value="singerD">singerC</singer-ordered-by-user>
+					<singer-ordered-by-user yang:insert="before" yang:value="singerD">singerB</singer-ordered-by-user>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

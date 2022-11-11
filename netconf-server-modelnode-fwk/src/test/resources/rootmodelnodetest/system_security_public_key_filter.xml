@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns="ns:ns">
+  <mp>
+    <jukebox xmlns="http://example.com/ns/example-jukebox">
+      <library>
+        <system-security>
+          <server-identity>
+            <host-key>
+              <name>ssh-dss</name>
+              <public-key/>
+            </host-key>
+          </server-identity>
+        </system-security>
+      </library>
+    </jukebox>
+  </mp>
+</root>

@@ -26,7 +26,7 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException
 /**
  * Inner {@code<config>} content of a Netconf {@code<edit-config>} request.
  * 
- *
+ * 
  * 
  */
 public class EditConfigElement {

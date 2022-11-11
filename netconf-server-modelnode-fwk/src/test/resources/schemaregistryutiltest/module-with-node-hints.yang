@@ -1,0 +1,83 @@
+module module-with-node-hints {
+  namespace "urn:module-with-node-hints";
+  prefix nodehints;
+  
+  revision 2018-06-28 {
+    description
+      "Initial version.";
+  }
+  
+  import nc-stack-extensions {
+      prefix "ncext";
+  }
+  
+  identity identity1 {
+  }
+  
+  identity identity2 {
+      base identity1;
+  }
+  
+  identity identity3 {
+      base identity2;
+  }
+  
+  container hintContainer {
+
+      leaf type {
+          type string;
+      }
+	  leaf-list nodeLeafList {
+		  type string;
+	  }
+	  
+      leaf nodeWithHint1{
+        when 'derived-from-or-self 
+          (../nodehints:nodeWithHint2, "identity3")';
+        type string;
+      }
+
+      leaf nodeWithHint2{
+          type identityref {
+              base identity1;
+          }
+      }
+      
+      leaf nodeWithHint3{
+          must "../nodeWithHint4='hello' and ../nodeWithHint5='test'";
+          type string;
+      }
+
+      leaf nodeWithHint4{
+          type string;
+      }
+      
+      leaf nodeWithHint5{
+          type string;
+      }
+      
+      leaf nodeWithHint6 {
+          when 'derived-from-or-self 
+              (../nodehints:nodeWithHint2, "identity3")';
+          type string;
+          ncext:validation-hints-on-node "*->SKIP_IMPACT_ON_CREATE";
+      }
+      
+      leaf nodeWithHint7 {
+          must "../nodeWithHint4='hello' and ../nodeWithHint5='test'";
+          type string;
+          ncext:validation-hints-on-node "/nodehints:hintContainer/nodehints:nodeWithHint4->SKIP_IMPACT_ON_CREATE /nodehints:hintContainer/nodehints:nodeWithHint5->SKIP_IMPACT_VALIDATION";
+      }      
+      
+      leaf nodeWithHint8 {
+    	  must "count(../nodehints:nodeLeafList)=2";
+    	  type string;
+      }
+      
+      leaf nodeWithHint9 {
+    	  must "count(../nodehints:nodeLeafList)=2";
+    	  type string;
+    	  ncext:validation-hints-on-node "/nodehints:hintContainer/nodehints:nodeLeafList->SKIP_VALIDATION";
+      }
+  }
+}

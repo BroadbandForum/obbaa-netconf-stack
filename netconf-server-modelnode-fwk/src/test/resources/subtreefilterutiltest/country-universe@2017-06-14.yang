@@ -1,6 +1,6 @@
 module country-universe {
   yang-version 1;
-  namespace "http://test-company.test/country-universe";
+  namespace "http://test-company/country-universe";
   prefix ut;
 
   revision 2017-06-14;

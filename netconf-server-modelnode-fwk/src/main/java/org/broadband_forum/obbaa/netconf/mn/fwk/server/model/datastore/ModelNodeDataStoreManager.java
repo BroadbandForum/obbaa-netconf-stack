@@ -1,17 +1,33 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ListEntryInfo;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistry;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
  * Netconf stack interacts with ModelNodeDataStoreManager It abstracts entity or persistence information by providing ModelNode to entity mapping and vice versa.
@@ -35,19 +51,19 @@ public interface ModelNodeDataStoreManager {
      * Use {@link  ModelNodeDataStoreManager#findNodes(SchemaPath, Map, ModelNodeId)} API instead.
      * This API will be removed soon.
      */
-    List<ModelNode> listNodes(SchemaPath nodeType) throws DataStoreException;
-    List<ModelNode> listChildNodes(SchemaPath childType, ModelNodeId parentId) throws DataStoreException;
-    ModelNode findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId) throws DataStoreException;
-    List<ModelNode> findNodes(SchemaPath nodeType, Map<QName,ConfigLeafAttribute> matchCriteria, ModelNodeId parentId) throws DataStoreException;
+    List<ModelNode> listNodes(SchemaPath nodeType, SchemaRegistry mountRegistry) throws DataStoreException;
+    List<ModelNode> listChildNodes(SchemaPath childType, ModelNodeId parentId, SchemaRegistry mountRegistry) throws DataStoreException;
+    ModelNode findNode(SchemaPath nodeType, ModelNodeKey key, ModelNodeId parentId, SchemaRegistry mountRegistry) throws DataStoreException;
+    List<ModelNode> findNodes(SchemaPath nodeType, Map<QName,ConfigLeafAttribute> matchCriteria, ModelNodeId parentId, SchemaRegistry mountRegistry) throws DataStoreException;
     ModelNode createNode(ModelNode modelNode, ModelNodeId parentId) throws DataStoreException;
     ModelNode createNode(ModelNode modelNode, ModelNodeId parentId, int insertIndex) throws DataStoreException;
     void updateNode(ModelNode modelNode, ModelNodeId parentId, Map<QName,ConfigLeafAttribute> configAttributes, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes, boolean removeNode) throws DataStoreException;
     void updateNode(ModelNode modelNode, ModelNodeId parentId, Map<QName,ConfigLeafAttribute> configAttributes, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes, int insertIndex, boolean removeNode) throws DataStoreException;
     void removeNode(ModelNode modelNode, ModelNodeId parentId) throws DataStoreException;
     void removeAllNodes(ModelNode parentNode, SchemaPath nodeType, ModelNodeId grandParentId) throws DataStoreException;
-    boolean isChildTypeBigList(SchemaPath childType);
-    List<ListEntryInfo> findNodesLike(SchemaPath nodeType, ModelNodeId parentId, Map<QName, String> keysLike, int maxResults);
-    public List findByMatchValues(SchemaPath nodeType, Map<String, Object> matchValues);
-    public EntityRegistry getEntityRegistry(SchemaPath nodeType);
-
+    boolean isChildTypeBigList(SchemaPath childType, SchemaRegistry mountRegistry);
+    List<ListEntryInfo> findVisibleNodesLike(SchemaPath nodeType, ModelNodeId parentId, Map<QName, String> keysLike, int maxResults, SchemaRegistry mountRegistry);
+    List findByMatchValues(SchemaPath nodeType, Map<String, Object> matchValues, SchemaRegistry mountRegistry);
+    EntityRegistry getEntityRegistry(SchemaPath nodeType, SchemaRegistry mountRegistry);
+    void updateIndex(ModelNode modelNode, ModelNodeId parentId, int newIndex);
 }

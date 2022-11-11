@@ -16,11 +16,13 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
+import java.nio.channels.AsynchronousChannelGroup;
+
+import org.apache.sshd.common.Factory;
 import org.apache.sshd.common.FactoryManager;
 import org.apache.sshd.common.io.IoServiceFactory;
 import org.apache.sshd.common.io.IoServiceFactoryFactory;
-
-import java.nio.channels.AsynchronousChannelGroup;
+import org.apache.sshd.common.util.threads.CloseableExecutorService;
 
 public class SshClientServiceFactoryFactory implements IoServiceFactoryFactory {
 
@@ -32,6 +34,11 @@ public class SshClientServiceFactoryFactory implements IoServiceFactoryFactory {
 
     public IoServiceFactory create(FactoryManager manager) {
         return new SshClientSharedThreadPoolServiceFactory(manager, m_asyncChannelGroup);
+    }
+
+    @Override
+    public void setExecutorServiceFactory(Factory<CloseableExecutorService> factory) {
+
     }
 
 }

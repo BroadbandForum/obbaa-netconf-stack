@@ -1,0 +1,66 @@
+module mpls-access-ring-hsi-infra {
+    yang-version 1.1;
+    namespace "http://www.test-company.com/solutions/mpls-access-ring-hsi-infra";
+    prefix "MplsArHsiInfra";
+    import ibn { prefix "ibn"; }
+    revision 2017-03-01 {
+        description "Initial revision.";
+    }
+    
+ 	grouping configuration-details {
+        container mpls-access-ring-hsi-infra {
+ 
+            leaf test1 {
+               type string;
+               when "../test2 = 'a'";
+            }
+            
+            leaf test2 {
+               type string;
+            }
+            
+            leaf sVlanId {
+                type int16 {
+                    range "1..4094";
+                }
+                description
+                                "ISP service Vlan identifier for HSI services";
+            }
+            leaf extendVlanStaticName {
+                type string;
+                description "ISP service Vlan Static Name";
+            }
+            leaf qosBandwidthProfileDelayTolerance {
+                type decimal64 {
+                    fraction-digits 3;
+                    range "0.125..30.000";
+                }
+                default "4";
+                units "ms";
+                description
+                                "Delay tolerance";
+            }
+            leaf qosBandwidthProfileEIR {
+                type int32 {
+                    range "0..10000000";
+                }
+                default "1000000";
+                units "Kb/s";
+                description
+                                "Excess Information Rate (EIR)";
+            }
+        }
+    }
+
+    
+    augment "/ibn:ibn/ibn:intent/ibn:configuration" {
+        when "../ibn:intent-type = 'mpls-access-ring-hsi-infra'";
+        uses MplsArHsiInfra:configuration-details;
+    }
+    
+    augment "/ibn:search-intents/ibn:output/ibn:intents/ibn:intent/ibn:configuration" {
+    	when "../ibn:intent-type = 'mpls-access-ring-hsi-infra'";
+        uses MplsArHsiInfra:configuration-details;
+    }
+}
+

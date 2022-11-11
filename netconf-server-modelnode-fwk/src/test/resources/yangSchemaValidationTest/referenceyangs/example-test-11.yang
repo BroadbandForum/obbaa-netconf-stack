@@ -39,6 +39,28 @@ module example-test-11 {
                 }
             }
         }
+        choice testChoice {
+        	case testCase1{
+        		container actionContainer {
+        			action actionInChoice {
+			            input {
+			                leaf testInput {
+			                    type string;
+			                }
+			            }
+			        }
+        		}
+        		choice nestedTestChoice {
+        			case nestedTestCase {
+        				container containerInNestedChoice{
+        					leaf test{
+        						type string;
+        					}
+        				}
+        			}
+        		}
+        	}
+        }
         
         notification container-notification {
             leaf container-notification-leaf {

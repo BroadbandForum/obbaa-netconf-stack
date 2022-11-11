@@ -1,0 +1,94 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:annotation-config/>
+
+
+    <bean id="entityManagerFactory" class="org.broadband_forum.obbaa.netconf.persistence.jpa.JPAEntityManagerFactory">
+        <constructor-arg value="hsql"/>
+    <constructor-arg name="properties">
+        <map key-type="java.lang.String" value-type="java.lang.String">
+        	<entry key="hibernate.cache.use_second_level_cache" value="true"/>
+        	<entry key="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.internal.SingletonEhcacheRegionFactory"/>
+        </map>
+    </constructor-arg>
+    </bean>
+
+    <bean id="persistenceManagerUtil" class="org.broadband_forum.obbaa.netconf.persistence.jpa.ThreadLocalPersistenceManagerUtil">
+        <constructor-arg ref="entityManagerFactory"/>
+    </bean>
+
+    <bean id="entityModelNodeHelperDeployer"
+          class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityModelNodeHelperDeployer">
+        <constructor-arg ref="modelNodeHelperRegistry"/>
+        <constructor-arg ref="schemaRegistry"/>
+        <constructor-arg ref="aggregatedDSM"/>
+        <constructor-arg ref="entityRegistry"/>
+        <constructor-arg ref="subSystemRegistry"/>
+    </bean>
+
+    <bean id="annotationBasedDSM" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TestTxUtils" factory-method="getTxDecoratedDSM">
+        <constructor-arg ref="persistenceManagerUtil"/>
+        <constructor-arg ref="annotationBasedDSMTarget"/>
+    </bean>
+
+    <bean id="annotationBasedDSMTarget" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.AnnotationBasedModelNodeDataStoreManager">
+        <constructor-arg ref="persistenceManagerUtil"/>
+        <constructor-arg ref="entityRegistry"/>
+        <constructor-arg ref="schemaRegistry"/>
+        <constructor-arg ref="modelNodeHelperRegistry"/>
+        <constructor-arg ref="subSystemRegistry"/>
+        <constructor-arg ref="modelNodeDSMRegistry"/>
+    </bean>
+
+    <bean id="xmlSubtreeDSM" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TestTxUtils" factory-method="getTxDecoratedDSM">
+        <constructor-arg ref="persistenceManagerUtil"/>
+        <constructor-arg ref="xmlSubtreeDSMTarget"/>
+    </bean>
+
+
+    <bean id="xmlSubtreeDSMTarget" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.XmlSubtreeDSM">
+        <constructor-arg ref="persistenceManagerUtil"/>
+        <constructor-arg ref="entityRegistry"/>
+        <constructor-arg ref="schemaRegistry"/>
+        <constructor-arg ref="modelNodeHelperRegistry"/>
+        <constructor-arg ref="subSystemRegistry"/>
+        <constructor-arg ref="modelNodeDSMRegistry"/>
+    </bean>
+
+    <bean id="modelNodeDSMRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistryImpl"/>
+
+    <bean id="aggregatedDSM" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.AggregatedDSM">
+        <constructor-arg ref="modelNodeDSMRegistry"/>
+    </bean>
+
+    <bean id="modelNodeHelperRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl">
+          <constructor-arg ref="schemaRegistry"/>
+    </bean>
+
+    <bean id="schemaRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl"
+          factory-method="buildSchemaRegistry">
+        <constructor-arg>
+            <list>
+                <value>/annotationbasedDSMLeafListtest/example-jukebox.yang</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg>
+            <set/>
+        </constructor-arg>
+        <constructor-arg>
+            <map/>
+        </constructor-arg>
+        <constructor-arg ref="noLockService"/>
+    </bean>
+
+    <bean id="noLockService" class="org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService"/>
+
+    <bean id="entityRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistryImpl"/>
+
+    <bean id="subSystemRegistry" class="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistryImpl"/>
+
+</beans>

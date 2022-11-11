@@ -29,8 +29,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.authentication.FailureInfo;
@@ -48,6 +47,8 @@ import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.client.dispatcher.CallhomeTlsClientDispatcherImpl;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import io.netty.handler.ssl.SslProvider;
 
@@ -57,14 +58,14 @@ import io.netty.handler.ssl.SslProvider;
 
 public class TlsCallhomeClient {
 
-    private static final Logger LOGGER = Logger.getLogger(TlsCallhomeClient.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(TlsCallhomeClient.class, LogAppNames.NETCONF_LIB);
     protected final String m_certChain;
     protected final String m_privateKey;
     protected final String m_trustChain;
     private NetconfClientSession m_clientSession;
 
     public TlsCallhomeClient() {
-        this("tlscertificates/client/netconfPeerCert.crt", "tlscertificates/client/netconfPeerPK.pem","tlscertificates/rootCA.pem");
+        this("/tlscertificates/client/netconfPeerCert.crt", "/tlscertificates/client/netconfPeerPK.pem","/tlscertificates/rootCA.pem");
     }
 
     public TlsCallhomeClient(String certChain, String privateKey, String trustChain) {

@@ -16,14 +16,14 @@
 
 package org.broadband_forum.obbaa.netconf.driver.client;
 
-import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
-
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public final class FutureNetconfReponse extends CompletableFuture<NetConfResponse> {
+import org.broadband_forum.obbaa.netconf.api.client.NetconfResponseFuture;
+import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+
+public final class FutureNetconfReponse extends NetconfResponseFuture {
     private final NetConfResponse m_testReponse;
 
     public FutureNetconfReponse(NetConfResponse testReponse) {

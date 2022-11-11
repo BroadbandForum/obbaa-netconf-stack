@@ -28,11 +28,9 @@ import org.apache.sshd.common.io.IoWriteFuture;
 import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.channel.ChannelSession;
-import org.w3c.dom.Document;
-
 import org.broadband_forum.obbaa.netconf.api.LogAppNames;
-import org.broadband_forum.obbaa.netconf.api.MessageToolargeException;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLoggingContext;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
@@ -56,16 +54,17 @@ import org.broadband_forum.obbaa.netconf.server.AbstractResponseChannel;
 import org.broadband_forum.obbaa.netconf.server.AnvTracingUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.w3c.dom.Document;
 
 /**
  * An abstract class provides that takes care of sending processed netconf request. The actual processing is done by the subclasses based on
  * the type netconf SSH Framing Protocol.
  * 
  * @see <a href="https://tools.ietf.org/html/rfc6242#section-4.1">RFC 6242 Netconf over SSH Framing Protocol</a>
- *
+ * 
  * 
  */
-public abstract class AbstractSshNetconfServerMessageHandler implements SshServerNetconfMessageHandler {
+public abstract class AbstractSshNetconfServerMessageHandler implements SshServerNetconfMessageHandlerV2 {
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(AbstractSshNetconfServerMessageHandler.class, LogAppNames.NETCONF_LIB);
     protected NetconfServerMessageListener m_serverMessageListener;
     private NetconfClientInfo m_clientInfo;
@@ -94,13 +93,12 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
     }
 
     @Override
-    public void processRequest(String rpcMessage) throws NetconfMessageBuilderException {
+    public void processRequest(DocumentInfo documentInfo) throws NetconfMessageBuilderException {
         boolean invalidRequest = false;
-        Document request = null;
         NetConfResponse response = new NetConfResponse();
         AbstractNetconfRequest netconfRequest = null;
+        Document request = documentInfo.getDocument();
         try {
-            request = decode(rpcMessage);
             String requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(request);
             if (AnvTracingUtil.isEmptyRequest(request, requestType)){
                 NetconfLoggingContext.suppress();
@@ -159,6 +157,7 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
                     // Could be a special rpc request
                     netconfRequest = DocumentToPojoTransformer.getRpcRequest(request);
                 }
+                netconfRequest.setRequestLength(documentInfo.getLength());
             } else {
                 // Send RPC error and close the session
                 invalidRequest = true;
@@ -170,9 +169,11 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
             }
         } catch (NetconfMessageBuilderException e) {
             if (request != null) {
-                try {LOGGER.error("Got an invalid netconf request from :" + m_clientInfo + " " + DocumentUtils.documentToString(request));
+                try {
+                    LOGGER.error("Got an invalid netconf request from: " + m_clientInfo
+                            + "\nRequest: " + DocumentUtils.documentToString(request), e);
                 } catch (NetconfMessageBuilderException ex) {
-                    LOGGER.error("Got an invalid netconf request from :" + m_clientInfo, ex);
+                    LOGGER.error("Got an invalid netconf request from : " + m_clientInfo, ex);
                 }
             }
             invalidRequest = true;
@@ -181,12 +182,8 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
                     NetconfRpcErrorSeverity.Error, "Got an invalid netconf request from username : " + m_clientInfo.getUsername() +", sessionId : " + m_clientInfo.getSessionId()
                     + ", IP address : " +m_clientInfo.getRemoteHost() + ", Port: " + m_clientInfo.getRemotePort());
             response.addError(rpcError);
-        } catch (MessageToolargeException e) {
-            LOGGER.warn("Closing netconf session, incoming message too long to decode", e);
-            invalidRequest = true;
-            m_closeSession = true;
-            response = null;
-        } finally {
+        }
+        finally {
             NetconfLoggingContext.enable();
         }
 
@@ -221,7 +218,6 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
 
     protected void killSession(int sessionId) {
         NetconfSubsystem.killSession(sessionId);
-        m_responseChannel.markSessionClosed();
     }
 
     protected ResponseChannel getResponseChannel() {
@@ -319,7 +315,7 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
 
         private void writeBytes(CompletableMessage message, byte[] responseBytes) {
             try {
-                IoWriteFuture writeFuture = m_out.write(new ByteArrayBuffer(responseBytes));
+                IoWriteFuture writeFuture = m_out.writePacket(new ByteArrayBuffer(responseBytes));
                 writeFuture.addListener(new SshFutureListener<IoWriteFuture>() {
                     public void operationComplete(IoWriteFuture future) {
                         if (future.isWritten()) {
@@ -339,10 +335,10 @@ public abstract class AbstractSshNetconfServerMessageHandler implements SshServe
                     }
                 }
             } catch (Exception e){
-                LOGGER.error("Error while sending the reponse to " + m_clientInfo.toString(), e);
+                LOGGER.error("Error while sending the response to " + m_clientInfo.toString(), e);
                 message.getMessageSentFuture().completeExceptionally(e);
                 if (message instanceof Notification) {
-                    throw e;
+                    throw new RuntimeException(e);
                 }
             }
         }

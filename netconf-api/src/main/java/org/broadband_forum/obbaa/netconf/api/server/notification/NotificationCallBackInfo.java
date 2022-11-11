@@ -58,4 +58,10 @@ public class NotificationCallBackInfo {
         this.m_callBack = callBack;
     }
 
+    @Override
+    public String toString() {
+        return "NotificationCallBackInfo [m_capabilities=" + m_capabilities + ", m_notificationTypes="
+                + m_notificationTypes + ", m_callBack=" + m_callBack + ", m_notificationApplicableCheck="
+                + m_notificationApplicableCheck + "]";
+    }
 }

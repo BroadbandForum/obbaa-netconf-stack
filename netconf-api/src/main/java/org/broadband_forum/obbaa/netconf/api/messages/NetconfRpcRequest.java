@@ -54,8 +54,14 @@ public class NetconfRpcRequest extends AbstractNetconfRequest implements Netconf
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addRpcElement(m_inputElement).build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId)
+                .addUserContextAttributes(m_userContext, m_contextSessionId).addRpcElement(m_inputElement).build();
         return doc;
+    }
+
+    @Override
+    public String getRpcType() {
+        return m_rpcName == null ? "" : m_rpcName.getName();
     }
 
     @Override

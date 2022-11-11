@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcher;
@@ -38,11 +39,12 @@ import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
 import org.broadband_forum.obbaa.netconf.client.dispatcher.SshClientDispatcherImpl;
 import org.broadband_forum.obbaa.netconf.client.ssh.auth.KeyLoginProvider;
 import org.broadband_forum.obbaa.netconf.client.ssh.auth.PasswordLoginProvider;
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class NetconfClientSessionFactory {
 
-    private static final Logger LOGGER = Logger.getLogger(NetconfClientSessionFactory.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfClientSessionFactory.class, LogAppNames.NETCONF_LIB);
     private static NetconfClientDispatcher c_dispatcher = new SshClientDispatcherImpl(Executors.newSingleThreadExecutor());
 
     public static NetconfClientSession createSSHClientSession(String ip, int port, int heartbeatInterval, String username, String password,

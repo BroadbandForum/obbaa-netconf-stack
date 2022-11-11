@@ -1,0 +1,209 @@
+// Contents of "datastore-validator-augment-test"
+module datastore-validator-augment-test11 {
+    yang-version 1.1;
+
+    namespace "urn:opendaylight:datastore-validator-augment-test11";
+    prefix "validation-augment11";
+
+    import datastore-validator-test-yang11 { prefix "validation11"; }
+
+    import datastore-validator-test { prefix "validation"; }
+
+    import datastore-validator-augment-test11-replicate-namespace1 { prefix "validation-augment11-replicate-namespace1"; }
+
+    import datastore-validator-augment-test11-replicate-namespace2 { prefix "validation-augment11-replicate-namespace2"; }
+
+    revision 2018-03-07 {
+        description "Initial revision";
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root/validation11:children-type" {
+
+          case scheduler-node {
+
+              list scheduler-node {
+                  key "name";
+
+                  leaf name{
+                    type string;
+                  }
+
+                  leaf scheduling-level {
+                    type uint8;
+                    mandatory true;
+                  }
+
+                  leaf if-name_. {
+                    type string;
+                  }
+
+                  choice children-type {
+                      case scheduler-node {
+
+                          list child-scheduler-nodes {
+                              key "name";
+                              leaf name {
+                                  type leafref {
+                                    path '/validation:validation'
+                                       + '/validation11:validation-yang11'
+                                       + '/validation11:tm-root'
+                                       + '/validation-augment11:scheduler-node'
+                                       + '/name';
+                                  }
+
+                                  must "../../../validation-augment11:scheduler-node
+                                       [name=current()]
+                                       /scheduling-level>
+                                       current()/../../scheduling-level" {
+
+                                    error-message
+                                     "The scheduler-level should be bigger than the
+                                       value of parent node.";
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-leaf-to-leaf-replicate-pass-1 {
+            must "/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace1:check-leaf-to-leaf-replicate='replicate1' and current()/../validation-augment11-replicate-namespace2:check-leaf-to-leaf-replicate='replicate2'";
+            type string;
+        }
+
+        leaf check-leaf-to-leaf-replicate-pass-2 {
+            must "/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace1:check-leaf-to-leaf-replicate='replicate3' and current()/../validation-augment11-replicate-namespace2:check-leaf-to-leaf-replicate='replicate2'";
+            type string;
+        }
+
+        leaf check-leaf-to-leaf-replicate-fail-1 {
+            must "../validation-augment11-replicate-namespace1:check-leaf-to-leaf-replicate='replicate3' and ../validation-augment11-replicate-namespace2:check-leaf-to-leaf-replicate='replicate2'";
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf-list check-leaflist-to-leaflist-replicate-pass-1 {
+            must "../validation-augment11-replicate-namespace1:check-leaflist-to-leaflist-replicate='replicate2' and current()/../validation-augment11-replicate-namespace2:check-leaflist-to-leaflist-replicate='replicate5'";
+            type string;
+        }
+
+        leaf-list check-leaflist-to-leaflist-replicate-fail-1 {
+            must "./../validation-augment11-replicate-namespace1:check-leaflist-to-leaflist-replicate='replicate4' and current()/../validation-augment11-replicate-namespace2:check-leaflist-to-leaflist-replicate='replicate5'";
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+
+        leaf check-leaf-to-leaflist-replicate-pass-1 {
+            must "/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace1:check-leaf-to-leaflist-replicate='replicate1' and current()/../validation-augment11-replicate-namespace2:check-leaf-to-leaflist-replicate='replicate3'";
+            type string;
+        }
+
+        leaf check-leaf-to-leaflist-replicate-pass-2 {
+            must "/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace1:check-leaf-to-leaflist-replicate='replicate1' and current()/../validation-augment11-replicate-namespace2:check-leaf-to-leaflist-replicate='replicate5'";
+            type string;
+        }
+
+        leaf check-leaf-to-leaflist-replicate-fail-1 {
+            must "../validation-augment11-replicate-namespace1:check-leaf-to-leaflist-replicate='replicate3' and ../validation-augment11-replicate-namespace2:check-leaf-to-leaflist-replicate='replicate2'";
+            type string;
+        }
+    }
+    
+    
+    augment "validation11:validation-yang11/validation11:tm-root" {
+    
+        leaf check-leaf-to-list-replicate-pass-1 {
+            must "/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace1:check-leaf-to-list-replicate='replicate100' and current()/../validation-augment11-replicate-namespace2:check-leaf-to-list-replicate/someproperty='15'";
+            type string;
+        }
+  
+        leaf check-leaf-to-list-replicate-pass-2 {
+            must "/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace1:check-leaf-to-list-replicate='replicate100' and current()/../validation-augment11-replicate-namespace2:check-leaf-to-list-replicate[iamthekey=current()]/someproperty='10'";
+            type string;
+        }
+  
+        leaf check-leaf-to-list-replicate-fail-1 {
+            must "../validation-augment11-replicate-namespace1:check-leaf-to-list-replicate='replicate1' and ../validation-augment11-replicate-namespace2:check-leaf-to-list-replicate/someproperty='15'";
+            type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-leaflist-to-container-replicate-pass-1 {
+            type string;
+            must "../validation-augment11-replicate-namespace1:check-leaflist-to-container-replicate='replicate1' and ../validation-augment11-replicate-namespace2:check-leaflist-to-container-replicate/someproperty='5'";
+        }
+        leaf check-leaflist-to-container-replicate-fail-1 {
+                    type string;
+                    must "../validation-augment11-replicate-namespace1:check-leaflist-to-container-replicate='replicate1' and ../validation-augment11-replicate-namespace2:check-leaflist-to-container-replicate/someproperty='4'";
+                }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-container-to-container-replicate {
+            type string;
+            must "../validation-augment11-replicate-namespace1:check-container-to-container-replicate/somePropertyContainerNameSpace1='4' and ../validation-augment11-replicate-namespace2:check-container-to-container-replicate/somePropertyContainerNameSpace2='18'";
+        }
+
+        leaf check-container-to-container-replicate-fail1 {
+            type string;
+            must "../validation-augment11-replicate-namespace1:check-container-to-container-replicate/somePropertyContainerNameSpace1='18' and ../validation-augment11-replicate-namespace2:check-container-to-container-replicate/somePropertyContainerNameSpace2='4'";
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-container-to-list-replicate-pass-1 {
+            type string;
+            must "../validation-augment11-replicate-namespace1:check-container-to-list-replicate/validation-augment11-replicate-namespace1:someproperty='4' and current()/../validation-augment11-replicate-namespace2:check-container-to-list-replicate[validation-augment11-replicate-namespace2:iamthekey=current()]/validation-augment11-replicate-namespace2:someproperty='10'";
+        }
+
+        leaf check-container-to-list-replicate-fail-1 {
+            type string;
+            must "../validation-augment11-replicate-namespace1:check-container-to-list-replicate/someproperty='18' and current()/../validation-augment11-replicate-namespace2:check-container-to-list-replicate[iamthekey=current()]/someproperty='10'";
+        }
+
+        leaf check-container-to-list-replicate-fail-2 {
+            type string;
+            must "../validation-augment11-replicate-namespace1:check-container-to-list-replicate/someproperty='4' and current()/../validation-augment11-replicate-namespace2:check-container-to-list-replicate[iamthekey=current()]/someproperty='10'";
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf concat-function-leaf {
+          must "concat(../validation-augment11-replicate-namespace1:leafforcorefunction,../validation-augment11-replicate-namespace2:leafforcorefunction) = current()";
+          type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf bool-function-leaf-namespace1 {
+          must "boolean(current()/../validation-augment11-replicate-namespace1:leafforcorefunction)";
+          type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf bool-function-leaf-namespace2 {
+          must "boolean(/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace2:leafforcorefunction)";
+          type string;
+        }
+    }
+
+    augment "validation11:validation-yang11/validation11:tm-root" {
+        leaf check-leaflist-to-list-replicate-count-namespace1 {
+            must "count(/validation11:validation-yang11/validation11:tm-root/validation-augment11-replicate-namespace1:check-leaflist-to-list-replicate) = 2";
+            type string;
+        }
+
+        leaf check-leaflist-to-list-replicate-count-namespace2 {
+            must "count(../validation-augment11-replicate-namespace2:check-leaflist-to-list-replicate) = 3";
+            type string;
+        }
+    }
+}

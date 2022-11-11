@@ -1,18 +1,26 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.createJukeBoxWithEmptyLibrary;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.load;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.responseToString;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfig;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.xml.sax.SAXException;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigDefaultOperations;
@@ -23,16 +31,18 @@ import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigTestOptions;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
-import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl;
-
-import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 /**
  * Created by sgs on 8/25/15.
  */
+@RunWith(RequestScopeJunitRunner.class)
 public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup {
 
     public static final String GET_AFTER_CREATE_ALBUM = "/editconfigdefaultoperationstest/getAfterCreateAlbumResponse.xml";
@@ -56,12 +66,12 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
    // private ModelNode m_model;
 
     @Before
-    public void initServer() throws SchemaBuildException {
+    public void initServer() throws SchemaBuildException, ModelNodeInitException {
         super.setup();
     }
 
     @Test
-    public void testDefaultOperationNoneWithEmptyJukebox() throws IOException, SAXException, SchemaBuildException {
+    public void testDefaultOperationNoneWithEmptyJukebox() throws IOException, SAXException, SchemaBuildException, ModelNodeInitException {
        
         createEmptyServer();
         
@@ -82,14 +92,14 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
         m_server.onEditConfig(m_clientInfo, request, response);
 
         // verify error is thrown
-        assertEquals(load(CREATE_LIBRARY_ERROR_RESPONSE), responseToString(response));
+        assertXMLEquals(CREATE_LIBRARY_ERROR_RESPONSE, response);
 
         // verify it is still empty
         verifyGetConfig(m_server, (NetconfFilter) null, EMPTY_JUKEBOX, MESSAGE_ID);
     }
 
     @Test
-    public void testDefaultOperationNoneWithEmptyLibrary() throws IOException, SAXException {
+    public void testDefaultOperationNoneWithEmptyLibrary() throws IOException, SAXException, ModelNodeInitException, SchemaBuildException {
         createServerWithEmptyLibrary();
         // verify empty library
         verifyGetConfig(m_server, (NetconfFilter) null, EMPTY_LIBRARY, MESSAGE_ID);
@@ -108,7 +118,7 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
         m_server.onEditConfig(m_clientInfo, request, response);
 
         // verify error is thrown
-        assertEquals(load(CREATE_ARTIST_ERROR_RESPONSE), responseToString(response));
+        assertXMLEquals(CREATE_ARTIST_ERROR_RESPONSE, response);
 
         // verify library is still empty
         verifyGetConfig(m_server, (NetconfFilter) null, EMPTY_LIBRARY, MESSAGE_ID);
@@ -141,12 +151,12 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
 
         // Create song on empty library
         m_server.onEditConfig(m_clientInfo, request, response);
-        assertXMLStringEquals(load(CREATE_ARTIST_ERROR_RESPONSE2), responseToString(response));
+        assertXMLEquals(CREATE_ARTIST_ERROR_RESPONSE2, response);
         verifyGetConfig(m_server, (NetconfFilter) null, CREATE_SONG_RESPONSE, MESSAGE_ID); // The same test case would work with default-operation "merge" and create second artist
     }
 
     @Test
-    public void testDefaultOperationMergeWithEmptyJukebox() throws IOException, SAXException, SchemaBuildException {
+    public void testDefaultOperationMergeWithEmptyJukebox() throws IOException, SAXException, SchemaBuildException, ModelNodeInitException {
         createEmptyServer();
         //Verify empty jukebox
         verifyGetConfig(m_server, (NetconfFilter) null, EMPTY_JUKEBOX, MESSAGE_ID);
@@ -165,7 +175,7 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
         m_server.onEditConfig(m_clientInfo, request, response);
 
         // assert Ok response
-        assertEquals(load(OK_RESPONSE), responseToString(response));
+        assertXMLEquals(OK_RESPONSE, response);
 
         // verify song is created
         verifyGetConfig(m_server, (NetconfFilter) null, CREATE_SONG_RESPONSE, MESSAGE_ID);
@@ -174,7 +184,7 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
     }
 
     @Test
-    public void testDefaultOperationMergeWithEmptyLibrary() throws IOException, SAXException {
+    public void testDefaultOperationMergeWithEmptyLibrary() throws IOException, SAXException, ModelNodeInitException, SchemaBuildException {
 
         createServerWithEmptyLibrary();
         // verify empty library
@@ -193,7 +203,7 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
         m_server.onEditConfig(m_clientInfo, request, response);
 
         // assert Ok response
-        assertEquals(load(OK_RESPONSE), responseToString(response));
+        assertXMLEquals(OK_RESPONSE, response);
 
         //Verify album is created
         verifyGetConfig(m_server, (NetconfFilter) null, GET_AFTER_CREATE_ALBUM, MESSAGE_ID);
@@ -225,14 +235,14 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
         // Create song on empty library
         m_server.onEditConfig(m_clientInfo, request, response);
 
-        assertEquals(load(OK_RESPONSE), responseToString(response));
+        assertXMLEquals(OK_RESPONSE, response);
 
         verifyGetConfig(m_server, (NetconfFilter) null, GET_AFTER_CREATE_SECOND_ARTIST_RESPONSE_XML, MESSAGE_ID);
 
     }
 
     @Test
-    public void testDefaultOperationReplaceOnJukebox() throws IOException, SAXException {
+    public void testDefaultOperationReplaceOnJukebox() throws IOException, SAXException, ModelNodeInitException, SchemaBuildException {
         createServerWithEmptyLibrary();
         // verify empty library
         verifyGetConfig(m_server, (NetconfFilter) null, EMPTY_LIBRARY, MESSAGE_ID);
@@ -248,7 +258,7 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
         //Create an album on empty library with no create tag on artist
         m_server.onEditConfig(m_clientInfo, request, response);
         // assert Ok response
-        assertEquals(load(OK_RESPONSE), responseToString(response));
+        assertXMLEquals(OK_RESPONSE, response);
         //make sure the data store is intact
         verifyGetConfig(m_server, (NetconfFilter) null, GET_AFTER_CREATE_ALBUM, MESSAGE_ID);
 
@@ -265,19 +275,8 @@ public class EditConfigDefaultOperationsTest extends AbstractEditConfigTestSetup
         //Create an album on empty library with no create tag on artist
         m_server.onEditConfig(m_clientInfo, request, response);
         // assert Ok response
-        assertEquals(load(OK_RESPONSE), responseToString(response));
+        assertXMLEquals(OK_RESPONSE, response);
         //make sure the data store is intact
         verifyGetConfig(m_server, (NetconfFilter) null, EMPTY_JUKEBOX, MESSAGE_ID);
-    }
-
-    private void createServerWithEmptyLibrary(){
-        m_server = new NetConfServerImpl(m_schemaRegistry, mock(RpcPayloadConstraintParser.class));
-        m_model = createJukeBoxWithEmptyLibrary(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
-        m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, m_model);
-        DataStore dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator,m_subSystemRegistry);
-        NbiNotificationHelper nbiNotificationHelper = mock(NbiNotificationHelper.class);
-        dataStore.setNbiNotificationHelper(nbiNotificationHelper);
-        m_server.setRunningDataStore(dataStore);
     }
 }

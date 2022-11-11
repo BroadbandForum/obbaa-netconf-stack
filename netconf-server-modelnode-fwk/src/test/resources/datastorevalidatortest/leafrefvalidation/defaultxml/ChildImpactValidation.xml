@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<validation-yang11 xmlns="urn:org:bbf:pma:validation-yang11">
+<validation-yang11 xmlns="urn:org:bbf2:pma:validation-yang11">
 <parent xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xc:operation="merge">
                        <parent-list>
                          <name>key</name>
@@ -12,6 +12,6 @@
                          </inner-list2>
                          </inner-list1>  
                        </parent-list>   
-                       <when-leaf>key</when-leaf>
+                       <must-leaf>key</must-leaf>
                       </parent>
    </validation-yang11>

@@ -1,0 +1,21 @@
+module sm-plug2 {
+	
+	yang-version 1;    
+	namespace "sm-plug2";	
+	prefix "sm-p2";
+	
+	revision "2018-01-03" {
+		description "Initial version.";
+	}
+	
+	container plug2-container {
+    	leaf p2 {
+    		type string;
+    	}
+    	container plug2-container-child {
+	    	leaf leaf1 {
+	    		type string;
+	    	}
+    	}
+    }
+}

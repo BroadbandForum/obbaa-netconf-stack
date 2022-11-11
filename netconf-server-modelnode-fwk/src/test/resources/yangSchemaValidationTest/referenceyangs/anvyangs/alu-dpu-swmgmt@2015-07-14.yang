@@ -2,7 +2,7 @@ module alu-dpu-swmgmt {
 
 	yang-version 1;
 
-    namespace "urn:org:bbf:pma:alu-dpu-swmgmt";
+    namespace "urn:org:bbf2:pma:alu-dpu-swmgmt";
 
     prefix dpu-swmgmt;
     

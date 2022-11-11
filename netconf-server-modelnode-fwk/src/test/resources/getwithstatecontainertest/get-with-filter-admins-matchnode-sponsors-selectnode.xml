@@ -1,0 +1,22 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Circus</name>
+                <admins xmlns="http://example.com/ns/example-jukebox">
+                    <admin>
+                        <label>admin1</label>
+                        <catalogue-number>catalogue 1</catalogue-number>
+                    </admin>
+                </admins>
+                <sponsors xmlns="http://example.com/ns/example-jukebox">
+                    <sponsor>
+                        <name/>
+                        <type/>
+                    </sponsor>
+                </sponsors>
+            </album>
+        </artist>
+    </library>
+</jukebox>

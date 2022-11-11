@@ -2,7 +2,7 @@ module feature-test {
 	
 	yang-version 1;
     
-	namespace "urn:org:bbf:pma:feature:test";
+	namespace "urn:org:bbf2:pma:feature:test";
 	
 	prefix "extTest";
 	

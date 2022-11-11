@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"  xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="7">
-  <get>
-    <filter>
-      <jukebox xmlns="http://example.com/ns/example-jukebox">
-      </jukebox>
-    </filter>
-  </get>
-</rpc>

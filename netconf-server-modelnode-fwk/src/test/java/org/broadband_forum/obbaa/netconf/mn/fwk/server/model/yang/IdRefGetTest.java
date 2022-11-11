@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGet;
@@ -7,15 +23,11 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.xml.sax.SAXException;
-
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NbiNotificationHelper;
@@ -31,10 +43,17 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNo
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class IdRefGetTest {
     private NetConfServerImpl m_server;
     private SubSystemRegistry m_subSystemRegistry = new SubSystemRegistryImpl();
@@ -50,6 +69,7 @@ public class IdRefGetTest {
         m_modelNodeHelperRegistry = new ModelNodeHelperRegistryImpl(m_schemaRegistry);
         m_server = new NetConfServerImpl(m_schemaRegistry, mock(RpcPayloadConstraintParser.class));
         ModelNodeDataStoreManager modelNodeDsm = new InMemoryDSM(m_schemaRegistry);
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         RootModelNodeAggregator rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, modelNodeDsm, m_subSystemRegistry);
         String yangFilePath = TestUtil.class.getResource("/idreftest/example-jukebox.yang").getPath();
         ModelNode yangModel = YangUtils.createInMemoryModelNode(yangFilePath, new LocalSubSystem(), m_modelNodeHelperRegistry,

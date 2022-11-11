@@ -1,33 +1,41 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util;
 
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDynaBeanFactory.getModelNodeAttributeName;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.beanutils.DynaBean;
-import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.ri.Compiler;
-import org.apache.commons.jxpath.ri.JXPathCompiledExpression;
 import org.apache.commons.jxpath.ri.compiler.Constant;
 import org.apache.commons.jxpath.ri.compiler.CoreFunction;
 import org.apache.commons.jxpath.ri.compiler.CoreOperation;
-import org.apache.commons.jxpath.ri.compiler.CoreOperationCompare;
-import org.apache.commons.jxpath.ri.compiler.CoreOperationRelationalExpression;
 import org.apache.commons.jxpath.ri.compiler.Expression;
-import org.apache.commons.jxpath.ri.compiler.ExpressionPath;
-import org.apache.commons.jxpath.ri.compiler.ExtensionFunction;
 import org.apache.commons.jxpath.ri.compiler.LocationPath;
 import org.apache.commons.jxpath.ri.compiler.NodeNameTest;
-import org.apache.commons.jxpath.ri.compiler.Operation;
 import org.apache.commons.jxpath.ri.compiler.Step;
-import org.broadband_forum.obbaa.netconf.api.logger.NetconfExtensions;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
+import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.ChoiceCaseNodeUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
@@ -35,9 +43,11 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDynaBean;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDynaBeanContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDynaBeanFactory;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.ProxyValidationModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath.JXPathUtils;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
@@ -46,9 +56,7 @@ import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.util.RevisionAwareXPathImpl;
 
 public class DataStoreValidationPathBuilder {
 
@@ -175,352 +183,16 @@ public class DataStoreValidationPathBuilder {
         return returnValue;
     }
 
-    private SchemaPath getNextPath(SchemaPath parentPath, Step[] steps, int stepIndex, List<Step> path, boolean absPath) {
-        List<Step> levelPath = new LinkedList<Step>();
-        String nodeName = DataStoreValidationUtil.getLocalName(steps[stepIndex]);
-        SchemaPath childPath = DataStoreValidationUtil.getChildPath(m_schemaRegistry, parentPath, nodeName);
-        if (childPath != null) {
-            levelPath.add(steps[stepIndex]);
-            SchemaPath returnPath = null;
-            if (stepIndex + 1 < steps.length) {
-                returnPath = getNextPath(childPath, steps, stepIndex + 1, levelPath, absPath);
-            } else {
-                returnPath = childPath;
-            }
-            path.addAll(levelPath);
-            return returnPath;
-        }        
-        return null;
-    }
-
-    private void fetchFunctionSchemaPaths(Expression expression, DataSchemaNode inSchemaNode, Map<SchemaPath, String> manyPaths, String accessPath) {
-        if (expression instanceof LocationPath) {
-            LocationPath path = (LocationPath) expression;
-            List<Step> steps = new ArrayList<>(Arrays.asList(path.getSteps()));
-            List<SchemaPath> referencedPath = new ArrayList<>();
-            fetchSchemaPaths(steps, inSchemaNode, referencedPath);
-            for (SchemaPath schemaPath : referencedPath) {
-                manyPaths.put(schemaPath, accessPath);
-            }
-        } else if (expression instanceof Operation) {
-        	if ( ((Operation) expression).getArguments() != null){
-        		for (Expression ex : ((Operation) expression).getArguments()) {
-                    fetchFunctionSchemaPaths(ex, inSchemaNode, manyPaths, accessPath);
-                }
-        	}
-        }
-    }
-
-    private void getSchemaPathsFromXPath(DataSchemaNode schemaNode, RevisionAwareXPath xPath,
-            List<SchemaPath> aggregatedPaths) {
-
-        Expression ex = JXPathUtils.getExpression((JXPathCompiledExpression) JXPathContext.compile(xPath.toString()));
-
-        if (ex instanceof LocationPath) {
-            LocationPath path = (LocationPath) ex;
-            List<Step> steps = new ArrayList<Step>(Arrays.asList(path.getSteps()));
-            fetchSchemaPaths(steps, schemaNode, aggregatedPaths);
-        } else if (ex instanceof CoreOperation) {
-            CoreOperation operation = (CoreOperation) ex;
-
-            if (operation instanceof CoreOperationCompare || operation instanceof CoreOperationRelationalExpression) {
-                // we will have only 2 expression here.
-                // 1 -> locationPath
-                // 2 -> some constant value to evaluate.
-                // we need to fetch schemaPath of locationPath
-                getSchemaPathsFromXPath(schemaNode,
-                        new RevisionAwareXPathImpl(operation.getArguments()[0].toString(), xPath.isAbsolute()), aggregatedPaths);
-            } else {
-                // indicates we have more than one xpath.
-                for (Expression exp : operation.getArguments()) {
-                    getSchemaPathsFromXPath(schemaNode, new RevisionAwareXPathImpl(exp.toString(), xPath.isAbsolute()),
-                            aggregatedPaths);
-                }
-            }
-        } else if (ex instanceof CoreFunction) {
-            CoreFunction function = (CoreFunction) ex;
-            for (Expression exp : function.getArguments()) {
-                getSchemaPathsFromXPath(schemaNode, new RevisionAwareXPathImpl(exp.toString(), xPath.isAbsolute()),
-                        aggregatedPaths);
-            }
-        } else {
-            LOGGER.debug("Could not fetch all schemaPath for {}", ex);
-        }
-
-    }
-
-    private void fetchSchemaPaths(List<Step> steps, DataSchemaNode schemaNode, List<SchemaPath> aggregatedPaths) {
-        SchemaRegistry schemaRegistry = m_schemaRegistry;
-        DataSchemaNode newNode = schemaNode;
-
-        /**
-         * for every '..' encountered, goto the parentNode
-         */
-        while (steps.size() > 0 && steps.get(0).getAxis() == Compiler.AXIS_PARENT) {
-            newNode = schemaRegistry.getDataSchemaNode(newNode.getPath().getParent());
-            if (newNode == null && steps.size() > 1 && steps.get(1).getAxis() == Compiler.AXIS_CHILD) {
-                // a newNode = null indicates we have hit a root node.
-                // if the path still has a parent and the next step is a child
-                // we need to look for another root node.
-                // it is baiscally like doing cd ../var inside /opt
-                newNode = DataStoreValidationUtil.getRootSchemaNode(m_schemaRegistry, steps.get(1));
-                if (newNode == null) {
-                    SchemaRegistry mountSchemaRegistry = SchemaRegistryUtil.getMountRegistry();                    
-                    if (mountSchemaRegistry != null) {
-                        newNode = DataStoreValidationUtil.getRootSchemaNode(mountSchemaRegistry, steps.get(1));
-                        schemaRegistry = mountSchemaRegistry;
-                    }
-                }
-                steps.remove(0);
-            }
-            if (newNode == null) {
-                return;
-            }
-            steps.remove(0);
-        }
-
-        if (steps.size() > 0) {
-            Step step = steps.get(0);
-            if (step.getNodeTest() instanceof NodeNameTest) {
-
-                String nodeName = ((NodeNameTest) step.getNodeTest()).getNodeName().getName();
-                QName qname = schemaRegistry.lookupQName(schemaNode.getQName().getNamespace().toString(), nodeName);
-                SchemaPath stepSchemaPath = schemaRegistry.getDescendantSchemaPath(newNode.getPath(), qname);
-                if (stepSchemaPath != null) {
-                    /**
-                     * if this is the last step in the xpath, add the schemaPath to the list.
-                     */
-                    if (steps.size() > 1) {
-                        newNode = schemaRegistry.getDataSchemaNode(stepSchemaPath);
-                        steps.remove(step);
-                        fetchSchemaPaths(steps, newNode, aggregatedPaths);
-                    } else {
-                        aggregatedPaths.add(stepSchemaPath);
-                    }
-                } else if (newNode.getPath().getParent() != null && newNode.getPath().getParent().getLastComponent() != null) {
-                    DataSchemaNode parentNode = schemaRegistry.getDataSchemaNode(newNode.getPath().getParent());
-                    Expression ex = new LocationPath(false, steps.toArray(new Step[steps.size()]));
-                    getSchemaPathsFromXPath(parentNode, new RevisionAwareXPathImpl(ex.toString(), false), aggregatedPaths);
-                } else {
-                    LOGGER.debug("schema path was null for qname {} and step{}", qname, newNode.getPath());
-                }
-            }
-        }
-
-    }
-
-    private void fetchAccessPath(String xPath, DataSchemaNode inSchemaNode, Map<SchemaPath, String> manyPaths, boolean isCaseOrChoice, boolean isAugment) {
-
-        Expression ex = JXPathUtils.getExpression(xPath);
-        if (ex instanceof CoreOperation) {
-            for (Expression exp : ((Operation) ex).getArguments()) {
-                fetchAccessPath(exp.toString(), inSchemaNode, manyPaths, isCaseOrChoice, isAugment);
-            }
-        } else if (ex instanceof LocationPath && ((LocationPath)ex).getSteps()[0].getAxis() == Compiler.AXIS_SELF){
-             manyPaths.put(inSchemaNode.getPath(), null);
-        } else if (ex instanceof LocationPath && !((LocationPath) ex).isAbsolute()) {
-            Step[] steps = ((LocationPath) ex).getSteps();
-            DataSchemaNode schemaNode = m_schemaRegistry.getDataSchemaNode(inSchemaNode.getPath());
-            if(isAugment){
-                /** In case of augmented when nodes, the when condition is defined for the augment and not the data node. Hence
-                 * the schemaNode of the augment should be evaluated to get the location path.
-                 * 
-                 * 
-                 * eg: augment '/if:interfaces/if:interface/bbf-subif:frame-processing/'
-                    + 'bbf-subif:egress-rewrite' {
-
-                    when 'derived-from-or-self(../../if:type,
-                      "bbfift:vlan-sub-interface")'
-                      
-                    leaf pop-tags{
-                        type uint8 {
-                        range "0..2";
-                        }
-                        default "0";                    
-                    }
-                      
-                 * In the above case, the when condition is for container egress-rewrite.*/
-                schemaNode = m_schemaRegistry.getDataSchemaNode(inSchemaNode.getPath().getParent());
-            }
-            /**
-             * record the localName of each step as we traverse.
-             * 
-             * eg:
-             * 
-             * container a {
-             *    leaf b{when "../c='a'";};
-             *    
-             *    leaf c;
-             * }
-             * 
-             * xPath = ../c, inSchemaNode = leaf b
-             * 
-             * as we traverse from b to c, we will build b/a/c. 
-             * reversing the path, will give c/a/b which 
-             * is the access path from c to reach b, its impact node
-             *      
-             * 
-             */
-            List<Step> path = new LinkedList<Step>();
-            if (!isCaseOrChoice) {
-                // if this is a case/choice node. Dont add it to data path
-                path.add(DataStoreValidationUtil.getYangStep(schemaNode.getQName()));
-            }
-            SchemaPath returnPath = null;
-            for (int i = 0; i < steps.length; i++) {
-                if (steps[i].getAxis() == Compiler.AXIS_PARENT) {
-                    boolean rootNode = false;
-                    
-                    if (schemaNode != null && schemaNode.getPath().getParent().getLastComponent() == null) {
-                        // indicate we are currently on a root node. 
-                        // to corelate with the explanation above, we are in /opt
-                        rootNode = true;
-                    }
-                    if (isCaseOrChoice && ChoiceCaseNodeUtil.isChoiceOrCaseNode(schemaNode)) {
-                        schemaNode = m_schemaRegistry.getDataSchemaNode(schemaNode.getPath().getParent());
-                    } else {
-                        schemaNode = SchemaRegistryUtil.getEffectiveParentNode(schemaNode, m_schemaRegistry);
-                    }
-                    
-                    if (schemaNode == null && rootNode && steps[i].getAxis() == Compiler.AXIS_PARENT
-                            && steps[i + 1].getAxis() == Compiler.AXIS_CHILD) {
-                        path.add(steps[i]);
-                        if (i + 1 < steps.length) {
-                            schemaNode = DataStoreValidationUtil.getRootSchemaNode(m_schemaRegistry, steps[++i]);
-                            path.add(steps[i]);
-                        }
-                        continue;
-                    }
-                    if (!ChoiceCaseNodeUtil.isChoiceOrCaseNode(schemaNode)) {
-                        // we are out of case/choice steps. Now start adding data path
-                        isCaseOrChoice = false;
-                    }
-
-                    if (!isCaseOrChoice) {
-                        // if this is a choice/case node, dont add it to data path
-                        path.add(DataStoreValidationUtil.getYangStep(schemaNode.getQName()));
-                    }
-
-                } else {
-                    returnPath = getNextPath(schemaNode.getPath(), steps, i, path, false);
-                    break;
-                }
-            }
-            Collections.reverse(path);
-            if(isAugment){
-                /** The path for an augmented node does not contain the actual node. As per documentation given above this means that
-                 * the node(leaf pop-tags) for which the augmentation is done is not added in path. Hence we add it separately here. */
-                path.add(DataStoreValidationUtil.getYangStep(inSchemaNode.getQName()));
-            }
-            String sb1 = new LocationPath(false, path.toArray(new Step[0])).toString();
-
-            if (returnPath != null) {
-                manyPaths.put(returnPath, sb1);
-            } else {
-                List<SchemaPath> paths = new ArrayList<SchemaPath>();
-                fetchSchemaPaths(new ArrayList<Step>(Arrays.asList(steps)), schemaNode, paths);
-                for (SchemaPath newPath : paths) {
-                    manyPaths.put(newPath, null);
-                }
-            }
-        } else if (ex instanceof LocationPath) {
-            /**
-             * we are here, if it is an absolute path. access path for the root is recorded
-             * 
-             * In legacy, 'device-manager' is the root node for all schemanodes, where as in schemamount mode root node should be different for each schemanode
-             * 
-             * consider below example for schema mount mode, there are two different root nodes.
-             * 
-             * eg:
-             * 
-             * container gsh {
-             * 		list profile {
-             * 			list handshake-profile{
-             * 				key "name";
-             * 				leaf name {type string;}
-             * 			}
-             * 		}
-             * }
-             * 
-             * container interfaces {
-             * 		list interface {
-             * 			list line {
-             * 				 container gsh{
-             * 					leaf handshake-profile {
-             * 						type leafref { 
-             * 							path "/ghs:ghs/ghs:profiles/"ghs:handshake-profile/ghs:name";
-             * 					 	}	
-             * 					}
-             * 				}
-             * 			}
-             * 		}
-             * }	
-             * 
-             * xpath : /ghs:ghs/ghs:profiles/"ghs:handshake-profile/ghs:name
-             * schemanode : handshake-profile [interfaces,interface,line,gsh,handshake-profile]
-             * 
-             */
-        	
-            Step[] steps = ((LocationPath) ex).getSteps();
-            DataSchemaNode schemaNode = m_schemaRegistry.getDataSchemaNode(inSchemaNode.getPath());
-            if(isAugment){
-                schemaNode = m_schemaRegistry.getDataSchemaNode(inSchemaNode.getPath().getParent());
-            }
-            List<Step> inputPath = new LinkedList<Step>(); 
-            SchemaPath parentPath = DataStoreValidationUtil.buildAbsAccessPath(m_schemaRegistry, schemaNode, inputPath);  
-            List<Step> accessPath = new LinkedList<Step>();
-            // Check root node of xpath with root node of actual schemanode
-            DataSchemaNode rootParentNode =  DataStoreValidationUtil.getRootSchemaNode(m_schemaRegistry,steps[0]);
-            if(rootParentNode != null){
-            	SchemaPath rootParentPath = rootParentNode.getPath();
-            	 if(!rootParentPath.getLastComponent().getLocalName().equals(parentPath.getLastComponent().getLocalName())){
-            		 parentPath = rootParentPath;
-            	 }
-            }
-            // Here we should pass actual root node of steps.
-            SchemaPath returnValue = getNextPath(parentPath, steps, 1, accessPath, true);
-            if (returnValue != null) {
-                String sb1 = new LocationPath(true, inputPath.toArray(new Step[0])).toString();
-                manyPaths.put(returnValue, sb1);
-            }
-        } else if (ex instanceof CoreFunction) {
-            /**
-             * here again, getting the relative path inside is difficult. So we record the access path from root
-             */
-            List<Step> inputPath = new LinkedList<Step>();
-            DataStoreValidationUtil.buildAbsAccessPath(m_schemaRegistry, inSchemaNode, inputPath);
-            String sb1 = new LocationPath(true, inputPath.toArray(new Step[0])).toString();
-            /**
-             * a generic count(list1), indicates it refers list1. All such
-             * list1 instances in schematree are found and the path found above is store as 
-             * access path for impact
-             */
-            fetchFunctionSchemaPaths(ex, inSchemaNode, manyPaths, sb1);
-        } else if (DataStoreValidationUtil.isExpressionPath(ex)) {
-        	ExpressionPath path = (ExpressionPath) ex;
-        	Expression[] predicates = path.getPredicates();
-        	Step[] steps = path.getSteps();
-        	if (predicates != null) {
-            	for (Expression predicate:predicates) {
-            		fetchAccessPath(predicate.toString(), inSchemaNode, manyPaths, isCaseOrChoice, isAugment);
-            	}
-        	}
-        	if (steps != null  && steps.length > 0) {
-        		fetchAccessPath(new LocationPath(false, steps).toString(), inSchemaNode, manyPaths, isCaseOrChoice, isAugment);
-        	}
-        } else if (DataStoreValidationUtil.isExtensionFunction(ex)) {
-            if (((ExtensionFunction) ex).getArguments() != null) {
-                for (Expression exp : ((ExtensionFunction) ex).getArguments()) {
-                    fetchAccessPath(exp.toString(), inSchemaNode, manyPaths, isCaseOrChoice, isAugment);
-                }
-            }
-        }
-    }
-
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private List<ModelNode> getReferencedModelNode(EditContainmentNode editNode, DynaBean inParentBean, Step[] pathSteps, boolean nodeNotDeleted, boolean missingParentNode) {
-
-        List<ModelNode> returnValue = new ArrayList<ModelNode>();
+    private List<ModelNode> getReferencedModelNode(EditContainmentNode editNode, DynaBean inParentBean, Step[] pathSteps,
+                                                   DataSchemaNode referenceNode, boolean nodeNotDeleted, boolean missingParentNode,
+                                                   DSValidationContext validationContext) {
+        boolean isChoiceOrCaseNode = ChoiceCaseNodeUtil.isChoiceOrCaseNode(referenceNode);
+        List<ModelNode> returnValue = validationContext.getRetrievedParentModelNodes().fetchAlreadyRegisteredParentModelNodes(editNode, inParentBean, pathSteps, nodeNotDeleted, missingParentNode, isChoiceOrCaseNode);
+        if(returnValue != null) {
+            return returnValue;
+        }
+        returnValue = new ArrayList<>();
         if (pathSteps != null && pathSteps.length > 0) {
             Step[] steps = pathSteps;
             DynaBean bean = inParentBean;
@@ -554,16 +226,27 @@ public class DataStoreValidationPathBuilder {
             }
             for (int i = startIndex; i < endIndex; i++) {
                 String stepName = DataStoreValidationUtil.getLocalName(steps[i]);
+                String prefix = DataStoreValidationUtil.getPrefix(steps[i]);
                 if (stepName == null && steps[i].getAxis() == Compiler.AXIS_PARENT && !DataStoreValidationUtil.isReadable(bean, ModelNodeWithAttributes.PARENT)) {
                     // indicates we need to look for a different tree.
                     if (i + 1 < steps.length) {
                         DataSchemaNode rootSchemaNode = DataStoreValidationUtil.getRootSchemaNode(m_schemaRegistry, steps[++i]);
-                        bean = DataStoreValidationUtil.getRootModelNode(m_schemaRegistry, rootSchemaNode);
+                        bean = DataStoreValidationUtil.getRootModelNode(m_schemaRegistry, rootSchemaNode, validationContext);
                         continue;
                     }
                 }
-                if (!(beanGetValue instanceof String) && (DataStoreValidationUtil.isReadable(bean, stepName))) {
-                    beanGetValue = bean.get(stepName);
+                boolean shouldLookInBean = !(beanGetValue instanceof String) && (DataStoreValidationUtil.isReadable(bean, stepName));
+                if (shouldLookInBean) {
+                    shouldLookInBean = isValidChildOfBean(bean, stepName, prefix, shouldLookInBean);
+                }
+                if (shouldLookInBean) {
+                    SchemaRegistry schemaRegistry = ((ModelNode) bean.get(ModelNodeWithAttributes.MODEL_NODE)).getSchemaRegistry();
+                    ModelNodeDynaBeanContext dynaBeanContext = DataStoreValidationUtil
+                            .getModelNodeDynaBeanContext(schemaRegistry, stepName, schemaRegistry
+                                            .getNamespaceURI(DataStoreValidationUtil.getPrefix(steps[i])),
+                                    null);
+                    final DynaBean beanforContext = bean;
+                    beanGetValue = ModelNodeDynaBean.withContext(dynaBeanContext, () -> beanforContext.get(stepName));
                     if (beanGetValue instanceof String) {
                         // is a leaf/leaf-list
                         bean = ModelNodeDynaBeanFactory.getDynaBeanForLeaf((ModelNode) bean.get(ModelNodeWithAttributes.MODEL_NODE), bean, stepName,
@@ -580,11 +263,13 @@ public class DataStoreValidationPathBuilder {
                             System.arraycopy(steps, i+1, newSteps, 0, steps.length-(i+1));
                             for (Object object : listBeans) {
                                 if (newSteps.length > 0) {
-                                    returnValue
-                                            .addAll(getReferencedModelNode(editNode, (DynaBean) object, newSteps, true, missingParentNode));
+                                    returnValue.addAll(getReferencedModelNode(editNode, (DynaBean) object, newSteps, referenceNode, true,
+                                            missingParentNode, validationContext));
                                 }
                             }
-                            bean = null;
+                            if ( newSteps.length == 0) { // Referring to the same list,here we can take any list entry. Because we will take its parent. So it doesn't matter which list entry it is, both the list entries parent is same.
+                                bean = (DynaBean) ((List) beanGetValue).get(0);
+                            } 
                             break;
                         }
                     } else if (beanGetValue instanceof Set) {
@@ -604,7 +289,7 @@ public class DataStoreValidationPathBuilder {
                         bean = buildDummySupport(steps,i, bean);
                         break;
                     } else if (i == steps.length - 1 && beanGetValue == null
-                            && DataStoreValidationUtil.getValidationContext().getImpactValidation()) {
+                            && validationContext.getImpactValidation()) {
 
                         // indicates it is an impact validation.
                         // need to check if this is the last step in the accessPath and if it is missing,
@@ -644,10 +329,38 @@ public class DataStoreValidationPathBuilder {
             if (bean != null && DataStoreValidationUtil.isReadable(bean, ModelNodeWithAttributes.PARENT) && !(startIndex == steps.length)) {
             	// if start index == steps.length indicates, there is a possibility of deleted node
             	// and we are already at the parent of the deleted node
-                returnValue.add((ModelNode) ((DynaBean) bean.get(ModelNodeWithAttributes.PARENT)).get(ModelNodeWithAttributes.MODEL_NODE));
+                if (isChoiceOrCaseNode) {
+                    if ( DataStoreValidationUtil.isReadable(bean, ModelNodeWithAttributes.MODEL_NODE)) {
+                        returnValue.add((ModelNode) ((DynaBean) bean).get(ModelNodeWithAttributes.MODEL_NODE));
+                    } else { // proxy model node case
+                        returnValue.add((ModelNode) ((DynaBean) bean.get(ModelNodeWithAttributes.PARENT)).get(ModelNodeWithAttributes.MODEL_NODE));
+                    }
+                } else {
+                    returnValue.add((ModelNode) ((DynaBean) bean.get(ModelNodeWithAttributes.PARENT)).get(ModelNodeWithAttributes.MODEL_NODE));
+                }
             }
         }
+        validationContext.getRetrievedParentModelNodes().registerParentModelNodes(returnValue, editNode, inParentBean, pathSteps, nodeNotDeleted, missingParentNode, isChoiceOrCaseNode);
         return returnValue;
+    }
+
+    private boolean isValidChildOfBean(DynaBean bean, String stepName, String prefix, boolean shouldLookInBean) {
+        SchemaRegistry schemaRegistry = ((ModelNode) bean.get(ModelNodeWithAttributes.MODEL_NODE)).getSchemaRegistry();
+        stepName = getModelNodeAttributeName(stepName);
+        if (prefix != null) {
+            String namespaceURI = schemaRegistry.getNamespaceURI(prefix);
+            if(namespaceURI != null) {
+                String moduleName = schemaRegistry.getModuleNameByNamespace(namespaceURI);
+                if(moduleName != null) {
+                    SchemaPath childPathModuleNameAware = DataStoreValidationUtil.getChildPathModuleNameAware(schemaRegistry,
+                            ((ModelNode) bean.get(ModelNodeWithAttributes.MODEL_NODE)).getModelNodeSchemaPath(), stepName, moduleName);
+                    if (childPathModuleNameAware == null) {
+                        shouldLookInBean = false;
+                    }
+                }
+            }
+        }
+        return shouldLookInBean;
     }
 
     private DynaBean buildDummySupport(Step[] steps, int currentIndex, DynaBean currentBean) {
@@ -655,15 +368,18 @@ public class DataStoreValidationPathBuilder {
         
         if (currentIndex + 1 <= steps.length) {
             if (currentIndex + 1 == steps.length) {
-                // indicates the last step in the path is missing; and current bean is the parent bean.
                 return ModelNodeDynaBeanFactory.getDynaBeanForLeaf((ModelNode) currentBean.get(ModelNodeWithAttributes.MODEL_NODE), currentBean,
                         DataStoreValidationUtil.getLocalName(steps[currentIndex]), null, null);
             } else {
                 String stepName = DataStoreValidationUtil.getLocalName(steps[currentIndex]);
                 currentIndex++;
-                ModelNode parentModelNode = (ModelNode) currentBean.get(ModelNodeWithAttributes.MODEL_NODE);
+                ModelNode parentModelNode = DataStoreValidationUtil.isReadable(currentBean, ModelNodeWithAttributes.MODEL_NODE) ? (ModelNode) currentBean.get(ModelNodeWithAttributes.MODEL_NODE) : null;
+                if(parentModelNode == null){
+                    LOGGER.error("Could not get model-node attribute from dynaBean {} for current step {}", currentBean, stepName);
+                    return null;
+                }
                 SchemaRegistry schemaRegistry = parentModelNode.getSchemaRegistry();
-                SchemaPath schemaPath = DataStoreValidationUtil.getChildPath(m_schemaRegistry, parentModelNode.getModelNodeSchemaPath(), stepName);
+                SchemaPath schemaPath = DataStoreValidationUtil.getChildPath(schemaRegistry, parentModelNode.getModelNodeSchemaPath(), stepName);
                 DataSchemaNode schemaNode = schemaRegistry.getDataSchemaNode(schemaPath);
                 if (schemaNode instanceof ContainerSchemaNode && !((ContainerSchemaNode) schemaNode).isPresenceContainer()) {
                     ProxyValidationModelNode modelNode = new ProxyValidationModelNode(parentModelNode,
@@ -757,41 +473,41 @@ public class DataStoreValidationPathBuilder {
      * The return list will contain schemaPath(c),path from a to c(../c) 
      * and schemaPath(b), path from a to b(../b)
      */
-    public Map<SchemaPath, String> getSchemaPathsFromXPath(DataSchemaNode schemaNode,
-            RevisionAwareXPath xPath, boolean isAugment) {
-    
-        Map<SchemaPath, String> manyPaths = new HashMap<SchemaPath, String>();
-        try {
-            String actualPath = xPath.toString();
-            if (NetconfExtensions.IS_TREAT_AS_RELATIVE_PATH.isExtensionIn(schemaNode)) {
-                Expression xpath = m_schemaRegistry.getRelativePath(xPath.toString(), schemaNode);
-                if (xpath != null) {
-                    actualPath = xpath.toString();
-                }
-            }
-            fetchAccessPath(actualPath, schemaNode, manyPaths, ChoiceCaseNodeUtil.isChoiceOrCaseNode(schemaNode), isAugment);
-            for (Map.Entry<SchemaPath, String> path : manyPaths.entrySet()) {
-                if (path.getValue() != null) {
-                    /**
-                     * Transform the access path so save time during validation.
-                     */
-                    String newPath = DataStoreValidationUtil.getDynaBeanAlignedPath((LocationPath) JXPathUtils.getExpression(path.getValue())).toString();
-                    manyPaths.put(path.getKey(), newPath);
-                }
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(String.format("Problem processing xpath '%s' on schemaNode '%s'", xPath, schemaNode.getPath()), e);
+    public Map<SchemaPath, ArrayList<String>> getSchemaPathsFromXPath(DataSchemaNode schemaNode,
+            String xPathString, SchemaPath augmentedSP) {
+    	return AccessSchemaPathUtil.getSchemaPathsFromXPath(m_schemaRegistry, schemaNode, xPathString, augmentedSP);
+    }
+
+
+    public List<ModelNode> getParentModelNodeWithAccessPath(EditContainmentNode editNode, DynaBean inParentBean, Step[] pathSteps,
+                                                            DataSchemaNode referenceNode, boolean nodeNotDeleted,
+                                                            boolean missingParentNode, DSValidationContext validationContext) {
+        return getReferencedModelNode(editNode,inParentBean, pathSteps, referenceNode, nodeNotDeleted, missingParentNode, validationContext);
+    }
+
+    public Map<SchemaPath, String> getValidationHints(Set<SchemaPath> allReferredSPs, String hintStr) {
+        Map<SchemaPath, String> hints = new HashMap<>();
+        String [] hintsForSps = hintStr.split("\\?\\?\\?");
+        if(hintsForSps.length<1){
+            throw new IllegalArgumentException("Cannot parse extension argument: "+hintStr);
         }
-        return manyPaths;
+        for(String hintForSp : hintsForSps){
+            String [] split = hintForSp.trim().split("->");
+            if(split.length > 2){
+                throw new IllegalArgumentException("Cannot parse part of extension argument: "+hintForSp);
+            }
+            String spStr = split[0].trim();
+            String hint = split[1].trim();
+            if("*".equals(spStr)){
+                hints.clear();
+                for (SchemaPath referredSP : allReferredSPs) {
+                    hints.put(referredSP, hint);
+                }
+                break;
+            }
+            SchemaPath sp = SchemaPathBuilder.fromMultipleStrings(spStr);
+            hints.put(sp, hint);
+        }
+        return hints;
     }
-
-
-    public List<ModelNode> getParentModelNodeWithAccessPath(EditContainmentNode editNode, DynaBean inParentBean, Step[] pathSteps, boolean nodeNotDeleted) {
-        return getReferencedModelNode(editNode,inParentBean, pathSteps, nodeNotDeleted, false);
-    }
-
-    public List<ModelNode> getMissingParentNodeWithAccessPath(EditContainmentNode editNode, DynaBean inParentBean, Step[] pathSteps, boolean nodeNotDeleted) {
-        return getReferencedModelNode(editNode, inParentBean, pathSteps, nodeNotDeleted, true);
-    }
-
 }

@@ -16,18 +16,20 @@
 
 package org.broadband_forum.obbaa.netconf.persistence.jpa;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.messages.LogUtil;
 import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
-import org.apache.log4j.Logger;
 
 
 @Deprecated
 public class JPAEntityDataStoreManager extends AbstractEntityDataStoreManager{
 	protected EntityManager m_manager;
-    private static final Logger LOGGER = Logger.getLogger(JPAEntityDataStoreManager.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(JPAEntityDataStoreManager.class, LogAppNames.NETCONF_LIB);
 
 
 	public JPAEntityDataStoreManager(EMFactory factory) {

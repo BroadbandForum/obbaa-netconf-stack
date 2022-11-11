@@ -17,37 +17,27 @@
 package org.broadband_forum.obbaa.netconf.api.util;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.sshd.common.cipher.BuiltinCiphers;
-import org.apache.sshd.common.mac.BuiltinMacs;
+import org.broadband_forum.obbaa.netconf.api.utils.SystemPropertyUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.opendaylight.yangtools.yang.common.QName;
 
 /**
  * Various netconf resources
  *
- *
+ * 
  *
  */
 public final class NetconfResources {
 
-    public static final List<BuiltinCiphers> SSH_CIPHERS_PREFERENCE =
-            Collections.unmodifiableList(Arrays.asList(
-                    BuiltinCiphers.aes128ctr,
-                    BuiltinCiphers.aes192ctr,
-                    BuiltinCiphers.aes256ctr
-            ));
-    public static final List<BuiltinMacs> SSH_MAC_PREFERENCE =
-            Collections.unmodifiableList(Arrays.asList(
-                    BuiltinMacs.hmacsha1,
-                    BuiltinMacs.hmacsha256,
-                    BuiltinMacs.hmacsha512
-            ));
+    public static final String REGEX_FOR_COMMA = "\\s*,\\s*";
+    public static final String DEFAULT_NC_SSH_MACS = "hmac-sha1, hmac-sha2-256, hmac-sha2-512";
+    public static final String DEFAULT_NC_SSH_CIPHERS = "aes128-ctr, aes192-ctr, aes256-ctr";
     public static final String CLOSE_SUBSCRIPTION = "close-subscription";
     public static final String CREATE_SUBSCRIPTION = "create-subscription";
     public static final String TYPE = "type";
@@ -58,14 +48,25 @@ public final class NetconfResources {
     public static final String RPC = "rpc";
     public static final String ACTION = "action";
     public static final String MESSAGE_ID = "message-id";
+    public static final String USER_CONTEXT = "user-context";
+    public static final String SESSION_ID_CONTEXT = "session-id";
+    public static final String APPLICATION = "application";
     public static final String NETCONF = "NETCONF";
     public static final String STATE_CHANGE = "STATE_CHANGE";
     public static final String NETCONF_RPC_NS_1_0 = "urn:ietf:params:xml:ns:netconf:base:1.0";
+    public static final String NC_STACK_EXTENSIONS_NS = "http://www.test-company.com/solutions/nc-stack-extensions";
+    public static final String NETCONF_RPC_NS_PREFIX = "nc:";
+    public static final String TRANSACTION_ID_NS = "http://tail-f.com/ns/netconf/with-transaction-id";
+    public static final String TAILF_NC_MONITORING_NS = "http://tail-f.com/yang/netconf-monitoring";
+    public static final String TAILF_NC_MONITORING_CAPABILITY = "http://tail" +
+            "-f.com/yang/netconf-monitoring?module=tailf-netconf-monitoring&revision=2019-03-28";
     public static final String NETCONF_BASE_CAP_1_0 = "urn:ietf:params:netconf:base:1.0";
     public static final String NETCONF_BASE_CAP_1_1 = "urn:ietf:params:netconf:base:1.1";
     public static final String CAPABILITY_TYPE = "CAPABILITY_TYPE";
     public static final String DEFAULT_VALUE_1_1 = "1.1";
     public static final String NETCONF_YANG_1 = "urn:ietf:params:xml:ns:yang:1";
+    public static final String NETCONF_YANG_PREFIX = "yang:";
+    public static final String NETCONF_YANG_NS_PREFIX = "yangns";
     public static final String NETCONF_NOTIFICATION = "urn:ietf:params:netconf:capability:notification:1.0";
     public static final String NETCONF_NOTIFICATION_NS = "urn:ietf:params:xml:ns:netconf:notification:1.0";
     public static final String IETF_NOTIFICATION_NS = "urn:ietf:params:xml:ns:yang:ietf-netconf-notifications";
@@ -76,7 +77,11 @@ public final class NetconfResources {
     public static final String NETCONF_ROLLBACK_ON_ERROR = "urn:ietf:params:netconf:capability:rollback-on-error:1.0";
     public static final String WITH_DEFAULTS_NS = "urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults";
     public static final String NOTIFICATION_INTERLEAVE = "urn:ietf:params:netconf:capability:interleave:1.0";
+    public static final String IETF_YANG_LIBRARY_NS = "urn:ietf:params:xml:ns:yang:ietf-yang-library";
+    public static final String TRANSACTION_ID_CAPABILITY = "http://tail-f.com/ns/netconf/with-transaction-id?module=tailf-netconf-with-transaction-id&revision=2018-11-23";
+    public static final String YANG_LIBRARY_CHANGE = "yang-library-change";
     public static final String NOTIFICATION = "notification";
+    public static final String XMLNS_NS = "http://www.w3.org/2000/xmlns/";
     public static final String XMLNS = "xmlns";
     public static final String FILTER = "filter";
     public static final String SUBTREE_FILTER = "subtree";
@@ -95,7 +100,8 @@ public final class NetconfResources {
     public static final String WITH_DELAY_NS = "http://www.test-company.com/solutions/anv-test-netconf-extensions";
     public static final String WITH_DELAY = "with-delay";
     public static final String EXTENSION_NS = "http://www.test-company.com/solutions/netconf-extensions";
-    public static final String NC_STACK_NS = "urn:bbf:yang:obbaa:netconf-stack";
+    public static final String NC_STACK_NS = "http://www.test-company.com/solutions/anv-netconf-stack";
+    public static final String SYSTEM_CAP_WITHOUT_NS = "urn:ietf:params:xml:ns:yang:ietf-system?module=ietf-system";
     public static final String SYSTEM_STATE_NS = "urn:ietf:params:xml:ns:yang:ietf-system";
     public static final String SYSTEM_STATE = "system-state";
     public static final String SYSTEM_STATE_NAMESPACE = "urn:ietf:params:xml:ns:yang:ietf-system";
@@ -103,10 +109,16 @@ public final class NetconfResources {
     public static final String SYS_CURRENT_DATE_TIME = "sys:current-datetime";
     public static final String CURRENT_DATE_TIME = "current-datetime";
     public static final String DEPTH = "depth";
+    public static final String TRIGGER_SYNC_UPON_SUCCESS = "trigger-sync-upon-success";
+    public static final String XMLNS_CTX = "xmlns:ctx";
+    public static final String CTX_USER_CONTEXT = "ctx:user-context";
+    public static final String CTX_SESSION_ID = "ctx:session-id";
+    public static final String FORCE_INSTANCE_CREATION = "force-instance-creation";
     public static final String FIELDS = "fields";
     public static final String DATA_NODE = "data-node";
     public static final String ATTRIBUTE = "attribute";
     public static final String WITH_DEFAULTS = "with-defaults";
+    public static final String WITH_TRANSACTION_ID = "with-transaction-id";
     public static final String CLOSE_SESSION = "close-session";
     public static final String KILL_SESSION = "kill-session";
     public static final String SESSION_ID = "session-id";
@@ -124,7 +136,9 @@ public final class NetconfResources {
     public static final String MAXIMUM_SIZE_OF_CHUNKED_MESSAGES = "MAXIMUM_SIZE_OF_CHUNKED_MESSAGES";
     public static final String RPC_REPLY = "rpc-reply";
     public static final String OK = "ok";
+    public static final String TRANSACTION_ID = "transaction-id";
     public static final String RPC_REPLY_DATA = "data";
+    public static final String RPC_REPLY_EXTENSION_RESULT = "%s-result";
     public static final String RPC_ERROR = "rpc-error";
     public static final String RPC_ERROR_TYPE = "error-type";
     public static final String RPC_ERROR_TAG = "error-tag";
@@ -133,6 +147,7 @@ public final class NetconfResources {
     public static final String RPC_ERROR_MESSAGE = "error-message";
     public static final String RPC_ERROR_APP_TAG = "error-app-tag";
     public static final String RPC_ERROR_INFO = "error-info";
+    public static final String RPC_STACK_TRACE = "stack-trace";
     public static final String NONE = "NONE";
     public static final String URL = "url";
     public static final String NETCONF_SUBSYSTEM_NAME = "netconf";
@@ -150,6 +165,7 @@ public final class NetconfResources {
     public static final String UNCLASSIFIED_NOTIFICATIONS = "unclassified notifications";
     public static final DateTimeFormatter DATE_TIME_FORMATTER = ISODateTimeFormat.dateTimeNoMillis();
     public static final String IMPLIED = "implied";
+    public static final String SELECT = "select";
 
     // This parameter needs to be moved to configuration
     public static int RETRY_LIMIT_REVERSE_SSH = 3;
@@ -172,7 +188,9 @@ public final class NetconfResources {
     public static final String CHANGED_LEAF = "changed-leaf";
     public static final String INSERT = "insert";
     public static final String KEY = "key";
+    public static final String ITEM = "item";
     public static final String VALUE = "value";
+    public static final String VISIBILITY = "visibility";
     public static final String REPLAY_COMPLETE = "replayComplete";
     public static final String NOTIFICATION_COMPLETE = "notificationComplete";
     public static final String CONFIG_CHANGE_NOTIFICATION = "netconf-config-change";
@@ -183,10 +201,17 @@ public final class NetconfResources {
     public static final String INTERLEAVE = "interleave";
     public static final String CONFIG_CHANGE_STREAM = "CONFIG_CHANGE";
     public static final String SYSTEM_STREAM = "SYSTEM";
+    public static final String DEVICE_MANAGEMENT_STREAM = "DEVICE_MANAGEMENT";
+    public static final String MANAGER_MANAGEMENT_STREAM = "MANAGER_MANAGEMENT";
     public static final String OPER_STATE_CHANGE = "oper-state-change";
     public static final String OLD_OPER_STATUS = "old-oper-status";
     public static final String NEW_OPER_STATUS = "new-oper-status";
     public static final String YANG_NAMESPACE = "urn:ietf:params:xml:ns:yang:ietf-yang-types";
+    public static final String COMMIT = "commit";
+    public static final String DISCARD_CHANGES = "discard-changes";
+    public static final String NETCONF_CANDIDATE = "urn:ietf:params:netconf:capability:candidate:1.0";
+    public static final String NETCONF_VALIDATE = "urn:ietf:params:netconf:capability:validate:1.1";
+    public static final String IS_FULL_DS_REBUILT = "IS_FULL_DS_REBUILT";
     /**
      * ietf-yang-types.yang: typedef date-and-time { type string { pattern
      * '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[\+\-]\d{2}:\d{2})'; }
@@ -195,10 +220,11 @@ public final class NetconfResources {
     public static final DateTimeFormatter DATE_TIME_WITH_TZ_WITHOUT_MS = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ssZZ");
     public static final Pattern DATE_TIME_WITH_TZ_WITH_MS_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)(Z|[\\+\\-]\\d{2}:\\d{2})");
     public static final Pattern DATE_TIME_WITH_TZ_WITHOUT_MS_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(Z|[\\+\\-]\\d{2}:\\d{2})");
+    public static final Pattern DATE_TIME_WITH_TZ_DOT_WITHOUT_MS_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.)(Z|[\\+\\-]\\d{2}:\\d{2})");
+
     public static final String IMPLICATION_CHANGE = "--automatic--";
 
     public static final String NC_NBI_CLIENT_IDLE_CONNECTION_TIMEOUT_MS = "NC_NBI_CLIENT_IDLE_CONNECTION_TIMEOUT_MS";
-
     public static DateTime parseDateTime(String dateTimeStr){
         return ISODateTimeFormat.dateTimeParser().parseDateTime(dateTimeStr);
     }
@@ -211,4 +237,14 @@ public final class NetconfResources {
         return DATE_TIME_WITH_TZ.print(dateTime);
     }
 
+    public static final List<QName> KNOWN_ATTRIBUTES = Arrays.asList( 
+            QName.create(NETCONF_RPC_NS_1_0, OPERATION),
+            QName.create(NETCONF_YANG_1, INSERT),
+            QName.create(NETCONF_YANG_1, VALUE),
+            QName.create(NETCONF_YANG_1, KEY),
+            QName.create(NC_STACK_EXTENSIONS_NS, VISIBILITY),
+            QName.create(NETCONF_RPC_NS_1_0, TYPE)
+            );
+    
+    public static final QName TRIGGER_SYNC_UPON_SUCCESS_QNAME = QName.create(EXTENSION_NS, TRIGGER_SYNC_UPON_SUCCESS);
 }

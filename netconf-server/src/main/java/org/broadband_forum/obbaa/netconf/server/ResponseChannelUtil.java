@@ -16,16 +16,17 @@
 
 package org.broadband_forum.obbaa.netconf.server;
 
-import org.apache.log4j.Logger;
-
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 
 public class ResponseChannelUtil {
 
-    private static final Logger LOGGER = Logger.getLogger(ResponseChannelUtil.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ResponseChannelUtil.class, LogAppNames.NETCONF_LIB);
 
     public static void sendResponse(ResponseChannel channel, AbstractNetconfRequest request, NetConfResponse response) {
         if (!channel.isSessionClosed()) {

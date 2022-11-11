@@ -1,12 +1,27 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.namespace.NamespaceContext;
-
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
+import org.broadband_forum.obbaa.netconf.mn.fwk.ChangeTreeNode;
 
 /**
  * This class is responsible for handling the netconf notifications which is happening in DataStore.java before pushing them to NBI client 
@@ -21,7 +36,7 @@ public interface NbiNotificationHelper {
 	 */
 
 	public void registerClassifier(SubSystem subsytem,
-			SubsystemNotificationClassifier classifier);
+			NotificationSegregator classifier);
 
 	/**
 	 * It builds the netconf notifications from the internal notifications which are sent to subsystems, 
@@ -29,6 +44,16 @@ public interface NbiNotificationHelper {
 	 */
 
 	public List<Notification> getNetconfConfigChangeNotifications(
-			Map<SubSystem, List<ChangeNotification>> subSystemNotificationMap,
-			NetconfClientInfo clientInfo, NamespaceContext namespaceContext);
+			Map<SubSystem, IndexedNotifList> subSystemNotificationMap,
+			NetconfClientInfo clientInfo);
+
+	/**
+	 * It builds the netconf notifications from the internal notifications.
+	 */
+
+	public List<Notification> getNetconfConfigChangeNotifications(
+			List<ChangeNotification> changeNotifications,
+			NetconfClientInfo clientInfo);
+
+	List<Notification> getNetconfConfigChangeNotificationsUsingAggregatorCTN(ChangeTreeNode aggregatorCTN, NetconfClientInfo clientInfo);
 }

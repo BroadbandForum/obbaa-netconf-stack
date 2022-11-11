@@ -17,11 +17,15 @@
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -32,12 +36,13 @@ import java.util.List;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.junit.Test;
 
 /**
  * Created by keshava on 4/28/15.
- * 
  */
 public class CertificateUtilTest {
     private static final String CERT_1 = "MIIC8zCCAdsCCQDO9DO6yC63WzANBgkqhkiG9w0BAQUFADBGMQswCQYDVQQGEwJJ\n"
@@ -141,6 +146,25 @@ public class CertificateUtilTest {
             + "NO6//1JqnHf/C/JwS3NF3GBB99B2BEEsAYB5nwcfAIUuVR6uZPuv7NmDOO4/Nm8Q\n"
             + "8iRLCrK4A1Ch0UFkLnmMcWPeMXd9cFcweMMD/p6WODC7Yxa1bTJj\n" + "-----END CERTIFICATE-----";
 
+    private static final String DELIMITED_CERT_2 = "-----BEGIN CERTIFICATE-----\n"
+            + "MIIDIjCCAgoCCQDO9DO6yC63WjANBgkqhkiG9w0BAQUFADBGMQswCQYDVQQGEwJJ"
+            + "TjELMAkGA1UECAwCS0ExDDAKBgNVBAcMA0JMUjEcMBoGA1UECgwTRGVmYXVsdCBD"
+            + "b21wYW55IEx0ZDAgFw0xNTAzMzEwOTAyNTJaGA8yMTUyMDIyMTA5MDI1MlowXjEL"
+            + "MAkGA1UEBhMCSU4xCzAJBgNVBAgMAktBMQwwCgYDVQQHDANCTFIxDDAKBgNVBAoM"
+            + "A0FMVTENMAsGA1UECwwERk5CTDEXMBUGA1UEAwwOMTM1LjI1MC4xNy4xMDAwggEi"
+            + "MA0GCSqGSIb3DQEBAQUA  A4IBDwAwggEKAoIBAQCo0e6xJZ2jKYE1ewed+VFPKmx6"
+            + "YdZPCTKKZqzGA0VgrDNpi4VYJtw45w51niftZ8S810dynEzM4mjVanNUTrL/FyVT"
+            + "q/FIbmUA2UGizkt1+8hh1Dd7q3wQDk360o7MhkltWBx+visGxT7EjAsOY/WIVq/A"
+            + "C7WpRAuS8yg59QB49pmFe1kXOnBsWzEDienZeUoVQHqoLOpv1BYMJEYh9bdq7R3G"
+            + "gX0/L8SNNnVbFePGKKIYgKApNvRGDJ\txVbE97de038C6VDsoZSAbxXvUayJ49+Ppl"
+            + "Do3y3DZWoAPrkKWqzMt6MCm2i0loebQe4+H/AV2iEB5Rs8ypEliYR60Aj4qvAgMB"
+            + "AAEwDQYJKoZIhvcNAQEFBQADggEBAATeGl17FWADCqWZ5seA816J24hliA/r1vuf"
+            + "Sk/7GSDCm3V8bX6qUTPMEWcuLOw727ySl4nrl4wfhAm4ZdIess4DMwCsJsu4LxpA"
+            + "OWK5GYQDuvicmMr2njTjw9cjnweSWHdNCltct5EcazjfuDEdj6TZFi6ZWLbBk3pE"
+            + "x2xoe6Cry59PKlgzzkUWgwbXA/KB0KBzSif9BFfwFxmUOfaklBrTwjwfZuAkYXa2"
+            + "Ce/wGXz2wMc3AOW26Jt0mrkFUb6e417vZfdgjjdwqxbY2JAWCn+7KCrAmeeXDH8G"
+            + "JHOJLRLRJSs9SzbLbfMT1DwlRovUA0GHjLz2xAiMSD//z+wUpig=" + "-----END CERTIFICATE-----";
+
     private static final String PEER_CERT = "MIIDpDCCAowCCQCBGDthXaSq4zANBgkqhkiG9w0BAQsFADCBjDELMAkGA1UEBhMC\n"
             + "SU4xEjAQBgNVBAgMCVRhbWlsbmFkdTEQMA4GA1UEBwwHQ2hlbm5haTEUMBIGA1UE\n"
             + "CgwLQ0EgUHZ0LiBMdGQxFjAUBgNVBAsMDUNBIERlcGFydG1lbnQxDzANBgNVBAMM\n"
@@ -159,7 +183,7 @@ public class CertificateUtilTest {
             + "a8+/cC97Cdw0mvQBqEjC5ABc0VcTgnokN7UYCuIRXbI+eWdIkZkfGW4HcziTPDv2\n"
             + "ZooKXrqREUpBE4d3v+4HR/Kn57FKCDIP8jyiO5oRZIzLnBFp4RuZPxlSi5f8ImrZ\n"
             + "xVkkUZaJMREB9u6ucP8aFQctCuqnq9DrbcbR+t8Qi9VPVAojU+pc16uqhS2P9/98\n"
-            + "OmEz0e5n154YpYsbh/IoMvZ55aOV6SjSbgLaL4bx7NWNllIncakVX+TnR4LrPeAM\n" 
+            + "OmEz0e5n154YpYsbh/IoMvZ55aOV6SjSbgLaL4bx7NWNllIncakVX+TnR4LrPeAM\n"
             + "Gbb5tJYvB7VFbLJm029Jx4yI8MWnCSbA\n";
 
     private static final String CA_CERT = "MIIDrzCCApcCCQCVj1/2EkeoqTANBgkqhkiG9w0BAQsFADCBpTELMAkGA1UEBhMC\n"
@@ -180,7 +204,7 @@ public class CertificateUtilTest {
             + "+Ip1DAk0xhDnuAs549RQFsAQqZaUBiu3+V1neBw47v9UvS5VAgLP58UyMsyS2AEa\n"
             + "xkXha9kZFuULTPWpBcQM/lpjArJ+rxpeQ6AwrG0EpSfoKoRpFcv+RtP39EFysXLn\n"
             + "Ntnc96a5wZPZdW5ENR3GI3vMKvMLda9NcKrVWDtvIjI36vKQO/fpQmqjlusQ8QMC\n"
-            + "q3OLxgkdAcyBdjMY7kcmJXHDKM8g6XNUDq3OyLlHcBdsZ/Cr0bKVlxDJLK/wzRjq\n" 
+            + "q3OLxgkdAcyBdjMY7kcmJXHDKM8g6XNUDq3OyLlHcBdsZ/Cr0bKVlxDJLK/wzRjq\n"
             + "LWjLygha9PgeCPi/s9YwuGQTj1SOnY+5hcB6eQ8I/SQQTaU=\n";
 
     private static final String ROOT_CA_CERT = "MIIEHzCCAwegAwIBAgIJAPqIoyFtil02MA0GCSqGSIb3DQEBCwUAMIGlMQswCQYD\n"
@@ -204,22 +228,21 @@ public class CertificateUtilTest {
             + "oe/KAmMbghC0htKuS+UiGoRDLgp+iJzA4inoca4Zv9nI2/fyp5Gcg2oxYBR87NZi\n"
             + "16o2RQTIXVU2SA+FVFEt8BmiVkJiECF78f95MsbqTRiHFg/siNrLmojAw9K20Fby\n"
             + "SZs7S/tUg4AGbdtj+jo2vDZjy+5u83edgqpXLtEkx9Hm/CzzPyljQoj7yap6E3vg\n"
-            + "juMOo5L6L4haKLNgl5qGbk5B4kpb7dYw+PaArODkYKhPIu+0FxNXVkdNwfLbMrhW\n" 
+            + "juMOo5L6L4haKLNgl5qGbk5B4kpb7dYw+PaArODkYKhPIu+0FxNXVkdNwfLbMrhW\n"
             + "mRfL\n";
 
-    private static final Logger LOGGER = Logger.getLogger(CertificateUtilTest.class);
+
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(CertificateUtilTest.class, LogAppNames.NETCONF_LIB);
 
     @Test
-    public void testCertificatesAreRead() throws TrustManagerInitException, CertificateException {
+    public void testCertificatesAreRead() throws CertificateException {
 
         List<String> caCerts = new ArrayList<>();
         caCerts.add(CERT_1);
         caCerts.add(CERT_2);
         caCerts.add(CERT_3);
-        List<ByteArrayCertificate> byteCertificates = CertificateUtil.getByteArrayCertificates(caCerts);
-        assertEquals(3, byteCertificates.size());
 
-        List<X509Certificate> x509Certificates = CertificateUtil.getX509Certificates(byteCertificates);
+        List<X509Certificate> x509Certificates = CertificateUtil.getX509Certificates(caCerts);
         assertEquals(3, x509Certificates.size());
         X509Certificate certificate1 = x509Certificates.get(0);
         X509Certificate certificate2 = x509Certificates.get(1);
@@ -227,25 +250,16 @@ public class CertificateUtilTest {
         assertEquals("CN=ALU, OU=FNBL, O=Alcatel", certificate1.getSubjectDN().getName());
         assertEquals("CN=135.250.17.100, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", certificate2.getSubjectDN().getName());
         assertEquals("CN=135.250.17.100, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", certificate3.getSubjectDN().getName());
-
-        x509Certificates = CertificateUtil.getX509CertificatesFromCertificateStrings(caCerts);
-        assertEquals(3, x509Certificates.size());
-        certificate1 = x509Certificates.get(0);
-        certificate2 = x509Certificates.get(1);
-        certificate3 = x509Certificates.get(2);
-        assertEquals("CN=ALU, OU=FNBL, O=Alcatel", certificate1.getSubjectDN().getName());
-        assertEquals("CN=135.250.17.100, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", certificate2.getSubjectDN().getName());
-        assertEquals("CN=135.250.17.100, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", certificate3.getSubjectDN().getName());
     }
 
     @Test
-    public void testInvalidCertificatesAreNotRead() {
+    public void testInvalidCertificatesAreNotRead() throws IOException {
 
         List<String> caCerts = new ArrayList<>();
         caCerts.add(INVALID_CERT_1);
         caCerts.add(INVALID_CERT_2);
         try {
-            CertificateUtil.getX509Certificates(CertificateUtil.getByteArrayCertificates(caCerts));
+            CertificateUtil.getX509Certificates(caCerts);
             fail("invalid certificates were parsed !");
         } catch (CertificateException e) {
             // we are ok, but lets log the exceptions
@@ -254,31 +268,11 @@ public class CertificateUtilTest {
     }
 
     @Test
-    public void testMultipleCertificatesAreRead() throws CertificateException {
-        List<String> certificateStrings = CertificateUtil
-                .certificateStringsFromFile(new File(getClass().getResource("/keyMgrTest/multipleCertificates.crt").getPath()));
-        assertEquals(3, certificateStrings.size());
-    }
-
-    @Test
-    public void testDelimiterBasedCertificateString() throws CertificateException {
-
-        List<ByteArrayCertificate> byteArrayCertificates = new ArrayList<>();
-        ByteArrayCertificate byteCertificate = CertificateUtil.getByteArrayCertificateFromDelimitedString(DELIMITED_CERT_1);
-        byteArrayCertificates.add(byteCertificate);
-
-        List<X509Certificate> x509Certificates = CertificateUtil.getX509Certificates(byteArrayCertificates);
-        assertEquals(1, x509Certificates.size());
-        X509Certificate certificate1 = x509Certificates.get(0);
-        assertEquals("CN=ALU, OU=FNBL, O=Alcatel", certificate1.getSubjectDN().getName());
-    }
-
-    @Test
-    public void testGetPeerX509Certifcate() throws SSLPeerUnverifiedException, CertificateException {
+    public void testGetPeerX509Certifcate() throws SSLPeerUnverifiedException, CertificateException, IOException {
         //prepare sslSession with peer certificate chain
         SSLSession sSLSession = mock(SSLSession.class);
-        List<ByteArrayCertificate> byteCertificates = CertificateUtil.getByteArrayCertificates(Arrays.asList(PEER_CERT, CA_CERT, ROOT_CA_CERT));
-        List<X509Certificate> peerCertificateChain = CertificateUtil.getX509Certificates(byteCertificates);
+        List<String> certificateChain = Arrays.asList(PEER_CERT, CA_CERT, ROOT_CA_CERT);
+        List<X509Certificate> peerCertificateChain = CertificateUtil.getX509Certificates(certificateChain);
 
         //assert certificate chain is loaded in order as peer certificate first to root ca last
         assertEquals("EMAILADDRESS=peer@peer.com, CN=www.peer.com, OU=Peer Department, O=Peer Pvt. Ltd, L=Chennai, ST=Tamilnadu, C=IN",
@@ -297,4 +291,59 @@ public class CertificateUtilTest {
         assertEquals("EMAILADDRESS=peer@peer.com, CN=www.peer.com, OU=Peer Department, O=Peer Pvt. Ltd, L=Chennai, ST=Tamilnadu, C=IN", peerCertificate.getSubjectDN().getName());
 
     }
+
+    @Test
+    public void testGetX509Certificates() throws CertificateException, IOException {
+        File trustChainFile = new File(getClass().getResource("/trustchain.crt").getPath());
+        List<X509Certificate> x509Certificates = CertificateUtil.getX509Certificates(new FileInputStream(trustChainFile));
+        assertEquals(3, x509Certificates.size());
+        X509Certificate certificate1 = x509Certificates.get(0);
+        X509Certificate certificate2 = x509Certificates.get(1);
+        X509Certificate certificate3 = x509Certificates.get(2);
+
+        assertEquals("CN=ALU, OU=FNBL, O=Alcatel", certificate1.getSubjectDN().getName());
+        assertEquals("CN=135.250.17.100, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", certificate2.getSubjectDN().getName());
+        assertEquals("CN=135.250.17.100, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", certificate3.getSubjectDN().getName());
+    }
+
+    @Test
+    public void testGetx509CertificateFromDelimitedString() throws CertificateException {
+        X509Certificate x509Certificate = CertificateUtil.getX509CertificateFromDelimitedString(DELIMITED_CERT_1);
+        assertEquals("CN=ALU, OU=FNBL, O=Alcatel", x509Certificate.getSubjectDN().getName());
+    }
+
+    @Test
+    public void testGetx509CertificatesFromDelimitedStrings() throws CertificateException {
+        List<X509Certificate> x509Certificates = CertificateUtil.getX509CertificatesFromDelimitedStrings(Arrays.asList(DELIMITED_CERT_1, DELIMITED_CERT_2));
+        assertEquals("CN=ALU, OU=FNBL, O=Alcatel", x509Certificates.get(0).getSubjectDN().getName());
+        assertEquals("CN=135.250.17.100, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", x509Certificates.get(1).getSubjectDN().getName());
+    }
+
+    @Test
+    public void testGetx509CertificatesForInvalidCertString() throws IOException {
+        File trustChainFile = new File(getClass().getResource("/keyMgrTest/multipleCertificates.crt").getPath());
+        try {
+            CertificateUtil.getX509Certificates(new FileInputStream(trustChainFile));
+            fail("Certificate exception should have been thrown");
+        } catch (CertificateException ex) {
+            assertEquals("Unable to initialize, java.io.IOException: extra data given to DerValue constructor", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetx509CertificateFromEmptyString() {
+        try {
+            CertificateUtil.getX509CertificateFromDelimitedString("");
+            fail("Certificate exception should have been thrown");
+        } catch (CertificateException ex) {
+            assertEquals("Could not parse certificate: java.io.IOException: Empty input",ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testGetx509CertificateFromEmptyStream() throws CertificateException {
+        List<X509Certificate> certificates = CertificateUtil.getX509Certificates(new ByteArrayInputStream(new String().getBytes()));
+        assertTrue(certificates.isEmpty());
+    }
+
 }

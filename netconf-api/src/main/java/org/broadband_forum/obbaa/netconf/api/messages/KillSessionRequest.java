@@ -16,13 +16,15 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.KILL_SESSION;
+
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <kill-session>} operation.
  * 
- *
+ * 
  * 
  */
 public class KillSessionRequest extends AbstractNetconfRequest {
@@ -47,6 +49,11 @@ public class KillSessionRequest extends AbstractNetconfRequest {
     @Override
     public String toString() {
         return "KillSessionRequest [sessionId=" + m_sessionId + "]";
+    }
+
+    @Override
+    public String getRpcType() {
+        return KILL_SESSION;
     }
 
 }

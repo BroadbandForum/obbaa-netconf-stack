@@ -1,0 +1,104 @@
+module example-jukebox {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox";
+
+    prefix jbox;
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module to test leaf-list in annotation based DSM(entity modelling)";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+    identity dummy-id-ref{
+        description "Base for all dummy-id-ref attribute under album";
+    }
+
+    identity dummy-id-ref1 {
+        base dummy-id-ref;
+        description "dummy-id-ref1";
+    }
+
+    identity dummy-id-ref2 {
+        base dummy-id-ref;
+        description "dummy-id-ref2";
+    }
+
+    identity dummy-id-ref3 {
+        base dummy-id-ref;
+        description "dummy-id-ref3";
+    }
+
+    container jukebox {
+      presence
+        "An empty container indicates that the jukebox
+        service is available";
+      description
+        "Represents a jukebox resource, with a library, playlists,
+        and a play operation.";
+      container library {
+        description
+          "Represents the jukebox library resource.";
+        list artist {
+          key "name";
+          description
+            "Represents one artist resource within the
+            jukebox library resource.";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "The name of the artist.";
+          }
+
+          list album {
+            key "name";
+            description
+              "Represents one album resource within one
+              artist resource, within the jukebox library.";
+            leaf name {
+              type string {
+                length "1 .. max";
+              }
+              description
+                "The name of the album.";
+            }
+
+            leaf-list singer {
+                type string;
+                ordered-by user;
+                description "A list of singers";
+            } // leaf-list singer
+
+            leaf-list dummy-leaf-list-id-ref {
+                type identityref {
+                    base dummy-id-ref;
+                }
+                ordered-by user;
+                description "A dummy leaflist of type id-ref";
+            } // leaf-list dummy-leaf-list-id-ref
+
+            leaf year {
+              type uint16 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+          }  // list album
+        }  // list artist
+      }  // container library
+    }  // container jukebox
+  }  // module example-jukebox

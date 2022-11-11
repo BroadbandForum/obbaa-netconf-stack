@@ -1,21 +1,37 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.WrappedService;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
  * Created by keshava on 6/12/15.
  */
-public interface EntityRegistry {
+public interface EntityRegistry extends WrappedService<EntityRegistry> {
 
     QName getQName(Class aClass);
 
@@ -54,6 +70,15 @@ public interface EntityRegistry {
     void addYangXmlSubtreeSetter(Class klass, Method yangXmlSubtreeSetter);
     Method getYangXmlSubtreeSetter(Class klass);
 
+    void addYangVisibilityControllerGetter(Class klass, Method yangXmlSubtreeGetter);
+    Method getYangVisibilityControllerGetter(Class klass);
+
+    void addYangVisibilityControllerSetter(Class klass, Method yangXmlSubtreeSetter);
+    Method getYangVisibilityControllerSetter(Class klass);
+
+    void addEagerFetchInfo(Class klass, Boolean eagerlyFetchXmlSubtree);
+    Boolean getEagerFetchInfo(Class klass);
+
     void addYangLeafListGetters(Class subrootClass, Map<QName, Method> yangLeafListGetters);
     Map<QName, Method> getYangLeafListGetters(Class klass);
 
@@ -89,4 +114,8 @@ public interface EntityRegistry {
     void addClassWithYangParentSchemaPathAnnotation(String componentId, Class klass);
 
     boolean classHasYangParentSchemaPathAnnotation(Class<?> klass);
+
+    List<EntityOnDeleteInterceptor> getEntityOnDeleteInterceptor(Class<?> klass);
+
+    void registerEntityOnDeleteInterceptor(Class<?> klass, EntityOnDeleteInterceptor entityOnDeleteInterceptor);
 }

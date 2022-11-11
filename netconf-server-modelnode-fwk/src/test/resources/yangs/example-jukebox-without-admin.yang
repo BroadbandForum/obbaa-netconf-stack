@@ -1,0 +1,117 @@
+module example-jukebox-without-admin {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox-without-admin";
+
+    prefix jbox;
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+
+
+    identity genre {
+      description "Base for all genre types";
+    }
+
+    identity alternative {
+      base genre;
+      description "Alternative music";
+    }
+
+    identity blues {
+      base genre;
+      description "Blues music";
+    }
+
+    identity country {
+      base genre;
+      description "Country music";
+    }
+
+    identity jazz {
+      base genre;
+      description "Jazz music";
+    }
+
+    identity pop {
+      base genre;
+      description "Pop music";
+    }
+
+    identity rock {
+      base genre;
+      description "Rock music";
+    }
+
+ 
+    container jukebox {
+      presence
+        "An empty container indicates that the jukebox
+        service is available";
+      description
+        "Represents a jukebox resource, with a library, playlists,
+        and a play operation.";
+      container library {
+        description
+          "Represents the jukebox library resource.";
+        list artist {
+          key "name";
+          description
+            "Represents one artist resource within the
+            jukebox library resource.";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "The name of the artist.";
+          }
+
+          list album {
+            key "name";
+            ordered-by user;
+            description
+              "Represents one album resource within one
+              artist resource, within the jukebox library.";
+            leaf name {
+              type string {
+                length "1 .. max";
+              }
+              description
+                "The name of the album.";
+            }
+
+            leaf genre {
+              type identityref {
+                base genre;
+              }
+              description
+                "The genre identifying the type of music on
+                the album.";
+            }
+
+            leaf year {
+              type uint16 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+          }  // list album
+        }  // list artist
+      }  // container library
+    }  // container jukebox
+  }  // module example-jukebox-without-admin

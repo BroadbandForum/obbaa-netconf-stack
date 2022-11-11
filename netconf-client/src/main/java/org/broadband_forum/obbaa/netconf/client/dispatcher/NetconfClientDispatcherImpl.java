@@ -20,8 +20,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.sshd.common.util.SecurityUtils;
-
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcher;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcherException;
@@ -35,22 +33,12 @@ import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 /**
  * A dispatcher that returns a client session for all supported transport types.
  *
- *
+ * 
  */
 public class NetconfClientDispatcherImpl implements NetconfClientDispatcher {
 
     private NetconfClientDispatcher m_sshClientDispatcher;
     private NetconfClientDispatcher m_callhomeTlsClientDispatcher;
-
-    static {
-        // register bouncy castle as apache sshd security provider        
-        SecurityUtils.setRegisterBouncyCastle(true);
-        /**
-         * SecurityUtils does not expose register() as public method. 
-         * need to call isBouncyCastleRegistered() which in-turn register egarly
-         */
-        SecurityUtils.isBouncyCastleRegistered();
-    }
 
     /**
      * For UTs only
@@ -68,11 +56,11 @@ public class NetconfClientDispatcherImpl implements NetconfClientDispatcher {
     }
 
     public NetconfClientDispatcherImpl(ExecutorService executorService) {// NOSONAR
-        this(executorService, executorService);
+        this(executorService, executorService, executorService);
     }
 
-    public NetconfClientDispatcherImpl(ExecutorService executorService, ExecutorService callHomeExecutorService) {// NOSONAR
-        m_sshClientDispatcher = new SshClientDispatcherImpl(executorService);
+    public NetconfClientDispatcherImpl(ExecutorService executorService, ExecutorService callHomeExecutorService, ExecutorService sbiSshSessionExecutor) {// NOSONAR
+        m_sshClientDispatcher = new SshClientDispatcherImpl(executorService, sbiSshSessionExecutor);
         m_callhomeTlsClientDispatcher = new CallhomeTlsClientDispatcherImpl(executorService, callHomeExecutorService);
     }
 
@@ -128,7 +116,7 @@ public class NetconfClientDispatcherImpl implements NetconfClientDispatcher {
     }
 
     @Override
-    public Future<TcpServerSession> createReverseClient(NetconfClientConfiguration config) throws NetconfClientDispatcherException,ExecutionException {
+    public Future<TcpServerSession> createReverseClient(NetconfClientConfiguration config) throws NetconfClientDispatcherException, ExecutionException {
         NetconfTransport transport = config.getTransport();
         if (transport.getTranportProtocol().equals(NetconfTransportProtocol.REVERSE_TLS.name())) {
             return m_callhomeTlsClientDispatcher.createReverseClient(config);

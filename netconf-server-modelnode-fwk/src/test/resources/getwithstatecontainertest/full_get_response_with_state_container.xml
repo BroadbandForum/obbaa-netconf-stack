@@ -73,6 +73,7 @@
         <album-count xmlns="http://example.com/ns/example-jukebox">1</album-count>
         <artist-count xmlns="http://example.com/ns/example-jukebox">2</artist-count>
         <song-count xmlns="http://example.com/ns/example-jukebox">5</song-count>
+        <case2-leaf xmlns="http://example.com/ns/example-jukebox">case2-leaf-value</case2-leaf>
       </jbox:library>
     </jbox:jukebox>
   </data>

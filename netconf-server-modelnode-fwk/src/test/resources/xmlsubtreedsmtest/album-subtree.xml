@@ -8,4 +8,7 @@
         <location>somelocation</location>
         <format>mp3</format>
     </song>
+    <admin>
+    	<label>test</label>
+    </admin>
 </album>

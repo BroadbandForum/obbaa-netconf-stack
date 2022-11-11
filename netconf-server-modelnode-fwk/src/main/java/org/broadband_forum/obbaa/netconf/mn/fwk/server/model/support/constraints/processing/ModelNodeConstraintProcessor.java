@@ -1,9 +1,26 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.processing;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +34,7 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.ChoiceCaseNodeUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditChangeNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
@@ -189,7 +207,7 @@ public class ModelNodeConstraintProcessor {
     }
 
     public static Map<QName, Object> handleChoiceCaseNode(SchemaRegistry schemaRegistry, Map<QName, ? extends ConstraintHelper> helpers,
-            ModelNode modelNode, QName qName) throws GetAttributeException, SetAttributeException, ModelNodeDeleteException {
+            ModelNode modelNode, QName qName) throws GetAttributeException, ModelNodeDeleteException {
         Map<QName, Object> oldValues = new HashMap<>();
         SchemaPath descendantPath = schemaRegistry.getDescendantSchemaPath(modelNode.getModelNodeSchemaPath(), qName);
         if (descendantPath != null) {
@@ -224,8 +242,16 @@ public class ModelNodeConstraintProcessor {
         return oldValues;
     }
 
-    public static void validateInsertRequest(EditChangeNode changeNode, Set<ConfigLeafAttribute> existedValues, String leafListOperation,
-            InsertOperation insertOperation, ModelNode modelNode) throws GetAttributeException, SetAttributeException {
+    public static void validateInsertRequest(EditChangeNode changeNode, String leafListOperation,
+                                             InsertOperation insertOperation, ModelNode parentModelNode,
+                                             SchemaRegistry schemaRegistry, ChildLeafListHelper helper) throws GetAttributeException, SetAttributeException {
+        Set<ConfigLeafAttribute> existedValues = new HashSet<>();
+
+        ModelNode reloadedParentNode = parentModelNode.getModelNodeDSM().findNode(parentModelNode.getModelNodeSchemaPath(), MNKeyUtil.getModelNodeKey(parentModelNode, schemaRegistry),
+                EMNKeyUtil.getParentId(schemaRegistry, parentModelNode.getModelNodeSchemaPath(), parentModelNode.getModelNodeId()), parentModelNode.getSchemaRegistry());
+
+        existedValues.addAll(helper.getValue(reloadedParentNode));
+
         if (insertOperation.getName().equals(InsertOperation.AFTER) || insertOperation.getName().equals(InsertOperation.BEFORE)) {
             boolean isLeafListNodeExists = false;
             Iterator<ConfigLeafAttribute> iterator = existedValues.iterator();

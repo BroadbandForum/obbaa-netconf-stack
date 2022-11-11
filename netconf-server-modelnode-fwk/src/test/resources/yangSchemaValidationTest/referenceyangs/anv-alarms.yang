@@ -8,6 +8,14 @@ module anv-alarms {
     description
         "This module is an interface for managing alarms.";
 
+    revision 2021-04-20 {
+    		description "Type of offset leaf modified from binary to int32 in rpcs";
+    }
+
+    revision 2020-04-20 {
+		description "Type of offset leaf modified from binary to int32 in rpcs";	
+    }
+    
     revision 2016-05-03 {
         description
                 "Initial version";
@@ -92,6 +100,20 @@ module anv-alarms {
             description
                         "This leaf provides a unique identification of the alarm type.
                         Note this field is not currently used to identify an alar";
+        }
+        leaf service-affecting {
+            type boolean;
+            description
+              "Optional leaf. When missing, the service-affecting condition is 'unknown'.
+               Value 'true' indicates that a service-affecting condition has occurred.";
+        }
+        leaf proposed-repair-actions {
+            type string;
+            description
+              "This parameter, when present, is used if the cause is
+               known and the system being managed can suggest one or
+               more solutions (such as switch in standby equipment,
+               retry, and replace media).";
         }
     }
 
@@ -275,7 +297,7 @@ module anv-alarms {
                                 "The maximum number of alarms to be returned in the output.";
             }
             leaf offset {
-                type binary;
+                type int32;
                 description
                                 "The database offset for the first alarm in the chunk to be collected.
                                 The offset is typically not provided in the initial invocation
@@ -287,7 +309,7 @@ module anv-alarms {
         // input
         output {
             leaf offset {
-                type binary;
+                type int32;
                 description
                                 "See description of offset as input. Not returned when the end
                                 of the current alarm list is reached.";

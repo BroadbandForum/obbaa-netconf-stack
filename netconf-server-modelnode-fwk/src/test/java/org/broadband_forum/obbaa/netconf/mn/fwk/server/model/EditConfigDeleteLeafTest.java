@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
@@ -11,12 +27,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.xml.sax.SAXException;
-
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
@@ -24,7 +34,6 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorSeverity;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.restaurant.RestaurantConstants;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
@@ -41,12 +50,22 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreValidatorImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.service.DataStoreIntegrityServiceImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.restaurant.RestaurantConstants;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class EditConfigDeleteLeafTest extends AbstractEditConfigTestSetup {
 
 	private NetConfServerImpl m_server;
@@ -80,10 +99,12 @@ public class EditConfigDeleteLeafTest extends AbstractEditConfigTestSetup {
 		m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
 		m_schemaRegistry.loadSchemaContext("restaurant", Arrays.asList(TestUtil.getByteSource("/leaftest/example-restaurant.yang")), Collections.emptySet(), Collections.emptyMap());
 		m_modelNodeDsm = new InMemoryDSM(m_schemaRegistry);
+		m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
 		m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
 				mock(ModelNodeDataStoreManager.class), m_subSystemRegistry);
 		m_server = new NetConfServerImpl(m_schemaRegistry);
 		m_integrityService = new DataStoreIntegrityServiceImpl(m_server);
+		m_expValidator = new DSExpressionValidator(m_schemaRegistry, m_modelNodeHelperRegistry, m_subSystemRegistry);
 		m_datastoreValidator = new DataStoreValidatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_modelNodeDsm, m_integrityService, m_expValidator);
 
 		YangUtils.deployInMemoryHelpers(yangFilePath, new LocalSubSystem(), m_modelNodeHelperRegistry,

@@ -1,3602 +1,4019 @@
 module datastore-validator-test {
-	
-	yang-version 1;
-    
-	namespace "urn:org:bbf:pma:validation";
-	
-	prefix "validation";
-	
-    import ietf-inet-types {
-          prefix inet;
-	}
-    
-    import datastore-validator-grouping-test {
-    	prefix lb;
-    }
-	
-	revision "2015-12-14" {
-	      description "Initial version.";
-	}
-	
-	identity some-identity {
-	}
-	
-	identity identity1 {
-		base some-identity;
-	}
-	
-	identity identity2 {
-		base some-identity;
-	}
+  yang-version 1;
+  namespace "urn:org:bbf2:pma:validation";
+  prefix validation;
 
-	typedef test-interface-ref {
-		type leafref {
-		   path "/validation:validation/validation:test-interfaces/validation:test-interface/validation:name";
-		}
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import dummy-extensions {
+    prefix anvext;
+    revision-date 2016-01-07;
+  }
+  import datastore-validator-grouping-test {
+    prefix lb;
+  }
+  import test-interfaces {
+    prefix if;
+  }
+
+  revision 2015-12-14 {
+    description
+      "Initial version.";
+  }
+
+  identity some-identity;
+
+  identity identity1 {
+    base some-identity;
+  }
+
+  identity identity2 {
+    base some-identity;
+  }
+
+  identity authentication-method {
+    description
+      "Base identity for user authentication methods.";
+  }
+
+  identity radius {
+    base authentication-method;
+  }
+
+  identity local-users {
+    base authentication-method;
+  }
+
+  feature local-storage {
+    description
+      "This feature means that the server supports local
+       storage (memory, flash, or disk) that can be used to
+       store syslog messages.";
+  }
+
+  typedef test-interface-ref {
+    type leafref {
+      path "/validation:validation/validation:test-interfaces/validation:test-interface/validation:name";
     }
-	    
-    grouping group1 {
-        container groupContainer1 {
-            leaf groupContainerLeaf1 {
-               type leafref {
-                   path "/validation:validation/validation:validation";
-                }
-            }
+  }
+
+  typedef mode-profile-ref {
+    type leafref {
+      path "/validation:validation3/validation:spectrum/validation:mode-profile/validation:name";
+    }
+  }
+
+  typedef data-decimal64-test-default {
+    type decimal64 {
+      fraction-digits 1;
+      range "1.5..2.5";
+    }
+    default "1.6";
+  }
+
+  typedef data-decimal64-test-default2 {
+    type data-decimal64-test-default;
+    default "1.8";
+  }
+
+  typedef custom-type-pattern {
+    type string {
+      pattern '[a-z].*' {
+        error-message "Provide pattern should between a to z";
+        error-app-tag "Pattern does not match specified customtype constrain pattern";
+      }
+    }
+    default "xy";
+  }
+
+  typedef custom-subtype-pattern {
+    type custom-type-pattern {
+      pattern '[e-l].*' {
+        error-message "Provide pattern should between e to l";
+        error-app-tag "Pattern does not match specified customsubtype constrain pattern";
+      }
+    }
+    default "hij";
+  }
+
+  grouping group1 {
+    container groupContainer1 {
+      leaf groupContainerLeaf1 {
+        type leafref {
+          path "/validation:validation/validation:validation";
         }
-
-        container groupContainer2 {
-        	leaf groupContainerLeaf2 {
-        		type leafref {
-        			path "/validation/validation";
-        		}
-        	}
-        }        
+      }
     }
-
-
-    grouping group-ref {
-        leaf group-name {
-            mandatory true;
-            type string;
+    container groupContainer2 {
+      leaf groupContainerLeaf2 {
+        type leafref {
+          path "/validation/validation";
         }
-        leaf group-id {
-            mandatory true;
-            type string;
-        }
+      }
     }
-    
-    grouping policy-entry-ref {
-        leaf name {
-          type leafref {
-            path "/validation:validation3" +
-             "/validation:policies" +
-    	     "/validation:policy" +
-    	     "/validation:name";
+  }
+
+  grouping leafref-grouping {
+    leaf grouping-leafref {
+      type leafref {
+        path "../leaf1";
+      }
+    }
+    leaf leafref-validation {
+      type leafref {
+        path "/validation/leafref-validation-list[name = current()/../leaf1]/ref-value";
+      }
+    }
+  }
+
+  grouping group-ref {
+    leaf group-name {
+      mandatory true;
+      type string;
+    }
+    leaf group-id {
+      mandatory true;
+      type string;
+    }
+  }
+
+  grouping policy-entry-ref {
+    leaf name {
+      type leafref {
+        path "/validation:validation3/validation:policies/validation:policy/validation:name";
+      }
+    }
+  }
+
+  grouping classifier-entry-ref {
+    leaf name {
+      type leafref {
+        path "/validation:validation3/validation:classifiers/validation:classifier-entry/validation:name";
+      }
+    }
+  }
+
+  grouping classifier-entry-inline-attr {
+    container match-criteria {
+      uses dscp-match;
+    }
+  }
+
+  grouping dscp-match {
+    leaf dscp-range {
+      type union {
+        type string;
+        type enumeration {
+          enum any {
+            description
+              "Matches 'any' dscp value in the range of 0 to 63.";
           }
         }
       }
-    grouping classifier-entry-ref {
-        leaf name {
-          type leafref {
-            path "/validation:validation3" +
-             "/validation:classifiers" +
-    	     "/validation:classifier-entry" +
-    	     "/validation:name";
-          }
-        }
-      }
-    
-    grouping classifier-entry-inline-attr {
+      default "any";
+    }
+  }
 
-        container match-criteria {
-          uses dscp-match;
-        }
+  container validate-customsubtype-string-defaultvalue {
+    container test-container {
+      leaf leaf1 {
+        type custom-subtype-pattern;
       }
-    
-    grouping dscp-match {
-        leaf dscp-range {
+    }
+  }
+  container validate-customtype-string-defaultvalue {
+    container test-container {
+      leaf leaf1 {
+        type custom-type-pattern;
+      }
+    }
+  }
+  container stateValue1 {
+    container child {
+      leaf value1 {
+        type string;
+        config false;
+        default "test";
+      }
+      leaf value2 {
+        type string;
+      }
+    }
+  }
+  container order-by-user-validation {
+    list orderByUserList {
+      key "someKey";
+      ordered-by user;
+      leaf someKey {
+        type string;
+      }
+      leaf value {
+        type string;
+        default "4";
+      }
+    }
+    list orderByUserListMultiKey {
+      key "firstKey secondKey";
+      ordered-by user;
+      leaf firstKey {
           type union {
-            type string;
+            type identityref {
+              base some-identity;
+            }
             type enumeration {
-              enum "any" {
-                description
-                  "Matches 'any' dscp value in the range of 0 to 63.";
+              enum all;
+            }
+          }
+      }
+      leaf secondKey {
+        type string;
+      }
+      leaf value {
+        type string;
+        default "4";
+      }
+    }
+    list leafRefTarget {
+        key "someKey";
+        leaf someKey {
+            type string;
+        }
+    }
+    list orderByUserListWithLeafRef {
+        key "someKey";
+        ordered-by user;
+        leaf someKey {
+          type leafref {
+              path "../../leafRefTarget/someKey";
+          }
+        }
+      }
+  }
+  container container-leaf-with-default {
+    leaf test {
+      type string;
+    }
+    leaf decimal64-fraction1-with-default-value-type {
+      type data-decimal64-test-default;
+      default "2.4";
+    }
+    leaf decimal64-fraction1-with-default-value-type2 {
+      type data-decimal64-test-default2;
+    }
+  }
+  container validation1 {
+    must 'count(list1) <= 1';
+    leaf leaf1 {
+      type string;
+      default "leaf1";
+    }
+    list list1 {
+      key "key1";
+      leaf key1 {
+        type string;
+      }
+    }
+  }
+  container decimal64-type-validation7 {
+    list type-validation {
+      key "id";
+      leaf id {
+        type string;
+      }
+      leaf decimal64-fraction1-with-default-value-type {
+        type data-decimal64-test-default;
+      }
+      leaf decimal64-fraction1-with-default-value-type2 {
+        type data-decimal64-test-default2;
+      }
+      leaf decimal64-fraction1-with-default-value-type3 {
+        type data-decimal64-test-default2;
+        default "2.0";
+      }
+    }
+  }
+  container must-presence-validation {
+    container referred-container;
+    container referring-container {
+      must '/validation5/referred-container' {
+        error-message "referred container must exist";
+      }
+    }
+  }
+  container must-with-hints-impacting-node {
+    container referred-container;
+  }
+  container must-with-hints-impacted-node {
+    must '/must-with-hints-impacting-node/referred-container' {
+      error-message "referred container must exist";
+    }
+  }
+  container validation5 {
+    leaf type {
+      type identityref {
+        base some-identity;
+      }
+    }
+    container must-with-derived-from-or-self {
+      must "derived-from-or-self(/validation5/type, 'validation:identity2')";
+      leaf mustLeaf {
+        type string;
+        default "must";
+      }
+    }
+    container testinterface-state {
+      when "derived-from-or-self(/validation5/type, 'validation:identity2')";
+      config false;
+      leaf type {
+        type string;
+      }
+    }
+    list whenOnChoice {
+      key "key2";
+      leaf key2 {
+        type int8;
+      }
+      leaf identityLeaf {
+        type identityref {
+          base some-identity;
+        }
+        mandatory true;
+      }
+      choice whenChoice {
+        when 'identityLeaf = "validation:identity1" or identityLeaf = "validation:identity2"';
+        case case1 {
+          leaf case1Leaf {
+            type string;
+          }
+        }
+        case case2 {
+          leaf case2Leaf {
+            type string;
+          }
+        }
+      }
+    }
+  }
+  container validation2 {
+    must "count(list1[enabled='true']) <= 1";
+    leaf leaf1 {
+      type string;
+    }
+    list list1 {
+      key "key1";
+      leaf key1 {
+        type string;
+      }
+      leaf enabled {
+        type boolean;
+        default "true";
+      }
+    }
+  }
+  container currentInPredicates {
+    leaf mustLeaf {
+          must "/currentInPredicates/currentInPredicatesList[key1= substring-after(current()/../otherLeaf, 'C')]";
+          type string;
+    }
+
+    leaf mustLeafForExpPath {
+          must "current()/../validation:currentInPredicatesList[validation:key1= substring-after(current()/../validation:otherLeaf, 'C')]";
+          type string;
+    }
+
+    leaf otherLeaf {
+        type string;
+    }
+    list currentInPredicatesList {
+        key "key1";
+        leaf key1 {
+          type string;
+        }
+    }
+  }
+  container leaf-list-validation-container {
+    leaf-list childEntity {
+      type leafref {
+        path "../list1/name";
+      }
+      ordered-by user;
+      max-elements 3;
+    }
+    list list1 {
+      key "name";
+      leaf name {
+        type string;
+      }
+    }
+    leaf-list absolutepath {
+      type leafref {
+        path "/leaf-list-validation-container/list1/name";
+      }
+    }
+    list model {
+      key "name app-name";
+      leaf name {
+        type string;
+      }
+      leaf app-name {
+        type string;
+      }
+      list entity {
+        key "type";
+        leaf type {
+          type string;
+        }
+        leaf isRootType {
+          type boolean;
+          default "false";
+        }
+        leaf-list childEntity {
+          type leafref {
+            path "../../../model[name = current()/../../name][app-name = current()/../../app-name]/entity/type";
+          }
+        }
+      }
+    }
+    leaf-list choice-reference-leaf {
+      type leafref {
+        path "../case-list/name";
+      }
+    }
+    choice leaf-list-choice {
+      case case1 {
+        leaf-list leaf1 {
+          type leafref {
+            path "/leaf-list-validation-container/list1/name";
+          }
+        }
+        leaf leaf2 {
+          type string;
+        }
+      }
+      case case2 {
+        list case-list {
+          key "name";
+          leaf name {
+            type string;
+          }
+        }
+      }
+    }
+    choice test {
+      case case11 {
+        leaf leaf11 {
+          type string;
+          mandatory true;
+        }
+      }
+      case case22 {
+        leaf leaf22 {
+          type string;
+        }
+      }
+    }
+  }
+  container validation3 {
+    leaf otherTreeRelativePath {
+      type leafref {
+        path "../../validation/validation";
+      }
+    }
+    leaf someLeaf1 {
+      when "../../validation/validation = 'otherRoot'";
+      type string;
+    }
+    leaf someLeaf {
+      must "count(../../validation/booleanCurrent) > 0 and not(contains(../../validation/validation, 'Other'))";
+      type string;
+    }
+    container container1 {
+      leaf validation3Leaf {
+        type string;
+      }
+    }
+    list list1 {
+      key "key1";
+      leaf key1 {
+        type string;
+      }
+      container container1 {
+        must "count(../container1/list2[enabled='true']) <= 1";
+        list list2 {
+          key "key2";
+          leaf key2 {
+            type string;
+          }
+          leaf enabled {
+            type boolean;
+            default "true";
+          }
+          list list3 {
+            key "key3";
+            leaf key3 {
+              type string;
+            }
+          }
+        }
+      }
+      container container2 {
+        list address {
+          key "ip";
+          leaf ip {
+            must 'not(count(../../container2/address[ip = current()]) >=2)' {
+              error-message "IP address can not be same";
+            }
+            type inet:ipv4-address-no-zone;
+          }
+        }
+        leaf refClass1 {
+          must 'count(current()) =1';
+          type string;
+        }
+        leaf refClass2 {
+          must "count(current()/../address[ip = '1.1.1.1']) = 1";
+          type string;
+        }
+        leaf container2leaf {
+          type string;
+        }
+      }
+    }
+    container qos-policy-profiles {
+      list policy-profile {
+        key "name";
+        leaf name {
+          type string;
+        }
+        list policy-list {
+          key "name";
+          ordered-by user;
+          uses policy-entry-ref;
+        }
+      }
+    }
+    container classifiers {
+      list classifier-entry {
+        key "name";
+        leaf name {
+          type string;
+        }
+        choice filter-method {
+          description
+            "Choice of filter configuration way.";
+          case inline {
+            uses classifier-entry-inline-attr;
+          }
+        }
+      }
+    }
+    container policies {
+      list policy {
+        key "name";
+        leaf name {
+          type string;
+        }
+        list classifiers {
+          key "name";
+          ordered-by user;
+          uses classifier-entry-ref;
+        }
+      }
+    }
+    container must-validation-with-mandatory {
+      must "value ='test' ";
+      leaf value {
+        type string;
+      }
+      leaf mandatory-leaf {
+        type string;
+        mandatory true;
+      }
+    }
+    list must-validation {
+      must "value ='test' ";
+      key "key1";
+      leaf key1 {
+        type string;
+      }
+      leaf value {
+        type string;
+      }
+      leaf test-leaf {
+        type string;
+        default "leaf3";
+      }
+    }
+    list must-validation1 {
+      must "key1 = 'key' and value ='test' ";
+      key "key1";
+      leaf key1 {
+        type string;
+      }
+      leaf value {
+        type string;
+      }
+      leaf mandatory-one {
+        type string;
+        mandatory true;
+      }
+    }
+    list must-validation2 {
+      must "key1 = 'key' and values ='test' ";
+      key "key1";
+      leaf key1 {
+        type string;
+      }
+      leaf-list values {
+        type string;
+      }
+    }
+    container must-validation3 {
+      list radius {
+        key "id";
+        leaf id {
+          type int8;
+        }
+      }
+      leaf-list user-authentication-order {
+        type identityref {
+          base authentication-method;
+        }
+        must '(. != "validation:radius" or ../radius)' {
+          error-message "When 'radius' is used, a RADIUS server must be configured.";
+        }
+        ordered-by user;
+      }
+    }
+    list when-validation {
+      when "key1 = 'key' and values ='test' ";
+      key "key1";
+      leaf key1 {
+        type string;
+      }
+      leaf leaf1 {
+        type string;
+        mandatory true;
+      }
+      leaf-list values {
+        type string;
+      }
+    }
+    container spectrum {
+      list spectrum-profile {
+        key "name";
+        leaf name {
+          type string;
+        }
+        list list1 {
+          min-elements 1;
+          key "ts";
+          leaf ts {
+            type string;
+          }
+          leaf mode-profile {
+            must '/validation:validation3/validation:spectrum/validation:mode-profile[validation:name = current()]/validation:ts = ../ts';
+            mandatory true;
+            type mode-profile-ref;
+          }
+        }
+      }
+      list mode-profile {
+        key "name";
+        leaf name {
+          type string;
+        }
+        leaf ts {
+          type string;
+          mandatory true;
+        }
+      }
+    }
+  }
+  augment "/validation/augmentContainer" {
+    when "validation = 'augment'";
+    container containerAugment {
+      leaf leaf1 {
+        mandatory true;
+        type string;
+      }
+    }
+  }
+  augment "/validation" {
+    when "/validation/load-balancing = 'round-robin'";
+    container identityContainer {
+      uses lb:load-balancer;
+    }
+  }
+  augment "/validation/dummy-interfaces/dummy-interface" {
+    when "dummy-type = 'forwarding'";
+    container dummy-forwarding {
+      leaf forwarding-leaf {
+        type string;
+        default "dummyForwarding";
+      }
+    }
+  }
+  augment "/validation/dummy-interfaces/dummy-interface" {
+    container dummy-traps {
+      leaf trap-leaf {
+        type string;
+        default "dummyTrap";
+        when "../../dummy-type = 'traps'";
+      }
+    }
+  }
+
+  grouping acl-ip-header-fields {
+    description
+      "IP header fields common to ipv4 and ipv6";
+    leaf dscp {
+      type inet:dscp;
+      description
+        "Value of dscp.";
+    }
+    leaf protocol {
+      type uint8;
+      description
+        "Internet Protocol number.";
+    }
+    uses acl-transport-header-fields;
+  }
+
+  grouping acl-transport-header-fields {
+    container source-port-range {
+      presence "Enables setting source port range";
+      leaf lower-port {
+        type int8;
+        mandatory true;
+      }
+      leaf upper-port {
+        must '. >= ../lower-port';
+        type int8;
+      }
+    }
+    container destination-port-range {
+      leaf lower-port {
+        default "1";
+        type int8;
+        mandatory true;
+      }
+      leaf upper-port {
+        must '. >= ../lower-port';
+        type int8;
+      }
+    }
+  }
+
+  grouping acl-ipv4-header-fields {
+    leaf destination-ipv4 {
+      type string;
+    }
+    leaf source-ipv4 {
+      type string;
+    }
+  }
+
+  grouping acl-ipv6-header-fields {
+    leaf destination-ipv6 {
+      type string;
+    }
+    leaf source-ipv6 {
+      type string;
+    }
+  }
+
+  grouping acl-eth-header-fields {
+    leaf destination-mac-address {
+      type string;
+    }
+    leaf source-mac-address {
+      type string;
+    }
+  }
+
+  container validation6 {
+    container access-lists {
+      list acl {
+        key "acl-type acl-name";
+        leaf acl-type {
+          type string;
+        }
+        leaf acl-name {
+          type string;
+        }
+        container access-list-entries {
+          list ace {
+            key "rule-name";
+            leaf rule-name {
+              type string;
+            }
+            container matches {
+              choice ace-type {
+                case ace-ip {
+                  choice ace-ip-version {
+                    case ace-ipv4 {
+                      uses acl-ipv4-header-fields;
+                    }
+                    case ace-ipv6 {
+                      uses acl-ipv6-header-fields;
+                    }
+                  }
+                  uses acl-ip-header-fields;
+                }
+                case ace-eth {
+                  uses acl-eth-header-fields;
+                }
               }
             }
           }
-          default "any";
         }
       }
-    
-    container validation1 {
-        must "count(list1) <= 1";
-    	leaf leaf1 {
-    		type string;
-    	}
-    	
-    	list list1{
-    		key key1;
-    		leaf key1{
-    			type string;
-    		}
-    	}
     }
-    
-    container validation5 {
-    	leaf type {
-	          type identityref {
-	            base some-identity;
-	          }
-		}
-    	container must-with-derived-from-or-self {
-            must "derived-from-or-self(/validation5/type, 'validation:identity2')";
-            leaf mustLeaf {
-                type string;
-                default "must";
+  }
+  container validation {
+    container big-list-validation {
+      list list-type {
+        key "list-id";
+        anvext:big-list;
+        leaf list-id {
+          type string;
+        }
+        leaf list-value {
+          type string;
+        }
+        leaf leafref-leaf {
+          type leafref {
+            path "/validation/big-list-validation/list-type/list-id";
+          }
+        }
+      }
+    }
+    container testContainer {
+      list list-type {
+        key "list-id";
+        leaf list-id {
+          type string;
+        }
+        leaf list-value {
+          type string;
+        }
+        leaf leafref-leaf {
+          type leafref {
+            path "/validation/testContainer/list-type/list-id";
+          }
+        }
+      }
+    }
+    container sampleContainer {
+      leaf master {
+        must 'string-length() > 3';
+        type string;
+      }
+      leaf leafWhen {
+        when "../master = 'sample'";
+        type string;
+        description "leaf having WHEN target as master leaf";
+      }
+      leaf leafWhen2 {
+        when "../master = 'sample2'";
+        type string;
+      }
+      leaf leafMust {
+        must "../master = 'sample3'";
+        type string;
+      }
+      leaf leaf-with-leafref {
+        type leafref {
+          path "/validation:validation/validation:sampleContainer/validation:master";
+        }
+      }
+      leaf leafReferringWhen {
+        when "../leafWhen = 'sample4'";
+        type string;
+      }
+      container innerContainer {
+        leaf innerContainerLeaf {
+          type string;
+        }
+      }
+    }
+    container validate-string-unicode-container {
+      container test-container {
+        leaf leaf1 {
+          type string;
+        }
+      }
+    }
+    container augmentContainer {
+      leaf validation {
+        type string;
+      }
+    }
+    container sameContainerAsRoot {
+      container validation {
+        leaf validation1 {
+          type leafref {
+            path "/validation:validation/validation:validation";
+          }
+        }
+      }
+    }
+    container dummy-interfaces {
+      list dummy-interface {
+        key "dummy-name";
+        leaf dummy-name {
+          type string;
+          description
+            "The name of the interface.";
+        }
+        leaf dummy-type {
+          type string;
+          mandatory true;
+        }
+      }
+    }
+    leaf nonExistantLeaf {
+      type string;
+      when "1 = 1 and iamImpactNode != 'iAmNotNull'";
+    }
+    leaf load-balancing {
+      type string;
+    }
+    leaf iamImpactNode {
+      type string;
+    }
+    leaf mustCount {
+      must 'count(../list1) > 0';
+      type string;
+    }
+    list list1 {
+      key "someKey";
+      leaf someKey {
+        type string;
+      }
+    }
+    list booleanCurrent {
+      key "key";
+      leaf key {
+        type string;
+      }
+      leaf leaf1 {
+        must 'boolean(current()/../leaf2)';
+        type string;
+      }
+      leaf leaf2 {
+        type boolean;
+      }
+    }
+    list mustMandatory {
+      must './mandatoryLeaf';
+      key "key";
+      leaf key {
+        type string;
+      }
+      leaf mandatoryLeaf {
+        type string;
+      }
+      container mustMandatoryContainer {
+        must './mandatoryContainer';
+        container mandatoryContainer {
+          must './mandatoryList';
+          list mandatoryList {
+            key "key";
+            leaf key {
+              type string;
             }
+          }
+          leaf-list mandatoryLeafList {
+            when '../mandatoryList';
+            type string;
+          }
+          leaf anotherLeaf {
+            type string;
+            when '../mandatoryLeafList';
+          }
         }
-    	
-        
-        container testinterface-state {
-            when "derived-from-or-self(/validation5/type, 'validation:identity2')";
-            config false;
-            
-                  leaf type {
-                        type string;
-                  }            
-        }
+      }
     }
-    
-    container validation2 {
-        must "count(list1[enabled='true']) <= 1";
-    	leaf leaf1 {
-    		type string;
-    	}
-    	
-    	list list1{
-    		key key1;
-    		leaf key1{
-    			type string;
-    		}
-    		leaf enabled {
-    	        type boolean;
-    	        default "true";
-    		}
-    	}
-    }
-    
-    container validation3 {
-    	
-    	
-    	leaf otherTreeRelativePath {
-    		type leafref {
-    			path "../../validation/validation";
-    		}
-    	}
-	
-    	leaf someLeaf1 {
-        	when "../../validation/validation = 'otherRoot'";
-			type string;    		
-    	}
-    	
-        leaf someLeaf {
-        	must "count(../../validation/booleanCurrent) > 0 and not(contains(../../validation/validation, 'Other'))";
-        	type string;
+    container test-interfaces {
+      list test-interface {
+        key "name";
+        leaf name {
+          type string;
+          description
+            "The name of the interface.";
         }
-        
+        leaf type {
+          type string;
+          mandatory true;
+        }
+        leaf identity-leaf {
+          type identityref {
+            base some-identity;
+          }
+        }
+        leaf version {
+          type uint32;
+        }
+      }
+    }
+    list someList {
+      must 'sum(/validation/someList/sumValue) < 100 and sum(../someList/sumValue) > 5';
+      key "key";
+      leaf key {
+        type string;
+      }
+      leaf sumValue {
+        type int8;
+      }
+    }
+    container presence-container-leaf-with-default {
+      presence "yes";
+      leaf decimal64-fraction1-with-default-value-type {
+        type data-decimal64-test-default;
+        default "1.7";
+      }
+      leaf decimal64-fraction1-with-default-value-type2 {
+        type data-decimal64-test-default2;
+      }
+      leaf test {
+        type string;
+      }
+    }
+    leaf validation {
+      type string;
+      mandatory false;
+    }
+    list leafref-validation-list {
+      key "name";
+      leaf name {
+        type string;
+      }
+      leaf ref-value {
+        type string;
+      }
+    }
+    leaf symbol-leaf-1.1_2 {
+      type string;
+      must ' . = ../validation';
+    }
+    leaf crossConstant {
+      type int8;
+      must ". = 10 and 'validation' = ../validation and 1 = 1";
+    }
+    leaf constantCheck {
+      type int8;
+      must '. = 10 and 10 = ../crossConstant';
+    }
+    leaf defaultLeaf {
+      default "1";
+      type string;
+      when "../validation = 'default'";
+    }
+    list selfOrCount {
+      key "index";
+      leaf index {
+        must ' . = 0 or count(../../selfOrCount[index = 0]) > 0';
+        type int8;
+      }
+    }
+    leaf valueCheck {
+      type int8;
+      must '. > 0';
+    }
+    leaf-list valueCheck1 {
+      type int8;
+      must '. > 0';
+    }
+    container validate-parent-container-on-when-deletion {
+      leaf leaf1 {
+        type int8;
+      }
+      container for-leaf-list {
+        leaf-list leafList {
+          type int8;
+        }
+        container innerContainer {
+          leaf leaf1 {
+            type int8;
+            when '../../../leaf1 > 0';
+          }
+        }
+      }
+      container for-leaf-list1 {
+        leaf-list leafList {
+          type int8;
+        }
+        leaf-list leafList1 {
+          type int8;
+        }
+        container innerContainer {
+          leaf leaf1 {
+            type int8;
+            when '../../../leaf1 > 0';
+          }
+        }
+      }
+      container for-leaf {
+        leaf leaf1 {
+          type int8;
+        }
+        leaf leaf2 {
+          type int8;
+        }
+        container innerContainer {
+          leaf leaf1 {
+            type int8;
+            when '../../../leaf1 > 0';
+          }
+        }
+      }
+      container for-container {
         container container1 {
-         leaf validation3Leaf {
-        	type string;
-         }
+          presence "yes";
         }
-        
-    	list list1{
-    		key key1;
-    		leaf key1{
-    			type string;
-    		}
-    		container container1 {
-    			must "count(../container1/list2[enabled='true']) <= 1";
-    			list list2{
-    				key key2;
-    				leaf key2{
-    					type string;
-    				}
-    				
-    	    		leaf enabled {
-    	    	        type boolean;
-    	    	        default "true";
-    	    		}
-    				list list3{
-    					key key3;
-    					leaf key3{
-    						type string;
-    					}
-    				}
-    			}
-    		}
-    		
-    	    container container2 {
-    				list address{
-    			   		key "ip";
-    			 		leaf ip {
-    			    	    must "not(count(../../container2/address[ip = current()]) >=2)"{ 
-         	   	            error-message "IP address can not be same"; 
-    			    	}
-    			    	type inet:ipv4-address-no-zone;
-    			      }
-    			   }
-    				leaf refClass1 {
-			    	    must "count(current()) =1";
-    					type string;
-    				}
-    				leaf refClass2 {
-    					must "count(current()/../address[ip = '1.1.1.1']) = 1";
-    					type string;
-    				}
-    				
-    				leaf container2leaf {
-    					type string;
-    				}
-    			}
-    	}
-    
-    	  container qos-policy-profiles {
-
-    		    list policy-profile {
-    		      key "name";
-
-    		      leaf name{
-    		        type string;
-    		      }
-
-    		      list policy-list {
-    		        key "name";
-    		        ordered-by user;
-
-    		        uses policy-entry-ref;
-    		      }
-    		    }
-    		  }
-    	  
-    	  container classifiers {
-
-    		    list classifier-entry {
-    		      key "name";
-
-    		      leaf name {
-    		        type string;
-    		      }
-
-    		      choice filter-method {
-    		        description 
-    		          "Choice of filter configuration way.";
-
-    		          case inline {
-    		            uses classifier-entry-inline-attr;
-    		          }
-    		       }
-    		    }
-    		  }
-    	  
-    	  container policies {
-
-    	    list policy {
-    	      key "name";
-
-    	      leaf name {
-    	        type string;
-    	      }
-
-    	      list classifiers {
-    	        key "name";
-    	        ordered-by user;
-
-    	        uses classifier-entry-ref;
-    	      }
-    	    }
-    	  }
-    	
-	 list must-validation {
-            must "value ='test' ";
-            key key1;
-
-            leaf key1 {
-                type string;
-            }
-
-            leaf value {
-                type string;
-            }
+        container innerContainer {
+          leaf leaf1 {
+            type int8;
+            when '../../../leaf1 > 0';
+          }
         }
-
-        list must-validation1 {
-            must "key1 = 'key' and value ='test' ";
-            key key1;
-
-            leaf key1 {
-                type string;
-            }
-
-            leaf value {
-                type string;
-            }
+      }
+      container for-list {
+        list list1 {
+          key "key1";
+          leaf key1 {
+            type string;
+          }
         }
-
-        list must-validation2 {
-            must "key1 = 'key' and values ='test' ";
-            key key1;
-
-            leaf key1 {
-                type string;
-            }
-
-            leaf-list values {
-                type string;
-            }
+        container innerContainer {
+          leaf leaf1 {
+            type int8;
+            when '../../../leaf1 > 0';
+          }
         }
-        
-        list when-validation {
-            when "key1 = 'key' and values ='test' ";
-            key key1;
-
-            leaf key1 {
-                type string;
-            }
-
-            leaf-list values {
-                type string;
-            }
-        }
-
+      }
     }
-
-    augment "/validation/augmentContainer" {
-    	when "validation = 'augment'";
-    	container containerAugment {
-    		leaf leaf1 {
-    			mandatory true;
-    			type string;
-    		}
-    	}
+    container group-validation-without-prefixes {
+      presence "yes";
+      uses group1;
     }
-    
-    augment "/validation" {
-    	when "/validation/load-balancing = 'round-robin'";
-    	container identityContainer {
-          uses lb:load-balancer;
-    	}
-    }
-
-    augment "/validation/dummy-interfaces/dummy-interface" {
-        	when "dummy-type = 'forwarding'";
-        	container dummy-forwarding {
-        	    leaf forwarding-leaf {
-        	        type string;
-        	        default "dummyForwarding";
-        	    }
-            }
-    }
-
-    augment "/validation/dummy-interfaces/dummy-interface" {
-             container dummy-traps {
-                leaf trap-leaf {
-                	 type string;
-                	 default "dummyTrap";
-                	 when "../../dummy-type = 'traps'";
-                }
-            }
-    }
-    
- grouping acl-ip-header-fields {
-
-        description
-                "IP header fields common to ipv4 and ipv6";
-        leaf dscp {
-            type inet:dscp;
-            description
-                        "Value of dscp.";
+    container mandatory-validation-container {
+      presence "mandatory";
+      container leafValidation {
+        leaf leaf1 {
+          mandatory true;
+          type int8;
         }
-        leaf protocol {
-            type uint8;
-            description
-                        "Internet Protocol number.";
+        leaf leafDefault {
+          default "0";
+          type int8;
+          when "../../../validation = 'mandatory'";
         }
-        uses acl-transport-header-fields;
-    }
-
-    grouping acl-transport-header-fields {
-        container source-port-range {
-            presence "Enables setting source port range";
-            leaf lower-port {
+      }
+      container leafListValidation {
+        presence "mandatory";
+        leaf-list leafList {
+          min-elements 1;
+          type int8;
+        }
+        container innerContainer {
+          leaf-list leafList1 {
+            min-elements 1;
+            type int8;
+          }
+        }
+      }
+      container listValidation {
+        presence "listValidation";
+        list list1 {
+          min-elements 1;
+          key "leaf1";
+          leaf leaf1 {
+            type int8;
+          }
+          container innerContainer {
+            list innerList {
+              min-elements 1;
+              key "leaf1";
+              leaf leaf1 {
                 type int8;
-                mandatory true;
-            }
-            leaf upper-port {
-                must ". >= ../lower-port" ;
+              }
+              leaf defaultLeaf {
                 type int8;
+                when '../leaf1 = 0';
+                default "0";
+              }
             }
+          }
         }
-        container destination-port-range {
-            leaf lower-port {
-            	default 1;
-                type int8;
-                mandatory true;
-            }
-            leaf upper-port {
-                must ". >= ../lower-port";
-                type int8;
-            }
-        }
-    }
-
-    grouping acl-ipv4-header-fields {
-        leaf destination-ipv4 {
-            type string;
-        }
-        leaf source-ipv4 {
-            type string;
-        }
-    }
-
-    grouping acl-ipv6-header-fields {
-        leaf destination-ipv6 {
-            type string;
-        }
-        leaf source-ipv6 {
-            type string;
-        }
-    }
-
-    grouping acl-eth-header-fields {
-        leaf destination-mac-address {
-            type string;
-        }
-        leaf source-mac-address {
-            type string;
-        }
-    }
-
-    container validation6 {
-        container access-lists {
-            list acl {
-
-                key "acl-type acl-name";
-
-                leaf acl-type {
-                    type string;
-                }
-
-                leaf acl-name {
-                    type string;
-                }
-
-                container access-list-entries {
-                	
-                    list ace {
-                        key "rule-name";
-                        leaf rule-name {
-                            type string;
-                        }
-
-                        container matches {
-                            choice ace-type {
-                                case ace-ip {
-                                    choice ace-ip-version {
-                                        case ace-ipv4 {
-                                            uses acl-ipv4-header-fields;
-                                        }
-                                        case ace-ipv6 {
-                                            uses acl-ipv6-header-fields;
-                                        }
-                                    }
-                                    uses acl-ip-header-fields;
-                                }
-                                case ace-eth {
-                                    uses acl-eth-header-fields;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    container validation {
-    	
-    	container augmentContainer {
-    		leaf validation {
-    			type string;
-    		}
-    	}
-    	
-    	container sameContainerAsRoot {
-    			
-    		container validation {
-    			leaf validation1 {
-    				type leafref { 
-    					path "/validation:validation/validation:validation";
-    				}
-    			}
-    				
-    		}
-    	}
-
-        container dummy-interfaces {
-            list dummy-interface {
-                key "dummy-name";
-
-                leaf dummy-name {
-                   type string;
-                   description
-                       "The name of the interface.";
-                }
-
-                leaf dummy-type {
-                   type string;
-                   mandatory true;
-                }
-            }
-        }
-
-		leaf nonExistantLeaf {
-			type string;
-			when "1 = 1 and iamImpactNode != 'iAmNotNull'";
-		}
-		
-		leaf load-balancing {
-			type string;
-		}
-		
-		leaf iamImpactNode {
-			type string;
-		}
-		
-    	leaf mustCount {
-			must "count(../list1) > 0";
-			type string;
-		}
-		
-		list list1 {
-			key someKey;
-			
-			leaf someKey {
-				type string;
-			}
-		}    	
-		
-    	list booleanCurrent {
-    		key key;
-    		
-    		leaf key {
-    			type string;
-    		}
-    		
-    		leaf leaf1 {
-    			must "boolean(current()/../leaf2)";
-    			type string;
-    		}
-    		
-    		leaf leaf2 {
-    			type boolean;
-    		}
-    	}
-    	list mustMandatory {
-    		must "./mandatoryLeaf";
-    		key key;
-    		leaf key {
-    			type string;
-    		}
-    		
-    		leaf mandatoryLeaf {
-    			type string;
-    		}
-    		
-    		container mustMandatoryContainer {
-    			must "./mandatoryContainer";
-    			container mandatoryContainer {
-    				must "./mandatoryList";
-    				list mandatoryList {
-    					key key;
-    					leaf key {
-    						type string;
-    					}
-    				}
-    				leaf-list mandatoryLeafList {
-    					when "../mandatoryList";
-    					type string;
-    				}
-    				
-    				leaf anotherLeaf {
-    					type string;
-    					when "../mandatoryLeafList";
-    				}
-    			}
-    		}
-    	}
-    	
-    	container test-interfaces {
-    		
-    		list test-interface {
-    			key "name";
-
-    			leaf name {
-    			    type string;
-    			    description
-    			      "The name of the interface.";
-    			}
-    			
-    		    leaf type {
-    		    	type string; 
-    		        mandatory true;    
-    		    }
-    		}
-
-    	}
-    	
-    	
-    	list someList {
-    		must "sum(/validation/someList/sumValue) < 100 and sum(../someList/sumValue) > 5";
-    		
-    		key key;
-    		leaf key {
-    			type string;
-    		}
-    		
-    		leaf sumValue {
-    			type int8;
-    		}
-    		
-    		
-    	}
-    	
-    	list alarm-list {
-    		
-    		key key;
-    		leaf key {
-    			type string;
-    		}
-    		
-    		leaf severity {
-    	         type enumeration {
-    	           enum cleared {
-    	             value 1;
-    	           }
-    	           enum indeterminate {
-    	             value 2;
-    	           }
-    	           enum minor {
-    	             value 3;
-    	           }
-    	           enum warning {
-    	             value 4;
-    	           }
-    	           enum major {
-    	             value 5;
-    	           }
-    	           enum critical {
-    	             value 6;
-    	           }
-    	         }
-    	     }
-    		
-    		 leaf test-enum-value-with-parent-pattern {
-        		must "enum-value(../severity) >= 5";
-        		type string;
-        	 }
-    		 
-    		 leaf test-enum-value-with-empty-node-set {
-          		must "enum-value() >= 5";
-          		type string;
-          	 }
-    	}
-    	
-    	container test-enum-value-container {
-    		
-    		container test-container-one {
-    			
-    			leaf leaf1 {
-    				type enumeration {
-    					enum one {
-    						value 1;
-    					} 
-    					enum two {
-    						value 2;
-    					}
-    				}
-    			}
-    			
-    			leaf-list leaflist1 {
-    				type enumeration {
-    					enum one {
-    						value 1;
-    					} 
-    					enum two {
-    						value 2;
-    					}
-    					enum three {
-    						value 3;
-    					}
-    					enum four {
-    						value 4;
-    					}
-    				}
-    			}
-    			
-    			list list1{
-    				
-    				key key;
-    				
-    				leaf key {
-    					type string;
-    				}
-    				
-    				leaf valueLeaf {
-    					type enumeration {
-    						
-    						enum one {
-    							value 1;
-    						} 
-    						enum two {
-    							value 2;
-    						}
-    					}
-    				}
-    			}
-    			
-    			leaf non-enum-leaf1 {
-    				type string;
-    			}
-    			
-				leaf-list non-enum-leaf-list1{
-					type string;
-				}
-				
-    			choice choice1{
-    				
-    				case case1 {
-    					leaf leaf11{
-    						type string;
-    					}
-    				}
-    				
-    				case case2 {
-    					leaf leaf22{
-    						type enumeration{
-    	    					enum one {
-    	    						value 1;
-    	    					} 
-    	    					enum two {
-    	    						value 2;
-    	    					}
-    						}
-    					}
-    				}
-    				
-    				case case3 {
-    					leaf leaf33{
-    						type string;
-    					}
-    				}
-    			}
-    		}
-    		
-    		container test-container-two {
-    			
-    			leaf test-enum-leaf {
-    				must "enum-value(../../test-container-one/leaf1) > 1";
-    				type string;
-    			}
-    			
-    			leaf test-enum-leaf-with-absolute-path {
-    				must "enum-value(/validation/test-enum-value-container/test-container-one/list1[key = current()]/valueLeaf) > 1";
-    				type string;
-    			}
-    			
-    			leaf test-enum-leaf-for-leaf-list {
-    				must "enum-value(../../test-container-one/leaflist1) > 2";
-    				type string;
-    			}
-    			
-    			leaf test-for-non-enum-leaf-list {
-    				must "enum-value(../../test-container-one/non-enum-leaf-list1) > 2";
-    				type string;
-    			}
-    			
-    			leaf test-for-non-enum-leaf {
-    				must "enum-value(/validation/test-enum-value-container/test-container-one/non-enum-leaf1) > 1";
-    				type string;
-    			}
-    			
-    			leaf test-enum-leaf-in-choice-case {
-    				must "enum-value(../../test-container-one/leaf22) > 1";
-    				type string;
-    			}
-    			
-    			leaf test-leaf {
-    				type enumeration{
-    					enum one{
-    						value 1;
-    					}
-    					enum two{
-    						value 2;
-    					}
-    					enum three{
-    						value 3;
-    					}
-    				}
-    			}
-    			
-    			leaf test-enum-leaf-with-dot-operator {
-    				must "enum-value(.) > 1";
-    				type enumeration{
-    					enum one{
-    						value 1;
-    					}
-    					enum two{
-    						value 2;
-    					}	
-    				}
-    			}
-    			
-    			leaf-list test-enum-leaf-list-with-dot-operator {
-    				must "enum-value(.) > 2";
-    				type enumeration{
-    					enum one{
-    						value 1;
-    					}
-    					enum two{
-    						value 2;
-    					}
-    					enum three{
-    						value 3;
-    					}
-    				}
-    			}
-    			
-    			leaf test-enum-leaf-xpath-from-dot {
-    				must "enum-value(./../test-leaf) > enum-value(.)";
-    				type enumeration{
-    					enum one{
-    						value 1;
-    					}
-    					enum two{
-    						value 2;
-    					}
-    				}
-    				
-    			}
-    		}
-    	}
-    	
-		leaf validation {
-			type string;
-			mandatory false;
-		}
-		
-		leaf symbol-leaf-1.1_2 {
-			type string;
-			must " . = ../validation";
-		}
-		
-		leaf crossConstant {
-			type int8;
-			must ". = 10 and 'validation' = ../validation and 1 = 1";
-		}
-		
-		leaf constantCheck {
-			type int8;
-			must ". = 10 and 10 = ../crossConstant";
-		}
-		
-		leaf defaultLeaf {
-			default "1";
-			type string;
-			when "../validation = 'default'";
-		}
-		
-		list selfOrCount {
-			key index;
-
-			leaf index {
-				must " . = 0 or count(../../selfOrCount[index = 0]) > 0";
-				type int8;
-			}
-		}
-		
-		leaf valueCheck {
-			type int8;
-			must ". > 0";
-		}
-		
-		leaf-list valueCheck1 {
-			type int8;
-			must ". > 0";
-		}
-		
-		container validate-parent-container-on-when-deletion {
-			
-			leaf leaf1 {
-				type int8;
-			}
-			
-			container for-leaf-list {
-				leaf-list leafList{
-					type int8;
-				}
-				
-				container innerContainer {
-					leaf leaf1 {
-						type int8;
-						when "../../../leaf1 > 0";
-					}
-				}
-			}
-			
-			container for-leaf-list1 {
-				leaf-list leafList{
-					type int8;
-				}
-				
-				leaf-list leafList1{
-					type int8;
-				}
-				
-				container innerContainer {
-					leaf leaf1 {
-						type int8;
-						when "../../../leaf1 > 0";
-					}
-				}
-			}
-			
-			container for-leaf {
-				leaf leaf1 {
-					type int8;
-				}
-				
-				leaf leaf2 {
-					type int8;
-				}
-				
-				container innerContainer {
-					leaf leaf1 {
-						type int8;
-						when "../../../leaf1 > 0";
-					}
-				}
-			}
-			
-			container for-container {
-				
-				container container1 {
-					presence "yes";
-				}
-				
-				container innerContainer {
-					leaf leaf1 {
-						type int8;
-						when "../../../leaf1 > 0";
-					}
-				}
-			}
-			
-			container for-list {
-
-				list list1 {
-					key key1;
-					
-					leaf key1 {
-						type string;
-					}
-				}
-				
-				container innerContainer {
-					leaf leaf1 {
-						type int8;
-						when "../../../leaf1 > 0";
-					}
-				}
-				
-			}
-		}
-		
-		container group-validation-without-prefixes {
-			presence "yes";
-			
-			uses group1;
-		}
-		
-		container mandatory-validation-container {
-			presence "mandatory";
-			
-			container leafValidation {
-				leaf leaf1 {
-					mandatory true;
-					type int8;
-				}
-				
-				leaf leafDefault {
-					default 0;
-					type int8;
-					when "../../../validation = 'mandatory'";
-				}
-			}
-			
-			container leafListValidation {
-				presence "mandatory";
-				leaf-list leafList {
-					min-elements 1;
-					type int8;
-				}
-				
-				container innerContainer {
-					
-					leaf-list leafList1 {
-						min-elements 1;
-						type int8;
-					}
-				}
-				
-			}
-			
-			container listValidation {
-				presence "listValidation";
-				
-				list list1 {
-					min-elements 1;
-					
-					key leaf1 ;
-					
-					leaf leaf1 {
-						type int8;
-					}
-					
-					container innerContainer {
-						list innerList {
-							min-elements 1;
-							key leaf1;
-
-							leaf leaf1 {
-								type int8;
-							}
-							
-							leaf defaultLeaf {
-								type int8;
-								when "../leaf1 = 0";
-								default 0;
-							}
-						}
-					}
-				}
-			}
-
-			container choiceValidation {
-				presence "choice";
-				
-				choice choice1 {
-					case case1 {
-						leaf leaf1 {
-							type int8;
-						}
-					}
-					
-					case case2 {
-						when "../../../../validation = 'choice'";
-						leaf leaf2 {
-							type int8;
-							mandatory true;
-						}
-						
-						leaf-list leafList1 {
-							min-elements 1;
-							type int8;
-						}
-						
-						choice case2Choice {
-							mandatory true;
-							
-							case case2ChoiceCase1 {
-								leaf case2leaf1 {
-									type int8;
-									when "../leaf2 = 10";
-								}
-							}
-							
-							case case2ChoiceCase2 {
-								when "../leaf2 != 10";
-
-								list case2ChoiceList1 {
-									min-elements 1;
-									
-									key leaf1;
-									
-									leaf leaf1 {
-										type int8;
-									}
-									
-									container someContainer {
-										
-										leaf leaf1 {
-											default 0;
-											type int8;
-										}
-										
-										container someContainer {
-											when "../leaf1 = 0";
-											
-											leaf leaf2 {
-												default 0;
-												type int8;
-											}
-											
-											choice choice1 {
-												default case2;
-												
-												case case1 {
-													leaf leafCase1 {
-														type int8;
-													}
-												}
-												
-												case case2 {
-													leaf leafCase2 {
-														type int8;
-														default 0;
-													}
-												}
-												
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				
-				choice choice2 {
-					mandatory true;
-					when "../../validation = 'choice2'";
-					case case1 {
-						leaf leaf11 {
-							type int8;
-						}
-						
-						leaf leaf11B {
-							default 0;
-							when "../../../validation = 'choice2'";
-							type int8;
-						}
-						
-						leaf leaf11C {
-							default 0;
-							when "../leaf11 = 0";
-							type int8;
-						}
-					}
-					
-					case case2 {
-						leaf leaf12 {
-							type int8;
-						}
-						
-						leaf leaf13 {
-							mandatory true;
-							type int8;
-						}
-						
-						leaf-list leafList11 {
-							min-elements 1;
-							type int8;
-						}
-					}
-				}
-			}
-		}
-		container default-when-validation {
-			
-			leaf class {
-				when "../../validation = 'default-when'";
-				type int8;
-				default 10;
-			}
-			
-			container default-when-inner-class {
-				leaf innerLeaf {
-					when "../../class = 11";
-					type int8;
-					default 10;
-				}
-			}
-			
-			list default-when-list {
-				key key;
-				leaf key {
-					type string;
-				}
-				
-				leaf when {
-					when "../../class = 10 and ../../default-when-inner-class/innerLeaf = 10";
-					default 10;
-					type int8;
-				}
-			}
-		}
-		
-	container current-validation {
-            list list1 {
-                key key;
-
-                leaf key {
-                    type string;
-                }
-
-                leaf type {
-                    type string;
-                }
-
-                leaf value {
-                    type int8;
-                }
-            }
-
+      }
+      container choiceValidation {
+        presence "choice";
+        choice choice1 {
+          case case1 {
             leaf leaf1 {
-                must "count(/validation/current-validation/list1[key = current() and /validation/current-validation/list1[key = 'key1']/value = /validation/current-validation/list1[key = current()]/value]) = 1";
-                type string;
+              type int8;
             }
-        }
- 		
-		leaf defaultLeaf1 {
-			default "2";
-			type string;
-			when "../validation = 'default1'";
-		}
-		
-		leaf notLeaf {
-			must "not(../validation = 'hello')";
-			type int8;				
-		}
-		
-		leaf containsLeaf {
-			must "contains(../validation,'hello')";
-			type int8;
-		}
-		
-		container inner-validation {
-			leaf containsLeaf {
-				type int8;
-			}
-		}
-		leaf rpcRefLeaf{
-			type string;
-		}
-		
-		leaf leafref-validation {
-           type leafref {
-               path "../validation:validation";
+          }
+          case case2 {
+            when "../../../../validation = 'choice'";
+            leaf leaf2 {
+              type int8;
+              mandatory true;
             }
-        }
-
-	container when-validation1 {
-            leaf when-leaf {
-                when "../enabled = 'true'";
-                type string;
+            leaf-list leafList1 {
+              min-elements 1;
+              type int8;
             }
-
-            leaf enabled {
-                type boolean;
-            }
-        }
-
-        container must-validation1 {
-            leaf must-leaf {
-                must "../enabled = 'true'";
-                type string;
-            }
-
-            leaf enabled {
-                type boolean;
-            }
-        }
-
-        container when-mandatory-validation {
-            leaf when-mandatory-leaf {
-                when "../enabled = 'true'";
-                type string;
-                mandatory true;
-            }
-
-            leaf enabled {
-                type boolean;
-            }
-        }
-
- container when-mandatory-leafref-validation {
-
-            leaf when-mandatory-leaf {
-                when "../enabled = 'true'";
-                type leafref {
-                    path '../profiles/profile/name';
+            choice case2Choice {
+              mandatory true;
+              case case2ChoiceCase1 {
+                leaf case2leaf1 {
+                  type int8;
+                  when '../leaf2 = 10';
                 }
-                mandatory true;
-            }
-
-            leaf enabled {
-                type boolean;
-            }
-
-            container profiles {
-
-                list profile {
-                    key name;
-
-                    leaf name {
-                        type string;
+              }
+              case case2ChoiceCase2 {
+                when '../leaf2 != 10';
+                list case2ChoiceList1 {
+                  min-elements 1;
+                  key "leaf1";
+                  leaf leaf1 {
+                    type int8;
+                  }
+                  container someContainer {
+                    leaf leaf1 {
+                      default "0";
+                      type int8;
                     }
-                }
-            }
-        }
-
-
-
-    	list newList {
-    		key validation;
-    		
-    		leaf validation {
-    			type string;
-    		}
-    	}
-    	
-    	container parent-validation {
-    		leaf parent {
-    			type string;
-    		}
-    		
-    		list parentList {
-
-    			key parent;
-    			
-    			leaf parent {
-    				type string;
-    				when "../../parent = 'parent'";
-    			}
-    			
-    			container parentContainer {
-    				
-    				container parent {
-    					
-    					container parent {
-    						leaf parent {
-    							type string;
-    						}
-    					}
-    				}
-    			}
-    		}
-    		
-    		
-    	}
-    	
-    	container current-usage {
-    		
-    		leaf current-usage {
-    			type string;
-    		}
-    		
-    		leaf current-usage-for-list {
-    			type string;
-    		}
-    	} 
-    	
-    	container test-profiler {
-    		must "current()/../validation:current-usage/validation:current-usage = 'current-leafvalue'";
-    		leaf profile {
-    			type string;
-    		}
-    		
-    		list student {
-    			must "current()/../../validation:current-usage/validation:current-usage-for-list = 'current-leafvalue-list'";
-    			key name;
-    			
-    			leaf name {
-    				type string;
-    			}
-    			
-    			leaf native-place {
-    				type string;
-    			}
-    		}
-    	}
-    	
-    	container class-validation {
-    		
-    		leaf class {
-    			type string;
-    		}
-    		
-    		leaf class1 {
-    			type string;
-    			default '1';
-    			when "../class = 'class'";
-    		}
-            container someClass {
-
-                leaf someLeafRef {
-                    type leafref {
-                        path "current()/../../class";
+                    container someContainer {
+                      when '../leaf1 = 0';
+                      leaf leaf2 {
+                        default "0";
+                        type int8;
+                      }
+                      choice choice1 {
+                        default "case2";
+                        case case1 {
+                          leaf leafCase1 {
+                            type int8;
+                          }
+                        }
+                        case case2 {
+                          leaf leafCase2 {
+                            type int8;
+                            default "0";
+                          }
+                        }
+                      }
                     }
+                  }
                 }
+              }
             }
-
-    		list caseList {
-				key class;
-				
-				leaf class {
-					type string;
-					when "../../class = 'class'";
-				}
-				
-				container classContainer {
-					when "../class='class' and ../../class='class'";
-					leaf class {
-						type string;
-					}
-				}
-				container innerClass {
-					list class {
-						key class;
-						leaf class {
-							type string;
-						}
-						
-						container innerClass {
-							container class {
-								list class {
-									key class;
-									
-									leaf class {
-										type string;
-									}
-									
-									container innerClass {
-										leaf class {
-											type instance-identifier {
-												require-instance "true";
-											}
-										}
-									}
-								}
-							}
-						}
-						
-					}
-				}
-				
-				leaf refClass1 {
-					when "../innerClass/class[class = current()]/innerClass/class/class[current()]/class = 'class'";
-					type string;
-				}
-				
-				leaf refClass2 {
-					type leafref {
-						path "../innerClass/class[class = current()/../refClass1]/innerClass/class/class[current()/../refClass2]/class";
-					}
-				}
-    		}
-    		
-    		leaf class2 {
-    			when "../validation:caseList[validation:class = current()]/validation:classContainer/validation:class = 'class'";
-    			type string;
-    		}
-    		
-    		leaf class3 {
-    			when "../caseList[current()]/class = 'class'";
-    			type string;
-    		}
-    		
-    		container must-validation {
-    		    leaf class {
-    		        must "current() = 'test'";
-    		        type string;
-    		    }
-    		}
+          }
+        }
+        choice choice2 {
+          mandatory true;
+          when "../../validation = 'choice2'";
+          case case1 {
+            leaf leaf11 {
+              type int8;
+            }
+            leaf leaf11B {
+              default "0";
+              when "../../../validation = 'choice2'";
+              type int8;
+            }
+            leaf leaf11C {
+              default "0";
+              when '../leaf11 = 0';
+              type int8;
+            }
+          }
+          case case2 {
+            leaf leaf12 {
+              type int8;
+            }
+            leaf leaf13 {
+              mandatory true;
+              type int8;
+            }
+            leaf-list leafList11 {
+              min-elements 1;
+              type int8;
+            }
+          }
+        }
+      }
+    }
+    container default-when-validation {
+      leaf class {
+        when "../../validation = 'default-when'";
+        type int8;
+        default "10";
+      }
+      container default-when-inner-class {
+        leaf innerLeaf {
+          when '../../class = 11';
+          type int8;
+          default "10";
+        }
+      }
+      list default-when-list {
+        key "key";
+        leaf key {
+          type string;
+        }
+        leaf when {
+          when '../../class = 10 and ../../default-when-inner-class/innerLeaf = 10';
+          default "10";
+          type int8;
+        }
+      }
+    }
+    container current-validation {
+      list list1 {
+        key "key";
+        leaf key {
+          type string;
+        }
+        leaf type {
+          type string;
+        }
+        leaf value {
+          type int8;
+        }
+      }
+      leaf leaf1 {
+        must "count(/validation/current-validation/list1[key = current() and /validation/current-validation/list1[key = 'key1']/value = /validation/current-validation/list1[key = current()]/value]) = 1";
+        type string;
+      }
+    }
+    leaf defaultLeaf1 {
+      default "2";
+      type string;
+      when "../validation = 'default1'";
+    }
+    leaf notLeaf {
+      must "not(../validation = 'hello')";
+      type int8;
+    }
+    leaf containsLeaf {
+      must "contains(../validation,'hello')";
+      type int8;
+    }
+    container inner-validation {
+      leaf containsLeaf {
+        type int8;
+      }
+    }
+    leaf rpcRefLeaf {
+      type string;
+    }
+    leaf leafref-validation {
+      type leafref {
+        path "../validation:validation";
+      }
+    }
+    list mustOnEmptyTypeLeaf {
+      key "name";
+      leaf name {
+        type string;
+      }
+    }
+    container testMustCountContainer {
+      leaf leaf1 {
+        type string;
+      }
+      container targetContainer {
+        must 'not(count(current()/../dei-marking-list) > 0)' {
+          error-message "dei-marking-list should not exist";
+        }
+        leaf leaf2 {
+          type string;
+        }
+      }
+      list dei-marking-list {
+        key "keyLeaf";
+        leaf keyLeaf {
+          type string;
+        }
+      }
+    }
+    list impactNodeWithDefault {
+      key "keyLeaf";
+      leaf keyLeaf {
+        type int8;
+      }
+      leaf impactLeafWithDefalt1 {
+        when '../keyLeaf > 10';
+        default "defValue1";
+        type string;
+      }
+      leaf dummyLeaf {
+        type boolean;
+      }
+      container impactContainerWithDefaltLeaf {
+        when '../keyLeaf > 10';
+        leaf impactLeafWithDefalt2 {
+          default "defValue2";
+          type string;
+        }
+      }
+      
+      container containerWithDefaltLeafWithoutWhen {
+        leaf leafWithDefalt3 {
+          default "defValue3";
+          type string;
+        }
+      }
+    }
+    container when-validation1 {
+      leaf when-leaf {
+        when "../enabled = 'true'";
+        type string;
+      }
+      leaf enabled {
+        type boolean;
+      }
+    }
+    container must-validation1 {
+      leaf must-leaf {
+        must "../enabled = 'true'";
+        type string;
+        default "leaf1";
+      }
+      leaf enabled {
+        type boolean;
+      }
+      leaf leafWithMustWhen {
+        must 'string-length(current()) > 3';
+        when "../enabled = 'true'";
+        type string;
+      }
+    }
+    container when-mandatory-validation {
+      leaf when-mandatory-leaf {
+        when "../enabled = 'true'";
+        type string;
+        mandatory true;
+      }
+      leaf enabled {
+        type boolean;
+      }
+    }
+    container when-mandatory-leafref-validation {
+      leaf when-mandatory-leaf {
+        when "../enabled = 'true'";
+        type leafref {
+          path "../profiles/profile/name";
+        }
+        mandatory true;
+      }
+      leaf enabled {
+        type boolean;
+      }
+      container profiles {
+        list profile {
+          key "name";
+          leaf name {
+            type string;
+          }
+        }
+      }
+    }
+    list newList {
+      key "validation";
+      leaf validation {
+        type string;
+      }
+    }
+    container parent-validation {
+      leaf parent {
+        type string;
+      }
+      list parentList {
+        key "parent";
+        leaf parent {
+          type string;
+          when "../../parent = 'parent'";
+        }
+        container parentContainer {
+          container parent {
+            container parent {
+              leaf parent {
+                type string;
+              }
+            }
+          }
+        }
+      }
+    }
+    container current-usage {
+      leaf current-usage {
+        type string;
+      }
+      leaf current-usage-for-list {
+        type string;
+      }
+    }
+    container test-profiler {
+      must "current()/../validation:current-usage/validation:current-usage = 'current-leafvalue'";
+      leaf profile {
+        type string;
+      }
+      list student {
+        must "current()/../../validation:current-usage/validation:current-usage-for-list = 'current-leafvalue-list'";
+        key "name";
+        leaf name {
+          type string;
+        }
+        leaf native-place {
+          type string;
+        }
+      }
+    }
+    container class-validation {
+      leaf class {
+        type string;
+      }
+      leaf class1 {
+        type string;
+        default "1";
+        when "../class = 'class'";
+      }
+      container someClass {
+        leaf someLeafRef {
+          type leafref {
+            path "../../class";
+          }
+        }
+      }
+      list caseList {
+        key "class";
+        leaf class {
+          type string;
+          when "../../class = 'class'";
+        }
+        container classContainer {
+          when "../class='class' and ../../class='class'";
+          leaf class {
+            type string;
+          }
+        }
+        container innerClass {
+          list class {
+            key "class";
+            leaf class {
+              type string;
+            }
+            container innerClass {
+              container class {
+                list class {
+                  key "class";
+                  leaf class {
+                    type string;
+                  }
+                  container innerClass {
+                    leaf class {
+                      type instance-identifier {
+                        require-instance true;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        leaf refClass1 {
+          must "../innerClass/class[class = current()]/innerClass/class/class[current()]/class = 'class'";
+          type string;
+        }
+        leaf refClass2 {
+          type leafref {
+            path "../innerClass/class[class = current()/../refClass1]/innerClass/class/class[class = current()/../refClass2]/class";
+          }
+        }
+      }
+      leaf class2 {
+        must "../validation:caseList[validation:class = current()]/validation:classContainer/validation:class = 'class'";
+        type string;
+      }
+      leaf class3 {
+        must "../caseList[current()]/class = 'class'";
+        type string;
+      }
+      container must-validation {
+        leaf class {
+          must "current() = 'test'";
+          type string;
+        }
+      }
+    }
+    container identity-validation {
+      leaf leaf1 {
+        type identityref {
+          base some-identity;
+        }
+      }
+      leaf leaf2 {
+        when "../leaf1 = 'identity1'";
+        type int8;
+      }
+      leaf leaf3 {
+        type identityref {
+          base identity2;
+        }
+      }
+      leaf leaf4 {
+        when "../leaf3 = 'validation:identity2'";
+        type int8;
+      }
+    }
+    list list-range {
+      key "id";
+      leaf id {
+        type string;
+      }
+      leaf value {
+        type string;
+        default "value4";
+      }
+      max-elements 2;
+    }
+    list list-range-with-min {
+      key "id";
+      leaf id {
+        type string;
+      }
+      list inner-list {
+        min-elements 2;
+        key "index";
+        leaf index {
+          type string;
+        }
+        leaf value {
+          type string;
+          default "value4";
+        }
+      }
+    }
+    list single-unique {
+      key "id";
+      unique "value";
+      leaf id {
+        type string;
+      }
+      leaf value {
+        type string;
+        default "value6";
+      }
+      leaf status {
+        type string;
+      }
+    }
+    list multi-unique-list {
+        key "id";
+        unique "value status";
+        unique "ipv4/group-ipv4-address ipv4/source-ipv4-address";
+        unique "ipv6/group-ipv6-address ipv6/source-ipv6-address";
+        leaf id {
+          type string;
+        }
+        leaf value {
+          type string;
+          default "value6";
+        }
+        leaf status {
+          type string;
+        }
+        leaf ip-version {
+        	type string;
+        }
+        container ipv4 {
+        	when '../ip-version = "ipv4"';
+        	leaf source-ipv4-address {
+        		type string;
+        	}
+        	leaf group-ipv4-address{
+        		type string;
+        		default "10.10.10.10";
+        	}
+        }
+        container ipv6 {
+        	when '../ip-version = "ipv6"';
+        	leaf source-ipv6-address {
+        		type string;
+        	}
+        	leaf group-ipv6-address {
+        		type string;
+        		default "0:0:0:0:0:0:0:0";
+        	}
+        }
+    }
+    list unionWithEnumAndInt {
+      key "id";
+      leaf id {
+        type int8;
+      }
+      leaf test {
+        type int8;
+      }
+      leaf max-address {
+        type union {
+          type enumeration {
+            enum no-limit;
+          }
+          type uint32;
+        }
+        default "no-limit";
+      }
+    }
+    list unique-with-mandatory {
+      key "id";
+      unique "value";
+      leaf id {
+        type string;
+      }
+      leaf value {
+        type string;
+        mandatory true;
+      }
+      leaf status {
+        type string;
+      }
+    }
+    list descendent-unique-with-nested-choice {
+      key "id";
+      unique "outerChoice/justCase1/mufasa outerChoice/justCase1/innerChoice/innerCase1/innerContainer/simba";
+      leaf id {
+        type string;
+      }
+      choice outerChoice {
+        case justCase1 {
+          container outerContainer {
+            leaf scar {
+              type string;
+            }
+          }
+          leaf mufasa {
+            type string;
+          }
+          choice innerChoice {
+            case innerCase1 {
+              container innerContainer {
+                leaf simba {
+                  type string;
+                }
+              }
+            }
+            case innerCase2 {
+              leaf zazu {
+                type string;
+              }
+            }
+          }
+        }
+        case justCase2 {
+          leaf sarabi {
+            type string;
+          }
+        }
+      }
+    }
+    list unique-with-default {
+      key "id";
+      unique "zazu rafiki";
+      leaf id {
+        type string;
+      }
+      leaf zazu {
+        default "fly";
+        type string;
+      }
+      leaf rafiki {
+        default "jump";
+        type string;
+      }
+    }
+    list descendent-unique-direct {
+      key "id";
+      unique "uniqueTarget/uniqueLeaf";
+      leaf id {
+        type string;
+      }
+      container uniqueTarget {
+        leaf uniqueLeaf {
+          type string;
+        }
+      }
+    }
+    list unique-with-choice {
+      key "id";
+      unique "justChoice/justCase1/pumbaa justChoice/justCase1/timon";
+      leaf id {
+        type string;
+      }
+      choice justChoice {
+        case justCase1 {
+          leaf pumbaa {
+            type string;
+          }
+          leaf timon {
+            type string;
+          }
+        }
+      }
+    }
+    list descendent-unique-with-choice {
+      key "id";
+      unique "justChoice/justCase1/uniqueTargetInChoice/scar justChoice/justCase1/mufasa";
+      leaf id {
+        type string;
+      }
+      choice justChoice {
+        case justCase1 {
+          container uniqueTargetInChoice {
+            leaf scar {
+              type string;
+            }
+          }
+          leaf mufasa {
+            type string;
+          }
+        }
+        case justCase2 {
+          leaf sarabi {
+            type string;
+          }
+        }
+      }
+    }
+    list multi-unique {
+      key "id";
+      unique "value status";
+      leaf id {
+        type string;
+      }
+      leaf value {
+        type string;
+        default "value6";
+      }
+      leaf status {
+        type string;
+      }
+    }
+    list multi-unique-with-default-and-mandatory {
+      key "id";
+      unique "value status";
+      leaf id {
+        type string;
+      }
+      leaf value {
+        type string;
+        mandatory true;
+      }
+      leaf status {
+        when "../value = 'value4'";
+        type string;
+        default "ok";
+      }
+      leaf test {
+        type string;
+      }
+    }
+    list key-leaf-with-default {
+      key "id";
+      leaf id {
+        type string;
+        default "1";
+      }
+      leaf value {
+        type string;
+      }
+    }
+    list listWithMust {
+      must './one' {
+        error-message "one leaf is mandatory";
+      }
+      must './two' {
+        error-message "two leaf is mandatory";
+      }
+      key "id";
+      leaf id {
+        type string;
+      }
+      leaf one {
+        type string;
+      }
+      leaf two {
+        type string;
+      }
+    }
+    container arithmetic-validation {
+      presence "arithmetic-validation";
+      leaf value1 {
+        type int8;
+        mandatory true;
+      }
+      leaf mod-leaf {
+        when '../value1 mod 5 = 0';
+        type int8;
+      }
+      leaf all-arith-leaf {
+        when '../value1 + ../value1 <= 50 - ../value1 and ../value1 * ../value1 or ../value1 div 3 = 5 and ../value1 mod 2 = 1';
+        type int8;
+      }
+      leaf all-must-leaf {
+        must '../value1 + ../value1 <= 50 - ../value1 and ../value1 * ../value1 or ../value1 div 3 = 5 and ../value1 mod 2 = 1';
+        type int8;
+      }
+      leaf abs-leaf {
+        when '/validation/arithmetic-validation/value1 + 10 = 10 + /validation:validation/validation:arithmetic-validation/validation:value1';
+        type int8;
+      }
+      leaf fail-must-leaf {
+        must '../value1 + 10 < 0';
+        type int8;
+      }
+      leaf must-value2-exist {
+        type int8;
+      }
+      leaf must-value3-exist {
+        type int8;
+      }
+      leaf pass-must-leaf-not-condition {
+        must 'not (../value1 + 10 < 0)';
+        type int8;
+      }
+      leaf pass-must-leaf-not-exist {
+        must 'not (../must-value2-exist)';
+        type int8;
+      }
+      leaf pass-must-leaf-exist {
+        must 'not (not (../must-value3-exist))';
+        type int8;
+      }
+      leaf fail-must-leaf-not-condition {
+        must 'not (../value1 >= 15)';
+        type int8;
+      }
+      leaf fail-must-leaf-not-condition1 {
+        must 'not (../value2 - ../value1 < ../value4 div ../value1)';
+        type int8;
+      }
+      leaf when-value2-exist {
+        type int8;
+      }
+      leaf when-value3-exist {
+        type int8;
+      }
+      leaf pass-when-leaf-not-condition {
+        when 'not (../value1 + 10 < 0)';
+        type int8;
+      }
+      leaf pass-when-leaf-not-exist {
+        when 'not (../when-value2-exist)';
+        type int8;
+      }
+      leaf pass-when-leaf-exist {
+        when 'not (not (../when-value3-exist))';
+        type int8;
+      }
+      leaf fail-when-leaf-not-condition {
+        when 'not (../value1 >= 15)';
+        type int8;
+      }
+      leaf fail-when-leaf-not-condition1 {
+        when 'not (../value2 - ../value1 < ../value4 div ../value1)';
+        type int8;
+      }
+      leaf value2 {
+        when '../value1+10 > 20';
+        type int8;
+      }
+      leaf value3 {
+        when '../value1 + ../value2 - 10 > 10';
+        type int8;
+      }
+      leaf value4 {
+        when '../value1 + ../value2 < ../value3 * ../value1';
+        type int8;
+      }
+      leaf value5 {
+        when '../value2 - ../value1 < ../value4 div ../value1';
+        type int8;
+      }
+      container error-path-validation {
+        list wrong-path-validation {
+          when '../value1 > 10';
+          key "key1";
+          leaf key1 {
+            type int8;
+          }
+        }
+      }
+      
+	list whenOnList {
+      when '../value1 > 10';
+      key "key1";
+      leaf key1 {
+        type int8;
+      }
+    }
+      
+      container must-validation {
+        must ' ../value5 * ../value4 >= ../value1 and ../value1 + ../value2 < ../value4 * ../value4';
+        container fail-must-validation {
+          must ' ../../value1 < 0';
+        }
+      }
+    }
+    list listForCount {
+    	key id;
+    	leaf id{
+    		type int8;
     	}
-    	
-    
-	    container identity-validation {
+    	leaf testLeaf{
+    		type string;
+    	}
+    }
 
-	    	leaf leaf1 {
-	    		type identityref {
-	    			base some-identity;
-	    		}
-	    	}
-	    	
-	    	leaf leaf2 {
-	    		when "../leaf1 = 'identity1'";
-	    		type int8;
-	    	}
-	    	
-	    	leaf leaf3 {
-	    		type identityref {
-	    			base identity2;
-	    		}
-	    	}
-	    	
-	    	leaf leaf4 {
-	    		when "../leaf3 = 'validation:identity2'";
-	    		type int8;
-	    	}
-	    }
-	    
-        list list-range {
+    list cache {
+        key name;
+        leaf name {
+            type string;
+        }
+        leaf testLeaf{
+            type string;
+        }
+        list cacheField {
+            must "count(/validation:validation/validation:cache/validation:cacheField/validation:ieName[. = 'constant1']) <= 1 and count(/validation:validation/validation:cache/validation:cacheField/validation:ieName[. = 'constant2']) <= 1" {
+                error-message "An ieName must be unique for constant 1&2";
+            }
             key id;
-            
             leaf id {
+                type int8;
+            }
+            leaf ieName{
                 type string;
             }
-            
-            leaf value {
-                type string;
-            }
-            
-            max-elements 2;
         }
-        
-       list single-unique {
+        list cacheFieldWithRelatveMustPath {
+            must "count(../../validation:cache/validation:cacheFieldWithRelatveMustPath/validation:ieName[. = 'constant1']) <= 1 and count(../../validation:cache/validation:cacheFieldWithRelatveMustPath/validation:ieName[. = 'constant2']) <= 1" {
+                error-message "An ieName must be unique for constant 1&2";
+            }
             key id;
-
-            unique "value";
-
             leaf id {
-                type string;
+                type int8;
             }
-
-            leaf value {
-                type string;
-            }
-
-            leaf status {
+            leaf ieName{
                 type string;
             }
         }
-
-        list multi-unique {
-            key id;
-
-            unique "value status";
-
-            leaf id {
-                type string;
-            }
-
-            leaf value {
-                type string;
-            }
-
-            leaf status {
-                type string;
-            }
-
+    }
+    container count-validation {
+      leaf-list countable {
+        type string;
+        max-elements 2;
+      }
+      leaf-list countable1 {
+        type string;
+      }
+      leaf value1 {
+        when '/validation/leaflist-range[count(leaflist-type) = 2]';
+        type int8;
+      }
+      leaf value2 {
+        when 'count(../countable) = 0';
+        type int8;
+      }
+      leaf dummyLeaf {
+      	type string;
+	  }
+      leaf countWithPredicates {
+      	when 'count(/validation/count-validation/dummyLeaf[ . = /validation/listForCount/testLeaf]) > 0';
+      	type string;
+      }
+      leaf valueCurrent {
+        must 'count(../countable) = 1 and (../../count-validation/countable = current())';
+        type string;
+      }
+      leaf twoLeafList {
+        must 'count(countable) = count(../countable1) and ../countable = ../countable1';
+        type int8;
+      }
+      list count-list {
+        key "leaf1";
+        leaf leaf1 {
+          when 'count(../../count-list) = 1';
+          type int8;
         }
-        
-        list listWithMust {
-        	
-        	must "./one" 
-            { 
-                error-message "one leaf is mandatory"; 
-            } 
-            must "./two" 
-            { 
-                error-message "two leaf is mandatory"; 
-            } 
-        	
-            key id;
-
-            leaf id {
-                type string;
-            }
-
-            leaf one {
-                type string;
-            }
-
-            leaf two {
-                type string;
-            }
-
+        leaf leaf2 {
+          must 'count(/validation/count-validation/count-list) = 1 and . != 0 and count(../../count-list[leaf1=current()]) = 0';
+          type int8;
         }
-
-         
-        container arithmetic-validation{
-           presence "arithmetic-validation";
-           
-           leaf value1 {
-                   type int8;
-                   mandatory true;
-           }
-           
-           leaf mod-leaf {
-           		when "../value1 mod 5 = 0";
-           		type int8;
-           	}
-           	
-           	leaf all-arith-leaf {
-           		when "../value1 + ../value1 <= 50 - ../value1 and ../value1 * ../value1 or ../value1 div 3 = 5 and ../value1 mod 2 = 1";
-           		type int8;
-           	}
-           	
-           	leaf all-must-leaf {
-           		must "../value1 + ../value1 <= 50 - ../value1 and ../value1 * ../value1 or ../value1 div 3 = 5 and ../value1 mod 2 = 1";
-           		type int8;
-           	}  
-           	
-           	leaf abs-leaf {
-           		when "/validation/arithmetic-validation/value1 + 10 = 10 + /validation:validation/validation:arithmetic-validation/validation:value1";
-           		type int8;
-           	}
-           
-           leaf fail-must-leaf {
-           		must "../value1 + 10 < 0";
-           		type int8;
-           	}
-           
-           leaf value2 {
-                   when "../value1+10 > 20";
-                   type int8;
-           }
-           
-           leaf value3 {
-           		   when "../value1 + ../value2 - 10 > 10";
-           		   type int8;
-           }
-           
-           leaf value4 {
-           		   when "../value1 + ../value2 < ../value3 * ../value1";
-           		   type int8;
-           }
-
-           leaf value5 {
-           		   when "../value2 - ../value1 < ../value4 div ../value1";
-           		   type int8;
-           }
-           
-		   container error-path-validation {
-           
-           		   list wrong-path-validation {
-           		   		when "../value1 > 10";
-           		   		key key1;
-           		   		
-           		   		leaf key1{
-           		   			type int8;
-           		   		}
-           		   }
-		   }
-		   
-           container must-validation {
-           		   must " ../value5 * ../value4 >= ../value1 and ../value1 + ../value2 < ../value4 * ../value4";
-           		   
-           		   container fail-must-validation {
-           		   		must " ../../value1 < 0";
-           		   }
-           		   
-           }
+      }
+    }
+    container leaflist-range {
+      presence "leaflist-range";
+      leaf-list leaflist-type {
+        type string;
+        min-elements 2;
+        max-elements 3;
+      }
+      leaf-list dummy {
+        type int8;
+      }
+    }
+    leaf-list dummy {
+      type int8;
+    }
+    container leaf-ref {
+      list artist {
+        key "name";
+        leaf name {
+          type string {
+            length "1 .. max";
+          }
+          description
+            "the artist of certain song";
         }
-        
-        container count-validation {
-			leaf-list countable {
-				type string;
-				max-elements 2;
-			}
-			
-			leaf-list countable1 {
-				type string;
-			}
-
-  		    leaf value1 {
-		   		when "/validation/leaflist-range[count(leaflist-type) = 2]";
-		   		type int8;
-		    }
-		    
-		    leaf value2 {
-				when "count(countable) = 0";
-		    	type int8;
-		    }
-		    
-		    leaf valueCurrent {
-		    	must "count(../countable) = 1 and (../../count-validation/countable = current())";
-		    	type string;
-		    }
-		    
-		    leaf twoLeafList {
-		    	must "count(countable) = count(../countable1) and ../countable = ../countable1";
-		    	type int8;
-		    } 
-		    
-		    list count-list {	
-		    	key leaf1;
-		    	
-		    	leaf leaf1 {
-		    		when "count(count-list) = 1";
-		    		type int8;
-		    	}
-		    	
-		    	leaf leaf2 {
-		    		when "count(/validation/count-validation/count-list) = 1 and . != 0 and count(../../count-list[leaf1=current()]) = 0";
-		    		type int8;
-		    	}
-		    	
-		    }
-        }  
-		
-        container leaflist-range {
-        	presence "leaflist-range";
-            leaf-list leaflist-type {
+      }
+      list album {
+        key "name";
+        leaf name {
+          type string {
+            length "1 .. max";
+          }
+          description
+            "the artist of certain song";
+        }
+        list song {
+          key "name";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+          }
+          leaf artist-name {
+            type leafref {
+              path "../../../artist/name";
+            }
+          }
+        }
+        leaf song-count {
+          type int32;
+        }
+      }
+      container music {
+        leaf kind {
+          type string {
+            length "1 .. max";
+          }
+        }
+        leaf favourite-album {
+          type leafref {
+            path "../../album/name";
+          }
+        }
+        leaf favourite-song {
+          type leafref {
+            path "../../album[name = current()/../favourite-album]/song/name";
+          }
+        }
+      }
+      container current-alone {
+        leaf current-leaf {
+          type leafref {
+            path "/validation/leaf-ref/album/name";
+          }
+        }
+        list current-alone-list {
+          key "key";
+          leaf key {
+            type int8;
+          }
+          leaf current-alone {
+            must '../../current-alone-list[current()]/current-alone = .';
+            type int8;
+          }
+        }
+        leaf current-alone-list-leaf {
+          must '../current-alone-list[current()]/current-alone = .';
+          type int8;
+        }
+        leaf current-alone-leaf {
+          must '/validation/leaf-ref/album[current()]/song-count >= 10';
+          type leafref {
+            path "../current-leaf";
+          }
+        }
+        leaf current-parent-leaf {
+          when '/validation/leaf-ref/album[name = current()/../current-leaf]/song-count >= 10';
+          type leafref {
+            path "../current-leaf";
+          }
+        }
+        leaf-list current-leaf-list {
+          when '/validation/leaf-ref/album[name = current()/../current-leaf]/song-count >= 10';
+          type string;
+        }
+        leaf-list current-leaf1 {
+          type string;
+        }
+        leaf-list current-leaf2 {
+          when '/validation/leaf-ref/album[name = current()/../current-leaf1]/song-count >= 10';
+          type string;
+        }
+      }
+      container current-multi-parent {
+        leaf current-some-leaf {
+          type string;
+        }
+        list name-list {
+          key "name";
+          leaf name {
+            type string;
+          }
+          leaf name-count {
+            type string;
+          }
+        }
+        list album-name-list {
+          key "name";
+          leaf name {
+            type string;
+          }
+          leaf current-album-list-leaf {
+            type leafref {
+              path "../../../album[name = current()/../../current-some-leaf]/song-count";
+            }
+          }
+          leaf two-current-leaf {
+            type leafref {
+              path "../../name-list[name = current()/../../current-some-leaf]/name-count";
+            }
+          }
+        }
+      }
+      container stateValue {
+        config false;
+        leaf value1 {
+          type string;
+          config false;
+        }
+      }
+      list device {
+        key "device-id";
+        anvext:big-list;
+        leaf device-id {
+          type string;
+        }
+        container stateValue {
+          config false;
+          leaf value1 {
+            type string;
+            config false;
+          }
+        }
+      }
+    }
+    container instance-identifier-example {
+      container address {
+        list national {
+          key "national-id";
+          leaf national-id {
+            type string;
+          }
+          leaf national-name {
+            type string;
+          }
+          list province {
+            key "province-id";
+            leaf province-id {
+              type string;
+            }
+            leaf province-name {
+              type string;
+            }
+            list district {
+              key "district-id";
+              leaf district-id {
                 type string;
+              }
+              leaf district-name {
+                type string;
+              }
+            }
+          }
+        }
+      }
+      list classz {
+        key "class-id class-name";
+        leaf class-id {
+          type string;
+        }
+        leaf class-name {
+          type string;
+        }
+        leaf number-students {
+          type uint8;
+        }
+      }
+      list subject {
+        key "subject-id";
+        leaf subject-id {
+          type string;
+        }
+        leaf subject-name {
+          type string;
+        }
+      }
+      leaf-list leaflist {
+        type instance-identifier {
+          require-instance true;
+        }
+      }
+      leaf leaf1 {
+        type string;
+      }
+      list student {
+        key "student-id";
+        leaf student-id {
+          type string;
+        }
+        leaf student-name {
+          type string;
+        }
+        leaf student-instance-identifier1 {
+          type instance-identifier {
+            require-instance true;
+          }
+        }
+        leaf student-instance-identifier2 {
+          type instance-identifier {
+            require-instance false;
+          }
+        }
+      }
+    }
+    container choicecase {
+      presence "choiceCase";
+      leaf name {
+        type string;
+      }
+      list list1-type {
+        key "list-key";
+        leaf list-key {
+          type string;
+        }
+        choice choice1 {
+          case case1 {
+            leaf case-leaf1 {
+              type string;
+            }
+          }
+          case case2 {
+            leaf case-leaf2 {
+              type string;
+            }
+          }
+          case case3 {
+            container case3Container {
+              leaf case-leaf3 {
+                type string;
+              }
+            }
+          }
+          case case4 {
+            container case4Container {
+              leaf case-leaf4 {
+                type string;
+              }
+            }
+          }
+        }
+      }
+      choice leaf-type {
+        default "leaf-type-case1";
+        case leaf-type-case1 {
+          leaf leaf-case1 {
+            type string;
+            default "Default value 1";
+          }
+        }
+        case leaf-type-case2 {
+          leaf leaf-case2 {
+            type string;
+          }
+          leaf leaf2-case2 {
+            type string;
+          }
+        }
+      }
+      choice leaf-empty-type {
+        default "leaf-empty-type-case1";
+        case leaf-empty-type-case1 {
+          leaf leaf-empty-case1 {
+            type empty;
+          }
+        }
+        case leaf-empty-type-case2 {
+          leaf leaf-empty-case2 {
+            type empty;
+          }
+        }
+      }
+      choice leaflist-type {
+        case leaflist-type-case1 {
+          leaf-list leaflist-case1 {
+            type string;
+          }
+        }
+        case leaflist-type-case2 {
+          leaf-list leaflist-case2 {
+            type string;
+          }
+        }
+        case leaflist-type-case3 {
+          leaf leaflist-leaf-case3 {
+            type string;
+          }
+        }
+      }
+      choice list-type {
+        case list-type-case1 {
+          list list-case1 {
+            key "name-case1";
+            leaf name-case1 {
+              type string;
+            }
+            leaf value-case1 {
+              type string;
+            }
+          }
+        }
+        case list-type-case2 {
+          list list-case2 {
+            key "name-case2";
+            leaf name-case2 {
+              type string;
+            }
+            leaf value-case2 {
+              type string;
+            }
+          }
+        }
+      }
+      choice mixed-case {
+        default "leaf-type-case-mixed";
+        case leaf-type-case-mixed {
+          leaf leaf-case-mixed {
+            type string;
+            default "Default value for mixed case";
+          }
+        }
+        case list-type-case-mixed {
+          list list-case-mixed {
+            key "name-case-mixed";
+            leaf name-case-mixed {
+              type string;
+            }
+            leaf value-case-mixed {
+              type string;
+            }
+          }
+        }
+        case container-type-case-mixed {
+          container container-case-mixed {
+            leaf value-case-mixed {
+              type string;
+            }
+          }
+        }
+        case leaflist-type-case-mixed {
+          leaf-list leaflist-case-mixed {
+            type string;
+          }
+        }
+      }
+      choice container-type {
+        default "container-type-case2";
+        case container-type-case1 {
+          container container-case1 {
+            leaf container-case1-leaf1 {
+              type string;
+            }
+            leaf container-case1-leaf2 {
+              type string;
+            }
+          }
+        }
+        case container-type-case2 {
+          container container-case2 {
+            leaf container-case2-leaf1 {
+              type string;
+              default "Default value for container-type";
+            }
+          }
+        }
+      }
+    }
+    container default-container-or-list-choice-case {
+      leaf name {
+        type string;
+      }
+      choice default-container-choice {
+        default "default-container";
+        case default-container-leaf {
+          leaf default-container-leaf {
+            type string;
+          }
+        }
+        case default-container-list {
+          list default-container-list {
+            key "name-case";
+            leaf name-case {
+              type string;
+            }
+            leaf value-case {
+              type string;
+            }
+          }
+        }
+        case default-container {
+          container default-container {
+            leaf container-leaf-default {
+              type string;
+              default "Default value for leaf in default container case";
+            }
+          }
+        }
+      }
+      choice default-list-choice {
+        default "default-list";
+        case default-list-leaf {
+          leaf default-list-leaf {
+            type string;
+          }
+        }
+        case default-list {
+          list default-list {
+            key "name-list value-list";
+            leaf name-list {
+              type string;
+              default "Default value for name-list";
+            }
+            leaf value-list {
+              type string;
+              default "Default value for value-list";
+            }
+          }
+        }
+        case default-list-container {
+          container list-default-container {
+            leaf default-list-container-leaf {
+              type string;
+            }
+          }
+        }
+      }
+      choice default-container-choice2 {
+        default "default-container-wo-default-leaf-value";
+        case default-container-leaf2 {
+          leaf default-container-leaf2 {
+            type string;
+          }
+        }
+        case default-container-list2 {
+          list default-container-list2 {
+            key "name-case2";
+            leaf name-case2 {
+              type string;
+            }
+            leaf value-case2 {
+              type string;
+            }
+          }
+        }
+        case default-container-wo-default-leaf-value {
+          container default-container-wo-default-leaf-value {
+            leaf container-leaf-wo-default-value {
+              type string;
+            }
+          }
+        }
+      }
+      choice default-list-choice2 {
+        default "default-list-wo-def-value-for-some-key";
+        case default-list-leaf2 {
+          leaf default-list-leaf2 {
+            type string;
+          }
+        }
+        case default-list-wo-def-value-for-some-key {
+          list default-list-wo-def-value-for-some-key {
+            key "leaf1 leaf2 leaf3";
+            leaf leaf1 {
+              type string;
+              default "Default value for leaf1";
+            }
+            leaf leaf2 {
+              type string;
+              default "Default value for leaf2";
+            }
+            leaf leaf3 {
+              type string;
+            }
+          }
+        }
+        case default-list-container2 {
+          container list-default-container2 {
+            leaf default-list-container-leaf2 {
+              type string;
+            }
+          }
+        }
+      }
+    }
+    container must-validation {
+      leaf data-status {
+        type enumeration {
+          enum success;
+          enum failed;
+          enum in-progress;
+        }
+      }
+      leaf leaf-type {
+        type string;
+        must '../interface/ifMTU <= 5000 and ../interface/ifMTU >= 100' {
+          error-message "An MTU must be  100 .. 5000";
+        }
+      }
+      container interface {
+        leaf ifType {
+          type enumeration {
+            enum ethernet;
+            enum atm;
+          }
+        }
+        leaf ifMTU {
+          type uint32;
+        }
+        leaf ifMTU2 {
+          type uint32;
+        }
+        leaf ifIndex {
+          type int8;
+        }
+        leaf-list ifEntry {
+          type string;
+          must "../../data-status != 'failed'" {
+            error-message "An ifEntry must be success or in-progress";
+          }
+        }
+        must "ifType = 'ethernet' and ifMTU = 1500" {
+          error-message "An ethernet MTU must be 1500";
+        }
+        must 'ifMTU2 = 1400' {
+          error-app-tag "custom-error-app-tag";
+          error-message "A MTU2 must be 1400";
+        }
+        list data {
+          key "data-id";
+          leaf data-id {
+            type int8;
+          }
+          leaf data-value {
+            type int32;
+          }
+          must "../../data-status = 'success' and data-value <= 10000 and data-value >= 64" {
+            error-message "data-value must be  64 .. 10000";
+          }
+        }
+        anyxml ifInfo {
+          must "../ifIndex <= '200' and ../ifIndex >= 100" {
+            error-message "An ifIndex must be 100 .. 200";
+          }
+        }
+      }
+    }
+    container when-validation {
+      leaf leaf-type {
+        when '../result-leaf >= 10';
+        type string;
+      }
+      leaf-list leaflist-type {
+        when '../result-leaflist >= 5 and ../result-leaflist <= 10';
+        type string;
+      }
+      leaf not-equal {
+        when '../result-leaf != 10';
+        type string;
+      }
+      leaf result-leaf {
+        type int8;
+      }
+      leaf result-leaflist {
+        type int8;
+      }
+      leaf result-container {
+        type int8;
+      }
+      leaf result-list {
+        type int8;
+      }
+      leaf boolean-leaf {
+        type boolean;
+      }
+      leaf NotEqualLeaf1 {
+        when '../result-leaf != 0';
+        type string;
+      }
+      leaf NotEqualLeaf2 {
+        when '/validation/when-validation/result-leaf != 10';
+        type string;
+      }
+      leaf NotEqualLeaf3 {
+        when '../result-leaf != 0 and /validation/when-validation/result-leaf != 15';
+        type string;
+      }
+      leaf absoluteLeaf {
+        when '/validation/when-validation/result-leaf >= 10';
+        type string;
+      }
+      leaf absoluteLeaf1 {
+        when '/validation/when-validation/result-leaf >= 10 and /validation/when-validation/result-leaf <= 20';
+        type string;
+      }
+      leaf absoluteLeaf2 {
+        when '/validation/when-validation/result-leaf >= 30 or /validation/when-validation/result-leaf <= 20';
+        type string;
+      }
+      leaf check-boolean-leaf {
+        when '../boolean-leaf = true and ../boolean-leaf != false';
+        type string;
+      }
+      container container-type {
+        when '../result-container >= 10 and ../result-container <= 20';
+        leaf container-value {
+          type string;
+        }
+      }
+      list list-type {
+        when '../result-list = 10';
+        key "list-id";
+        anvext:big-list;
+        leaf list-id {
+          type string;
+        }
+        leaf list-value {
+          type string;
+        }
+      }
+      list list-type1 {
+        when '../result-list = 10';
+        key "list-id";
+        leaf list-id {
+          type string;
+        }
+        leaf list-value {
+          type string;
+        }
+      }
+      list list-type2 {
+        when '../result-list = 10';
+        key "list-id";
+        anvext:big-list;
+        leaf list-id {
+          type string;
+        }
+        leaf list-value {
+          type string;
+        }
+      }
+      container choicecase {
+        presence "choicecase";
+        description "when-constraint for ChoiceCaseNode";
+
+        leaf data-choice {
+          type int8;
+        }
+        leaf result-choice {
+          type enumeration {
+            enum success;
+            enum failed;
+          }
+        }
+        choice leaf-type {
+          case leafcase-success {
+            when "validation:result-choice = 'success'";
+            leaf leaf-case-success {
+              type string;
+            }
+          }
+          case leafcase-failed {
+            when "validation:result-choice = 'failed'";
+            leaf leaf-case-failed {
+              type string;
+            }
+          }
+        }
+        choice leaflist-type {
+          case leaflist-case-success {
+            when "validation:result-choice = 'success'";
+            leaf-list leaflist-case-success {
+              type string;
+            }
+          }
+          case leaflist-case-failed {
+            when "validation:result-choice = 'failed'";
+            leaf-list leaflist-case-failed {
+              type string;
+            }
+          }
+        }
+        choice container-type {
+          when 'validation:data-choice > 100';
+          case container-case-success {
+            when "validation:result-choice = 'success'";
+            container container-case-success {
+              leaf container-success-leaf1 {
+                type string;
+              }
+              leaf container-success-leaf2 {
+                type string;
+              }
+            }
+          }
+          case container-case-failed {
+            when "validation:result-choice = 'failed'";
+            container container-case-failed {
+              leaf container-failed-leaf1 {
+                type string;
+              }
+              leaf container-failed-leaf2 {
+                type string;
+              }
+            }
+          }
+        }
+        choice list-type {
+          case list-case-success {
+            when "validation:result-choice = 'success'";
+            list list-case-success {
+              key "success-id";
+              leaf success-id {
+                type int8;
+              }
+              leaf success-value {
+                type string;
+              }
+            }
+          }
+          case list-case-failed {
+            when "validation:result-choice = 'failed'";
+            list list-case-failed {
+              key "failed-id";
+              leaf failed-id {
+                type int8;
+              }
+              leaf failed-value {
+                type string;
+              }
+            }
+          }
+        }
+        choice absolute-leaf-type {
+          case absolute-case-success {
+            when "/validation/when-validation/choicecase/result-choice = 'success'";
+            leaf-list absolute-case-success {
+              type string;
+            }
+          }
+          case absolute-case-failed {
+            when "/validation/when-validation/choicecase/leaflist-case-failed = 'failed'";
+            leaf-list absolute-case-failed {
+              type string;
+            }
+          }
+        }
+        choice anyXml-type {
+          case anyxml-case-success {
+            when "validation:result-choice = 'success'";
+            anyxml data-success;
+          }
+          case anyxml-case-failed {
+            when "validation:result-choice = 'failed'";
+            anyxml data-failed;
+          }
+        }
+      }
+      leaf result-anyxml {
+        type enumeration {
+          enum failed;
+          enum success;
+        }
+      }
+      anyxml extraInfo {
+        when "../result-anyxml = 'success'";
+      }
+    }
+    container mandatory-validation {
+      presence "choiceCase";
+      choice mandatory-choice {
+        mandatory true;
+        case non-mandatory {
+          leaf non-mandatory-leaf {
+            type string;
+          }
+          leaf non-mandatory-leaf2 {
+            type string;
+          }
+        }
+        case non-mandatory-list {
+          list level1-list {
+            key "name";
+            leaf name {
+              type string;
+            }
+          }
+        }
+        case non-mandatory-case {
+          leaf level1-default-leaf {
+            type empty;
+            default "This is default level1-default-leaf value";
+          }
+          choice under-non-mandatory-case {
+            default "level2-case1";
+            case level2-case1 {
+              leaf level2-leaf-case1 {
+                type string;
+                default "This is the default value of choice-case under non-mandatory-case";
+              }
+            }
+            case level2-case2 {
+              leaf level2-leaf-case2 {
+                type string;
+              }
+            }
+          }
+        }
+        case mandatory-case1 {
+          leaf mandatory-case1-leaf1 {
+            type string;
+            default "This is the default value of mandatory-case1-leaf1";
+          }
+          leaf mandatory-case1-leaf2 {
+            type string;
+            mandatory true;
+          }
+        }
+        case mandatory-case2 {
+          leaf mandatory-case2-leaf1 {
+            type string;
+            mandatory true;
+          }
+          leaf mandatory-case2-leaf2 {
+            type string;
+            mandatory true;
+          }
+        }
+      }
+    }
+    container xml-subtree {
+      leaf leaf1 {
+        type string;
+      }
+    }
+    container interfaces-wrong-must-condition-xpath-for-count {
+      must "count(interface[enabled='true'] < 90)";
+      list interface {
+        key "name";
+        leaf name {
+          type string;
+        }
+        leaf enabled {
+          type boolean;
+          default "true";
+        }
+      }
+    }
+    container OrderByListContainer {
+      presence "orderByContainer";
+    }
+    container boolean-function-validation {
+      leaf string1 {
+        type string;
+      }
+      leaf number1 {
+        type int16;
+      }
+      leaf-list nodeset1 {
+        type string;
+      }
+      leaf boolean-string-conversion-leaf {
+        must '../string1';
+        type string;
+      }
+      leaf boolean-string-conversion-in-and-leaf {
+        must '5 = 5 and ../string1';
+        type string;
+      }
+      leaf boolean-string-conversion-in-or-leaf {
+        must '4 = 5 or ../string1';
+        type string;
+      }
+      leaf boolean-number-conversion-leaf {
+        must '../number1';
+        type string;
+      }
+      leaf boolean-number-conversion-in-and-leaf {
+        must '5 = 5 and ../number1';
+        type string;
+      }
+      leaf boolean-number-conversion-in-or-leaf {
+        must '4 = 5 or ../number1';
+        type string;
+      }
+      leaf boolean-nodeset-conversion-leaf {
+        must '../nodeset1';
+        type string;
+      }
+      leaf boolean-nodeset-conversion-in-and-leaf {
+        must '5 = 5 and ../nodeset1';
+        type string;
+      }
+      leaf boolean-nodeset-conversion-in-or-leaf {
+        must '4 = 5 or ../nodeset1';
+        type string;
+      }
+    }
+    container leaf-list-add-validation {
+      leaf-list configured-mode {
+        type string;
+      }
+      leaf fast-leaf {
+        when "../configured-mode = 'fast'";
+        type string;
+        default "fast1";
+      }
+    }
+    container when-validation-container {
+      list list1 {
+        key "key";
+        leaf key {
+          type uint8 {
+            range "1..50";
+          }
+        }
+        leaf operator {
+          mandatory true;
+          type enumeration {
+            enum contains;
+            enum equal-to;
+            enum in;
+          }
+        }
+        leaf value {
+          when "../operator != 'in'";
+          type string;
+          mandatory true;
+        }
+        leaf-list values {
+          when "../operator = 'in'";
+          type string;
+          min-elements 2;
+        }
+      }
+    }
+    container routing {
+      container control-plane-protocols {
+        list control-plane-protocol {
+          key "type name";
+          leaf type {
+            type identityref {
+              base some-identity;
+            }
+            description
+              "Type of the control-plane protocol - an identity derived
+               from the 'control-plane-protocol' base identity.";
+          }
+          leaf name {
+            type string;
+            description
+              "An arbitrary name of the control-plane protocol
+               instance.";
+          }
+          container static-routes {
+            when "derived-from-or-self(../type, 'validation:identity2')" {
+              description
+                "This container is only valid for the 'static' routing
+                 protocol.";
+            }
+          }
+        }
+      }
+    }
+    container choice-when-validation {
+      presence "choice-when";
+      leaf limit {
+        type int16;
+        default "0";
+      }
+      leaf must-limit {
+        type int16;
+        default "0";
+      }
+    }
+  }
+  augment "/validation:validation/validation:choice-when-validation" {
+    when './limit = 1 or ./limit = 2';
+    choice choice-when {
+      default "case1";
+      case case1 {
+        leaf leaf1 {
+          must '../must-limit = 1';
+          type int16;
+          default "0";
+        }
+      }
+      case case2 {
+        leaf leaf2 {
+          must '../must-limit = 2';
+          type int16;
+          default "0";
+        }
+      }
+    }
+  }
+  augment "/validation:validation/validation:routing/validation:control-plane-protocols/validation:control-plane-protocol/validation:static-routes" {
+    container ipv4 {
+      list route {
+        key "destination-prefix";
+        leaf destination-prefix {
+          type inet:ipv4-prefix;
+          mandatory true;
+          description
+            "IPv4 destination prefix.";
+        }
+        container next-hop {
+          description
+            "Configuration of next-hop.
+             WORKAROUND: NOT SUPPORTED BY ANV - COPYING DEFINITION
+             of next-hop-content from ietf-routing.yang here - See also FNMS-6874";
+          choice next-hop-options {
+            mandatory true;
+            case simple-next-hop {
+              leaf next-hop-address {
+                type inet:ipv4-address;
+              }
+            }
+            case next-hop-list {
+              container next-hop-list {
+                description
+                  "Container for multiple next-hops.";
+                list next-hop {
+                  key "index";
+                  leaf index {
+                    type string;
+                  }
+                  leaf next-hop-address {
+                    type inet:ipv4-address;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  rpc testRematch {
+    input {
+      leaf testRematchName {
+        must 're-match(current(),"[0-9]{2}")';
+        type string;
+      }
+    }
+  }
+  rpc testIfFeature {
+    input {
+      leaf testLeafName {
+        if-feature "local-storage";
+        type string;
+      }
+    }
+  }
+  rpc testDefault {
+    input {
+      leaf testLeafDefault {
+        type string;
+        default "test";
+      }
+      leaf leaf1 {
+        must '../testLeafDefault = "test"';
+        type string;
+      }
+      leaf leaf2 {
+        must '../testLeafDefault = "test10"';
+        type string;
+      }
+    }
+  }
+  rpc emptyInput;
+  rpc groupingTest {
+    input {
+      uses group1;
+    }
+  }
+
+  grouping testGroupWhen {
+    container testGroup1 {
+      leaf groupLeaf1 {
+        type string;
+      }
+    }
+  }
+
+  grouping testGroupWhenCases {
+    choice choicelevel1 {
+      case caselevel1 {
+        choice choicelevel2 {
+          case caselevel2 {
+            choice choicelevel3 {
+              case caselevel3 {
+                leaf upperLeaf {
+                  type string;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  rpc testOutputRematch {
+    output {
+      container outputRematch {
+        leaf testRematchName {
+          must 're-match(current(),"[0-9]{2}")';
+          type string;
+        }
+      }
+    }
+  }
+  rpc testOutputIfFeature {
+    output {
+      container test {
+        leaf testLeafName {
+          if-feature "local-storage";
+          type string;
+        }
+      }
+    }
+  }
+  rpc testOutputDefault {
+    output {
+      container outputDefault {
+        leaf testLeafDefault {
+          type string;
+          default "test";
+        }
+        leaf leaf1 {
+          must '../testLeafDefault = "test"';
+          type string;
+        }
+        leaf leaf2 {
+          must '../testLeafDefault = "test10"';
+          type string;
+        }
+      }
+    }
+  }
+  rpc testRpcInput {
+    input {
+      container container1 {
+        container innerContainer {
+          list innerList {
+            key "innerLeaf";
+            leaf innerLeaf {
+              type string;
+            }
+          }
+        }
+      }
+      uses testGroupWhenCases {
+        when "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name='test']/validation:type='interfaceType'";
+      }
+    }
+  }
+  rpc testRpcOutputUsesWithWhen {
+    output {
+      container container1 {
+        container innerContainer {
+          list innerList {
+            key "innerLeaf";
+            leaf innerLeaf {
+              type string;
+            }
+          }
+        }
+      }
+      uses testGroupWhen {
+        when "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name='test']/validation:type='interfaceType'";
+      }
+    }
+  }
+  rpc leafref-grouping-rpc {
+    input {
+      leaf leaf1 {
+        type string;
+      }
+      uses leafref-grouping;
+    }
+  }
+  rpc leafRefTest {
+    input {
+      leaf leaf1 {
+        type leafref {
+          path "/validation:validation/validation:rpcRefLeaf";
+        }
+      }
+    }
+  }
+  rpc leaf-ref-validation {
+    input {
+      leaf interface {
+        type test-interface-ref;
+        mandatory true;
+      }
+    }
+  }
+  rpc leaf-list-minmax {
+    input {
+        container minmax {
+            leaf-list noOfSongs {
+                type uint64;
                 min-elements 2;
                 max-elements 3;
             }
-            
-            leaf-list dummy {
-            	type int8;
-            }
-        }
-        
-        leaf-list dummy {
-        	type int8;
-        }
-        
-        container leaf-ref {
-        	list artist {
-        		key "name";
-        		leaf name {
-        			type string {
-        				length "1 .. max";
-        			}
-        			description
-        			"the artist of certain song";
-        		}
-        	}
-        	list album {
-        		key "name";
-        		leaf name {
-        			type string {
-        				length "1 .. max";
-        			}
-        			description
-        			"the artist of certain song";
-        		}
-	        	list song {
-	        		key "name";
-	        		leaf name {
-		              type string {
-		                length "1 .. max";
-		              }
-	              	}
-	              	leaf artist-name {
-		               type leafref {
-		                   path "../../../artist/name";
-		                }
-	            	}
-	        	}
-	        	leaf song-count {
-	        		type int32;
-	        	}
-        	}
-        	
-        	container music {
-        		leaf kind {
-        			type string {
-        			  length "1 .. max";
-        			}
-        		}
-        		leaf favourite-album {
-        			type leafref {
-        				path "../../album/name";
-        			}
-        		}
-        		leaf favourite-song {
-        			type leafref {
-        			  path "../../album[name = current()/../favourite-album]/song/name";
-        			}
-        		}
-        	}
-        	
-        	container current-alone {
-        		leaf current-leaf {
-        			type leafref {
-        				path "/validation/leaf-ref/album/name";
-        			}
-        		}
-        		
-        		list current-alone-list {
-        			key key;
-        			
-        			leaf key {
-        				type int8;
-        			}
-        			
-        			leaf current-alone {
-        				when "../../current-alone-list[current()]/current-alone = .";
-        				type int8;
-        			}
-        		}
-        		
-        		leaf current-alone-list-leaf {
-        			when "../current-alone-list[current()]/current-alone = .";
-        			type int8;
-        		}
-        		
-        		leaf current-alone-leaf {
-        			when "/validation/leaf-ref/album[current()]/song-count >= 10";
-        			type leafref {
-        				path "../current-leaf";
-        			}
-        		}
-        		leaf current-parent-leaf {
-        			when "/validation/leaf-ref/album[name = current()/../current-leaf]/song-count >= 10";
-        			type leafref {
-        				path "../current-leaf";
-        			}
-        		}
-        		leaf-list current-leaf-list {
-        			when "/validation/leaf-ref/album[name = current()/../current-leaf]/song-count >= 10";
-        			type string;
-        		}
-        		
-        		leaf-list current-leaf1 {
-        			type string;
-        		}
-        		
-        		leaf-list current-leaf2 {
-        			when "/validation/leaf-ref/album[name = current()/../current-leaf1]/song-count >= 10";
-        			type string;
-        		}
-        		
-        	}
-            
-        	container current-multi-parent {
-        		leaf current-some-leaf {
-        			type string;
-        		}
-        		
-        		list name-list{
-        			key "name";
-        			leaf name {
-        				type string;
-        			}
-        			
-        			leaf name-count {
-        				type string;
-        			}
-        		}
-        		
-        		list album-name-list{
-        			key "name";
-			   		leaf name {
-				 		type string;
-			   		}
-			   		
-			   		leaf current-album-list-leaf {
-	        			type leafref {
-	        				path "../../../album[name = current()/../../current-some-leaf]/song-count";
-	        			}
-	        		}
-			   		
-			   		leaf two-current-leaf {
-			   			type leafref {
-			   				path "current()/../../name-list[name = current()/../../current-some-leaf]/name-count";
-			   			}
-			   		}
-			   		
-			   		leaf nested-current-leaf {
-			   			type leafref {
-			   				path "../../../album[name = current()/../../name-list[name = current()/../../current-some-leaf]/name-count]/song-count";
-			   			}
-			   		}
-        		}
-        	}
-        	
-           container stateValue {
-        	   config false;
-              leaf value1 {
-                  type string;
-                  config false;
-              }
-           }
-                
-        	
-        }
-        
-   container instance-identifier-example {
-        	container address {
-        	 list national {
-        	   key "national-id";
-        	   leaf national-id {
-        	   	 type string;
-        	   }
-        	   leaf national-name {
-        	   	 type string;
-        	   }
-			   list province {
-				   key "province-id";
-				   leaf province-id {
-					 type string;
-				   }
-				   leaf province-name {
-					 type string;
-				   }
-				   list district {
-					key "district-id";
-				    leaf district-id {
-					 type string;
-					}
-					leaf district-name {
-					 type string;
-					}
-				   }
-			   }
-			   
-        	 }
-        	}
-        	
-        	list classz {
-        		key "class-id class-name";
-        		leaf class-id {
-        			type string;
-        		}
-        		leaf class-name {
-        			type string;
-        		}
-        		leaf number-students {
-        			type uint8;
-        		}
-        		
-        	}
-        	
-        	list subject {
-        	  key "subject-id";
-        	  leaf subject-id {
-        	  	type string;
-        	  }
-        	  leaf subject-name {
-        	  	type string;
-        	  }
-        	
-        	}
-        	
-        	leaf-list leaflist {
-	    		type instance-identifier {
-						require-instance "true";
-					}
-        	}
-        	
-        	leaf leaf1 {
-        		 type string;
-        	}
-
-			list student {
-				key "student-id";
-				leaf student-id {
-					type string;
-				}
-				leaf student-name {
-					type string;
-				}
-				leaf student-instance-identifier1 {
-					type instance-identifier {
-						require-instance "true";
-					}
-				}
-				leaf student-instance-identifier2 {
-					type instance-identifier {
-						require-instance "false";
-					}
-					
-				}
-				
-			}
-			
-			
-        }
-        
-        container choicecase {
-    		presence "choiceCase";
-	    	leaf name {
-	    		type string;
-	    	}
-	    	
-	    	list list1-type {
-	    		key list-key;
-	    		leaf list-key{
-	    			type string;
-	    		}
-	    		
-	    		choice choice1 {
-	    			case case1 {
-	    				leaf case-leaf1{
-	    					type string;
-	    				}
-	    			}
-	    			case case2 {
-	    				leaf case-leaf2{
-	    					type string;
-	    				}
-	    			}
-	    			case case3 {
-	    				container case3Container{
-	    					leaf case-leaf3{
-	    						type string;
-	    					}
-	    				}
-	    			}
-	    			case case4 {
-	    				container case4Container{
-	    					leaf case-leaf4{
-	    						type string;
-	    					}
-	    				}
-	    			}
-	    		}
-	    	}
-	    	
-	    	choice leaf-type {
-	    		default leaf-type-case1;
-	    		case leaf-type-case1 {
-	    			leaf leaf-case1 {
-	    				type string;
-	    				default "Default value 1";
-	    			}
-	    		}
-	    		case leaf-type-case2 {
-	    			leaf leaf-case2 {
-	    				type string;
-	    			}
-	    			
-	    			leaf leaf2-case2 {
-	    				type string;
-	    			}
-	    		}
-	    	}
-
-	    	choice leaf-empty-type {
-                default leaf-empty-type-case1;
-                case leaf-empty-type-case1 {
-                    leaf leaf-empty-case1 {
-                        type empty;
-                    }
-                }
-                case leaf-empty-type-case2 {
-                    leaf leaf-empty-case2 {
-                        type empty;
-                    }
-                }
-            }
-	    	
-	    	choice leaflist-type {
-	    		case leaflist-type-case1 {
-	    			leaf-list leaflist-case1 {
-	    				type string;
-	    			}
-	    		}
-	    		case leaflist-type-case2 {
-	    			leaf-list leaflist-case2 {
-	    				type string;
-	    			}
-	    		}
-	    		case leaflist-type-case3 {
-                    leaf leaflist-leaf-case3 {
-                        type string;
-                    }
-                }
-	    	}
-
-	    	choice list-type {
-	    		case list-type-case1 {
-	    			list list-case1 {
-	    				key name-case1;
-	    				leaf name-case1 {
-	    					type string;
-	    				}
-	    				leaf value-case1 {
-	    					type string;
-	    				}
-	    			}
-	    		}
-	    		case list-type-case2 {
-	    			list list-case2 {
-	    				key name-case2;
-	    				leaf name-case2 {
-	    					type string;
-	    				}
-	    				leaf value-case2 {
-	    					type string;
-	    				}
-	    			}
-	    		}
-	    	}
-
-	    	choice mixed-case {
-	    	    default leaf-type-case-mixed;
-	    		case leaf-type-case-mixed {
-	    			leaf leaf-case-mixed {
-	    				type string;
-	    				default "Default value for mixed case";
-	    			}
-	    		}
-	    		case list-type-case-mixed {
-	    			list list-case-mixed {
-                        key name-case-mixed;
-                        leaf name-case-mixed {
-                            type string;
-                        }
-                        leaf value-case-mixed {
-                            type string;
-                        }
-                    }
-                }
-                case container-type-case-mixed {
-                    container container-case-mixed {
-                        leaf value-case-mixed {
-                            type string;
-                        }
-                    }
-                }
-                case leaflist-type-case-mixed {
-                    leaf-list leaflist-case-mixed {
-                        type string;
-                    }
-                }
-            }
-
-			choice container-type {
-			    default container-type-case2;
-				case container-type-case1 {
-					container container-case1 {
-						leaf container-case1-leaf1 {
-							type string;
-						}
-						leaf container-case1-leaf2 {
-							type string;
-						}
-					}
-				}
-				case container-type-case2 {
-					container container-case2 {
-						leaf container-case2-leaf1 {
-							type string;
-							default "Default value for container-type";
-						}
-					}
-				}
-			}
-    	}
-
-    	container default-container-or-list-choice-case{
-    	    leaf name {
-        	    type string;
-        	}
-            choice default-container-choice {
-                default default-container;
-                case default-container-leaf {
-                    leaf default-container-leaf {
-                        type string;
-                    }
-                }
-                case default-container-list {
-                    list default-container-list {
-                        key name-case;
-                        leaf name-case {
-                            type string;
-                        }
-                        leaf value-case {
-                            type string;
-                        }
-                    }
-                }
-                case default-container {
-                    container default-container {
-                        leaf container-leaf-default {
-                            type string;
-                            default "Default value for leaf in default container case";
-                        }
-                    }
-                }
-            }
-
-            choice default-list-choice {
-                default default-list;
-                case default-list-leaf {
-                    leaf default-list-leaf {
-                        type string;
-                    }
-                }
-                case default-list {
-                    list default-list {
-                        key "name-list value-list";
-                        leaf name-list {
-                            type string;
-                            default "Default value for name-list";
-                        }
-                        leaf value-list {
-                            type string;
-                            default "Default value for value-list";
-                        }
-                    }
-                }
-                case default-list-container {
-                    container list-default-container {
-                        leaf default-list-container-leaf {
-                            type string;
-                        }
-                    }
-                }
-            }
-
-            choice default-container-choice2 {
-                default default-container-wo-default-leaf-value;
-                case default-container-leaf2 {
-                    leaf default-container-leaf2 {
-                        type string;
-                    }
-                }
-                case default-container-list2 {
-                    list default-container-list2 {
-                        key name-case2;
-                        leaf name-case2 {
-                            type string;
-                        }
-                        leaf value-case2 {
-                            type string;
-                        }
-                    }
-                }
-                case default-container-wo-default-leaf-value {
-                    container default-container-wo-default-leaf-value {
-                        leaf container-leaf-wo-default-value {
-                            type string;
-                        }
-                    }
-                }
-            }
-
-            choice default-list-choice2 {
-                default default-list-wo-def-value-for-some-key;
-                case default-list-leaf2 {
-                    leaf default-list-leaf2 {
-                        type string;
-                    }
-                }
-                case default-list-wo-def-value-for-some-key{
-                    list default-list-wo-def-value-for-some-key {
-                        key "leaf1 leaf2 leaf3";
-                        leaf leaf1 {
-                            type string;
-                            default "Default value for leaf1";
-                        }
-                        leaf leaf2 {
-                            type string;
-                            default "Default value for leaf2";
-                        }
-                        leaf leaf3 {
-                            type string;
-                        }
-                    }
-                }
-                case default-list-container2 {
-                    container list-default-container2 {
-                        leaf default-list-container-leaf2 {
-                            type string;
-                        }
-                    }
-                }
-            }
-    	}
-
-    	container must-validation {
-	    
-	    	leaf data-status {
-	         	type enumeration {
-		        	enum success;
-		        	enum failed;
-		        	enum in-progress;
-	            }
-	        }
-	    
-	    	leaf leaf-type {
-	    		type string;
-	    		must "../interface/ifMTU <= 5000 and ../interface/ifMTU >= 100" {
-	             	error-message "An MTU must be  100 .. 5000";
-	         	}
-	    	}
-	    	
-	    	container interface {
-	    		leaf ifType {
-	            	type enumeration {
-	                	enum ethernet;
-	                	enum atm;
-	             	}
-	         	}
-	         	
-	         	leaf ifMTU {
-             		type uint32;
-         		}
-         		
-         		leaf ifMTU2 {
-         			type uint32;
-         		}
-         		
-         		leaf ifIndex {
-         			type int8;
-         		}
-         		
-         		leaf-list ifEntry {
-		    		type string;
-		    		must "../../data-status != 'failed'" {
-		             	error-message "An ifEntry must be success or in-progress";
-		         	}
-		    	}
-		        
-		        must "ifType = 'ethernet' and ifMTU = 1500" {
-	             	error-message "An ethernet MTU must be 1500";
-	         	}
-	         	
-	         	must "ifMTU2 = 1400" {
-	         		error-app-tag "custom-error-app-tag";
-	             	error-message "A MTU2 must be 1400";
-	         	}
-	         	
-	         	list data {
-	         		key data-id;
-	         		leaf data-id {
-	         			type int8;
-	         		}
-	         		
-	         		leaf data-value {
-	         			type int32;
-	         		}
-	         		
-	         		must "../../data-status = 'success' and data-value <= 10000 and data-value >= 64" {
-	             		error-message "data-value must be  64 .. 10000";
-	         		}
-	         		
-	         	}
-				
-				anyxml ifInfo{
-					must "../ifIndex <= '200' and ../ifIndex >= 100" {
-						error-message "An ifIndex must be 100 .. 200";
-					}
-				}
-	        }
-
-	    }
-    	
-    	container when-validation {
-    	
-	    	leaf leaf-type {
-	    		when "../result-leaf >= 10";
-	    		type string;
-	    	}
-	    	
-	    	
-	    	leaf-list leaflist-type {
-	    		when "../result-leaflist >= 5 and ../result-leaflist <= 10";
-	    		type string;
-	    	}
-	    	
-	    	leaf not-equal {
-	    		when "../result-leaf != 10";
-	    		type string;
-	    	}
-	    	
-	    	leaf result-leaf {
-	    		type int8;
-	    	}
-	    	leaf result-leaflist {
-	    		type int8;
-	    	}
-	    	leaf result-container {
-	    		type int8;
-	    	}
-	    	leaf result-list {
-	    		type int8;
-	    	}
-	    	leaf boolean-leaf {
-	    		type boolean;
-	    	}
-	    	
-	    	leaf NotEqualLeaf1 {
-	    	    when "../result-leaf != 0";
-	    	    type string;
-	    	}
-	    	
-	    	leaf NotEqualLeaf2 {
-	    	    when "/validation/when-validation/result-leaf != 10";
-	    	    type string;
-	    	}
-	    	 
-            leaf NotEqualLeaf3 {
-                when "../result-leaf != 0 and /validation/when-validation/result-leaf != 15";
-                type string;
-            }
-
-	    	leaf absoluteLeaf {
-	    		when "/validation/when-validation/result-leaf >= 10";
-	    		type string;
-	    	}
-	    	
-            leaf absoluteLeaf1 {
-                when "/validation/when-validation/result-leaf >= 10 and /validation/when-validation/result-leaf <= 20";
-                type string;
-            }
-
-            leaf absoluteLeaf2 {
-                when "/validation/when-validation/result-leaf >= 30 or /validation/when-validation/result-leaf <= 20";
-                type string;
-            }
-
-	    	leaf check-boolean-leaf {
-	    		when "../boolean-leaf = true and ../boolean-leaf != false";
-	    		type string;
-	    	}
-	    	
-			container container-type {		
-				when "../result-container >= 10 and ../result-container <= 20";
-				leaf container-value {
-					type string;
-				}
-			}
-			
-			list list-type {
-				when "../result-list = 10";
-			
-				key list-id;
-            
-	            leaf list-id {
-	                type string;
-	            }
-	            
-	            leaf list-value {
-	                type string;
-	            }
-			}
-			
-			// when-constraint for ChoiceCaseNode
-			container choicecase {
-				presence "choicecase";
-				leaf data-choice {
-					type int8;
-				}
-				
-				leaf result-choice {
-		    		type enumeration {
-	                	enum success;
-	                	enum failed;
-	             	}
-		    	}
-				
-				choice leaf-type {
-					case leafcase-success {
-						when "validation:result-choice = 'success'";
-						leaf leaf-case-success {
-							type string;
-						}
-					}
-					case leafcase-failed {
-						when "validation:result-choice = 'failed'";
-						leaf leaf-case-failed {
-							type string;
-						}
-					}
-				}
-				
-				choice leaflist-type {
-					case leaflist-case-success {
-						when "validation:result-choice = 'success'";
-						leaf-list leaflist-case-success {
-							type string;
-						}
-					}
-					case leaflist-case-failed {
-						when "validation:result-choice = 'failed'";
-						leaf-list leaflist-case-failed {
-							type string;
-						}
-					}
-				}
-				
-				choice container-type {
-					when "validation:data-choice > 100";
-					case container-case-success {
-						when "validation:result-choice = 'success'";
-						container container-case-success {
-							leaf container-success-leaf1 {
-								type string;
-							}
-							leaf container-success-leaf2 {
-								type string;
-							}
-						}
-					}
-					case container-case-failed {
-						when "validation:result-choice = 'failed'";
-						container container-case-failed {
-							leaf container-failed-leaf1 {
-								type string;
-							}
-							leaf container-failed-leaf2 {
-								type string;
-							}
-						}
-					}
-				}
-				
-				choice list-type {
-					case list-case-success {
-						when "validation:result-choice = 'success'";
-						list list-case-success {
-							key success-id;
-							leaf success-id {
-								type int8;
-							}
-							leaf success-value {
-								type string;
-							}
-						}
-					}
-					case list-case-failed {
-						when "validation:result-choice = 'failed'";
-						list list-case-failed {
-							key failed-id;
-							leaf failed-id {
-								type int8;
-							}
-							leaf failed-value {
-								type string;
-							}
-						}
-					}
-				}
-
-                choice absolute-leaf-type {
-                    case absolute-case-success {
-                        when "/validation/when-validation/choicecase/result-choice = 'success'";
-                        leaf-list absolute-case-success {
-                            type string;
-                        }
-                    }
-                    case absolute-case-failed {
-                        when "/validation/when-validation/choicecase/leaflist-case-failed = 'failed'";
-                        leaf-list absolute-case-failed {
-                            type string;
-                        }
-                    }
-                }				
-
-				choice anyXml-type {
-					case anyxml-case-success {
-						when "validation:result-choice = 'success'";
-						anyxml data-success;
-					}
-					
-					case anyxml-case-failed {
-						when "validation:result-choice = 'failed'";
-						anyxml data-failed;
-					}
-				}
-			}
-
-			leaf result-anyxml {
-				type enumeration {
-                	enum failed;
-                	enum success;
-             	}
-			}
-			
-			anyxml extraInfo{
-				when "../result-anyxml = 'success'";
-			}
-			
-			leaf when-parent-local-name-leaf {
-			    when "local-name(..) = 'when-validation'";
-			    type string;
-			}
-			
-			leaf when-no-arg-local-name-leaf {
-			    when "local-name() = 'when-no-arg-local-name-leaf'";
-			    type string;
-			}
-			
-			leaf when-parent-local-name-container-leaf {
-			    when "local-name(../choicecase) = 'choicecase'";
-			    type string;
-			}
-			
-			leaf when-parent-name-leaf {
-			    when "name(..) = 'validation:when-validation'";
-			    type string;
-			}
-			
-			leaf when-no-arg-name-leaf {
-			    when "name() = 'validation:when-no-arg-name-leaf'";
-			    type string;
-			}
-			
-			leaf when-parent-name-container-leaf {
-			    when "name(../choicecase) = 'validation:choicecase'";
-			    type string;
-			}
-			
-			leaf when-parent-namespace-leaf {
-			    when "namespace-uri(..) = 'urn:org:bbf:pma:validation'";
-			    type string;
-			}
-			
-			leaf when-no-arg-namespace-leaf {
-			    when "namespace-uri() = 'urn:org:bbf:pma:validation'";
-			    type string;
-			}
-			
-            /* This is not working yet, so only the above trivial case currently works
-			leaf when-parent-namespace-container-leaf {
-			    when "namespace-uri(../choicecase) = 'urn:org:bbf:pma:validation'";
-			    type string;
-			} */
-
-	    }
-	    
-		container mandatory-validation {
-			presence "choiceCase";
-			choice mandatory-choice {
-				mandatory true;
-				
-				case non-mandatory {
-					leaf non-mandatory-leaf {
-						type string;
-					}
-					leaf non-mandatory-leaf2 {
-					    type string;
-					}
-				}
-				
-				case non-mandatory-list{
-				    list level1-list{
-				        key name;
-				        
-				        leaf name{
-				            type string;
-				        }
-				    }
-				}
-				
-				case non-mandatory-case {
-					leaf level1-default-leaf {
-						type empty;
-						default "This is default level1-default-leaf value";
-					}
-					
-					choice under-non-mandatory-case {
-						default level2-case1;
-						case level2-case1 {
-							leaf level2-leaf-case1 {
-								type string;
-								default "This is the default value of choice-case under non-mandatory-case";
-							}
-						}
-						
-						case level2-case2 {
-							leaf level2-leaf-case2 {
-								type string;
-							}
-						}
-					}
-				}
-	
-				case mandatory-case1 {
-					leaf mandatory-case1-leaf1 {
-						type string;
-						default "This is the default value of mandatory-case1-leaf1";
-					}
-				
-					leaf mandatory-case1-leaf2 {
-						type string;
-						mandatory true;
-					}
-				}
-	
-				case mandatory-case2 {
-					leaf mandatory-case2-leaf1 {
-						type string;
-						mandatory true;
-					}
-					
-					leaf mandatory-case2-leaf2 {
-						type string;
-						mandatory true;
-					}
-				}
-			}
-	    }
-		
-		container xml-subtree {
-			leaf leaf1 {
-				type string;
-			}
-		}
-		
-		container OrderByListContainer {
-			presence "orderByContainer";
-			
-		}
-		
-		container string-function-validation {
-			leaf string1 {
-				type string;
-			}
-			leaf string2 {
-				type string;
-			}
-			leaf number1 {
-				type uint16;
-			}
-			leaf string-function-leaf {
-				must "string(../number1) = '42'";
-				type string;
-			}
-			leaf no-arg-string-function-leaf {
-				must "string() = string(current())";
-				type string;
-			}
-			leaf no-arg-string-length-function-leaf {
-				must "string-length() = string-length(current())";
-				type string;
-			}
-			leaf no-arg-normalize-space-function-leaf {
-				must "normalize-space() = normalize-space(current())";
-				type string;
-			}
-			leaf concat-function-leaf {
-				must "concat(../string1,../string2) = 'AB'";
-				type string;
-			}
-			leaf starts-with-function-leaf {
-				must "starts-with(../string1,'DSL')";
-				type string;
-			}
-			leaf contains-function-leaf {
-				must "contains(../string1,'DSL')";
-				type string;
-			}
-			leaf substring-function-leaf {
-				must "substring(../string1,2,3) = '234'";
-				type string;
-			}
-			leaf substring-before-function-leaf {
-				must "substring-before(../string1,'/') = '1999'";
-				type string;
-			}
-			leaf substring-after-function-leaf {
-				must "substring-after(../string1,'/') = '04/01'";
-				type string;
-			}
-			leaf string-length-function-leaf {
-				must "string-length(../string1) = 5";
-				type string;
-			}
-			leaf normalize-space-function-leaf {
-				must "normalize-space(../string1) = 'ITF 1'";
-				type string;
-			}
-			leaf translate-function-leaf {
-				must "translate(../string1,'abc-','ABC') = 'BAr'";
-				type string;
-			}
-		}
-		
-		container boolean-function-validation {
-			leaf string1 {
-				type string;
-			}
-			leaf number1 {
-			    type int16;
-			}
-			leaf-list nodeset1 {
-			    type string;
-			}
-			leaf boolean-function-leaf {
-				must "boolean(../string1)";
-				type string;
-			}
-			leaf not-function-leaf {
-				must "not(boolean(../string1))";
-				type string;
-			}
-			leaf true-function-leaf {
-				must "true()";
-				type string;
-			}
-			leaf false-function-leaf {
-				must "not(false())";
-				type string;
-			}
-			
-			//UT associated with below leaf will fail
-			leaf no-arg-not-function-leaf {
-				must "not()";
-				type string;
-			}
-			
-			leaf boolean-string-conversion-leaf {
-			    must "../string1";
-			    type string;
-			}
-			
-			leaf boolean-string-conversion-in-and-leaf {
-			    must "5 = 5 and ../string1";
-			    type string;
-			}
-			
-			leaf boolean-string-conversion-in-or-leaf {
-			    must "4 = 5 or ../string1";
-			    type string;
-			}
-            
-            leaf boolean-number-conversion-leaf {
-                must "../number1";
-                type string;
-            }
-            
-            leaf boolean-number-conversion-in-and-leaf {
-                must "5 = 5 and ../number1";
-                type string;
-            }
-            
-            leaf boolean-number-conversion-in-or-leaf {
-                must "4 = 5 or ../number1";
-                type string;
-            }
-            
-            leaf boolean-nodeset-conversion-leaf {
-                must "../nodeset1";
-                type string;
-            }
-            
-            leaf boolean-nodeset-conversion-in-and-leaf {
-                must "5 = 5 and ../nodeset1";
-                type string;
-            }
-            
-            leaf boolean-nodeset-conversion-in-or-leaf {
-                must "4 = 5 or ../nodeset1";
-                type string;
-            }
-            
-		}
-		
-		container number-function-validation {
-			leaf string1 {
-				type string;
-			}
-			leaf number1 {
-				type decimal64 {
-					fraction-digits 2;
-				}
-			}
-			leaf number-function-leaf {
-				must "number(../string1) = 42";
-				type string;
-			}
-			leaf no-arg-number-function-leaf {
-				must "number() = number(current())";
-				type string;
-			}
-			leaf floor-function-leaf {
-				must "floor(../number1) = 42";
-				type string;
-			}
-			leaf ceiling-function-leaf {
-				must "ceiling(../number1) = 42";
-				type string;
-			}
-			leaf round-function-leaf {
-				must "round(../number1) = 42";
-				type string;
-			}
-		}
-		
-		container leaf-list-add-validation {
-			leaf-list configured-mode {
-				type string;
-			}
-			leaf fast-leaf {
-				when "../configured-mode = 'fast'";
-				type string;
-			}
-		}
-		
-		container when-validation-container {
-            list list1 {
-                key "key";
-
-                leaf key {
-                    type uint8 {
-                        range "1..50";
-                    }
-                }
-                leaf operator {
-                    mandatory true;
-                    type enumeration {
-                        enum contains;
-                        enum equal-to;
-                        enum in;
-                    }
-                }
-
-                leaf value {
-                    when "../operator != 'in'";
+            list testlist {
+                key testname;
+                leaf testname {
                     type string;
-                    mandatory true;
                 }
-
-                leaf-list values {
-                    when "../operator = 'in'";
-                    type string;
-                    min-elements 2;
+                container testcontainer {
+                    list songs {
+                        key name;
+                        leaf name {
+                            type string;
+                        }
+                        min-elements 2;
+                        max-elements 3;
+                    }
                 }
             }
         }
-
-		  container routing {
-
-			    container control-plane-protocols {
-			      list control-plane-protocol {
-			        key "type name";
-			        leaf type {
-			          type identityref {
-			            base some-identity;
-			          }
-			          description
-			            "Type of the control-plane protocol - an identity derived
-			             from the 'control-plane-protocol' base identity.";
-			        }
-			        leaf name {
-			          type string;
-			          description
-			            "An arbitrary name of the control-plane protocol
-			             instance.";
-			        }
-			        container static-routes {
-			          when "derived-from-or-self(../type, 'validation:identity2')" {
-			            description
-			              "This container is only valid for the 'static' routing
-			               protocol.";
-			          }
-			        }
-			      }
-			    }
-		  }
-		  
-		  container choice-when-validation {
-        
-                presence "choice-when";
-                
-                leaf limit {
-                     type int16;
-                     default 0;
-                }
-                
-                leaf must-limit {
-                     type int16;
-                     default 0;
-                }
-          }
-    
-    }
-    
-    augment "/validation:validation/validation:choice-when-validation" {
-    
-         when "./limit = 1 or ./limit = 2";
-                
-         choice choice-when {
-            
-            default case1;
-            
-            case case1 {
-            
-                leaf leaf1 {
-                    must "../must-limit = 1";
-                    type int16;
-                    default 0;
-                }
-            }
-            
-            case case2 {
-            
-                leaf leaf2 {
-                    must "../must-limit = 2";
-                    type int16;
-                    default 0;
-                }
-            }
-         }
-     }
-    
-    augment "/validation:validation/validation:routing/validation:control-plane-protocols/"
-    + "validation:control-plane-protocol/validation:static-routes" {
-container ipv4 {
-  list route {
-    key "destination-prefix";
-    leaf destination-prefix {
-      type inet:ipv4-prefix;
-      mandatory "true";
-      description
-        "IPv4 destination prefix.";
-    }
-    container next-hop {
-      description
-        "Configuration of next-hop.";
-	    // WORKAROUND: NOT SUPPORTED BY ANV - COPYING DEFINITION of next-hop-content from ietf-routing.yang here - See also FNMS-6874
-	    choice next-hop-options {
-	      mandatory "true";
-	      case simple-next-hop {
-            leaf next-hop-address {
-              type inet:ipv4-address;
-            }
-	      }
-	      case next-hop-list {
-	        container next-hop-list {
-	          description
-	            "Container for multiple next-hops.";
-	          list next-hop {
-	            key "index";
-	            leaf index {
-	              type string;
-	            }
-                leaf next-hop-address {
-                  type inet:ipv4-address;
-                }
-	          }
-	        }
-	      }
-	    }
     }
   }
-}
-}
-    
-    rpc groupingTest {
-     input {
-      uses group1;  
-     }
+  rpc leaf-ref-validation-concurrent {
+    input {
+      leaf interface {
+        type test-interface-ref;
+        mandatory true;
+      }
+      leaf version {
+        type leafref {
+          path "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()/../interface]/validation:version";
+        }
+      }
     }
-    
-    rpc leafRefTest {
-    	input {
-    		leaf leaf1 {
-    			type leafref {
-    		 		path "/validation:validation/validation:rpcRefLeaf";
-   				}
-     		}
-    	}
+  }
+  rpc must-with-derived-from-or-self-validation {
+    input {
+      leaf interface {
+        type test-interface-ref;
+        must "derived-from-or-self(/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()]/validation:identity-leaf,'validation:identity1')";
+        mandatory true;
+      }
     }
-    
-    rpc mustCount {
-    	input {
-    		list list1 {
-    			key key;
-    			leaf key {
-    				type string;
-    			}
-    		}
-    		
-    		leaf someLeaf {
-    			must "count(../list1) > 0";
-    			type string;
-    		}
-    		
-    		container container1 {
-    			must "count(current()/list2) >= 1";
-    			list list2 {
-    				key key;
-    				leaf key {type string;}
-    			}
-    			
-    			leaf someLeaf {
-    				type string;
-    				must "../../someLeaf = 'hello' and count(../list2) > 0 and count(../../list1[key = current()]) > 0";
-    			}
-    			
-    			leaf someLeaf1 {
-    				type string;
-    				must "current() = ../someLeaf and . = ../../container1/list2[key = current()/../someLeaf]";
-    			}
-    		}
-    	}
+  }
+  rpc must-with-current-validation {
+    input {
+      leaf interface {
+        type test-interface-ref;
+        must "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()]/validation:type = 'interfaceType'";
+        mandatory true;
+      }
     }
-    rpc testRpcOutput {
-    	output {
-    		uses group-ref;
-    	    
-    		leaf test1 {
-    			type int8;
-    		}
-    		
-    		leaf test2 {
-    			when "../test1 > 10";
-    			type string;
-    		}
-
-    		leaf test3 {
-    			when "../test1 != 10";
-    			type string;
-    		}
-
-            leaf test4 {
-                type string;
+  }
+  rpc when-with-derived-from-or-self-validation {
+    input {
+      leaf interface {
+        type string;
+        when "derived-from-or-self(/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()]/validation:identity-leaf,'validation:identity2')";
+        mandatory true;
+      }
+      leaf type {
+        type string;
+        mandatory true;
+      }
+    }
+  }
+  rpc when-with-current-validation {
+    input {
+      leaf interface {
+        type test-interface-ref;
+        when "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()]/validation:type = 'interface-type'";
+        mandatory true;
+      }
+    }
+  }
+  rpc mustCount {
+    input {
+      list list1 {
+        key "key";
+        leaf key {
+          type string;
+        }
+      }
+      leaf someLeaf {
+        must 'count(../list1) > 0';
+        type string;
+      }
+      container container1 {
+        must 'count(current()/list2) >= 1';
+        list list2 {
+          key "key";
+          leaf key {
+            type string;
+          }
+        }
+        leaf someLeaf {
+          type string;
+          must "../../someLeaf = 'hello' and count(../list2) > 0 and count(../../list1[key = current()]) > 0";
+        }
+        leaf someLeaf1 {
+          type string;
+          must 'current() = ../someLeaf and . = ../../container1/list2[key = current()/../someLeaf]';
+        }
+      }
+    }
+  }
+  
+  rpc testRpcWhenAugment{
+      output {
+          container intents{
+              list intent {
+                  key "target intent-type";
+                  
+                  leaf target {
+                      type string;
+                  }
+                  leaf intent-type {
+                      type string;
+                  }
+                  
+                  leaf version {
+                      type string;
+                  }
+                  
+                  container configuration{
+                      
+                  }
+              }
+          }
+      }
+  }
+  
+  rpc testRpcWhenUses{
+      output {
+          container intents{
+              list intent {
+                  key "target intent-type";
+                  
+                  leaf target {
+                      type string;
+                  }
+                  leaf intent-type {
+                      type string;
+                  }
+                  
+                  leaf version {
+                      type string;
+                  }
+                  
+                  container configuration{
+                      uses copperGrouping {
+                          when "../intent-type = 'copper-infra' and ../version = '1'";
+                      }
+                  }
+              }
+          }
+      }
+  }
+  
+  rpc testRpcOutput {
+    output {
+      uses group-ref;
+      leaf test1 {
+        type int8;
+      }
+      leaf test2 {
+        when '../test1 > 10';
+        type string;
+      }
+      leaf test3 {
+        when '../test1 != 10';
+        type string;
+      }
+      leaf test4 {
+        type string;
+      }
+      leaf test5 {
+        type string;
+      }
+      container container0 {
+        leaf leaf1 {
+          type string;
+        }
+      }
+      container container1 {
+        container innerContainer {
+          list innerList {
+            key "innerLeaf";
+            leaf innerLeaf {
+              type string;
             }
-            
-            leaf test5 {
+            list innerInnerList {
+              key "innerInnerLeaf1";
+              leaf innerInnerLeaf1 {
                 type string;
+              }
             }
-            
-    		container container0{
-    			leaf leaf1{
-    				type string;
-    			}
-    		}
-    		container container1{
-                
-    			container innerContainer{
-    				list innerList{
-    					key innerLeaf;
-    					
-    					leaf innerLeaf{
-    						type string;
-    					}
-    					
-    					list innerInnerList{
-    						key innerInnerLeaf1;
-    						
-    						leaf innerInnerLeaf1{
-    							type string;
-    						}
-    					}
-    					
-    				}
-    			}
-    			list list1{
-    				key leaf1;
-    				
-    				leaf leaf1{
-    					type string;
-    				}
-    			}
-    		}
-    	}
+          }
+        }
+        list list1 {
+          key "leaf1";
+          leaf leaf1 {
+            type string;
+          }
+        }
+      }
     }
-    
+  }
   augment "/testRpcOutput/output/container1" {
     when "../test4='test4' and ../test5 = 'test5'";
     uses testGrouping;
   }
 
-  grouping testGrouping{
-      container test {
-      leaf enumLeaf1 {
-          type string;
-          default "bridge-mode";
-      }
-      }
-    container groupingContainer {
-        leaf enumLeaf {
-            type string;
-            default "bridge-mode";
-        }
-        
-        leaf whenOnEnum{
-            when "../enumLeaf = 'bridge-mode' and ../../test/enumLeaf1 = 'bridge-mode'";                
-            type string;
-        }
-    }
+  augment "/testRpcWhenAugment/output/intents/intent/configuration" {
+      when "../intent-type = 'copper-infra' and ../version = '1'";
+      uses copperGrouping;
+      uses choiceGrouping1;
   }
-    
-    rpc testRpc {
-        description
-                "This is a test RPC involving all types of input elements";
-        input {
-        	leaf data-status {
-	         	type enumeration {
-		        	enum success;
-		        	enum failed;
-		        	enum in-progress;
-	            }
-	        }
-	        
-	    	leaf leaf-type {
-	    		type string;
-	    		must "../validation:data-status = 'success' or ../data-status = 'in-progress'" {
-	             	error-message "data-status must be success or in-progress";
-	         	}
-	    	}
-	    	
-	    	leaf result-list {
-	    		type int8;
-	    	}
-	    	
-    		leaf-list countable{
-    			type string;
-    		}
-    		
-    		leaf countLeaf {
-    			when "count(countable) = 1";
-    			type string;
-    		}
-	    	
-	    	
-	    	list list-type {
-				when "../result-list = 10";
-			
-				key list-id;
-            
-	            leaf list-id {
-	                type string;
-	            }
-	            
-	            leaf list-value {
-	                type string;
-	            }
-	            
-	            list inside-list{
-					when "../../list-type2/list-id > 10";	            		
-					
-					key some-leaf;
-					
-	            	leaf some-leaf {
-	            		type int8;
-	            	}
-	            }
-			}
-			
-			list list-type2{
-				key list-id;
-				
-				leaf list-id {
-					type int8;
-				}
-			}
-	    	
-	    	container choicecase {
-			
-				leaf data-choice {
-					type int8;
-				}
-				
-				leaf result-choice {
-		    		type enumeration {
-	                	enum success;
-	                	enum failed;
-	             	}
-		    	}
-		    	
-		    	leaf-list leaflist {
-		    		type instance-identifier {
-						require-instance "true";
-					}
-	        	}
-				
-				choice leaf-type {
-					case leafcase-success {
-						when "result-choice = 'success'";
-						leaf leaf-case-success {
-							type string;
-						}
-					}
-					case leafcase-failed {
-						when "result-choice = 'failed'";
-						leaf leaf-case-failed {
-							type string;
-						}
-					}
-				}
-				
-				choice leaflist-type {
-					case leaflist-case-success {
-						when "validation:result-choice = 'success'";
-						leaf-list leaflist-case-success {
-							type string;
-						}
-					}
-					case leaflist-case-failed {
-						when "validation:result-choice = 'failed'";
-						leaf-list leaflist-case-failed {
-							type string;
-						}
-					}
-				}
-				
-				choice absolute-leaf-type {
-                    case absolute-case-success {
-                        when "validation/when-validation/choicecase/result-choice = 'success'";
-                        leaf-list absolute-case-success {
-                            type string;
-                        }
-                    }
-                    case absolute-case-failed {
-                        when "validation/when-validation/choicecase/leaflist-case-failed = 'failed'";
-                        leaf-list absolute-case-failed {
-                            type string;
-                        }
-                    }
-				}
-				
-				choice container-type {
-					when "data-choice > 100";
-					case container-case-success {
-						when "result-choice = 'success'";
-						container container-case-success {
-							leaf container-success-leaf1 {
-								type string;
-							}
-							leaf container-success-leaf2 {
-								type string;
-							}
-						}
-					}
-					case container-case-failed {
-						when "result-choice = 'failed'";
-						container container-case-failed {
-							leaf container-failed-leaf1 {
-								type string;
-							}
-							leaf container-failed-leaf2 {
-								type string;
-							}
-						}
-					}
-				}
-				
-				choice list-type {
-				when "data-choice < 50";
-					case list-case-success {
-						when "result-choice = 'success'";
-						list list-case-success {
-							key success-id;
-							leaf success-id {
-								type int8;
-							}
-							leaf success-value {
-								type string;
-							}
-						}
-					}
-					case list-case-failed {
-						when "result-choice = 'failed'";
-						list list-case-failed {
-							key failed-id;
-							leaf failed-id {
-								type int8;
-							}
-							leaf failed-value {
-								type string;
-							}
-						}
-					}
-				}
-			}
-			container instance-identifier-example {
-	        	container address {
-	        		list national {
-	        	   		key "national-id";
-	        	   		leaf national-id {
-	        	   	 		type string;
-	        	   		}
-	        	   		leaf national-name {
-	        	   	 		type string;
-	        	   		}
-				   		list province {
-					   		key "province-id";
-					   		leaf province-id {
-						 		type string;
-					   		}
-					   		leaf province-name {
-						 		type string;
-					   		}
-					   		list district {
-								key "district-id";
-					    		leaf district-id {
-						 			type string;
-								}
-								leaf district-name {
-						 			type string;
-								}
-					   		}
-				   		}
-		        	}
-		       	}
-	        	
-	        	list class {
-	        		key "class-id class-name";
-	        		leaf class-id {
-	        			type string;
-	        		}
-	        		leaf class-name {
-	        			type string;
-	        		}
-	        		leaf number-students {
-	        			type uint8;
-	        		}
-	        		
-	        	}
-	        	
-	        	list subject {
-	        	  key "subject-id";
-	        	  leaf subject-id {
-	        	  	type string;
-	        	  }
-	        	  leaf subject-name {
-	        	  	type string;
-	        	  }
-	        	
-	        	}
-	        	
-	        	leaf-list leaflist {
-		    		type instance-identifier {
-						require-instance "true";
-					}
-	        	}
-	        	
-	        	leaf leaf1 {
-	        		 type string;
-	        	}
-	
-				list student {
-					key "student-id";
-					leaf student-id {
-						type string;
-					}
-					leaf student-name {
-						type string;
-					}
-					leaf student-instance-identifier1 {
-						type instance-identifier {
-							require-instance "true";
-						}
-					}
-					leaf student-instance-identifier2 {
-						type instance-identifier {
-							require-instance "false";
-						}
-					}
-				}
-	        }
-			container leaf-ref {
-	        	list artist {
-	        		key "name";
-	        		leaf name {
-	        			type string {
-	        				length "1 .. max";
-	        			}
-	        			description
-	        			"the artist of certain song";
-	        		}
-	        	}
-	        	list album {
-	        		key "name";
-	        		leaf name {
-	        			type string {
-	        				length "1 .. max";
-	        			}
-	        			description
-	        			"the artist of certain song";
-	        		}
-		        	list song {
-		        		key "name";
-		        		leaf name {
-			              type string {
-			                length "1 .. max";
-			              }
-		              	}
-		              	leaf artist-name {
-			               type leafref {
-			                   path "../../../artist/name";
-			                }
-		            	}
-		        	}
-		        	leaf song-count {
-	        			type int32;
-	        		}
-	        	}
-	        	
-	        	container music {
-	        		leaf kind {
-	        			type string {
-	        			  length "1 .. max";
-	        			}
-	        		}
-	        		leaf favourite-album {
-	        			type leafref {
-	        				path "../../album/name";
-	        			}
-	        		}
-	        		leaf favourite-song {
-	        			type leafref {
-	        			  path "../../album[name = current()/../favourite-album]/song/name";
-	        			}
-	        		}
-	        	}
-	        	
-	        	container current-alone {
-	        		leaf current-leaf {
-	        			type leafref {
-	        				path "../../album/name";
-	        			}
-	        		}
-	        		leaf current-alone-leaf {
-	        			when "../../album[current()]/song-count >= 10";
-	        			type leafref {
-	        				path "../current-leaf";
-	        			}
-	        		}
-	        		leaf current-parent-leaf {
-	        			when "../../album[name = current()/../current-leaf]/song-count >= 10";
-	        			type leafref {
-	        				path "../current-leaf";
-	        			}
-	        		}
-	        		leaf-list current-leaf-list {
-	        			when "../../album[name = current()/../current-leaf]/song-count >= 10";
-	        			type string;
-	        		}
-	        	}
-	        	
-	        	container stateValue {
-	        	  leaf value2 {
-	        	      type leafref {
-	        	          path "/validation/leaf-ref/stateValue/value1";
-	        	      }
-	        	  }
-
-                  leaf value3 {
-                      type leafref {
-                          path "/validation:validation/validation:leaf-ref/validation:stateValue/validation:value1";
+  
+  grouping choiceGrouping1 {
+      container container1{
+          uses choiceGrouping;
+      }
+  }
+  
+  grouping choiceGrouping{
+      choice choiceA{
+          case caseLeaf {
+              choice choiceB{
+                  case innerCaseLeaf {
+                      leaf innerCaseLeaf {
+                          type empty;
                       }
                   }
-	            }
-        	}	        
-	    }
-        
-    }
-    
-	 rpc testConfigValidationInputRpc {
-	        input {
-	            leaf leaf1 {
-	                type string;
-	                config false;
-	            }
-	            leaf leaf2 {
-	                type string;
-	                config true;
-	            }
-	        }
-	    }
-	
-	    rpc testConfigValidationOutputRpc {
-	        output {
-	            leaf leaf1 {
-	                type string;
-	                config false;
-	            }
-	            leaf leaf2 {
-	                type string;
-	                config true;
-	            }
-	        }
-	    }
- 
-    notification testNotification {
-        container notif-container {
-            
+              }
+              leaf caseLeaf {
+                  type empty;
+              }
+          }
+      } 
+  }
+  
+  grouping copperGrouping {
+      container copper-infra {
+        leaf mac-learning {
+          type string;
         }
+      }
+  }
+  
+  augment "/testRpcWhenAugment/output/intents/intent/configuration" {
+      when "../intent-type = 'copper-infra1' and '1' = ../version";
+      uses copperGrouping1;
+  }
+  
+  grouping copperGrouping1 {
+      container copper-infra1 {
+        leaf mac-learning1 {
+          type string;
+        }
+      }
+  }
+  
+  grouping testGrouping {
+    container test {
+      leaf enumLeaf1 {
+        type string;
+        default "bridge-mode";
+      }
     }
+    container groupingContainer {
+      leaf enumLeaf {
+        type string;
+        default "bridge-mode";
+      }
+      leaf whenOnEnum {
+        when "../enumLeaf = 'bridge-mode' and ../../test/enumLeaf1 = 'bridge-mode'";
+        type string;
+      }
+    }
+  }
+
+  rpc test-leafref-state-data-rpc {
+    input {
+      leaf device-id {
+        type leafref {
+          path "/validation/leaf-ref/device/device-id";
+        }
+      }
+      leaf state-leaf {
+        type leafref {
+          path "/validation/leaf-ref/device[device-id = current()/../device-id]/stateValue/value1";
+        }
+      }
+    }
+  }
+  rpc testRpc {
+    description
+      "This is a test RPC involving all types of input elements";
+    input {
+      leaf data-status {
+        type enumeration {
+          enum success;
+          enum failed;
+          enum in-progress;
+        }
+      }
+      leaf leaf-type {
+        type string;
+        must "../validation:data-status = 'success' or ../data-status = 'in-progress'" {
+          error-message "data-status must be success or in-progress";
+        }
+      }
+      leaf result-list {
+        type int8;
+      }
+      leaf-list countable {
+        type string;
+      }
+      leaf countLeaf {
+        when 'count(../countable) = 1';
+        type string;
+      }
+      list list-type {
+        when '../result-list = 10';
+        key "list-id";
+        leaf list-id {
+          type string;
+        }
+        leaf list-value {
+          type string;
+        }
+        list inside-list {
+          when '../../list-type2/list-id > 10';
+          key "some-leaf";
+          leaf some-leaf {
+            type int8;
+          }
+        }
+      }
+      list list-type2 {
+        key "list-id";
+        leaf list-id {
+          type int8;
+        }
+      }
+      container choicecase {
+        leaf data-choice {
+          type int8;
+        }
+        leaf result-choice {
+          type enumeration {
+            enum success;
+            enum failed;
+          }
+        }
+        leaf-list leaflist {
+          type instance-identifier {
+            require-instance true;
+          }
+        }
+        choice leaf-type {
+          case leafcase-success {
+            when "result-choice = 'success'";
+            leaf leaf-case-success {
+              type string;
+            }
+          }
+          case leafcase-failed {
+            when "result-choice = 'failed'";
+            leaf leaf-case-failed {
+              type string;
+            }
+          }
+        }
+        choice leaflist-type {
+          case leaflist-case-success {
+            when "validation:result-choice = 'success'";
+            leaf-list leaflist-case-success {
+              type string;
+            }
+          }
+          case leaflist-case-failed {
+            when "validation:result-choice = 'failed'";
+            leaf-list leaflist-case-failed {
+              type string;
+            }
+          }
+        }
+        choice absolute-leaf-type {
+          case absolute-case-success {
+            when "validation/when-validation/choicecase/result-choice = 'success'";
+            leaf-list absolute-case-success {
+              type string;
+            }
+          }
+          case absolute-case-failed {
+            when "validation/when-validation/choicecase/leaflist-case-failed = 'failed'";
+            leaf-list absolute-case-failed {
+              type string;
+            }
+          }
+        }
+        choice container-type {
+          when 'data-choice > 100';
+          case container-case-success {
+            when "result-choice = 'success'";
+            container container-case-success {
+              leaf container-success-leaf1 {
+                type string;
+              }
+              leaf container-success-leaf2 {
+                type string;
+              }
+            }
+          }
+          case container-case-failed {
+            when "result-choice = 'failed'";
+            container container-case-failed {
+              leaf container-failed-leaf1 {
+                type string;
+              }
+              leaf container-failed-leaf2 {
+                type string;
+              }
+            }
+          }
+        }
+        choice list-type {
+          when 'data-choice < 50';
+          case list-case-success {
+            when "result-choice = 'success'";
+            list list-case-success {
+              key "success-id";
+              leaf success-id {
+                type int8;
+              }
+              leaf success-value {
+                type string;
+              }
+            }
+          }
+          case list-case-failed {
+            when "result-choice = 'failed'";
+            list list-case-failed {
+              key "failed-id";
+              leaf failed-id {
+                type int8;
+              }
+              leaf failed-value {
+                type string;
+              }
+            }
+          }
+        }
+      }
+      container instance-identifier-example {
+        container address {
+          list national {
+            key "national-id";
+            leaf national-id {
+              type string;
+            }
+            leaf national-name {
+              type string;
+            }
+            list province {
+              key "province-id";
+              leaf province-id {
+                type string;
+              }
+              leaf province-name {
+                type string;
+              }
+              list district {
+                key "district-id";
+                leaf district-id {
+                  type string;
+                }
+                leaf district-name {
+                  type string;
+                }
+              }
+            }
+          }
+        }
+        list class {
+          key "class-id class-name";
+          leaf class-id {
+            type string;
+          }
+          leaf class-name {
+            type string;
+          }
+          leaf number-students {
+            type uint8;
+          }
+        }
+        list subject {
+          key "subject-id";
+          leaf subject-id {
+            type string;
+          }
+          leaf subject-name {
+            type string;
+          }
+        }
+        leaf-list leaflist {
+          type instance-identifier {
+            require-instance true;
+          }
+        }
+        leaf leaf1 {
+          type string;
+        }
+        list student {
+          key "student-id";
+          leaf student-id {
+            type string;
+          }
+          leaf student-name {
+            type string;
+          }
+          leaf student-instance-identifier1 {
+            type instance-identifier {
+              require-instance true;
+            }
+          }
+          leaf student-instance-identifier2 {
+            type instance-identifier {
+              require-instance false;
+            }
+          }
+        }
+      }
+      container leaf-ref {
+        list artist {
+          key "name";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "the artist of certain song";
+          }
+        }
+        list album {
+          key "name";
+          leaf name {
+            type string {
+              length "1 .. max";
+            }
+            description
+              "the artist of certain song";
+          }
+          list song {
+            key "name";
+            leaf name {
+              type string {
+                length "1 .. max";
+              }
+            }
+            leaf artist-name {
+              type leafref {
+                path "../../../artist/name";
+              }
+            }
+          }
+          leaf song-count {
+            type int32;
+          }
+        }
+        container music {
+          leaf kind {
+            type string {
+              length "1 .. max";
+            }
+          }
+          leaf favourite-album {
+            type leafref {
+              path "../../album/name";
+            }
+          }
+          leaf favourite-song {
+            type leafref {
+              path "../../album[name = current()/../favourite-album]/song/name";
+            }
+          }
+        }
+        container current-alone {
+          leaf current-leaf {
+            type leafref {
+              path "../../album/name";
+            }
+          }
+          leaf current-alone-leaf {
+            must '../../album[current()]/song-count >= 10';
+            type leafref {
+              path "../current-leaf";
+            }
+          }
+          leaf current-parent-leaf {
+            when '../../album[name = current()/../current-leaf]/song-count >= 10';
+            type leafref {
+              path "../current-leaf";
+            }
+          }
+          leaf-list current-leaf-list {
+            when '../../album[name = current()/../current-leaf]/song-count >= 10';
+            type string;
+          }
+        }
+        container stateValue {
+          leaf value2 {
+            type leafref {
+              path "/validation/leaf-ref/stateValue/value1";
+            }
+          }
+          leaf value3 {
+            type leafref {
+              path "/validation:validation/validation:leaf-ref/validation:stateValue/validation:value1";
+            }
+          }
+        }
+      }
+    }
+  }
+  rpc testConfigValidationInputRpc {
+    input {
+      leaf leaf1 {
+        type string;
+        config false;
+      }
+      leaf leaf2 {
+        type string;
+        config true;
+      }
+    }
+  }
+  rpc testConfigValidationOutputRpc {
+    output {
+      leaf leaf1 {
+        type string;
+        config false;
+      }
+      leaf leaf2 {
+        type string;
+        config true;
+      }
+    }
+  }
+  notification testNotification {
+    container notif-container;
+  }
 }

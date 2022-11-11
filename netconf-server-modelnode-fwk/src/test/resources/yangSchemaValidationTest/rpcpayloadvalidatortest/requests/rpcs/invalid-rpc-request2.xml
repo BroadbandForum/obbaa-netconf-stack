@@ -1,5 +1,5 @@
 <rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
-	<pma:download-pma-configuration-to-device xmlns:pma="urn:org:bbf:pma" xmlns:unknown="urn:org:bbf:unknown">
+	<pma:download-pma-configuration-to-device xmlns:pma="urn:org:bbf2:pma" xmlns:unknown="urn:org:bbf2:unknown">
 		<pma:device-holder-name>OLT-1</pma:device-holder-name>
 		<unknown:device-id>R1.S1.S1.LT1.DPU1</unknown:device-id>
 	</pma:download-pma-configuration-to-device>

@@ -20,15 +20,15 @@ package org.broadband_forum.obbaa.netconf.api.messages;
  * Created by keshava on 11/23/15.
  */
 public class NetconfRpcErrorMessages {
-    public static final String AN_UNEXPECTED_ELEMENT_S_IS_PRESENT = "An unexpected element %s is present";
+    public static final String AN_UNEXPECTED_ELEMENT_S_IS_PRESENT = "An unexpected element '%s' is present";
 
-    public static final String AN_UNEXPECTED_NAMESPACE_S_IS_PRESENT = "An unexpected namespace %s is present";
+    public static final String AN_UNEXPECTED_NAMESPACE_S_IS_PRESENT = "An unexpected namespace '%s' is present";
 
-    public static final String MANDATORY_LEAF_MISSING = "Mandatory leaf %s is missing";
+    public static final String MANDATORY_LEAF_MISSING = "Mandatory leaf '%s' is missing";
 
-    public static final String MANDATORY_CHOICE_MISSING = "Mandatory choice %s is missing";
+    public static final String MANDATORY_CHOICE_MISSING = "Mandatory choice '%s' is missing";
 
-    public static final String MANDATORY_ANYXML_MISSING = "Mandatory anyxml %s is missing";
+    public static final String MANDATORY_ANYXML_MISSING = "Mandatory anyxml '%s' is missing";
 
     public static final String EXPECTED_ELEMENTS_IS_MISSING = "Expected element(s) %s is missing";
 
@@ -43,5 +43,7 @@ public class NetconfRpcErrorMessages {
     public static final String LENGTH_CONSTRAINT = "Value \"%s\" does not meet the length constraints. Expected length is: %s to %s";
 
     public static final String USER_IS_NOT_AUTHORIZED_ERROR_MESSAGE = "User is not authorized to invoke the protocol operation";
+    
+    public static final String INVALID_XML_SYNTAX = "Invalid XML Syntax reported in an element: %s";
 
 }

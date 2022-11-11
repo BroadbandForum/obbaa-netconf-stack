@@ -1,0 +1,6 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+  <library/>
+  <playlist>
+    <name>NotExists123</name>
+  </playlist>
+</jukebox>

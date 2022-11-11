@@ -16,6 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.stack.logging;
 
+import java.util.Collections;
+import java.util.Map;
+
 public interface ApplicationName {
     String getName();
+    default Map<String, String> getDescriptions() {
+        return Collections.emptyMap();
+    }
 }

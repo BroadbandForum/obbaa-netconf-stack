@@ -1,0 +1,15 @@
+<notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
+    <eventTime>2021-03-29T05:03:44.158+00:00</eventTime>
+    <netconf-state-change xmlns="http://www.test-company.com/solutions/anv-netconf-stack">
+        <changes>
+            <target xmlns:adh="http://www.test-company.com/solutions/anv-device-holders"
+                    xmlns:anv="http://www.test-company.com/solutions/anv">/anv:device-manager/adh:device[adh:device-id='R1.S1.LT1.PON1.ONT1']/adh:device-state</target>
+            <changed-leaf>
+                <key>1</key>
+                <value>
+                    <adh:reachable xmlns:adh="http://www.test-company.com/solutions/anv-device-holders">true</adh:reachable>
+                </value>
+            </changed-leaf>
+        </changes>
+    </netconf-state-change>
+</notification>

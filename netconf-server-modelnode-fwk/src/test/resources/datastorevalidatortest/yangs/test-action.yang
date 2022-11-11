@@ -11,6 +11,21 @@ module test-action {
 	      description "Initial version.";
 	}
    	
+	identity some-identity {
+	}
+	
+	identity identity1 {
+		base some-identity;
+	}
+	
+	identity identity11 {
+		base identity1;
+	}
+	
+	identity identity2 {
+		base some-identity;
+	}
+   	
        list server {
          key name;
          leaf name {
@@ -31,8 +46,42 @@ module test-action {
             }
           }
         }
-       
+
+    typedef device-ref {
+        type leafref {
+            path "/test:test-action-container/test:device/test:device-id";
+        }
+    }
+    
+    typedef interface-ref {
+        type leafref {
+            path "/test:devices/test:interface/test:name";
+        }
+    }
        container test-action-container {
+
+            list device {
+
+                   key device-id;
+
+                   leaf device-id {
+                       type string {
+                           length "1..253";
+                           pattern
+                               '((([a-zA-Z0-9_]([a-zA-Z0-9\-_]){0,61})?[a-zA-Z0-9]\.)*'
+                               + '([a-zA-Z0-9_]([a-zA-Z0-9\-_]){0,61})?[a-zA-Z0-9]\.?)'
+                               + '|\.';
+                       }
+                   }
+
+                   leaf hardware-type {
+                       type string {
+                          length "1..50";
+                       }
+                       mandatory true;
+                   }
+            }
+
            action container-reset {
                input {
                  leaf reset-at {
@@ -47,6 +96,22 @@ module test-action {
                   }
                 }
               }
+
+           action container-other-reset {
+               input {
+                 leaf reset-at {
+                   type yang:date-and-time;
+                   mandatory true;
+                  }
+                }
+                output {
+                  leaf reset-finished-at {
+                    type yang:date-and-time;
+                    mandatory true;
+                  }
+                }
+              }
+
            list action-list {
                key name;
                leaf name {
@@ -67,6 +132,27 @@ module test-action {
                   }
                 }
            }
+           list action-anotherlist {
+               key name;
+               leaf name {
+                 type string;
+               }
+               action anotherreset {
+                 input {
+                   leaf reset-at {
+                     type yang:date-and-time;
+                     mandatory true;
+                    }
+                  }
+                  output {
+                    leaf reset-finished-at {
+                      type yang:date-and-time;
+                      mandatory true;
+                    }
+                  }
+                }
+           }
+
            list action-list-multiple-key {
                key "name name1";
                leaf name {
@@ -110,7 +196,51 @@ module test-action {
             }
           }
        }
-       
+
+        augment "/test:test-action-container" {
+            action get-device-list {
+                input {
+                }
+                output {
+                    list device-list {
+                        key "device-id";
+                        leaf device-id {
+                            type device-ref;
+                        }
+                        leaf hardware-type {
+                            type string {
+                              length "1..50";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        augment "/test:test-action-container" {
+            action get-device {
+                input {
+                }
+                output {
+                    leaf device-id {
+                        type device-ref;
+                    }
+                }
+            }
+        }
+
+        augment "/test:test-action-container" {
+            action get-device-leaf-list {
+                input {
+                }
+                output {
+                    leaf-list device-id{
+                        type device-ref;
+                    }
+                }
+            }
+        }
+
        grouping action-group {
            action grouping-reset {
                input {
@@ -153,7 +283,7 @@ module test-action {
                }
            }
        }
-       
+
 	 container test-action-container1 {
 	        action test-action {
 	            input {
@@ -230,6 +360,369 @@ module test-action {
             }
         }
     }
+    
+ 	container devices {
 
-		 
-	 }
+            list interface {
+                key name;
+                leaf name {
+                    type string;
+                }
+                leaf type {
+                    type string;
+                    mandatory true;
+                }
+                leaf enabled {
+                    type boolean;
+                    default true;
+                }
+                
+                leaf identity-leaf {
+          	          type identityref {
+          	            base some-identity;
+          	          }
+                }
+            }
+
+            list profile {
+                key name;
+                leaf name {
+                    type string;
+                }
+            }
+    }
+
+	
+	// validate action input-nodes for leaf-ref validation
+    container test-action-leafref-container {
+    	
+        action input-list-leafref-action {
+            input {
+                list input-list {
+                    key interface;
+                    leaf interface {
+                        type leafref {
+                            path "/devices/interface/name";
+                        }
+                    }
+                }
+            }
+        }
+
+        action input-container-leafref-action {
+            input {
+                container input-container {
+                    leaf interface {
+                        type interface-ref;
+                    }
+                    leaf name {
+                    	type string;
+                    }
+                    leaf interface-type-ref {
+                        type leafref {
+                            path "/devices/interface[name = current()/../name]/type";
+                        }
+                    }
+                }
+            }
+        }
+
+        action input-leafref-action {
+            input {
+                leaf interface {
+                    type interface-ref;
+                }
+                leaf-list profile {
+                    type leafref {
+                        path "/devices/profile/name";
+               		}
+                }
+            }
+        }
+
+ 	action input-choice-leafref-action {
+            input {
+                container input-container {
+                    choice choice1 {
+                        case case1 {
+                            list list1 {
+                                key name;
+                                leaf name {
+                                    type string;
+                                }
+
+                                leaf default-leaf {
+                                    type string;
+                                    default "test";
+                                }
+                                leaf testing {
+                                    type leafref {
+                                        path "../default-leaf";
+                                    }
+                                }
+                            }
+                        }
+                        case case2 {
+                            leaf-list profile {
+                                type leafref {
+                                    path "/devices/profile/name";
+                                }
+                            }
+                        }
+
+                        case case3 {
+                            choice choice3 {
+                                case case31 {
+                                    leaf type {
+                                        type string;
+                                    }
+                                    leaf mandatory-leaf {
+                                        type string;
+                                        mandatory true;
+                                    }
+                                }
+                                case case32 {
+                                    leaf enabled {
+                                        type string;
+                                        default "enabled";
+                                    }
+                                    list innerList {
+                                        key "id";
+                                        leaf id {
+                                            type string;
+                                        }
+                                        leaf refvalue {
+                                            type leafref {
+                                                path "/devices/profile/name";
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    // action input-elements for must/when constraints validation
+	container test-action-when-must-validation {
+		leaf mustTargetLeafOutSideAction {
+            type string;
+        }
+	    action must-with-derived-from-or-self-validation {
+	        input {
+	            leaf interface {
+	                type interface-ref;
+	                must "derived-from-or-self(/test:devices/test:interface[test:name=current()]/test:identity-leaf,'test:identity1')";
+	                mandatory true;
+	            }
+	        }
+	    }
+
+	    action must-with-current-validation {
+	        input {
+	            leaf interface {
+	                type interface-ref;
+	                must "/test:devices/test:interface[test:name=current()]/test:type = 'interfaceType'";
+	                mandatory true;
+	            }
+	        }
+	    }
+
+	    action when-with-derived-from-or-self-validation {
+	        input {
+	            leaf interface {
+	                type string;
+	                mandatory true;
+	            }
+
+	            leaf type {
+	            	when "derived-from-or-self(/test:devices/test:interface[test:name = current()/../interface]/test:identity-leaf,'test:identity2')";
+	                type string;
+	                mandatory true;
+	            }
+	        }
+	    }
+
+	    action when-with-current-validation {
+	        input {
+	            leaf interface {
+	                type interface-ref;
+	                mandatory true;
+	            }
+	            leaf type {
+	            	when "/test:devices/test:interface[test:name=current()/../interface]/test:type = 'interfaceType'";
+	            	type string;
+	            }
+	        }
+	    }
+	    
+        action default-when-validation{
+        	input {
+        		leaf default-leaf {
+        			type string;
+        			default "test";
+        		}
+        		leaf when-validation {
+        			when "../default-leaf = current()";
+        			type string;
+        		}
+        		leaf targetOutSideAction {
+        		    must "../../../mustTargetLeafOutSideAction = 'hello'";
+                    type string;
+        		}
+        	}
+        }
+
+	    action must-validation {
+	    	input {
+	    		list list1 {
+	    			key key;
+	    			leaf key {
+	    				type string;
+	    			}
+	    		}
+	    		
+	    		leaf countLeaf {
+	    			must "count(../list1) > 0";
+	    			type string;
+	    		}
+	    		
+	    		container container1 {
+	    			must "count(current()/list2) >= 1";
+	    			list list2 {
+	    				key key;
+	    				leaf key {
+	    					type string;
+	    				}
+	    			}
+	    			
+	    			leaf someLeaf {
+	    				type string;
+	    				must "../../countLeaf = 'hello' and count(../list2) > 0 and count(../../list1[key = current()]) > 0";
+	    			}
+	    			
+	    			leaf someLeaf1 {
+	    				type string;
+	    				must "current() = ../someLeaf and . = ../../container1/list2[key = current()/../someLeaf]";
+	    			}
+	    		}
+	    	}
+	    }
+	    
+	}
+	
+    augment "/test:test-action-leafref-container" {
+    	action test-action-augment {
+    		input {
+    			leaf-list test-interface {
+    				type interface-ref; 
+    			}
+    		}
+    	}
+    }
+	
+    augment "/test:test-action-leafref-container" {
+        container validation-container {
+            uses grouping-test-action;
+        }
+    }
+    
+    grouping grouping-test-action {
+    	action test-action {
+    		input {
+    			leaf-list test-interface {
+    				type interface-ref; 
+    			}
+    		}
+    	}
+    	
+    }
+    
+    augment "/test:test-action-leafref-container" {
+    	when "/devices/profile/name = 'profile'";
+    	container when-augment-container {
+    		uses grouping-test-action;
+        }
+	}
+
+    container cpe-software-management {
+        container software-preferences {
+            list preference {
+                key "cpe-type";
+                leaf cpe-type {
+                    type string;
+                }
+                leaf preferred-software-version {
+                    type string;
+                }
+            }
+        }
+
+        container software-actions {
+            action delete {
+                input {
+                    leaf software-version {
+                        must "count(/cpe-software-management/software-preferences/preference[preferred-software-version = current()]) = 1";
+                        type string;
+                    }
+                }
+            }
+
+            action remove {
+                input {
+                    leaf software-version {
+                        must "count(current()/../software[version = current()]) = 1";
+                        type string;
+                    }
+                    list software {
+                        leaf name {
+                            type string;
+                        }
+                        leaf version {
+                            type string;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    container rollback-files {
+
+        list file {
+          key id;
+
+          leaf id {
+            type uint32;
+          }
+          leaf name {
+            type string;
+          }
+        }
+
+        grouping rollback-reference {
+          choice rollback {
+            leaf id {
+              type leafref {
+                path "/rollback-files/file/id";
+              }
+            }
+          }
+        }
+
+        action apply-rollback-file {
+          input {
+            uses rollback-reference;
+            leaf-list city {
+            	must "count(/rollback-files/file) > 1";
+                type string;
+            }
+          }
+        }
+      }
+}

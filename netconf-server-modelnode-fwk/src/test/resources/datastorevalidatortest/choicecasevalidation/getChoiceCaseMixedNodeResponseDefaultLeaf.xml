@@ -1,11 +1,10 @@
 <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
     <data>
-        <validation:validation xmlns:validation="urn:org:bbf:pma:validation">
+        <validation:validation xmlns:validation="urn:org:bbf2:pma:validation">
             <validation:choicecase>
                 <validation:name>Mixed case with non default list case</validation:name>
                 <validation:leaf-case1>Default value 1</validation:leaf-case1>
                 <validation:leaf-case-mixed>Default value for mixed case</validation:leaf-case-mixed>
-                <validation:leaf-empty-case1/>
                 <validation:container-case2>
                     <validation:container-case2-leaf1>Default value for container-type</validation:container-case2-leaf1>
                 </validation:container-case2>

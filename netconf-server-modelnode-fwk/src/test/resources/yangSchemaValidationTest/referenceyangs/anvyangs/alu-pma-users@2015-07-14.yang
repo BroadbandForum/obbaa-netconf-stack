@@ -3,7 +3,7 @@ module alu-pma-users {
 	
 	yang-version 1;
     
-	namespace "urn:org:bbf:pma:alu-pma-users";
+	namespace "urn:org:bbf2:pma:alu-pma-users";
 	
 	prefix "user";
 	

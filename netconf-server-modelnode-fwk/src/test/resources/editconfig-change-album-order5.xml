@@ -1,0 +1,13 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+	<library>
+		<artist>
+			<name>Lenny</name><!-- Matcher -->
+			<album xc:operation="merge" yang:insert="first">
+				<name>New album</name>
+			</album>
+			<album xc:operation="merge" yang:insert="before" yang:key="[jbox:name='New album']">
+				<name>AlbumWithoutGenre</name>
+			</album>
+		</artist>
+	</library>
+</jukebox>

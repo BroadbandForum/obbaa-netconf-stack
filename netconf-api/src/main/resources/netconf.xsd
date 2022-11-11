@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+           xmlns:wtx="http://tail-f.com/ns/netconf/with-transaction-id"
+           xmlns:extn="http://www.test-company.com/solutions/netconf-extensions"
+           targetNamespace="urn:ietf:params:xml:ns:netconf:base:1.0"
+           elementFormDefault="qualified"
+           xml:lang="en"
+           version="1.1">
+
+    <xs:annotation>
+        <xs:documentation>
+            This schema defines the syntax for the NETCONF Messages layer
+            messages 'hello', 'rpc', and 'rpc-reply'.
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace"
+               schemaLocation="xml.xsd">
+        <xs:annotation>
+            <xs:documentation>
+                This import accesses the xml: attribute groups for the
+                xml:lang as declared on the error-message element.
+            </xs:documentation>
+        </xs:annotation>
+    </xs:import>
+
+    <xs:import namespace="http://tail-f.com/ns/netconf/with-transaction-id" schemaLocation="with-tx.xsd"/>
+    <xs:import namespace="http://www.test-company.com/solutions/netconf-extensions" schemaLocation="netconf-extensions.xsd"/>
+
+    <!-- message-id attribute -->
+    <xs:simpleType name="messageIdType">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="4095"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- <rpc> element -->
+    <xs:complexType name="rpcType">
+        <xs:sequence>
+            <xs:element ref="rpcOperation"/>
+        </xs:sequence>
+        <xs:attribute name="message-id" type="messageIdType"/>
+        <!-- Arbitrary attributes can be supplied with <rpc> element. -->
+        <xs:anyAttribute processContents="lax"/>
+    </xs:complexType>
+    <xs:element name="rpc" type="rpcType"/>
+
+    <!-- operation attribute used in <edit-config> -->
+    <xs:simpleType name="editOperationType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="merge"/>
+            <xs:enumeration value="replace"/>
+            <xs:enumeration value="create"/>
+            <xs:enumeration value="delete"/>
+            <xs:enumeration value="remove"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:attribute name="operation" type="editOperationType" default="merge"/>
+
+    <!-- default-operation element -->
+    <xs:simpleType name="DefaultOperationType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="merge"/>
+            <xs:enumeration value="replace"/>
+            <xs:enumeration value="none"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="default-operation" type="DefaultOperationType"/>
+
+    <!-- rpcOperationType: used as a base type for all NETCONF operations -->
+    <xs:complexType name="rpcOperationType"/>
+    <xs:element name="rpcOperation" type="rpcOperationType" abstract="true"/>
+
+    <!-- <config> element -->
+    <xs:complexType name="configInlineType">
+        <xs:sequence>
+            <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:element name="config" type="configInlineType"/>
+
+    <!-- Configuration datastore names -->
+    <xs:complexType name="configNameType"/>
+    <xs:element name="config-name" type="configNameType" abstract="true"/>
+    <xs:element name="startup" type="configNameType" substitutionGroup="config-name"/>
+    <xs:element name="candidate" type="configNameType" substitutionGroup="config-name"/>
+    <xs:element name="running" type="configNameType" substitutionGroup="config-name"/>
+
+    <!-- <url> element -->
+    <xs:complexType name="configUriType">
+        <xs:simpleContent>
+            <xs:extension base="xs:anyURI"/>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:element name="url" type="configUriType"/>
+
+    <!-- <target> element -->
+    <xs:complexType name="rpcOperationTargetType">
+        <xs:choice>
+            <xs:element ref="config-name"/>
+            <xs:element ref="url"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:element name="target" type="rpcOperationTargetType"/>
+
+    <!-- test-option> parameter to <edit-config> -->
+    <xs:simpleType name="testOptionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="test-then-set"/>
+            <xs:enumeration value="set"/>
+            <xs:enumeration value="test-only"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="test-option" type="testOptionType"/>
+
+    <!-- <error-option> parameter to <edit-config> -->
+    <xs:simpleType name="errorOptionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="stop-on-error"/>
+            <xs:enumeration value="continue-on-error"/>
+            <xs:enumeration value="rollback-on-error"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:element name="error-option" type="errorOptionType"/>
+
+    <!-- <edit-config> operation -->
+    <xs:complexType name="editConfigType">
+        <xs:complexContent>
+            <xs:extension base="rpcOperationType">
+                <xs:all>
+                    <xs:element name="target">
+                        <xs:complexType>
+                            <xs:choice>
+                                <xs:element name="candidate"/>
+                                <xs:element name="running"/>
+                            </xs:choice>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element ref="default-operation" minOccurs="0"/>
+                    <xs:element ref="test-option" minOccurs="0"/>
+                    <xs:element ref="error-option" minOccurs="0"/>
+                    <xs:element ref="wtx:with-transaction-id" minOccurs="0"/>
+                    <xs:element ref="extn:trigger-sync-upon-success" minOccurs="0"/>
+                    <xs:element ref="extn:force-instance-creation" minOccurs="0"/>
+                    <xs:element ref="config"/>
+                </xs:all>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="edit-config" type="editConfigType" substitutionGroup="rpcOperation"/>
+
+    <!--dummy definition to skip the validations for some of the rpc operations-->
+    <xs:element name="rpc-reply" type="anyXml"/>
+    <xs:element name="hello" type="anyXml"/>
+    <xs:element name="get" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="get-config" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="copy-config" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="delete-config" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="lock" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="unlock" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="validate" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="commit" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="cancel-commit" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="discard-changes" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="close-session" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:element name="kill-session" type="anyXml" substitutionGroup="rpcOperation"/>
+    <xs:complexType name="anyXml">
+        <xs:complexContent>
+            <xs:extension base="rpcOperationType">
+                <xs:sequence>
+                    <xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+</xs:schema>

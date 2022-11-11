@@ -1,0 +1,48 @@
+submodule type-validator-submodule{
+
+    yang-version 1;  
+    
+    belongs-to validation {
+        prefix validation;
+    } 
+     
+    import "ietf-yang-types" { 
+       prefix yang; 
+    }
+       
+    revision "2018-02-07" {
+          description "Initial version.";
+    }
+    
+    identity tamil {
+        base validation:indian-language;
+        description "Tamil language";
+    }
+    
+    identity telugu {
+        base indian-language;
+        description "Telugu language";
+    }
+    
+    container south-india{
+        leaf language{
+            type identityref {
+                base "validation:indian-language";                
+            }
+            default tamil;
+        }
+        
+        list list1{
+            key id;
+            
+            leaf id{
+            type uint32;
+            }
+            
+            leaf leaf1{
+               type string;
+            }
+        }
+    }
+    
+}

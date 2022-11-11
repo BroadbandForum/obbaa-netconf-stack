@@ -20,13 +20,14 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>netconf-server</artifactId>
-    <name>netconf-lib/netconf-server</name>
+    <name>netconf-fwk/netconf-server</name>
     <packaging>bundle</packaging>
+
     <dependencies>
         <!-- Internal -->
         <dependency>
@@ -51,7 +52,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.sshd</groupId>
-            <artifactId>sshd-core</artifactId>
+            <artifactId>sshd-osgi</artifactId>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
@@ -74,13 +75,17 @@
             <artifactId>netty-codec</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative</artifactId>
             <classifier>${tcnative.classifier}</classifier>
-        </dependency>
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -94,6 +99,11 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -110,7 +120,11 @@
                         </goals>
                         <configuration>
                             <failOnWarning>true</failOnWarning>
-                            <ignoredDependencies>io.netty:netty-tcnative:jar:${netty-tcnative.version}</ignoredDependencies>
+                            <ignoredDependencies>
+                                <ignoredDependency>io.netty:netty-tcnative:jar:${netty-tcnative.version}</ignoredDependency>
+                                <ignoredDependency>org.apache.logging.log4j:log4j-core:jar:${log4j2.version}</ignoredDependency>
+                                <ignoredDependency>org.apache.logging.log4j:log4j-slf4j-impl:jar:${slf4j.log4j.impl.version}</ignoredDependency>
+                        </ignoredDependencies>
                             <outputXML>true</outputXML>
                         </configuration>
                     </execution>
@@ -122,6 +136,7 @@
                 <configuration>
                     <instructions combine.children="append">
                         <Import-Package>*,org.apache.sshd.common.util.net,io.netty.util.internal</Import-Package>
+                        <_removeheaders>Import-Service,Export-Service</_removeheaders>
                     </instructions>
                 </configuration>
             </plugin>

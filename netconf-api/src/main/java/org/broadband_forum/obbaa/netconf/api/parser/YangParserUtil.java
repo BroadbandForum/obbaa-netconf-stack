@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,13 +30,17 @@ import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
+import org.opendaylight.yangtools.yang.common.YangConstants;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.parser.api.YangSyntaxErrorException;
-import org.opendaylight.yangtools.yang.model.repo.api.SchemaContextFactory;
+import org.opendaylight.yangtools.yang.model.repo.api.EffectiveModelContextFactory;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaContextFactoryConfiguration;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaSourceException;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaSourceFilter;
@@ -50,16 +55,16 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
-import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public class YangParserUtil {
-
-    public static SchemaContext parseFiles(String repoName, List<File> yangFiles) {
-    	return parseFiles(repoName, yangFiles, null, null);
-    }
     
+    public static final String YANG_EXTN = ".yang";
+
+    public static final IOFileFilter YANG_FILE_FILTER = FileFilterUtils.suffixFileFilter(YANG_EXTN);
+    
+    // pass null for supportedFeatures and supportedDeviations if *all* features and deviations are to be supported
     public static SchemaContext parseFiles(String repoName, List<File> yangFiles, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations) {
         List<YangTextSchemaSource> inputFiles = new ArrayList<>();
         for (File yangFile : yangFiles) {
@@ -67,13 +72,18 @@ public class YangParserUtil {
         }
         return parseSchemaSources(repoName, inputFiles, supportedFeatures, supportedDeviations);
     }
-
-    public static SchemaContext parseSchemaSources(String repoName, List<YangTextSchemaSource> inputFiles) {
-		return parseSchemaSources(repoName, inputFiles, null, null);
-    }
     
+    // pass null for supportedFeatures and supportedDeviations if *all* features and deviations are to be supported
     public static SchemaContext parseSchemaSources(String repoName, List<YangTextSchemaSource> inputFiles, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations) {
         try {
+
+            // TODO: once the ODL ticket https://jira.opendaylight.org/browse/YANGTOOLS-859 (tracked internally in FNMS-22439) is fixed we should remove this
+            if (supportedFeatures != null) {
+                supportedFeatures = new HashSet<>(supportedFeatures);
+                QName candidateFeature = QName.create("urn:ietf:params:xml:ns:netconf:base:1.0", "2011-06-01", "candidate");
+                supportedFeatures.add(candidateFeature);
+            }
+            
             List<YangTextSchemaSource> filteredInputFiles = removeDuplicates(inputFiles);
             SharedSchemaRepository repo = new SharedSchemaRepository(repoName);
             List<SourceIdentifier> sourceIds = prepareSchemaRepo(repo, filteredInputFiles);
@@ -83,19 +93,22 @@ public class YangParserUtil {
                     .setSupportedFeatures(supportedFeatures)
                     .setModulesDeviatedByModules(createDeviationSetMultimap(supportedDeviations))
                     .build();
-            SchemaContextFactory factory = repo.createSchemaContextFactory(factoryConfig);
-            ListenableFuture<SchemaContext> schemaContextFuture = factory.createSchemaContext(sourceIds);
+            EffectiveModelContextFactory factory = repo.createEffectiveModelContextFactory(factoryConfig);
+            ListenableFuture<EffectiveModelContext> schemaContextFuture = factory.createEffectiveModelContext(sourceIds);
             return schemaContextFuture.get();
         } catch (Exception e) {
-            throw new RuntimeException("Error parsing files", e);
+            Throwable deepestException = e;
+            while (deepestException.getCause() != null && !deepestException.getCause().equals(deepestException)) {
+                deepestException = deepestException.getCause();
+            }
+            throw new RuntimeException("Error parsing files: " + deepestException.getMessage(), e);
         }
     }
 
     public static List<SourceIdentifier> prepareSchemaRepo(SharedSchemaRepository repo, List<YangTextSchemaSource> inputFiles) throws SchemaSourceException, IOException, YangSyntaxErrorException, InterruptedException, java.util.concurrent.ExecutionException {
         List<SourceIdentifier> sourceIds = new ArrayList<>();
         for (YangTextSchemaSource yangSource : inputFiles) {
-            CheckedFuture<ASTSchemaSource, SchemaSourceException> aSTSchemaSource = Futures
-                    .immediateCheckedFuture(TextToASTTransformer.transformText(yangSource));
+            ListenableFuture<ASTSchemaSource> aSTSchemaSource = Futures.immediateFuture(TextToASTTransformer.transformText(yangSource));
             SettableSchemaProvider<ASTSchemaSource> schemaProvider = SettableSchemaProvider.createImmediate(aSTSchemaSource.get(),
                     ASTSchemaSource.class);
             schemaProvider.setResult();
@@ -135,17 +148,6 @@ public class YangParserUtil {
 
     public static Module getParsedModule(SchemaContext schemaContext, String yangModuleFileName) {
     	String fileName = FilenameUtils.getName(yangModuleFileName);
-    	/* ODL Restriction: YangTextSchemaSource.identifierFromFilename cannot parse revision in file names while building SourceIdentifier
-    	 Below is the code in YangTextSchemaSource.identifierFromFilename method:
-    	 {code}
-    	  checkArgument(name.endsWith(".yang"), "Filename %s does not have a .yang extension", name);
-          // add revision-awareness
-          return SourceIdentifier.create(name.substring(0, name.length() - 5), Optional.<String>absent());
-    	 {code}
-    	 */
-    	if (fileName.contains("@")) {
-    		fileName = fileName.substring(0, fileName.indexOf("@")) + ".yang";
-    	}
         SourceIdentifier sourceId = YangTextSchemaSource.identifierFromFilename(fileName);
         String moduleName = sourceId.getName();
         for (Module module : schemaContext.getModules()) {
@@ -175,6 +177,13 @@ public class YangParserUtil {
     public static YangTextSchemaSource getYangSource(String filename) {
         return new FileYangSource(new File(filename));
     }
+
+	public static YangTextSchemaSource getYangSourceFromContent(String moduleNameAndRevision, String yangContent) {
+		byte[] bytes = yangContent.getBytes(Charset.forName("UTF-8"));
+		SourceIdentifier sourceId = YangTextSchemaSource.identifierFromFilename(
+				moduleNameAndRevision + YangConstants.RFC6020_YANG_FILE_EXTENSION);
+		return YangTextSchemaSource.delegateForByteSource(sourceId, ByteSource.wrap(bytes));
+	}
 
     public static YinTextSchemaSource getYinSource(String filename) {
         return new FileYinSource(new File(filename));

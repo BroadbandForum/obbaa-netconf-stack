@@ -3,7 +3,7 @@ module alu-device-plugs {
  
 	yang-version 1;
 	
-	namespace "urn:org:bbf:pma:alu-device-plugs";
+	namespace "urn:org:bbf2:pma:alu-device-plugs";
 	
 	prefix "plug";
 	

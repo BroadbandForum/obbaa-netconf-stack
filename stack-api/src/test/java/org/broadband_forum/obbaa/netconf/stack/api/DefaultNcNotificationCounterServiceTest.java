@@ -34,9 +34,9 @@ public class DefaultNcNotificationCounterServiceTest {
     @Test
     public void testCountersAreIncreasing(){
         assertEquals(0L, m_counterService.getNumberOfNotifications());
-        m_counterService.increaseNumberOfNotifications();
+        m_counterService.increaseNumberOfNotificationsForUsers("adminuser");
         assertEquals(1L, m_counterService.getNumberOfNotifications());
-        m_counterService.increaseNumberOfNotifications();
+        m_counterService.increaseNumberOfNotificationsForUsers("slice-owner1");
         assertEquals(2L, m_counterService.getNumberOfNotifications());
 
         assertEquals(0L, m_counterService.getOutNotifications(10));

@@ -1,0 +1,38 @@
+module main-module {
+  yang-version 1.1;
+
+  namespace "ns:ns";
+  prefix "mm";
+
+  import ietf-yang-schema-mount {
+    prefix yangmnt;
+  }
+
+  revision 2019-03-13;
+
+  container root {
+    leaf leaf1 {
+        type string;
+        description
+            "leaf under root";
+    }
+    leaf leaf2 {
+        type string;
+        description
+            "leaf under root";
+    }
+    leaf-list leaf-list1 {
+        type string;
+        description
+            "leaf-list under root";
+    }
+    leaf-list leaf-list2 {
+        type string;
+        description
+            "leaf-list under root";
+    }
+    container mp {
+      yangmnt:mount-point "mp";
+    }
+  }
+}

@@ -16,6 +16,15 @@
 
 package org.broadband_forum.obbaa.netconf.api.client.util;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.nio.channels.AsynchronousChannelGroup;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.sshd.client.auth.UserAuthFactory;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
@@ -26,23 +35,18 @@ import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportOrder;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportProtocol;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import io.netty.channel.EventLoopGroup;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.nio.channels.AsynchronousChannelGroup;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import io.netty.channel.EventLoopGroup;
 
 /**
  * A builder to build netconf client configuration.
  * 
- *
+ * 
  * 
  */
 public class NetconfClientConfigurationBuilder {
     private Long m_connectionTimeoutMillis;
+    private Long m_readTimeoutMillis;
     private NetconfLoginProvider m_loginProvider;
     private Set<String> m_caps;
     private NetconfTransport m_transport;
@@ -50,11 +54,13 @@ public class NetconfClientConfigurationBuilder {
     private EventLoopGroup m_eventLoopGroup;
     private AsynchronousChannelGroup m_asyncChannelGroup;
     private AuthenticationListener m_authenticationListener;
+    private List<UserAuthFactory> m_userAuthFactories;
 
     public NetconfClientConfiguration build() {
         NetconfClientConfiguration config = new NetconfClientConfiguration(m_connectionTimeoutMillis, m_loginProvider,
-                m_caps, m_transport, m_eventLoopGroup, m_asyncChannelGroup, m_authenticationListener);
+                m_caps, m_transport, m_eventLoopGroup, m_asyncChannelGroup, m_authenticationListener, m_readTimeoutMillis);
         config.setClientSessionListener(m_clientSessionListener);
+        config.setUserAuthFactories(m_userAuthFactories);
         return config;
     }
 
@@ -85,6 +91,11 @@ public class NetconfClientConfigurationBuilder {
         return this;
     }
 
+    public NetconfClientConfigurationBuilder setUserAuthFactories(List<UserAuthFactory> userAuthFactories) {
+        m_userAuthFactories = userAuthFactories;
+        return this;
+    }
+
     public NetconfClientConfigurationBuilder setTransport(NetconfTransport transport) {
         this.m_transport = transport;
         return this;
@@ -92,6 +103,11 @@ public class NetconfClientConfigurationBuilder {
 
     public NetconfClientConfigurationBuilder setConnectionTimeout(long timeout) {
         this.m_connectionTimeoutMillis = timeout;
+        return this;
+    }
+    
+    public NetconfClientConfigurationBuilder setReadTimeout(long readTimeout) {
+        this.m_readTimeoutMillis = readTimeout;
         return this;
     }
 

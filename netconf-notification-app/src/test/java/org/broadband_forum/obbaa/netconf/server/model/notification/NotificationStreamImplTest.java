@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
+import org.broadband_forum.obbaa.netconf.api.utils.FileUtil;
+import org.broadband_forum.obbaa.netconf.server.model.notification.utils.NotificationFilterUtilTest;
 import org.broadband_forum.obbaa.netconf.stack.DefaultNcNotificationCounterService;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -41,6 +44,7 @@ import org.broadband_forum.obbaa.netconf.api.server.notification.Stream;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.w3c.dom.Document;
 
 public class NotificationStreamImplTest {
 
@@ -141,7 +145,9 @@ public class NotificationStreamImplTest {
 
     @Test
     public void testBroadCastNotification() throws NetconfMessageBuilderException {
-        final Notification notification = DocumentToPojoTransformer.getNotification(DocumentUtils.loadXmlDocument(NotificationStreamImplTest.class.getResourceAsStream("/sample-state-change-notification.xml")));
+        Document doc = DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-state-change-notification.xml"));
+        DocumentInfo documentInfo = new DocumentInfo(doc, FileUtil.loadAsString("/sample-state-change-notification.xml"));
+        Notification notification = DocumentToPojoTransformer.getNotification(documentInfo);
         
         CreateSubscriptionRequest request = DocumentToPojoTransformer.getCreateSubscriptionRequest(DocumentUtils.loadXmlDocument(NotificationStreamImplTest.class.getResourceAsStream("/create-subscription-with-filter.xml")));
 

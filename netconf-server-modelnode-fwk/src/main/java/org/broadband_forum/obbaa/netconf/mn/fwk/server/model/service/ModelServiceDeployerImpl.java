@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service;
 
 import java.util.ArrayList;
@@ -10,28 +26,20 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.collections.map.HashedMap;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
-import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.w3c.dom.Element;
 import org.broadband_forum.obbaa.netconf.api.client.InternalNetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigErrorOptions;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigTestOptions;
+import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.RpcName;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryTraverser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryVisitor;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaVerifierImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
@@ -45,28 +53,25 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNode
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.PersistenceException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContainerHelper;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildListHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeSetException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootEntityContainerModelNodeHelper;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootEntityListModelNodeHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.ModelNodeHelperDeployer;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.LockServiceException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.ReadWriteLockService;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.SchemaMountUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.WriteLockTemplate;
 import org.broadband_forum.obbaa.netconf.persistence.DataStoreMetaProvider;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.server.rpc.MultiRpcRequestHandler;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcRequestHandler;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
@@ -75,20 +80,17 @@ import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.w3c.dom.Element;
 
-
 public class ModelServiceDeployerImpl implements ModelServiceDeployer {
 
     protected final SchemaRegistry m_schemaRegistry;
 
     protected ModelNodeDSMRegistry m_modelNodeDSMRegistry;
-
-    protected ModelNodeHelperRegistry m_modelNodeHelperRegistry;
-
-    protected SubSystemRegistry m_subSystemRegistry;
-
-    private RpcRequestHandlerRegistry m_rpcRequestHandlerRegistry;
-
-    protected Map<String, ModelService> m_modelServices = new HashMap<String, ModelService>();
+	
+	protected ModelNodeHelperRegistry m_modelNodeHelperRegistry;
+	
+	protected SubSystemRegistry m_subSystemRegistry;
+	
+	private RpcRequestHandlerRegistry m_rpcRequestHandlerRegistry;
 
     protected ModelNodeHelperDeployer m_modelNodeHelperDeployer;
 
@@ -102,26 +104,26 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
     protected ReadWriteLockService m_readWriteLockService;
 
     /**
-     * construct ModelServiceDeployer with sysSystemRegistry, RpcRequestHandlerRegistry
+	 * construct ModelServiceDeployer with sysSystemRegistry, RpcRequestHandlerRegistry
      * @param subSystemRegistry
      * @param rpcRequestHandlerRegistry
      * @param modelNodeHelperDeployer
      * @param readWriteLockService
      */
-    public ModelServiceDeployerImpl(ModelNodeDSMRegistry modelNodeDSMRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry,
+	public ModelServiceDeployerImpl(ModelNodeDSMRegistry modelNodeDSMRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry,
                                     SubSystemRegistry subSystemRegistry, RpcRequestHandlerRegistry rpcRequestHandlerRegistry,
                                     ModelNodeHelperDeployer modelNodeHelperDeployer,
                                     SchemaRegistry schemaRegistry, ReadWriteLockService readWriteLockService) {
-        super();
-        this.m_modelNodeDSMRegistry = modelNodeDSMRegistry;
-        this.m_modelNodeHelperRegistry = modelNodeHelperRegistry;
-        this.m_subSystemRegistry = subSystemRegistry;
-        this.m_rpcRequestHandlerRegistry = rpcRequestHandlerRegistry;
-        m_modelNodeHelperDeployer = modelNodeHelperDeployer;
+		super();
+		this.m_modelNodeDSMRegistry = modelNodeDSMRegistry;
+		this.m_modelNodeHelperRegistry = modelNodeHelperRegistry;
+		this.m_subSystemRegistry = subSystemRegistry;
+		this.m_rpcRequestHandlerRegistry = rpcRequestHandlerRegistry;
+		m_modelNodeHelperDeployer = modelNodeHelperDeployer;
         // deployHelpers NETCONF base namespace by default
         m_schemaRegistry = schemaRegistry;
         m_readWriteLockService = readWriteLockService;
-    }
+	}
 
     @Override
     public void postStartup(ModelService service)  throws ModelServiceDeployerException {
@@ -146,7 +148,8 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
                                 try {
                                     LOGGER.info("sending default XML edit for modelservice {}, edit-request {}", service, request.requestToString());
                                     NetconfClientInfo clientInfo = new InternalNetconfClientInfo(NetconfResources.IMPLICATION_CHANGE, 0);
-                                    store.edit(request, clientInfo);
+                                    NetConfResponse response = new NetConfResponse().setMessageId(request.getMessageId());
+                                    store.edit(request, response, clientInfo);
                                     m_dataStoreMetadataProvider.updateDataStoreVersion(service.getName(), 1);
                                 } catch (EditConfigException | PersistenceException | EditConfigTestFailedException | LockedByOtherSessionException e) {
                                     throw new RequestScopeExecutionException(new ModelServiceDeployerException("Error while deploying application " + service.getName(), e));
@@ -162,118 +165,127 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
                     if (cause instanceof ModelServiceDeployerException) {
                         throw (ModelServiceDeployerException) cause;
                     }
+                } finally {
+                    LOGGER.debug("The contents of Datastore for db_version table post startup are: {}", m_dataStoreMetadataProvider.getAllDataStoreVersions());
                 }
             }
         }
     }
 
     public ModelNodeDSMRegistry getModelNodeDSMRegistry() {
-        return m_modelNodeDSMRegistry;
-    }
+		return m_modelNodeDSMRegistry;
+	}
 
-    public void setModelNodeDSMRegistry(ModelNodeDSMRegistry modelNodeDSMRegistry) {
-        m_modelNodeDSMRegistry = modelNodeDSMRegistry;
-    }
+	public void setModelNodeDSMRegistry(ModelNodeDSMRegistry modelNodeDSMRegistry) {
+		m_modelNodeDSMRegistry = modelNodeDSMRegistry;
+	}
 
-    public ModelNodeHelperRegistry getModelNodeHelperRegistry() {
-        return m_modelNodeHelperRegistry;
-    }
+	public ModelNodeHelperRegistry getModelNodeHelperRegistry() {
+		return m_modelNodeHelperRegistry;
+	}
 
-    public void setModelNodeHelperRegistry(ModelNodeHelperRegistry modelNodeHelperRegistry) {
-        m_modelNodeHelperRegistry = modelNodeHelperRegistry;
-    }
+	public void setModelNodeHelperRegistry(ModelNodeHelperRegistry modelNodeHelperRegistry) {
+		m_modelNodeHelperRegistry = modelNodeHelperRegistry;
+	}
 
-    public SubSystemRegistry getSubSystemRegistry() {
-        return m_subSystemRegistry;
-    }
+	public SubSystemRegistry getSubSystemRegistry() {
+		return m_subSystemRegistry;
+	}
 
-    public void setSubSystemRegistry(SubSystemRegistry subSystemRegistry) {
-        this.m_subSystemRegistry = subSystemRegistry;
-    }
+	public void setSubSystemRegistry(SubSystemRegistry subSystemRegistry) {
+		this.m_subSystemRegistry = subSystemRegistry;
+	}
 
-    public RpcRequestHandlerRegistry getRpcRequestHandlerRegistry() {
-        return m_rpcRequestHandlerRegistry;
-    }
+	public RpcRequestHandlerRegistry getRpcRequestHandlerRegistry() {
+		return m_rpcRequestHandlerRegistry;
+	}
 
-    public void setRpcRequestHandlerRegistry(RpcRequestHandlerRegistry rpcRequestHandlerRegistry) {
-        this.m_rpcRequestHandlerRegistry = rpcRequestHandlerRegistry;
-    }
-
-    public ModelService getModelService(String name) {
-        return m_modelServices.get(name);
-    }
+	public void setRpcRequestHandlerRegistry(RpcRequestHandlerRegistry rpcRequestHandlerRegistry) {
+		this.m_rpcRequestHandlerRegistry = rpcRequestHandlerRegistry;
+	}
 
     @Override
     public synchronized void deploy(List<ModelService> services) throws ModelServiceDeployerException {
-        LOGGER.info("deploying modelservices {}, deployer hashcode: {}", services, hashCode());
-        try {
-            m_readWriteLockService.executeWithWriteLock(new WriteLockTemplate<Void>() {
+	    try{
+            RequestScope.withScope(new RequestScope.RsTemplate<Void>(){
                 @Override
-                public Void execute() throws LockServiceException {
+                protected Void execute() throws RequestScopeExecutionException {
+                    LOGGER.info("deploying modelservices {}, deployer hashcode: {}", services, hashCode());
                     try {
-                        // Trigger listeners to perform pre-deploy actions
-                        for (DeployListener listener : m_deployListener) {
-                            listener.preDeploy();
-                        }
-                        for(ModelService service : services){
-                            deploy(service);
-                        }
-                        // Trigger listeners to perform post-deploy actions
-                        for (DeployListener listener : m_deployListener) {
-                            listener.postDeploy();
-                        }
-                        for(ModelService service : services){
-                            addRootNodeHelpers(service);
-                        }
-                        for(ModelService service : services){
-                            postStartup(service);
-                        }
-                        for(ModelService service : services){
-                            for(SubSystem ss : service.getSubSystems().values()){
-                                ss.appDeployed();
-                            }
-                            SubSystem defaultSubsystem = service.getDefaultSubsystem();
-                            if(defaultSubsystem != null){
-                                defaultSubsystem.appDeployed();
-                            }
-                        }
+                        m_readWriteLockService.executeWithWriteLock(new WriteLockTemplate<Void>() {
+                            @Override
+                            public Void execute() throws LockServiceException {
+                                try {
+                                    // Trigger listeners to perform pre-deploy actions
+                                    for (DeployListener listener : m_deployListener) {
+                                        listener.preDeploy();
+                                    }
+                                    for(ModelService service : services){
+                                        deploy(service);
+                                    }
+                                    // Trigger listeners to perform post-deploy actions
+                                    for (DeployListener listener : m_deployListener) {
+                                        listener.postDeploy();
+                                    }
+                                    for(ModelService service : services){
+                                        addRootNodeHelpers(service);
+                                    }
+                                    for(ModelService service : services){
+                                        postStartup(service);
+                                    }
+                                    for(ModelService service : services){
+                                        for(SubSystem ss : service.getSubSystems().values()){
+                                            ss.appDeployed();
+                                        }
+                                        SubSystem defaultSubsystem = service.getDefaultSubsystem();
+                                        if(defaultSubsystem != null){
+                                            defaultSubsystem.appDeployed();
+                                        }
+                                    }
 
-                    } catch (ModelServiceDeployerException e) {
-                        throw new LockServiceException(e);
+                                } catch (Exception e) {
+                                    throw new LockServiceException(e);
+                                }
+                                return null;
+                            }
+                        });
+                    } catch (LockServiceException e) {
+                        LOGGER.error("Deploy failed, trying to undeploy model services {} to clear partially deployed services", services, e);
+                        undeploy(services);
+                        throw e;
                     }
+                    LOGGER.info("deploying modelservices {} done, deployer hashcode: {}", services, hashCode());
                     return null;
                 }
             });
-        } catch (LockServiceException e) {
-            if (e.getCause() instanceof ModelServiceDeployerException){
-                throw ((ModelServiceDeployerException)e.getCause());
-            }else{
-                throw e;
+        }catch (LockServiceException e) {
+            if(e.getCause() instanceof ModelServiceDeployerException){
+                throw (ModelServiceDeployerException) e.getCause();
             }
+            throw e;
         }
-        LOGGER.info("deploying modelservices {} done, deployer hashcode: {}", services, hashCode());
     }
 
     /**
-     * deployHelpers following modelservice SubSystem, ModelMode  RpcRequestHandlers of model service to registry
-     * @param service
-     * @throws ModelNodeInitException
-     * @throws ModelNodeGetException
-     * @throws ModelNodeSetException
-     * @throws PersistenceException
-     */
+	 * deployHelpers following modelservice SubSystem, ModelMode  RpcRequestHandlers of model service to registry
+	 * @param service
+	 * @throws ModelNodeInitException
+	 * @throws ModelNodeGetException
+	 * @throws ModelNodeSetException 
+	 * @throws PersistenceException 
+	 */
     protected void deploy(ModelService service) throws ModelServiceDeployerException {
         LOGGER.info("updating registries for modelservice {}",service);
         try {
 
             Map<String, SchemaPath> appAugmentedPaths = service.getAppAugmentedPaths();
-            for(String xpath : appAugmentedPaths.keySet()){
-                m_schemaRegistry.registerAppAllowedAugmentedPath(service.getModuleName(), xpath, appAugmentedPaths.get(xpath));
-            }
+        	for(String xpath : appAugmentedPaths.keySet()){
+        		m_schemaRegistry.registerAppAllowedAugmentedPath(service.getModuleName(), xpath, appAugmentedPaths.get(xpath));
+        	}
 
-            loadSchemaContext(service);
+           loadSchemaContext(service);
 
-            //deploy subsystems
+        	//deploy subsystems
             Optional<Module> deployedModule = m_schemaRegistry.getModule(service.getModuleName(), Revision.of(service.getModuleRevision()));
 
             if(deployedModule.isPresent()){
@@ -284,8 +296,6 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
                 LOGGER.warn("No YANG module defined by ModelService {}", service.getName());
             }
 
-            m_modelServices.put(service.getName(), service);
-
         } catch (SchemaBuildException | AnnotationAnalysisException e) {
             LOGGER.error("Error while deploying service {}",service.getName(), e);
             throw new ModelServiceDeployerException(e);
@@ -294,60 +304,47 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
     }
 
     protected void loadSchemaContext(ModelService service) throws SchemaBuildException {
-        List<YangTextSchemaSource> yangByteSources = service.getYangModuleByteSources();
-        m_schemaRegistry.loadSchemaContext(service.getName(), yangByteSources, service.getSupportedFeatures(),
-                service.getSupportedDeviations());
+        if(service.updateSchema()) {
+            List<YangTextSchemaSource> yangByteSources = service.getYangModuleByteSources();
+            m_schemaRegistry.loadSchemaContext(service.getName(), yangByteSources, service.getSupportedFeatures(),
+                    service.getSupportedDeviations());
+        }
     }
 
     public void addRootNodeHelpers(ModelService service) {
         LOGGER.info("adding root node helpers for modelservice {}",service);
         List<SchemaPath> subtreeRootPaths = new ArrayList<>();
-        subtreeRootPaths.addAll(SchemaRegistryUtil.getModuleSubtreeRoots(m_schemaRegistry, service.getModuleName(),
-                service.getModuleRevision()));
-        if (subtreeRootPaths != null) {
-            for (SchemaPath rootSchemaPath : subtreeRootPaths) {
-                if (!rootSchemaPath.getParent().getPathFromRoot().iterator().hasNext()) {
-                    DataSchemaNode rootNode = m_schemaRegistry.getDataSchemaNode(rootSchemaPath);
-                    if (!rootNode.isConfiguration() && !(rootNode instanceof ContainerSchemaNode)) {
-                        throw new RuntimeException("Cannot load non-config node.");
-                    } else {
-                        if (rootNode instanceof ContainerSchemaNode) {
-                            ChildContainerHelper childContainerHelper = new RootEntityContainerModelNodeHelper(
-                                    (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(rootSchemaPath), m_modelNodeHelperRegistry,
-                                    m_subSystemRegistry, m_schemaRegistry, service.getModelNodeDSM());
-                            m_rootModelNodeAggregator.addModelServiceRootHelper(rootSchemaPath, childContainerHelper);
-                        } else {
-                            ChildListHelper childListHelper = new RootEntityListModelNodeHelper(
-                                    (ListSchemaNode) m_schemaRegistry.getDataSchemaNode(rootSchemaPath), m_modelNodeHelperRegistry,
-                                    service.getModelNodeDSM(), m_schemaRegistry, m_subSystemRegistry);
-                            m_rootModelNodeAggregator.addModelServiceRootHelper(rootSchemaPath, childListHelper);
-                        }
-                    }
-                }
+        
+        List<SchemaPath> rootNodes = SchemaRegistryUtil.getModuleSubtreeRoots(m_schemaRegistry, service.getModuleName(), service.getModuleRevision());
+        for ( SchemaPath rootNodePath : rootNodes){
+            DataSchemaNode rootNode = m_schemaRegistry.getDataSchemaNode(rootNodePath);
+            if(!(rootNode instanceof ListSchemaNode && !rootNode.isConfiguration())){ // We just need to omit the state list nodes. 
+                subtreeRootPaths.add(rootNodePath);
             }
         }
+        SchemaMountUtil.addRootNodeHelpers(m_schemaRegistry, m_subSystemRegistry, m_modelNodeHelperRegistry, service.getModelNodeDSM(), subtreeRootPaths, m_rootModelNodeAggregator);
     }
 
     private void undeploy(ModelService service) throws ModelServiceDeployerException {
 
-        String componentId = service.getName().toString();
+		String componentId = service.getName();
 
-
-        m_modelNodeDSMRegistry.undeploy(componentId);
-        m_modelNodeHelperRegistry.undeploy(componentId);
-        m_subSystemRegistry.undeploy(componentId);
-        m_rpcRequestHandlerRegistry.undeploy(componentId);
-        Set<MultiRpcRequestHandler> multiRpcRequestHandlers = service.getMultiRpcRequestHandlers();
+		m_modelNodeDSMRegistry.undeploy(componentId);
+		m_modelNodeHelperRegistry.undeploy(componentId);
+		m_subSystemRegistry.undeploy(componentId);
+		m_rpcRequestHandlerRegistry.undeploy(componentId);
+		Set<MultiRpcRequestHandler> multiRpcRequestHandlers = service.getMultiRpcRequestHandlers();
         for (MultiRpcRequestHandler multiRpcHandler : multiRpcRequestHandlers) {
             m_rpcRequestHandlerRegistry.undeployMultiRpcRequestHandler(multiRpcHandler);
         }
         m_entityRegistry.undeploy(componentId);
+        m_schemaRegistry.deRegisterNodesReferencedInConstraints(componentId);
         unloadSchemaContext(service, componentId);
         Map<String, SchemaPath> appAugmentedPaths = service.getAppAugmentedPaths();
-        for(String xpath : appAugmentedPaths.keySet()){
-            m_schemaRegistry.deRegisterAppAllowedAugmentedPath(xpath);
-        }
-        m_schemaRegistry.unregisterMountPointSchemaPath(componentId);
+		for(String xpath : appAugmentedPaths.keySet()){
+			m_schemaRegistry.deRegisterAppAllowedAugmentedPath(xpath);
+		}
+		m_schemaRegistry.unregisterMountPointSchemaPath(componentId);
     }
 
     protected void unloadSchemaContext(ModelService service, String componentId) throws ModelServiceDeployerException {
@@ -360,35 +357,62 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
     }
 
     @Override
-    public synchronized void undeploy(List<ModelService> services) throws ModelServiceDeployerException {
-        LOGGER.info("un-deploying modelservices {}", services);
-        List<ModelService> servicesInReverseOrder = new ArrayList<ModelService>(services);
-        Collections.reverse(servicesInReverseOrder);
-        for(ModelService service : servicesInReverseOrder){
-            removeRootNodeHelpers(service);
-        }
-        // Trigger listeners to perform pre-undeploy actions
-        for (DeployListener listener : m_deployListener) {
-            listener.preUndeploy();
-        }
-        for(ModelService service : servicesInReverseOrder){
-            undeploy(service);
-        }
-        // Trigger listeners to perform post-undeploy actions
-        for (DeployListener listener : m_deployListener) {
-            listener.postUndeploy();
-        }
+    public synchronized void undeploy(List<ModelService> services) {
+        RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
 
-        for(ModelService service : services){
-            for(SubSystem ss : service.getSubSystems().values()){
-                ss.appUndeployed();
+            @Override
+            protected Void execute() throws RequestScopeExecutionException {
+                LOGGER.info("un-deploying modelservices {}", services);
+                List<ModelService> servicesInReverseOrder = new ArrayList<ModelService>(services);
+                Collections.reverse(servicesInReverseOrder);
+                for(ModelService service : servicesInReverseOrder){
+                    removeRootNodeHelpers(service);
+                }
+                // Trigger listeners to perform pre-undeploy actions
+                for (DeployListener listener : m_deployListener) {
+                    try {
+                        listener.preUndeploy();
+                    } catch (Exception e) {
+                        LOGGER.warn("Pre-undeploy for the listener [{}] failed!! ", listener, e);
+                    }
+                }
+                for(ModelService service : servicesInReverseOrder){
+                    try {
+                        undeploy(service);
+                    } catch (Exception e) {
+                        LOGGER.error("Un-deploying modelservice [{}] failed!! ", service.getName(), e);
+                    }
+                }
+                // Trigger listeners to perform post-undeploy actions
+                for (DeployListener listener : m_deployListener) {
+                    try {
+                        listener.postUndeploy();
+                    } catch (Exception e){
+                        LOGGER.warn("Post-undeploy for the listener [{}] failed!! ", listener, e);
+                    }
+                }
+
+                for (ModelService service : services) {
+                    for (SubSystem ss : service.getSubSystems().values()) {
+                        try {
+                            ss.appUndeployed();
+                        } catch (Exception e) {
+                            LOGGER.warn("Un-deploy for [{}] failed!! ", ss, e);
+                        }
+                    }
+                    SubSystem defaultSubsystem = service.getDefaultSubsystem();
+                    if (defaultSubsystem != null) {
+                        try {
+                            defaultSubsystem.appUndeployed();
+                        } catch (Exception e) {
+                            LOGGER.warn("Un-deploy for [{}] failed!! ", defaultSubsystem, e);
+                        }
+                    }
+                }
+                LOGGER.info("un-deploying modelservices {} done", services);
+                return null;
             }
-            SubSystem defaultSubsystem = service.getDefaultSubsystem();
-            if(defaultSubsystem != null){
-                defaultSubsystem.appUndeployed();
-            }
-        }
-        LOGGER.info("un-deploying modelservices {} done", services);
+        });
     }
 
     private void removeRootNodeHelpers(ModelService service) {
@@ -400,18 +424,20 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
         }
     }
 
-    protected void updateRegistries(ModelService service, Module deployedModule) throws AnnotationAnalysisException {
+    protected void updateRegistries(ModelService service, Module deployedModule) throws AnnotationAnalysisException, SchemaBuildException {
         //the order is important here.
         if(m_entityRegistry !=null && service.getEntityClasses() != null && !service.getEntityClasses().isEmpty()){
             m_entityRegistry.updateRegistry(service.getName(), service.getEntityClasses(), m_schemaRegistry, service.getEntityDSM(), m_modelNodeDSMRegistry);
         }
 
         //register the module revision
-        String componentId = service.getName();
+		String componentId = service.getName();
         List<SchemaRegistryVisitor> visitors = getRegistryVisitors(service);
 
         SchemaRegistryTraverser traverser = new SchemaRegistryTraverser(componentId, visitors, m_schemaRegistry, deployedModule);
         traverser.traverse();
+        SchemaVerifierImpl verifier = new SchemaVerifierImpl();
+        verifier.verify(m_schemaRegistry);
 
     }
 
@@ -447,19 +473,32 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
 
         //deployHelpers rpcRequestHanders of model service
         Map<RpcName, RpcDefinition> rpcDefinitionMap = new HashMap<RpcName, RpcDefinition>();
-        String componentId;
+		String componentId;
         Set<RpcDefinition> rpcDefinitions = deployedModule.getRpcs();
         for (RpcDefinition rpcDefinition : rpcDefinitions) {
             rpcDefinitionMap.put(new RpcName(rpcDefinition.getQName().getNamespace().toString(), rpcDefinition.getQName().getLocalName()), rpcDefinition);
         }
+
+        // Get the RPC yang definition which is defined in Yang Modules
+        Map<String, String> rpcYangModuleNames =  service.getRpcModuleNames();
+        rpcYangModuleNames.forEach((key,value)->{
+        	Optional<Module> module = m_schemaRegistry.getModule(key, Revision.of(value));
+        	if(module.isPresent()) {
+        		Set<RpcDefinition> rpcs = module.get().getRpcs();
+        		for (RpcDefinition rpcDefinition : rpcs) {
+        			rpcDefinitionMap.put(new RpcName(rpcDefinition.getQName().getNamespace().toString(), rpcDefinition.getQName().getLocalName()), rpcDefinition);
+        		}
+        	}
+        });
+
         Set<RpcRequestHandler> rpcRequestHandlers = service.getRpcRequestHandlers();
         for (RpcRequestHandler handler : rpcRequestHandlers) {
             RpcDefinition rpcDefinition = rpcDefinitionMap.get(handler.getRpcQName());
             handler.setRpcDefinition(rpcDefinition);
-            componentId = service.getName();
+			componentId = service.getName();
             m_rpcRequestHandlerRegistry.register(componentId,handler.getRpcQName(), handler);
         }
-
+        
         Set<MultiRpcRequestHandler> multiRpcRequestHandlers = service.getMultiRpcRequestHandlers();
         for (MultiRpcRequestHandler multiRpcHandler : multiRpcRequestHandlers) {
             m_rpcRequestHandlerRegistry.registerMultiRpcRequestHandler(multiRpcHandler);
@@ -488,7 +527,7 @@ public class ModelServiceDeployerImpl implements ModelServiceDeployer {
             m_deployListener.add(listener);
         }
     }
-
+    
     @Override
     public void removeDeployListener(DeployListener listener) {
         if (m_deployListener.contains(listener)) {

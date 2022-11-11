@@ -52,7 +52,7 @@ public class NetconfCapability {
     public NetconfCapability(String uri, String module, String revision) {
         m_uri = uri;
         m_parameters.put(MODULE_PARAM, module);
-        if (revision != null) {
+        if (revision != null && !revision.isEmpty()) {
             m_parameters.put(REVISION_PARAM, revision);
         }
     }
@@ -60,10 +60,10 @@ public class NetconfCapability {
     public NetconfCapability(String uri, String module, String revision, String supportedFeatures,
                              String supportedDeviations) {
         this(uri, module, revision);
-        if (supportedFeatures != null) {
+        if (supportedFeatures != null && !supportedFeatures.isEmpty()) {
             m_parameters.put(FEATURES_PARAM, supportedFeatures);
         }
-        if (supportedDeviations != null) {
+        if (supportedDeviations != null && !supportedDeviations.isEmpty()) {
             m_parameters.put(DEVIATIONS_PARAM, supportedDeviations);
         }
     }
@@ -84,7 +84,7 @@ public class NetconfCapability {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((m_parameters == null) ? 0 : m_parameters.hashCode());
+        result = prime * result + m_parameters.hashCode();
         result = prime * result + ((m_uri == null) ? 0 : m_uri.hashCode());
         return result;
     }
@@ -98,10 +98,7 @@ public class NetconfCapability {
         if (getClass() != obj.getClass())
             return false;
         NetconfCapability other = (NetconfCapability) obj;
-        if (m_parameters == null) {
-            if (other.m_parameters != null)
-                return false;
-        } else if (!m_parameters.equals(other.m_parameters))
+        if (!m_parameters.equals(other.m_parameters))
             return false;
         if (m_uri == null) {
             if (other.m_uri != null)
@@ -130,10 +127,7 @@ public class NetconfCapability {
             return true;
         if (capability == null)
             return false;
-        if (m_parameters == null) {
-            if (capability.m_parameters != null)
-                return false;
-        } else if (!isParameterMatch(capability.m_parameters))
+        if (!isParameterMatch(capability.m_parameters))
             return false;
         if (m_uri == null) {
             if (capability.m_uri != null)

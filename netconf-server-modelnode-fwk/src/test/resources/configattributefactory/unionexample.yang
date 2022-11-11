@@ -42,6 +42,7 @@ module union-test {
                     }
                     type enumeration {
                         enum all;
+                        enum none;
                     }
                     type int32;
                     type string;

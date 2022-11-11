@@ -1,0 +1,350 @@
+module datastore-validator-leafref-test {
+	
+	yang-version 1.1;
+    
+	namespace "urn:org:bbf2:pma:leafref:validation";
+	
+	prefix "lrValidation";
+	
+	revision "2019-02-11" {
+	      description "Initial version.";
+	}
+	
+	container rootNode {
+	
+		container choiceWithLeafref {
+			leaf LF1{
+				type leafref{
+					path "../A1";							
+				}
+			}
+			leaf LF4{
+				type leafref{
+					path "../innerB1";							
+				}
+			}
+			leaf L1{
+				type string;
+			}
+			choice CC {
+				case A{
+					leaf A1{
+						type string;
+					}
+				} 
+				case B {
+					leaf B1 {
+						type string;
+					}
+				}
+				case C {
+					leaf LF2{
+						type leafref{
+							path "../L1";
+						}
+					}
+				}
+				case D {
+					leaf D1 {
+						type string;
+					}
+					leaf LF3{
+						type leafref{
+							path "../D1";
+						}
+					}
+				}
+				case E {
+					leaf E1 {
+						type string;
+					}
+					choice innerChoice {
+						case innerA {
+							leaf innerLF1{
+								type leafref{
+									path "../E1";
+								}
+							}
+						}
+						case innerB {
+							leaf innerB1{
+								type string;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		
+		list leafRefHolder{
+			key id;
+			leaf id{
+				type uint8;
+			}
+			leaf testInt{
+				type uint8;
+			}
+			leaf lrWithMust{
+				must "../lrValidation:id > '5'";
+				type leafref {
+					path "../lrValidation:id";
+				}
+			}			
+		}
+		
+		list mustWithMultiplePredicatesAsImpactNodes_RelativePath {
+			key name;
+			leaf name{
+				type string;
+			}
+			uses scheduler-ref;
+		}
+		
+		list mustWithPredicatesAsImpactNode_AbsPath-target {
+			key name;
+			leaf name{
+				type string;
+			}
+		}
+		
+		list mustWithPredicatesAsImpactNode_AbsPath-source {
+			key name;
+			leaf name{
+				type string;
+			}
+		}
+		
+		list multiPredicatesExample{
+			key index;
+			leaf index{
+				type uint8;
+			}
+			leaf name{
+				type string;
+			}
+			
+			list deep1{
+				key deep1Index;
+				leaf deep1Index{
+					type uint8;
+				}
+				list deep2{
+					key deep2Index;
+					leaf deep2Index{
+						type uint8;
+					}
+					leaf lrTarget{
+						default 'xyz';
+						type string;
+					}
+					leaf multiPredicateLR{
+						type leafref{
+							path "/lrValidation:rootNode/lrValidation:multiPredicatesExample[index=current()/../../../index]/lrValidation:deep1[deep1Index=current()/../../deep1Index]/lrValidation:deep2[deep2Index=current()/../deep2Index]/lrValidation:lrTarget";							
+						}
+					}				
+				}
+			}
+		}
+		list lrPoints{
+			key index;
+			leaf index{
+				type uint8;
+			}
+			leaf index2{
+			    type uint8;
+			    default 10;
+			}
+			leaf lrPointsToSibling{
+				type leafref{
+					path "../lrValidation:index";
+				}
+			}
+			container deep1{
+				leaf lrPointintToParentNodeSibling{
+					type leafref{
+						path "../../lrValidation:index";
+					}
+				}
+				leaf lrPointintToOtherParentNodeSibling{
+					type leafref{
+						path "../../../lrValidation:otherParent[otherIndex1=current()/../../index][otherIndex2=current()/../../index2]/lrValidation:otherIndex1";
+					}
+				}
+				leaf lrPointintToOtherRootNodeSibling{
+					type leafref{
+						path "../../../../lrValidation:otherRootNode/lrValidation:lrTarget";
+					}
+				}
+			}
+		}
+		list otherParent{
+			key "otherIndex1 otherIndex2";
+			leaf otherIndex1{
+				type uint8;
+			}
+			leaf otherIndex2{
+				type uint8;
+			}
+		}
+		
+		list leafRefPointingToLeafList{
+			key index;
+			leaf index{
+				type uint8;
+			}
+			leaf-list minEleLeafList {
+				min-elements 1;
+				type int8;
+			}
+			leaf lrPointingToMinEleLeafList{
+				type leafref{
+					path "../lrValidation:minEleLeafList";
+				}
+			}
+		}
+		list list2 {
+           key name2;
+           leaf name2{
+                type string;
+           }
+        }
+	}	
+	container otherRootNode {
+		leaf lrTarget{
+			type string;
+		}
+	}
+	
+	grouping scheduler-ref {
+		leaf scheduler-node-name-leafref {
+      		type leafref {
+        		path '/lrValidation:rootNode/lrValidation:multiPredicatesExample/lrValidation:index';
+      		}
+      		must "count(/lrValidation:rootNode/lrValidation:multiPredicatesExample[lrValidation:index = current()]/lrValidation:deep1[lrValidation:deep1Index = current()/../../lrValidation:leafRefHolder[lrValidation:id=current()]/lrValidation:testInt]) > 0" {
+      			error-message "Count failed";
+      		}
+		}
+	}
+
+	augment '/lrValidation:rootNode' {
+		list scheduler-node {
+			key "name";
+			leaf name {
+			  type string;          
+			}
+
+			leaf scheduling-level {
+			  type uint8;
+			  // mandatory true;
+			}       
+			choice children-type {
+			  case scheduler-node {
+				list child-scheduler-nodes {
+				  key "name";
+				  leaf name {
+					  type string;
+					}     
+				  }
+			  }
+			  case queue {
+
+				leaf contains-queues {
+				  type boolean;
+				  default "true";             
+				}
+				
+			  }
+			}
+		  }
+		  list child-scheduler-nodes {
+			key "name";
+			leaf name {
+			  type string;
+			}
+		  }
+	}
+	augment '/lrValidation:rootNode' {
+
+    	list list1 {
+    		key "name";
+    		leaf name {
+    		   type string;
+    		}
+    	list list3 {
+    	    key listid;
+    		leaf listid {
+    		   type string;
+    		}
+    	}
+
+
+    	    choice choice1 {
+    		    case case1 {
+    			    list caselist1 {
+                        key "name1";
+                        leaf name1 {
+                            type string;
+                        }
+                    }
+    		    }
+    	    }
+        }
+    }
+
+  augment '/lrValidation:rootNode/lrValidation:list2' {
+    container tm-object {
+      choice tm-objects-method {
+        case schedulercase {
+          uses scheduler-containing-multiple-predicates;
+        }
+      }
+    }
+  }
+
+  augment '/lrValidation:rootNode/lrValidation:mustWithPredicatesAsImpactNode_AbsPath-source' {
+    container egress-tm-objects {
+      choice select-tm-objects-method {
+        case scheduler {
+          uses scheduler-containing-queues-ref;
+        }
+      }
+    }
+  }
+	grouping scheduler-containing-queues-ref {
+		leaf scheduler-node-name {
+      		type leafref {
+        		path '/lrValidation:rootNode/lrValidation:mustWithPredicatesAsImpactNode_AbsPath-target/lrValidation:name';
+      		}
+      		
+      		must "count(/lrValidation:rootNode/lrValidation:child-scheduler-nodes[lrValidation:name = current()]) > 0 or "+
+				 "count(/lrValidation:rootNode/lrValidation:child-scheduler-nodes[lrValidation:name = "+
+				 "/lrValidation:rootNode/lrValidation:scheduler-node/lrValidation:child-scheduler-nodes[lrValidation:name = current()]/../lrValidation:name]) > 0" {
+				error-message "Count failed with multi predicates";
+			}
+		}
+	}
+	grouping scheduler-containing-multiple-predicates {
+        leaf groupleaf1 {
+            type string;
+              	must "count(../../../lrValidation:list1/lrValidation:list3[lrValidation:listid = current()/../leaf-must]/../lrValidation:caselist1[lrValidation:name1 = current()/../leaf-must]) > 0" {
+        			error-message "Count Validation in multiple predicates using relative path fails";
+        			}
+        }
+        leaf groupleaf2 {
+                    type string;
+                      	must "count(/lrValidation:rootNode/lrValidation:list1/lrValidation:list3[lrValidation:listid = current()/../leaf-must]/../lrValidation:caselist1[lrValidation:name1 = current()/../leaf-must]) > 0" {
+                			error-message "Count Validation in multiple predicates using absolute path fails";
+                			}
+                }
+        leaf groupleaf3 {
+                            type string;
+                              	must "count(/lrValidation:rootNode/lrValidation:list1[lrValidation:name = current()]/lrValidation:list3[lrValidation:listid = current()]/../lrValidation:caselist1[lrValidation:name1 = current()]) > 0" {
+                        			error-message "Count Validation in multiple predicates with multiple list using absolute path fails";
+                        			}
+                        }
+        leaf leaf-must {
+            type string;
+        }
+    }
+}	

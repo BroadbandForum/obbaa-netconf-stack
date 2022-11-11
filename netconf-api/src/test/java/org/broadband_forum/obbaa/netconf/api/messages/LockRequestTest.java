@@ -25,12 +25,16 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-public class LockRequestTest {
+public class LockRequestTest extends RpcTypeTest {
 
     private LockRequest m_lockRequest = new LockRequest();
     private static final String TEST_TARGET = "candidate";
     private String m_target = TEST_TARGET;
     private String m_messageId = "101";
+
+    public LockRequestTest() {
+        super(new LockRequest().setTargetRunning());
+    }
 
     @Test
     public void testGetRequestDocument() throws NetconfMessageBuilderException, SAXException, IOException {

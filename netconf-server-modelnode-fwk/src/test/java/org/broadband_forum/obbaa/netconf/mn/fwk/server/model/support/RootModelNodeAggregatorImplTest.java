@@ -1,26 +1,74 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
+import static junit.framework.TestCase.assertFalse;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NotifSwitchUtil.ENABLE_NEW_NOTIF_STRUCTURE;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NotifSwitchUtil.resetSystemProperty;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NotifSwitchUtil.setSystemPropertyAndReturnResetValue;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGet;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfig;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
+import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.ActionResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.CopyConfigRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigErrorOptions;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigTestOptions;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorSeverity;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
+import org.broadband_forum.obbaa.netconf.api.util.CryptUtil2;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.tester.TesterConstants;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.toaster.ToasterConstants;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ChangeNotification;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetAttributeException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NbiNotificationHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetConfServerImpl;
@@ -28,21 +76,24 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemValidationException;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetAttributeException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.Operation;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang.DsmJukeboxSubsystem;
-import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.tester.TesterConstants;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.toaster.ToasterConstants;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
+import org.broadband_forum.obbaa.netconf.server.ssh.auth.AccessDeniedException;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
@@ -53,29 +104,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.load;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.responseToString;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGet;
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfig;
-import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-
+@RunWith(RequestScopeJunitRunner.class)
 public class RootModelNodeAggregatorImplTest {
     private static final String FULL_GET_RESPONSE = "/rootmodelnodetest/full_get_response.xml";
 
@@ -104,7 +133,7 @@ public class RootModelNodeAggregatorImplTest {
 
     private static final String EDIT_ON_TOASTER = "/rootmodelnodetest/edit_on_toaster.xml";
     private static final String RESPONSE_AFTER_EDIT_ON_TOASTER = "/rootmodelnodetest/response_after_edit_on_toaster.xml";
-    
+
     private static final String RESPONSE_AFTER_EDIT_ON_BOTH_MODELS = "/rootmodelnodetest/response_after_edit_on_both_models.xml";
 
     private static final String INVALID_EDIT1 = "/rootmodelnodetest/invalid_edit1.xml";
@@ -137,6 +166,7 @@ public class RootModelNodeAggregatorImplTest {
 
     private static final String FULL_GET_CONFIG_RESPONSE_TESTER = "/rootmodelnodetest/full_get_config_response_tester.xml";
     private static final String FULL_GET_RESPONSE_TESTER = "/rootmodelnodetest/full_get_response_tester.xml";
+    private static final String FULL_GET_RESPONSE_WITHOUT_TESTER = "/rootmodelnodetest/full_get_response_without_tester.xml";
 
     private static final String COPY_CONFIG_ONE_ROOTCONTAINER_XML = "/rootmodelnodetest/copy-config-with-one-root-container.xml";
     private static final String GET_CONFIG_RESP_AFTER_COPY_CONFIG_ROOTCONT = "/rootmodelnodetest/get_config_resp_after_copy_config_rootcont.xml";
@@ -144,7 +174,7 @@ public class RootModelNodeAggregatorImplTest {
     private static final String COPY_CONFIG_TWO_ROOTS_XML = "/rootmodelnodetest/copy-config-with-two-roots.xml";
     private static final String GET_CONFIG_RESP_AFTER_COPY_CONFIG = "/rootmodelnodetest/get_config_resp_after_copy_config.xml";
     private static final String GET_CONFIG_RESPONSE_WITH_MULTIPLE_ROOTS_XML = "/rootmodelnodetest/get-config-response-with-multiple-roots.xml";
-   
+
 
     private RootModelNodeAggregator m_runningAggregator;
     private SchemaRegistry m_schemaRegistry = null;
@@ -161,11 +191,12 @@ public class RootModelNodeAggregatorImplTest {
     private ContainerSchemaNode m_toasterSchemaNode;
 
     @Before
-    public void setUp() throws ModelNodeInitException, SchemaBuildException, ModelNodeFactoryException {
+    public void setUp() throws Exception {
         m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         m_schemaRegistry.loadSchemaContext("jukebox", TestUtil.getJukeBoxYangs(), Collections.emptySet(), Collections.emptyMap());
         m_schemaRegistry.loadSchemaContext("toaster", Arrays.asList(TestUtil.getByteSource("/rootmodelnodetest/toaster.yang")), Collections.emptySet(), Collections.emptyMap());
         m_runningDsm = Mockito.spy(new InMemoryDSM(m_schemaRegistry, "running"));
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_runningAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_runningDsm, m_subSystemRegistry);
         m_server = new NetConfServerImpl(m_schemaRegistry, mock(RpcPayloadConstraintParser.class));
         String xmlFilePath = TestUtil.class.getResource("/example-jukebox.xml").getPath();
@@ -190,6 +221,10 @@ public class RootModelNodeAggregatorImplTest {
         m_server.setRunningDataStore(dataStore);
         YangUtils.loadXmlDataIntoServer(m_server, xmlFilePath);
         YangUtils.loadXmlDataIntoServer(m_server, xmlFilePath1);
+        String keyFilePath = getClass().getResource("/domvisitortest/keyfile.plain").getPath();
+        CryptUtil2 cryptUtil2 = new CryptUtil2();
+        cryptUtil2.setKeyFilePathForTest(keyFilePath);
+        cryptUtil2.initFile();
     }
 
     @Test
@@ -260,7 +295,7 @@ public class RootModelNodeAggregatorImplTest {
         verify(m_runningDsm, atLeastOnce()).beginModify();
         verify(m_runningDsm, atLeastOnce()).endModify();
         // assert Ok response
-        assertEquals(load("/ok-response.xml"), responseToString(response));
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(m_server, (String) null, RESPONSE_AFTER_EDIT_ON_JUKEBOX, "1");
@@ -277,7 +312,7 @@ public class RootModelNodeAggregatorImplTest {
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(new NetconfClientInfo("unit-test", 1), request, response);
         // assert Ok response
-        assertEquals(load("/ok-response.xml"), responseToString(response));
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(m_server, (String) null, RESPONSE_AFTER_EDIT_ON_JUKEBOX_WITH_NS_PREFIX, "1");
@@ -298,10 +333,45 @@ public class RootModelNodeAggregatorImplTest {
         verify(m_jukeBoxHelper, never()).getValue(null);
         verify(m_toasterHelper).getValue(null);
         // assert Ok response
-        assertEquals(load("/ok-response.xml"), responseToString(response));
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(m_server, "", RESPONSE_AFTER_EDIT_ON_TOASTER, "1");
+    }
+
+    @Test
+    public void testOnActionWithSubsystemPermissionCheck() throws SchemaBuildException, ModelNodeFactoryException, NetconfMessageBuilderException {
+        m_schemaRegistry.loadSchemaContext("tester", Arrays.asList(TestUtil.getByteSource("/rootmodelnodetest/tester.yang")), Collections.emptySet(), Collections.emptyMap());
+
+        NetconfClientInfo clientInfo = new NetconfClientInfo("unit-test", 1);
+        SubSystem stateContainerSubSystem = mock(SubSystem.class);
+        NetconfRpcError rpcError = new NetconfRpcError(NetconfRpcErrorTag.OPERATION_FAILED, NetconfRpcErrorType.Application, NetconfRpcErrorSeverity.Error, "Operation 'dummy-action' not authorized for 'unit-test'");
+        doThrow(new AccessDeniedException(rpcError)).when(stateContainerSubSystem).checkRequiredPermissions(clientInfo, "dummy-action");
+
+        String yangFilePath = getClass().getResource("/rootmodelnodetest/tester.yang").getPath();
+        YangUtils.deployInMemoryHelpers(yangFilePath, stateContainerSubSystem, m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_runningDsm);
+
+        ContainerSchemaNode testerActionSchemaNode = (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(TesterConstants.ROOT_ACTION_SCHEMA_PATH);
+        ChildContainerHelper testerHelper = new RootEntityContainerModelNodeHelper(testerActionSchemaNode,
+                m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_runningDsm);
+        m_runningAggregator.addModelServiceRootHelper(TesterConstants.ROOT_ACTION_SCHEMA_PATH, testerHelper);
+
+        String request = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "<action xmlns=\"urn:ietf:params:xml:ns:yang:1\">" +
+                "<action-root xmlns=\"http://netconfcentral.org/ns/tester\">\n" +
+                "  <dummy-action></dummy-action>\n" +
+                "</action-root>\n" +
+                "</action>\n" +
+                "</rpc>";
+        ActionRequest actionRequest = DocumentToPojoTransformer.getAction(DocumentUtils.stringToDocument(request));
+        ActionResponse response = new ActionResponse();
+
+        m_server.onAction(clientInfo, actionRequest, response);
+        assertEquals(1, response.getErrors().size());
+        NetconfRpcError error = response.getErrors().get(0);
+        assertEquals("Operation 'dummy-action' not authorized for 'unit-test'", error.getErrorMessage());
+        assertEquals(NetconfRpcErrorTag.OPERATION_FAILED, error.getErrorTag());
+
     }
 
     @Test
@@ -378,7 +448,7 @@ public class RootModelNodeAggregatorImplTest {
         NetConfResponse response = new NetConfResponse().setMessageId("1");
         m_server.onEditConfig(new NetconfClientInfo("unit-test", 1), request, response);
         // assert Ok response
-        assertEquals(load("/ok-response.xml"), responseToString(response));
+        assertXMLEquals("/ok-response.xml", response);
 
         // do a get-config to be sure
         verifyGetConfig(m_server, "", RESPONSE_AFTER_EDIT_ON_BOTH_MODELS, "1");
@@ -387,6 +457,10 @@ public class RootModelNodeAggregatorImplTest {
     @Test
     public void testEditConfigWhenPreCommitValidationFailed()
             throws EditConfigException, IOException, SAXException, SubSystemValidationException {
+
+        String previousValue = System.getProperty(ENABLE_NEW_NOTIF_STRUCTURE);
+        boolean toBeReset = setSystemPropertyAndReturnResetValue(previousValue, "true");
+
         EditConfigRequest request = new EditConfigRequest().setTargetRunning().setTestOption(EditConfigTestOptions.SET)
                 .setErrorOption(EditConfigErrorOptions.ROLLBACK_ON_ERROR).setConfigElement(new EditConfigElement()
                         .addConfigElementContent(loadAsXml(EDIT_ON_JUKEBOX)).addConfigElementContent(loadAsXml(EDIT_ON_TOASTER)));
@@ -397,11 +471,11 @@ public class RootModelNodeAggregatorImplTest {
                 NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED,
                         "pre commit validation failed"));
 
-        doThrow(validationException).when(m_jukeBoxSystem).notifyPreCommitChange(anyListOf(ChangeNotification.class));
+        doThrow(validationException).when(m_jukeBoxSystem).preCommit(anyMap());
 
         m_server.onEditConfig(new NetconfClientInfo("unit-test", 1), request, response);
-        // assert Ok response
-        assertEquals(load("/precommit-error-response.xml"), responseToString(response));
+        assertXMLEquals("/precommit-error-response.xml", response);
+        resetSystemProperty(toBeReset, previousValue);
     }
 
     @Test
@@ -502,7 +576,35 @@ public class RootModelNodeAggregatorImplTest {
     }
 
     @Test
-    public void testCopyConfig1() throws ModelNodeInitException, EditConfigException, SAXException, IOException, ModelNodeFactoryException {
+    public void testGetWithSubsystemPermissionCheck() throws IOException, SAXException, SchemaBuildException, ModelNodeFactoryException, ModelNodeInitException {
+        m_schemaRegistry.loadSchemaContext("tester", Arrays.asList(TestUtil.getByteSource("/rootmodelnodetest/tester.yang")), Collections.emptySet(), Collections.emptyMap());
+        String stateRootPath = getClass().getResource("/rootmodelnodetest/state-root.xml").getPath();
+        String stateContainerPath = getClass().getResource("/rootmodelnodetest/state-container.xml").getPath();
+
+        SubSystem stateContainerSubSystem = mock(SubSystem.class);
+        doThrow(new AccessDeniedException("some error")).when(stateContainerSubSystem).checkRequiredPermissions(new NetconfClientInfo("test", 1), Operation.GET.getType());
+
+        String yangFilePath = getClass().getResource("/rootmodelnodetest/tester.yang").getPath();
+        YangUtils.deployInMemoryHelpers(yangFilePath, stateContainerSubSystem, m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_runningDsm);
+
+        ContainerSchemaNode testerSchemaNode = (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(TesterConstants.STATE_ROOT_SCHEMA_PATH);
+        ChildContainerHelper testerHelper = new RootEntityContainerModelNodeHelper(testerSchemaNode,
+                m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_runningDsm);
+        m_runningAggregator.addModelServiceRootHelper(TesterConstants.STATE_ROOT_SCHEMA_PATH, testerHelper);
+
+        ContainerSchemaNode stateContainerSchemaNode = (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(TesterConstants.STATE_CONTAINER_SCHEMA_PATH);
+        ChildContainerHelper stateContainerHelper = new RootEntityContainerModelNodeHelper(stateContainerSchemaNode,
+                m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_runningDsm);
+        m_runningAggregator.addModelServiceRootHelper(TesterConstants.STATE_CONTAINER_SCHEMA_PATH, stateContainerHelper);
+
+        YangUtils.loadXmlDataIntoServer(m_server, stateRootPath);
+        YangUtils.loadXmlDataIntoServer(m_server, stateContainerPath);
+
+        verifyGet(m_server, (NetconfFilter) null, FULL_GET_RESPONSE_WITHOUT_TESTER, "1");
+    }
+
+    @Test
+    public void testCopyConfig1() throws ModelNodeInitException, EditConfigException, SAXException, IOException, ModelNodeFactoryException, SchemaBuildException {
         setUpCandidateStore();
         //do an edit
         testEditOnBothModels();
@@ -515,7 +617,7 @@ public class RootModelNodeAggregatorImplTest {
     }
 
     @Test
-    public void testCopyConfig2() throws ModelNodeInitException, EditConfigException, SAXException, IOException, ModelNodeFactoryException {
+    public void testCopyConfig2() throws ModelNodeInitException, EditConfigException, SAXException, IOException, ModelNodeFactoryException, SchemaBuildException {
         setUpCandidateStore();
         //do an edit on running
         testEditOnBothModels();
@@ -552,7 +654,7 @@ public class RootModelNodeAggregatorImplTest {
     }
 
     @Test
-    public void testInvalidCopyConfig() throws ModelNodeInitException, EditConfigException, SAXException, IOException, ModelNodeFactoryException {
+    public void testInvalidCopyConfig() throws ModelNodeInitException, EditConfigException, SAXException, IOException, ModelNodeFactoryException, SchemaBuildException {
         setUpCandidateStore();
 
         copyConfig(loadAsXml(INVALID_COPY_CONFIG1_XML), StandardDataStores.RUNNING);
@@ -564,7 +666,7 @@ public class RootModelNodeAggregatorImplTest {
 
     @Test
     public void testCopyConfigDeletesRootContainerNotPresent()
-            throws IOException, SAXException, ModelNodeFactoryException, ModelNodeInitException {
+            throws IOException, SAXException, ModelNodeFactoryException, ModelNodeInitException, SchemaBuildException {
 
         // Case when DS has Root nodes 1,2 and copy-config has root nodes 1, Root node 2 is to be deleted.
         setUpCandidateStore();
@@ -628,16 +730,16 @@ public class RootModelNodeAggregatorImplTest {
         m_runningAggregator.removeModelServiceRootHelpers(ToasterConstants.TOASTER_SCHEMA_PATH);
         assertEquals(Collections.emptyList(), m_runningAggregator.getModelServiceRoots());
     }
-    
+
     private void deployJukeboxHelpers(ModelNodeDataStoreManager dsm, ModelNodeHelperRegistry modelNodeHelperRegistry,
-                                      SubSystemRegistry subSystemRegistry) throws ModelNodeInitException, ModelNodeFactoryException {
+                                      SubSystemRegistry subSystemRegistry) throws ModelNodeInitException, ModelNodeFactoryException, SchemaBuildException {
         String yangFilePath = getClass().getResource("/yangs/example-jukebox.yang").getPath();
-        m_jukeBoxSystem = spy(new DsmJukeboxSubsystem(dsm, "http://example.com/ns/example-jukebox"));
+        m_jukeBoxSystem = spy(new DsmJukeboxSubsystem(dsm, "http://example.com/ns/example-jukebox", m_schemaRegistry));
         YangUtils.deployInMemoryHelpers(yangFilePath, m_jukeBoxSystem, modelNodeHelperRegistry, subSystemRegistry, m_schemaRegistry, dsm);
     }
 
     private void deployToasterHelpers(ModelNodeDataStoreManager dsm, ModelNodeHelperRegistry modelNodeHelperRegistry,
-                                      SubSystemRegistry subSystemRegistry) throws ModelNodeInitException, ModelNodeFactoryException {
+                                      SubSystemRegistry subSystemRegistry) throws ModelNodeInitException, ModelNodeFactoryException, SchemaBuildException {
         String yangFilePath = getClass().getResource("/rootmodelnodetest/toaster.yang").getPath();
         YangUtils.deployInMemoryHelpers(yangFilePath,
                 new LocalSubSystem(), modelNodeHelperRegistry, subSystemRegistry, m_schemaRegistry, dsm);
@@ -670,14 +772,14 @@ public class RootModelNodeAggregatorImplTest {
     }
 
     private void deployWeatherAppHelpers(ModelNodeDataStoreManager dsm, ModelNodeHelperRegistry modelNodeHelperRegistry,
-                                         SubSystemRegistry subSystemRegistry, SchemaRegistry schemaRegistry) throws ModelNodeInitException, ModelNodeFactoryException {
+                                         SubSystemRegistry subSystemRegistry, SchemaRegistry schemaRegistry) throws ModelNodeInitException, ModelNodeFactoryException, SchemaBuildException {
         String yangFilePath = getClass().getResource("/rootmodelnodetest/weather-app.yang").getPath();
         YangUtils.deployInMemoryHelpers(yangFilePath,
                 new LocalSubSystem(), modelNodeHelperRegistry, subSystemRegistry, schemaRegistry, dsm);
     }
 
     private void deployTesterHelpers(ModelNodeDataStoreManager dsm, ModelNodeHelperRegistry modelNodeHelperRegistry,
-                                     SubSystemRegistry subSystemRegistry) throws ModelNodeFactoryException {
+                                     SubSystemRegistry subSystemRegistry) throws ModelNodeFactoryException, SchemaBuildException {
 
         String yangFilePath = getClass().getResource("/rootmodelnodetest/tester.yang").getPath();
 
@@ -706,7 +808,7 @@ public class RootModelNodeAggregatorImplTest {
         YangUtils.deployInMemoryHelpers(yangFilePath, stateContainerSubSystem, modelNodeHelperRegistry, subSystemRegistry, m_schemaRegistry, dsm);
     }
 
-    private void setUpCandidateStore() throws ModelNodeInitException, ModelNodeFactoryException {
+    private void setUpCandidateStore() throws ModelNodeInitException, ModelNodeFactoryException, SchemaBuildException {
         m_candidateDsm = new InMemoryDSM(m_schemaRegistry, "candidate");
         ModelNodeHelperRegistry registryForCandidateDS = new ModelNodeHelperRegistryImpl(m_schemaRegistry);
         RootModelNodeAggregator candidateAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, registryForCandidateDS, m_candidateDsm, m_subSystemRegistry);

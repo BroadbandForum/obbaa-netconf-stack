@@ -19,9 +19,8 @@ package org.broadband_forum.obbaa.netconf.nc.stack.examples;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
@@ -41,14 +40,16 @@ import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class LoggingServerMessageListener implements NetconfServerMessageListener {
-    private static final Logger LOGGER = Logger.getLogger(LoggingServerMessageListener.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(LoggingServerMessageListener.class, LogAppNames.NETCONF_LIB);
 
     @Override
     public void onHello(NetconfClientInfo info, Set<String> clientCaps) {
         LOGGER.info(String.format("received hello rpc from %s, with capabilities %s", info, clientCaps));
-        LOGGER.info(clientCaps);
+        LOGGER.info(clientCaps.toString());
 
     }
 

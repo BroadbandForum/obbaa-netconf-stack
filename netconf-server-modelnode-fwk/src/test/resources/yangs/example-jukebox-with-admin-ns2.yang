@@ -1,0 +1,45 @@
+module example-jukebox-with-admin-ns2 {
+
+    yang-version 1;
+
+    namespace
+      "http://example.com/ns/example-jukebox-with-admin-ns2";
+
+    prefix adminns1;
+    
+    import example-jukebox-without-admin {
+      prefix jbox;
+    }
+
+    organization "Example, Inc.";
+
+    contact "support at example.com";
+
+    description
+      "Example Jukebox Data Model Module";
+
+    revision "2014-07-03" {
+      description "Initial version.";
+      reference
+        "example.com document 1-4673";
+
+    }
+    
+    augment "/jbox:jukebox/jbox:library/jbox:artist/jbox:album" {
+        container admin {
+          description
+            "Administrative information for the album.";
+          leaf label {
+            type string;
+            description
+              "The label that released the album.";
+          }
+
+          leaf catalogue-number {
+            type string;
+            description
+              "The album's catalogue number.";
+          }
+       }  // container admin
+    }
+}  // module example-jukebox-with-admin-ns1

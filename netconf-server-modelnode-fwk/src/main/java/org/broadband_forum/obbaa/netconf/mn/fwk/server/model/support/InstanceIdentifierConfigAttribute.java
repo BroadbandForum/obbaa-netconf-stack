@@ -1,6 +1,24 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
+import org.broadband_forum.obbaa.netconf.api.logger.NetconfExtensions;
 import org.broadband_forum.obbaa.netconf.api.messages.PojoToDocumentTransformer;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -20,6 +38,7 @@ public class InstanceIdentifierConfigAttribute implements ConfigLeafAttribute, C
     private final String m_attributeNS;
     private final Map<String, String> m_nsPrefixMap;
     private Integer m_insertIndex = -1;
+    private boolean m_isPassword = false;
 
     public InstanceIdentifierConfigAttribute(Map<String, String> nsPrefixMap, String attributeNamespace, String attributeLocalName, String attributeValue) {
         constructInstanceIdentifierElement(nsPrefixMap, attributeNamespace, attributeLocalName, attributeValue);
@@ -123,6 +142,11 @@ public class InstanceIdentifierConfigAttribute implements ConfigLeafAttribute, C
     }
 
     @Override
+    public String xPathString(SchemaRegistry schemaRegistry, String parentNodeXPath) {
+        return GenericConfigAttribute.xPathString(schemaRegistry, m_attributeNS, parentNodeXPath, m_attributeLocalName);
+    }
+
+    @Override
     public Integer getInsertIndex() {
         return m_insertIndex;
     }
@@ -130,6 +154,16 @@ public class InstanceIdentifierConfigAttribute implements ConfigLeafAttribute, C
     @Override
     public void setInsertIndex(Integer insertIndex) {
         m_insertIndex = insertIndex;
+    }
+
+    @Override
+    public void setIsPassword(boolean isPassword) {
+        m_isPassword = isPassword;
+    }
+
+    @Override
+    public Boolean isPassword() {
+        return m_isPassword;
     }
 
     @Override

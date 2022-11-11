@@ -1,0 +1,22 @@
+module sm-common-data-with-diff-conditions {
+	
+	yang-version 1;    
+	namespace "sm-common-data-with-diff-conditions";	
+	prefix "smt-cm";
+	
+	revision "2018-01-03" {
+		description "Initial version.";
+	}
+	
+	container test-common-parent {
+		container test-common {
+	    	leaf cmLeaf1 {
+	    		type string;
+	    	}
+	    	
+	    	leaf cmLeaf2 {
+	    	    type boolean;
+	    	}
+	    }	
+	}
+}

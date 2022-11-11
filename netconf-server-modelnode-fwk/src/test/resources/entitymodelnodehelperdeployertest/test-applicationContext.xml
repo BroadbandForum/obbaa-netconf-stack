@@ -11,7 +11,7 @@
     <constructor-arg name="properties">
         <map key-type="java.lang.String" value-type="java.lang.String">
         	<entry key="hibernate.cache.use_second_level_cache" value="true"/>
-        	<entry key="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory"/>
+        	<entry key="hibernate.cache.region.factory_class" value="org.hibernate.cache.ehcache.internal.SingletonEhcacheRegionFactory"/>
         </map>
     </constructor-arg>
   </bean>

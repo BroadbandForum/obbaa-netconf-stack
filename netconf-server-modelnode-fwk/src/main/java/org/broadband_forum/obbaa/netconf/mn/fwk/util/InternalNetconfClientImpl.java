@@ -1,7 +1,25 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.util;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.broadband_forum.obbaa.netconf.api.client.InternalNetconfClient;
@@ -9,7 +27,9 @@ import org.broadband_forum.obbaa.netconf.api.client.InternalNetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
+import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.GetConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
@@ -22,26 +42,28 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.server.ResponseChannel;
 import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
-import org.broadband_forum.obbaa.netconf.api.util.BlockingMap;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.api.utils.SystemPropertyUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
-import org.broadband_forum.obbaa.netconf.server.AbstractResponseChannel;
+import org.broadband_forum.obbaa.netconf.server.RequestContext;
+import org.broadband_forum.obbaa.netconf.server.UserContext;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 import org.w3c.dom.Document;
 
+import com.google.common.base.Stopwatch;
+
 public class InternalNetconfClientImpl implements InternalNetconfClient {
     public static final String NC_INTERNAL_CLIENT_TIMEOUT_MILLIS = "NC_INTERNAL_CLIENT_TIMEOUT_MILLIS";
     private static final String DEFAULT_REPLY_TIMEOUT = "60000";
-    NetconfClientInfo m_clientInfo = null;
+    protected NetconfClientInfo m_clientInfo = null;
     private ServerMessageHandler m_serverMessageHandler = null;
-    private BlockingMap<String, NetConfResponse> m_responsesQueue = new BlockingMap<>();
     private AtomicInteger m_requestId = new AtomicInteger();
-    private ResponseChannel m_responseChannel;
-    private NetconfLogger m_netconfLogger;
-    private boolean m_runningUT = false;
+    protected NetconfLogger m_netconfLogger;
+    protected boolean m_runningUT = false;
 
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(InternalNetconfClientImpl.class, LogAppNames.NETCONF_STACK);
     private Long m_requestTimeout;
@@ -49,14 +71,12 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
     public InternalNetconfClientImpl(String internalUserName, ServerMessageHandler serverMessageHandler, NetconfLogger netconfLogger) {
         m_clientInfo = new InternalNetconfClientInfo(internalUserName, 0);
         m_serverMessageHandler = serverMessageHandler;
-        m_responseChannel = new PmaWebAppResponseChannel();
         m_netconfLogger = netconfLogger;
     }
 
     public InternalNetconfClientImpl(NetconfClientInfo clientInfo, ServerMessageHandler serverMessageHandler, NetconfLogger netconfLogger) {
         m_clientInfo = clientInfo;
         m_serverMessageHandler = serverMessageHandler;
-        m_responseChannel = new PmaWebAppResponseChannel();
         m_netconfLogger = netconfLogger;
     }
 
@@ -67,7 +87,7 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
     }
 
     @Override
-    public NetConfResponse editConfig(AbstractNetconfRequest request) throws InterruptedException, ExecutionException {
+    public NetConfResponse editConfig(EditConfigRequest request) throws InterruptedException, ExecutionException {
         return assignIdAndSend(request);
     }
 
@@ -76,33 +96,20 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
         return assignIdAndSend(request);
     }
     
+    @Override
+    public NetConfResponse action(ActionRequest request) throws InterruptedException, ExecutionException {
+        return assignIdAndSend(request);
+    }
+    
     // Added for UT purpose
     public void setRunningUT(boolean runningUT) {
         m_runningUT = runningUT;
     }
     
-    /*
-    * For UT only
-    * **/
-    protected AtomicInteger getRequestId() {
-        return m_requestId;
-    }
-    
-    
-   
-
-    /*
-    * For UT only
-    * **/
-    protected BlockingMap<String, NetConfResponse> getResponsesQueue() {
-        return m_responsesQueue;
-    }
-
     private NetConfResponse assignIdAndSend(AbstractNetconfRequest request) throws InterruptedException, ExecutionException {
         String requestId;
         if(request.getMessageId() != null && request.getMessageId().trim().matches("\\d+")) {
             requestId = request.getMessageId().trim();
-            m_requestId.set(Integer.valueOf(requestId));
         } else {
             requestId = String.valueOf(m_requestId.incrementAndGet());
         }
@@ -120,10 +127,12 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
     public NetConfResponse sendRpcMessage(Document document) throws InterruptedException, ExecutionException {
         NetConfResponse response = null;
         AbstractNetconfRequest netconfRequest = null;
+        Stopwatch sw = Stopwatch.createStarted();
 
         try {
             m_netconfLogger.setThreadLocalDeviceLogId(document);
-            m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(), new Integer(m_clientInfo.getSessionId()).toString(), document);
+            m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(),
+                    Integer.toString(m_clientInfo.getSessionId()), document);
 
             if (document.getElementsByTagName(NetconfResources.RPC).getLength() == 0) {
                 response = new NetConfResponse();
@@ -135,7 +144,8 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
                 response.addError(rpcError);
 
                 m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(),
-                    new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument(), null);
+                    Integer.toString(m_clientInfo.getSessionId()), response.getResponseDocument(), null,
+                    sw.elapsed(TimeUnit.MILLISECONDS));
             }
 
             // if response != null, then there is error - message id missing.
@@ -181,8 +191,8 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
                             netconfRequest = DocumentToPojoTransformer.getRpcRequest(document);
                     }
 
-                    String newRequestId = String.valueOf(m_requestId.incrementAndGet());
-                    netconfRequest.setMessageId(newRequestId);
+                    String messageId = getRequestMessageId(netconfRequest);
+                    netconfRequest.setMessageId(messageId);
 
                     response = sendRequest(netconfRequest);
                 } else {
@@ -194,16 +204,37 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
                 }
                 if (response != null) {
                     m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(),
-                            new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument(), netconfRequest);
+                            Integer.toString(m_clientInfo.getSessionId()), response.getResponseDocument(), netconfRequest,
+                            sw.elapsed(TimeUnit.MILLISECONDS));
                 }
             }
         } catch (NetconfMessageBuilderException e) {
-            LOGGER.error("invalid response received ", e);
+            response = new NetConfResponse();
+            if (document != null) {
+                try {
+                    LOGGER.error("Got an invalid netconf request from: " + m_clientInfo + "\nRequest: "
+                            + DocumentUtils.documentToString(document), e);
+                } catch (NetconfMessageBuilderException ex) {
+                    LOGGER.error("Got an invalid netconf request from : " + m_clientInfo, ex);
+                }
+            }
+            response.setOk(false);
+            NetconfRpcError rpcError = NetconfRpcErrorUtil.getNetconfRpcError(NetconfRpcErrorTag.OPERATION_FAILED, NetconfRpcErrorType.RPC,
+                    NetconfRpcErrorSeverity.Error, "RPC parsing error - " + e.getMessage());
+            response.addError(rpcError);
         }
         finally {
             m_netconfLogger.setThreadLocalDeviceLogId(null);
         }
         return response;
+    }
+
+    private String getRequestMessageId(AbstractNetconfRequest netconfRequest) {
+        String messageId = netconfRequest.getMessageId();
+        if (messageId == null || messageId.isEmpty()) {
+            messageId = String.valueOf(m_requestId.incrementAndGet());
+        }
+        return messageId;
     }
 
     @Override
@@ -219,12 +250,7 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
             if(m_requestTimeout == null){
                 synchronized (this){
                     if(m_requestTimeout == null){
-                        String replyTimeout = DEFAULT_REPLY_TIMEOUT;
-                        if (System.getProperties().containsKey(NC_INTERNAL_CLIENT_TIMEOUT_MILLIS)) {
-                            replyTimeout = System.getProperty(NC_INTERNAL_CLIENT_TIMEOUT_MILLIS);
-                        }else if (System.getenv().containsKey(NC_INTERNAL_CLIENT_TIMEOUT_MILLIS)) {
-                            replyTimeout = System.getenv(NC_INTERNAL_CLIENT_TIMEOUT_MILLIS);
-                        }
+                        String replyTimeout = SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(NC_INTERNAL_CLIENT_TIMEOUT_MILLIS,DEFAULT_REPLY_TIMEOUT);
                         m_requestTimeout = Long.valueOf(replyTimeout);
                     }
                 }
@@ -233,13 +259,58 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
         }
     }
 
-    private NetConfResponse sendRequest(final AbstractNetconfRequest request) throws InterruptedException, ExecutionException {
+    public NetConfResponse sendRequest(final AbstractNetconfRequest request) throws InterruptedException, ExecutionException {
         request.setReplyTimeout(getRequestTimeOut());
-        m_serverMessageHandler.processRequest(m_clientInfo, request, m_responseChannel);
-        if (m_runningUT) {
-        	return m_responsesQueue.get(request.getMessageId(), 0, TimeUnit.MILLISECONDS);
+        UserContext additionalUserCtxtTL = RequestContext.getAdditionalUserCtxtTL();
+        if(additionalUserCtxtTL != null) {
+            request.setUserContext(additionalUserCtxtTL.getUsername());
+            request.setContextSessionId(additionalUserCtxtTL.getSessionId());
         }
-        return m_responsesQueue.get(request.getMessageId(), Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        CompletableFuture<NetConfResponse> futureResponse = initCompletableFuture();
+        m_serverMessageHandler.processRequest(m_clientInfo, request, getResponseChannel(futureResponse));
+        try {
+            if (m_runningUT) {
+                return futureResponse.get(0, TimeUnit.MILLISECONDS);
+            }
+            return futureResponse.get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            //maintaining blocking map behavior
+            return null;
+        }
+    }
+
+    //for UT
+    protected CompletableFuture<NetConfResponse> initCompletableFuture() {
+        return new CompletableFuture<>();
+    }
+
+    protected static ResponseChannel getResponseChannel(CompletableFuture<NetConfResponse> futureResponse) {
+        return new ResponseChannel() {
+            @Override
+            public void sendResponse(NetConfResponse response, AbstractNetconfRequest request) {
+                futureResponse.complete(response);
+            }
+
+            @Override
+            public void sendNotification(Notification notification) {
+
+            }
+
+            @Override
+            public boolean isSessionClosed() {
+                return false;
+            }
+
+            @Override
+            public void markSessionClosed() {
+
+            }
+
+            @Override
+            public CompletableFuture<Boolean> getCloseFuture() {
+                return new CompletableFuture<>();
+            }
+        };
     }
 
     @Override
@@ -254,17 +325,6 @@ public class InternalNetconfClientImpl implements InternalNetconfClient {
     @Override
     public void setRequestTimeout(long requestTimeout) {
         m_requestTimeout = requestTimeout;
-    }
-
-    private class PmaWebAppResponseChannel extends AbstractResponseChannel {
-        @Override
-        public void sendResponse(NetConfResponse response, AbstractNetconfRequest request) throws NetconfMessageBuilderException {
-            m_responsesQueue.put(response.getMessageId(), response);
-        }
-
-        @Override
-        public void sendNotification(Notification notification) {
-        }
     }
 
     @Override

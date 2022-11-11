@@ -16,16 +16,13 @@
 
 package org.broadband_forum.obbaa.netconf.api.parser;
 
-import org.opendaylight.yangtools.yang.model.repo.api.SchemaSourceException;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaSourceRepresentation;
 import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.spi.PotentialSchemaSource;
 import org.opendaylight.yangtools.yang.model.repo.spi.SchemaSourceProvider;
 import org.opendaylight.yangtools.yang.model.repo.spi.SchemaSourceRegistry;
 
-import com.google.common.base.Function;
-import com.google.common.util.concurrent.CheckedFuture;
-import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
 public class SettableSchemaProvider<T extends SchemaSourceRepresentation> implements SchemaSourceProvider<T> {
@@ -47,13 +44,8 @@ public class SettableSchemaProvider<T extends SchemaSourceRepresentation> implem
     }
 
     @Override
-    public CheckedFuture<T, SchemaSourceException> getSource(final SourceIdentifier sourceIdentifier) {
-        return Futures.makeChecked(m_future, new Function<Exception, SchemaSourceException>() {
-            @Override
-            public SchemaSourceException apply(final Exception input) {
-                return new SchemaSourceException("Failed", input);
-            }
-        });
+    public ListenableFuture<T> getSource(final SourceIdentifier sourceIdentifier) {
+        return m_future;
     }
 
     public T getSchemaSourceRepresentation() {

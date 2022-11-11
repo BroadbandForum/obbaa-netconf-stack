@@ -1,4 +1,4 @@
-<operation-example xmlns="urn:org:bbf:pma">
+<operation-example xmlns="urn:org:bbf2:pma">
   <list-a operation="create">
     <a1>a1</a1>
     <a2>a2</a2>

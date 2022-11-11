@@ -1,4 +1,24 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing;
+
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationErrors.getViolateMaxElementException;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationErrors.getViolateMinElementException;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.ActionUtils.getActionInputChildNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -6,12 +26,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Optional;
 
+import org.opendaylight.yangtools.yang.model.api.ElementCountConstraint;
+import org.opendaylight.yangtools.yang.model.api.ElementCountConstraintAware;
+import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.broadband_forum.obbaa.netconf.api.NetconfMessage;
 import org.broadband_forum.obbaa.netconf.api.NetconfRpcPayLoadType;
+import org.broadband_forum.obbaa.netconf.api.logger.NetconfExtensions;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionResponse;
+import org.broadband_forum.obbaa.netconf.api.messages.CopyConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigDefaultOperations;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
@@ -29,10 +55,13 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.DataPathUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.MountProviderInfo;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
@@ -47,14 +76,19 @@ import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 
 public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintParser implements RpcPayloadConstraintParser {
 	private static final String EMPTY_STR = "";
+	public static final String IGNORE_PASSWORD_ATTRIBUTE = "ignore-password-attribute";
 	private final SchemaRegistry m_schemaRegistry;
 	private final ModelNodeDataStoreManager m_modelNodeDsm;
 	private ModelNodeDSMRegistry m_modelNodeDSMRegistry;
@@ -63,25 +97,14 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 	private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(RpcRequestConstraintParser.class, LogAppNames.NETCONF_STACK);
 
 
-	public RpcRequestConstraintParser(SchemaRegistry schemaRegistry, ModelNodeDataStoreManager modelNodeDSM, DSExpressionValidator validator) {
+	public RpcRequestConstraintParser(SchemaRegistry schemaRegistry, ModelNodeDataStoreManager modelNodeDSM, DSExpressionValidator validator, RootModelNodeAggregator aggregator) {
 		m_schemaRegistry = schemaRegistry;
 		m_modelNodeDsm = modelNodeDSM;
 		m_expressionValidator = validator;
+		m_rootModelNodeAggregator = aggregator;
 	}
 
 	protected SchemaRegistry getSchemaRegistry(SchemaPath schemaPath) {
-		if (schemaPath != null) {
-			DataSchemaNode schemaNode = m_schemaRegistry.getDataSchemaNode(schemaPath);
-			if (schemaNode == null) {
-				SchemaRegistry mountRegistry = SchemaRegistryUtil.getMountRegistry();
-				if (mountRegistry != null) {
-					schemaNode = mountRegistry.getDataSchemaNode(schemaPath);
-					if (schemaNode != null) {
-						return mountRegistry;
-					}
-				}
-			}
-		}
 		return m_schemaRegistry;
 	}
 
@@ -94,14 +117,17 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
     }
 
     @Override
-	public void validate(AbstractNetconfRequest netconfRequest, RequestType requestType) throws ValidationException {
-		if(requestType.isRpc()){
-			validateRpc(((NetconfRpcRequest) netconfRequest).getRpcInput(),(NetconfMessage) netconfRequest, requestType, ((NetconfRpcRequest)netconfRequest).getRpcContext());
-		} else if(requestType.isAction()){
-			Element actionTreeElement = ((ActionRequest)netconfRequest).getActionTreeElement();            
-			validateAction(actionTreeElement, requestType);
+	public void validate(AbstractNetconfRequest netconfRequest, RequestType requestType) throws ValidationException {             	
+		if (requestType.isRpc()) {
+			validateRpc(((NetconfRpcRequest) netconfRequest).getRpcInput(), (NetconfMessage) netconfRequest,requestType, ((NetconfRpcRequest) netconfRequest).getRpcContext());
+		} else if (requestType.isAction()) {
+			Element actionTreeElement = ((ActionRequest) netconfRequest).getActionTreeElement();
+			ActionDefinition actionDefinition = ((ActionRequest) netconfRequest).getActionDefinition();
+			validateAction(actionTreeElement, requestType, actionDefinition);
+		} else if(requestType.equals(RequestType.COPY_CONFIG)){
+            validateCopyConfig((CopyConfigRequest) netconfRequest, requestType);
 		} else {
-			validateEditConfig((EditConfigRequest) netconfRequest, requestType);
+		    validateEditConfig((EditConfigRequest) netconfRequest, requestType);
 		}
 	}
 	
@@ -119,7 +145,16 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 			        try {
 			        	if(type.isAction()){
 			        		ActionDefinition actionDef = ((ActionResponse)response).getActionDefinition();
-			        		validateActionOutput(outputElement, actionDef.getOutput().getPath());
+			        		Element actionContext = ((ActionResponse)response).getActionContext();
+			        		SchemaRegistry schemaRegistry = null;
+			        		MountProviderInfo mountProviderInfo = SchemaRegistryUtil.getMountProviderInfo(actionContext, m_schemaRegistry);
+			        		if ( mountProviderInfo == null){
+			        			schemaRegistry = m_schemaRegistry;
+			        		} else {
+			        			schemaRegistry = mountProviderInfo.getMountedRegistry();
+			        		}
+			        		
+			        		validateActionOutput(outputElement, actionDef.getOutput().getPath(), schemaRegistry);
 			        	} else {
 			        		validateRpc( outputElement, (NetconfMessage)response, RequestType.RPC, null);
 			        	}
@@ -160,11 +195,15 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 		//if rpc request does not need input, we have nothing to validate the input
 		ContainerSchemaNode input = foundRpcDefinition.getInput();
 		if(rpc.getType().isRequest() && null != input){
+			//Collection<DataSchemaNode> children = input.getChildNodes();
+			validateRpcMaxMinElements(rpcElement, input.getPath(), schemaRegistry);
+			validateDuplicateSiblings(rpcElement, input.getPath(), schemaRegistry, null);
 			validateElement(rpcElement, input.getPath(), requestType, rpcElement, m_modelNodeDsm, rpc.getType(), m_modelNodeDSMRegistry, schemaRegistry, rpcContext);
 		}
 		
 		ContainerSchemaNode output = foundRpcDefinition.getOutput();
 		if (rpc.getType().isResponse() && null != output && isData(rpcElement, (NetconfRpcResponse)rpc)){
+			validateDuplicateSiblings(rpcElement, output.getPath(), schemaRegistry, null);
 		    validateElement(rpcElement, output.getPath(), requestType, rpcElement, m_modelNodeDsm, rpc.getType(), m_modelNodeDSMRegistry, schemaRegistry, rpcContext);
 		}
 	}
@@ -198,30 +237,205 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 					NetconfRpcError.getApplicationError("<ok/> cannot be part of response if there is output data"));
 		}
 	}
-    
-	private void validateEditConfig(EditConfigRequest request, RequestType requestType) throws ValidationException {
-	    EditConfigElement configElement = request.getConfigElement();
-	    Set<SchemaPath> rootSchemaPaths = getSchemaRegistry(null).getRootSchemaPaths();
-	    for(Element rootElement : configElement.getConfigElementContents()){
-			String editOperation;
-			editOperation = getEditOperation(rootElement);
-	        if(EditConfigOperations.DELETE.equals(editOperation) || EditConfigOperations.REMOVE.equals(editOperation)){
-			    throw new ValidationException(NetconfRpcError.getBadAttributeError(rootElement.getLocalName(), NetconfRpcErrorType.Application, "Do not allow to remove/delete root node").setErrorPath("/", Collections.emptyMap()));
-			}
-			
-	        SchemaPath schemaPath = getSchemaPathForElement(rootElement, rootSchemaPaths);
-	        if(schemaPath == null){
-	            if(m_schemaRegistry.isKnownNamespace(rootElement.getNamespaceURI())) {
-	                throw new ValidationException(NetconfRpcError.getUnknownElementError(rootElement.getLocalName(), NetconfRpcErrorType.Application).setErrorPath("/", Collections.emptyMap()));
-	            }
-				throw new ValidationException(NetconfRpcError.getUnknownNamespaceError(rootElement.getNamespaceURI(),
-						rootElement.getLocalName(), NetconfRpcErrorType.Application).setErrorPath("/", Collections.emptyMap()));
-	        }
-	        validateElement(rootElement, schemaPath, requestType, rootElement, null, null, null, null, null);
-	    }
+
+	private void throwErrorForDuplicateElements(Element element, SchemaPath schemaPath, SchemaRegistry schemaRegistry, DataSchemaNode parentSchemaNode) {
+		NetconfRpcError error = new NetconfRpcError(NetconfRpcErrorTag.BAD_ELEMENT, NetconfRpcErrorType.Application, NetconfRpcErrorSeverity.Error,
+				String.format("Duplicate elements in node %s", schemaPath.getLastComponent()));
+		Pair<String, Map<String, String>> errorPathPair = (parentSchemaNode == null) ? new Pair<String, Map<String, String>>("/", Collections.emptyMap()) : SchemaRegistryUtil.getErrorPath(element.getParentNode(), parentSchemaNode,
+				schemaRegistry, element);
+
+		if(errorPathPair != null) {
+			error.setErrorPath(errorPathPair.getFirst(), errorPathPair.getSecond());
+		}
+		error.setErrorAppTag(EditContainmentNode.DATA_NOT_UNIQUE);
+		throw new ValidationException(error);
 	}
 
-	private void validateAction(Element rootElement, RequestType requestType) throws ValidationException {
+	private void validateEditConfig(EditConfigRequest request, RequestType requestType) throws ValidationException {
+		EditConfigElement configElement = request.getConfigElement();
+		SchemaRegistry schemaRegistry = getSchemaRegistry(null);
+		Set<SchemaPath> rootSchemaPaths = schemaRegistry.getRootSchemaPaths();
+		List<SchemaPath> schemaPathsForDuplicateCheck = new ArrayList<>();
+
+		configElement.getConfigElementContents().forEach(rootElement -> {
+			checkDuplicateElements(schemaRegistry, rootSchemaPaths, schemaPathsForDuplicateCheck, rootElement);
+		});
+
+		for (Element rootElement : configElement.getConfigElementContents()) {
+			String editOperation;
+			editOperation = getEditOperation(rootElement);
+			if (EditConfigOperations.DELETE.equals(editOperation) || EditConfigOperations.REMOVE.equals(editOperation)) {
+				throw new ValidationException(NetconfRpcError.getBadAttributeError(rootElement.getLocalName(), NetconfRpcErrorType.Application, "Do not allow to remove/delete root node").setErrorPath("/", Collections.emptyMap()));
+			}
+
+			validateRootElement(requestType, schemaRegistry, rootSchemaPaths, rootElement);
+		}
+	}
+
+    private void validateRootElement(RequestType requestType, SchemaRegistry schemaRegistry, Set<SchemaPath> rootSchemaPaths,
+            Element rootElement) {
+        SchemaPath schemaPath = getSchemaPathForElement(rootElement, rootSchemaPaths);
+        if (schemaPath == null) {
+            if (m_schemaRegistry.isKnownNamespace(rootElement.getNamespaceURI())) {
+                throw new ValidationException(
+                        NetconfRpcError.getUnknownElementError(rootElement.getLocalName(), NetconfRpcErrorType.Application)
+                                .setErrorPath("/", Collections.emptyMap()));
+            }
+            throw new ValidationException(NetconfRpcError.getUnknownNamespaceError(rootElement.getNamespaceURI(),
+                    rootElement.getLocalName(), NetconfRpcErrorType.Application).setErrorPath("/", Collections.emptyMap()));
+        }
+
+        validateDuplicateSiblings(rootElement, schemaPath, schemaRegistry, null);
+        validateElement(rootElement, schemaPath, requestType, rootElement, null, null, null, null, null);
+    }
+
+    private void checkDuplicateElements(SchemaRegistry schemaRegistry, Set<SchemaPath> rootSchemaPaths,
+            List<SchemaPath> schemaPathsForDuplicateCheck, Element rootElement) {
+        SchemaPath schemaPathOfRootElement = getSchemaPathForElement(rootElement, rootSchemaPaths);
+        if (schemaPathOfRootElement != null
+                && schemaRegistry.getDataSchemaNode(schemaPathOfRootElement) instanceof ContainerSchemaNode) {
+            if (schemaPathsForDuplicateCheck.contains(schemaPathOfRootElement)) {
+                throwErrorForDuplicateElements(rootElement, schemaPathOfRootElement, schemaRegistry,
+                        schemaRegistry.getDataSchemaNode(schemaPathOfRootElement));
+            } else {
+                schemaPathsForDuplicateCheck.add(schemaPathOfRootElement);
+            }
+        }
+    }
+
+    private void validateCopyConfig(CopyConfigRequest request, RequestType requestType) throws ValidationException {
+
+        Element configElement = request.getSourceConfigElement();
+        if (configElement != null) {
+            NodeList childElements = configElement.getChildNodes();
+            SchemaRegistry schemaRegistry = getSchemaRegistry(null);
+            Set<SchemaPath> rootSchemaPaths = schemaRegistry.getRootSchemaPaths();
+            List<SchemaPath> schemaPathsForDuplicateCheck = new ArrayList<>();
+            for (int i = 0; i < childElements.getLength(); i++) {
+                Node childNode = childElements.item(i);
+                if (childNode.getNodeType() == Node.ELEMENT_NODE) {
+                    Element rootElement = (Element) childNode;
+                    checkDuplicateElements(schemaRegistry, rootSchemaPaths, schemaPathsForDuplicateCheck, rootElement);
+                    validateRootElement(requestType, schemaRegistry, rootSchemaPaths, rootElement);
+
+                }
+            }
+        }
+    }
+
+	private void validateMaxMinElements(Element parentElement, SchemaPath parentSchemaPath, SchemaRegistry schemaRegistry, ActionDefinition actionDefinition) {
+		List<Element> siblingElements = new ArrayList<>();
+		NodeList siblingNodes = parentElement.getChildNodes();
+		if (schemaRegistry == null) {
+			schemaRegistry = getSchemaRegistry(parentSchemaPath);
+		}
+		schemaRegistry = SchemaRegistryUtil.retrievePossibleMountRegistry(parentElement, parentSchemaPath, schemaRegistry);
+		ActionDefinition schemaNode = schemaRegistry.getActionDefinitionNode(DataPathUtil.convertToDataPath(parentSchemaPath));
+		if (schemaNode != null)/*schemaNode instanceof ActionDefinition */ {
+			Collection<DataSchemaNode> childrenNode = schemaNode.getInput().getChildNodes();
+			validateMinMaxConstrainsInChildren(parentElement, childrenNode, parentSchemaPath, schemaRegistry);
+
+		} else {
+			for (int i = 0; i < siblingNodes.getLength(); i++) {
+				Node siblingNode = siblingNodes.item(i);
+				if (siblingNode.getNodeType() == Node.ELEMENT_NODE) {
+					siblingElements.add((Element) siblingNode);
+				}
+			}
+			SchemaRegistry finalSchemaRegistry = schemaRegistry;
+			siblingElements.forEach(siblingElement -> {
+				SchemaPath schemaPathOfSiblingElement = getChildSchemaPath(finalSchemaRegistry, siblingElement, parentSchemaPath, actionDefinition);
+				if (schemaPathOfSiblingElement != null) {
+					validateMaxMinElements(siblingElement, schemaPathOfSiblingElement, finalSchemaRegistry, actionDefinition);
+				}
+			});
+		}
+	}
+
+	private void validateMinMaxConstrainsInChildren(Element parentElement, Collection<DataSchemaNode> childrenNode, SchemaPath parentSchemaPath, SchemaRegistry schemaRegistry) {
+		for (DataSchemaNode child : childrenNode) {
+			ElementCountConstraint elementCountConstraint = null;
+			if (child instanceof ElementCountConstraintAware) {
+				Optional<ElementCountConstraint> optElementCountConstraint = ((ElementCountConstraintAware) child).getElementCountConstraint();
+				if (optElementCountConstraint.isPresent()) {
+					elementCountConstraint = optElementCountConstraint.get();
+				}
+				if (elementCountConstraint != null) {
+					int elementCount = DocumentUtils.getDirectChildElements(parentElement, child.getQName().getLocalName()).size();
+					Integer minElements = elementCountConstraint.getMinElements();
+					Integer maxElements = elementCountConstraint.getMaxElements();
+					if (minElements != null && elementCount < minElements) {
+						ValidationException violateMinException = getViolateMinElementException(child.getQName().getLocalName(), minElements);
+						throw violateMinException;
+					}
+					if (maxElements != null && elementCount > maxElements) {
+						ValidationException violateMaxException = getViolateMaxElementException(child.getQName().getLocalName(), maxElements);
+						throw violateMaxException;
+					}
+				}
+			}
+			if (child instanceof DataNodeContainer) {
+				Collection<DataSchemaNode> grandChildren = ((DataNodeContainer) child).getChildNodes();
+				List<Element> childElements = DocumentUtils.getDirectChildElements(parentElement, child.getQName().getLocalName(), child.getQName().getNamespace().toString());
+				for (Element childElement : childElements) {
+					validateMinMaxConstrainsInChildren(childElement, grandChildren, child.getPath(), schemaRegistry);
+				}
+			}
+		}
+	}
+
+	private void validateRpcMaxMinElements(Element parentElement, SchemaPath parentSchemaPath, SchemaRegistry schemaRegistry) {
+		RpcDefinition schemaNode = schemaRegistry.getRpcDefinition(parentSchemaPath.getParent());
+		if (schemaNode != null)/*schemaNode instanceof RpcDefinition */ {
+			Collection<DataSchemaNode> childrenNode = schemaNode.getInput().getChildNodes();
+			validateMinMaxConstrainsInChildren(parentElement, childrenNode, parentSchemaPath, schemaRegistry);
+		}
+	}
+
+	private void validateDuplicateSiblings(Element parentElement, SchemaPath parentSchemaPath, SchemaRegistry schemaRegistry, ActionDefinition actionDefinition) {
+		List<Element> siblingElements = new ArrayList<>();
+		NodeList siblingNodes = parentElement.getChildNodes();
+		List<SchemaPath> schemaPaths = new ArrayList<>();
+
+		for (int i = 0; i < siblingNodes.getLength(); i++) {
+			Node siblingNode = siblingNodes.item(i);
+			if (siblingNode.getNodeType() == Node.ELEMENT_NODE) {
+				siblingElements.add((Element) siblingNode);
+			}
+		}
+
+		siblingElements.forEach(siblingElement -> {
+			SchemaPath schemaPathOfSiblingElement = getChildSchemaPath(schemaRegistry, siblingElement, parentSchemaPath, actionDefinition);
+			//For Actions, since it is not a regular DataSchemaNode the getChildren(actionSchemaPath) will return null. Hence it is handled as below
+
+			if( schemaPathOfSiblingElement == null && actionDefinition != null) {
+				DataSchemaNode actionChildNode = getActionInputChildNode(schemaRegistry.getActionDefinitionNode(DataPathUtil.convertToDataPath(parentSchemaPath)),
+						QName.create(parentSchemaPath.getLastComponent(), siblingElement.getLocalName()));
+				if (actionChildNode != null) {
+					schemaPathOfSiblingElement = actionChildNode.getPath();
+				}
+			}
+			if (schemaPathOfSiblingElement != null
+					&& (schemaRegistry.getDataSchemaNode(schemaPathOfSiblingElement) instanceof ContainerSchemaNode
+					|| schemaRegistry.getDataSchemaNode(schemaPathOfSiblingElement) instanceof LeafSchemaNode)) {
+				if (schemaPaths.contains(schemaPathOfSiblingElement)) {
+					throwErrorForDuplicateElements(siblingElement, schemaPathOfSiblingElement, schemaRegistry, schemaRegistry.getDataSchemaNode(parentSchemaPath));
+				} else {
+					schemaPaths.add(schemaPathOfSiblingElement);
+				}
+			}
+
+		});
+
+		siblingElements.forEach(siblingElement -> {
+			SchemaPath schemaPathOfSiblingElement = getChildSchemaPath(schemaRegistry, siblingElement, parentSchemaPath, actionDefinition);
+			if (schemaPathOfSiblingElement != null) {
+				validateDuplicateSiblings(siblingElement, schemaPathOfSiblingElement, schemaRegistry, actionDefinition);
+			}
+		});
+	}
+
+	private void validateAction(Element rootElement, RequestType requestType, ActionDefinition actionDefinition) throws ValidationException {
 		Set<SchemaPath> rootSchemaPaths = getSchemaRegistry(null).getRootSchemaPaths();
 
 		SchemaPath schemaPath = getSchemaPathForElement(rootElement, rootSchemaPaths);
@@ -232,13 +446,16 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 			throw new ValidationException(NetconfRpcError.getUnknownNamespaceError(rootElement.getNamespaceURI(),
 					rootElement.getLocalName(), NetconfRpcErrorType.Application).setErrorPath("/", Collections.emptyMap()));
 		}
-		validateElement(rootElement, schemaPath, requestType, rootElement, null, NetconfRpcPayLoadType.REQUEST, m_modelNodeDSMRegistry, m_schemaRegistry, null);
+		validateMaxMinElements(rootElement, schemaPath, m_schemaRegistry, actionDefinition);
+		validateDuplicateSiblings(rootElement, schemaPath, m_schemaRegistry, actionDefinition);
+		validateElement(rootElement, schemaPath, requestType, rootElement, m_modelNodeDsm, NetconfRpcPayLoadType.REQUEST, m_modelNodeDSMRegistry, m_schemaRegistry, rootElement);
 	}
 	
-	private void validateActionOutput(Element outputElement, SchemaPath outputPath) throws ValidationException{
+	private void validateActionOutput(Element outputElement, SchemaPath outputPath, SchemaRegistry schemaRegistry) throws ValidationException{
 		throwErrorIfOkResponse(outputElement);
-		SchemaPath elementSchemaPath = getChildSchemaPath(m_schemaRegistry, outputElement, outputPath);
-		validateElement(outputElement, elementSchemaPath, RequestType.ACTION, outputElement, m_modelNodeDsm, NetconfRpcPayLoadType.RESPONSE, m_modelNodeDSMRegistry, m_schemaRegistry, null);
+		SchemaPath elementSchemaPath = getChildSchemaPath(schemaRegistry, outputElement, outputPath, null);
+		validateDuplicateSiblings(outputElement, elementSchemaPath, schemaRegistry, null);
+		validateElement(outputElement, elementSchemaPath, RequestType.ACTION, outputElement, m_modelNodeDsm, NetconfRpcPayLoadType.RESPONSE, m_modelNodeDSMRegistry, schemaRegistry, outputElement);
 	}
 	
 	@Override
@@ -309,6 +526,48 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 	
 	}
 	
+   @Override
+   protected void validateAttributes(Element parentElement, Element childNode, SchemaPath schemaPath) throws ValidationException {
+       NamedNodeMap attributes = childNode.getAttributes();
+       if (attributes != null) {
+           for (int i = 0; i < attributes.getLength(); i++) {
+               Node attributeNode = attributes.item(i);
+               String namespace = attributeNode.getNamespaceURI();
+               if (namespace == null) {
+                   namespace = "";
+               }
+               String attrName = attributeNode.getNodeName();
+               String[] attrNameSplit = attrName.split(":");
+               String localAttrName = attrNameSplit[attrNameSplit.length-1];
+               if(namespace.isEmpty() && NetconfResources.TYPE.equals(localAttrName)) {
+               		namespace = childNode.getNamespaceURI();
+			   }
+               if (!(namespace.equals(NetconfResources.XMLNS_NS)
+				   || NetconfResources.KNOWN_ATTRIBUTES.contains(QName.create(namespace, localAttrName))
+			       || isPasswordAttribute(localAttrName))) {
+                   LOGGER.error("Invalid attribute: {}, {}", namespace, localAttrName);
+                   SchemaRegistry schemaRegistry = getSchemaRegistry(schemaPath);
+                   DataSchemaNode parentSchemaNode = schemaRegistry.getDataSchemaNode(schemaPath);
+                   Pair<String, Map<String, String>> errorPathPair = SchemaRegistryUtil.getErrorPath(parentElement, parentSchemaNode, schemaRegistry, childNode);
+                   NetconfRpcError rpcError = NetconfRpcError.getBadAttributeError(localAttrName, NetconfRpcErrorType.Application,
+                           String.format("Bad attribute: namespace '%s', attribute name '%s'", namespace, localAttrName));
+                   rpcError.setErrorPath(errorPathPair.getFirst(), errorPathPair.getSecond());
+                   throw new ValidationException(rpcError);
+               }
+           }
+       }
+   }
+
+	private boolean isPasswordAttribute(String localAttrName) {
+		boolean canIgnore = false;
+		if(NetconfExtensions.IS_PASSWORD.getModuleName().equals(localAttrName)){
+			Object fromCache = RequestScope.getCurrentScope().getFromCache(IGNORE_PASSWORD_ATTRIBUTE);
+			canIgnore = fromCache != null ? (boolean) fromCache : false;
+		}
+		return canIgnore;
+	}
+
+	@Override
 	protected void validateOperation(Element parentElement, Element childNode, SchemaPath schemaPath) throws ValidationException {
 		SchemaRegistry schemaRegistry = getSchemaRegistry(schemaPath);
 	    String childOperation = getEditOperation(childNode);
@@ -325,7 +584,7 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 		if(insert == null){
 			return null;
 		} else if (!EMPTY_STR.equals(insert) && (insert.equals(InsertOperation.FIRST) || insert.equals(InsertOperation.LAST) || insert.equals(InsertOperation.BEFORE) || insert.equals(InsertOperation.AFTER))) {
-			return new InsertOperation(insert, value);
+			return InsertOperation.get(insert, value);
 		} else {
 			LOGGER.error("Invalid <edit-config> insert operation :{}" , insert);
 			NetconfRpcError rpcError = NetconfRpcError.getBadAttributeError(NetconfResources.INSERT, NetconfRpcErrorType.Application,
@@ -358,11 +617,11 @@ public class RpcRequestConstraintParser extends SchemaElementChildrenConstraintP
 	}
 	
 	@Override
-	protected void typeValidation(Element element, SchemaPath schemaPath, RequestType requestType) throws ValidationException {
+	protected void typeValidation(Element element, SchemaPath schemaPath, RequestType requestType, SchemaRegistry schemaRegistry) throws ValidationException {
 	    if(isContainerSchemaNode(schemaPath) && !DataStoreValidationUtil.needsFurtherValidation(element, requestType)){
 	    	return;
 	    }
-	    super.typeValidation(element, schemaPath, requestType);
+	    super.typeValidation(element, schemaPath, requestType, schemaRegistry);
 	}
 	
 	private boolean isContainerSchemaNode(SchemaPath schemaPath) {

@@ -16,9 +16,9 @@
 
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
-import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
-import org.broadband_forum.obbaa.netconf.stack.logging.LoggerFactory;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Security;
@@ -38,32 +38,35 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
 
-import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
  * <pre>
  * DynamicX509TrustManagerImpl is a X509TrustManager that has capability of reloading the trust material.
  * One can call DynamicX509TrustManagerImpl#initTrustManager() with the new List of trust certificates to re-align the trust manager.
  * </pre>
- *
+ * <p>
  * Created by keshava on 4/28/15.
  */
 public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implements DynamicX509TrustManager {
     static {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null){
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
             Security.addProvider(new BouncyCastleProvider());
         }
-        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null){
+        if (Security.getProvider(BouncyCastleJsseProvider.PROVIDER_NAME) == null) {
             Security.addProvider(new BouncyCastleJsseProvider(BouncyCastleProvider.PROVIDER_NAME));
         }
     }
 
     X509ExtendedTrustManager m_innerTrustManager = null;
 
-    private static final Logger LOGGER = Logger.getLogger(DynamicX509TrustManagerImpl.class);
-    public static final AdvancedLogger CUSTOMER_LOGGER = LoggerFactory.getLogger(DynamicX509TrustManagerImpl.class,  "netconf-lib", "CUSTOMER", "GLOBAL");
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil
+            .getGlobalDebugLogger(DynamicX509TrustManagerImpl.class, LogAppNames.NETCONF_LIB);
+    public static final AdvancedLogger CUSTOMER_LOGGER = AdvancedLoggerUtil.getGlobalCustomerLogger(DynamicX509TrustManagerImpl.class, LogAppNames.NETCONF_LIB);
 
     public DynamicX509TrustManagerImpl(List<String> trustedCaCertificates) throws TrustManagerInitException {
         initTrustManager(trustedCaCertificates);
@@ -71,6 +74,16 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
 
     public DynamicX509TrustManagerImpl(String caCertificateFilePath) throws TrustManagerInitException {
         initTrustManager(caCertificateFilePath);
+    }
+
+    @Override
+    public void initTrustManager(List<String> trustedCaCertificates) throws TrustManagerInitException {
+        try {
+            List<X509Certificate> certificates = CertificateUtil.getX509Certificates(trustedCaCertificates);
+            initializeTrustManager(certificates);
+        } catch (Exception e) {
+            throw new TrustManagerInitException("Exception while TrustManagerInit ", e);
+        }
     }
 
     /**
@@ -85,20 +98,17 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
      *   m_dynamicX509TrustManager.initTrustManager(caCerts);}
      * </pre>
      *
-     * @param trustedCaCertificates - new list of trusted Certificate Authority certificates.This list might as well contain a pieces of a
-     *            certificate chain.
+     * @param trustedCaCertificates - List of trusted Certificate Authority certificates.
      * @throws TrustManagerInitException - If the certificates are invalid.
      */
-    @Override
-    public synchronized void initTrustManager(List<String> trustedCaCertificates) throws TrustManagerInitException {
+
+    private synchronized void initializeTrustManager(List<X509Certificate> trustedCaCertificates) throws TrustManagerInitException {
         try {
-            List<X509Certificate> trustCerts =  CertificateUtil.getX509Certificates(CertificateUtil.getByteArrayCertificates(CertificateUtil.stripDelimiters
-                    (trustedCaCertificates)));
-            CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(trustCerts);
+            CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(trustedCaCertificates);
             CertStore store = CertStore.getInstance("Collection", ccsp, BouncyCastleProvider.PROVIDER_NAME);
             Set trust = new HashSet();
             X509CertSelector targetConstraints = new X509CertSelector();
-            for(X509Certificate trustCert : trustCerts){
+            for (X509Certificate trustCert : trustedCaCertificates) {
                 trust.add(new TrustAnchor(trustCert, null));
             }
 
@@ -111,9 +121,9 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
             m_innerTrustManager = (X509ExtendedTrustManager) trustManagerFactory.getTrustManagers()[0];
 
         } catch (Exception e) {
-            if(e instanceof InvalidAlgorithmParameterException){
+            if (e instanceof InvalidAlgorithmParameterException) {
                 CUSTOMER_LOGGER.error("Could not load CA certificates ", e);
-            }else{
+            } else {
                 throw new TrustManagerInitException("Exception while TrustManagerInit ", e);
             }
         }
@@ -125,12 +135,12 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
         try {
             File caCertificateFile = new File(caCertificateFilePath);
             if (caCertificateFile.isFile()) {
-                List<String> certificates = CertificateUtil.certificateStringsFromFile(caCertificateFile);
-                initTrustManager(certificates);
+                List<X509Certificate> certificates = CertificateUtil.getX509Certificates(new FileInputStream(caCertificateFile));
+                initializeTrustManager(certificates);
             } else {
                 LOGGER.error("CaCertificate file not found: " + caCertificateFilePath);
             }
-        } catch (CertificateException e) {
+        } catch (CertificateException | IOException e) {
             throw new TrustManagerInitException("Could not load CA certificates ", e);
         }
     }
@@ -139,7 +149,7 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType) throws CertificateException {
         try {
             m_innerTrustManager.checkClientTrusted(x509Certificates, authType);
-        }catch (CertificateException e){
+        } catch (CertificateException e) {
             //When SSL handshake failed, call home ssl handler needs to extract peer certificate
             //so, throw PeerCertificateException that wraps certificate
             throw new PeerCertificateException(e, x509Certificates);
@@ -150,11 +160,11 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType) throws CertificateException {
         try {
             m_innerTrustManager.checkServerTrusted(x509Certificates, authType);
-        }catch (CertificateException e){
-        //When SSL handshake failed, call home ssl handler needs to extract peer certificate
-        //so, throw PeerCertificateException that wraps certificate
-        throw new PeerCertificateException(e, x509Certificates);
-    }
+        } catch (CertificateException e) {
+            //When SSL handshake failed, call home ssl handler needs to extract peer certificate
+            //so, throw PeerCertificateException that wraps certificate
+            throw new PeerCertificateException(e, x509Certificates);
+        }
 
     }
 
@@ -167,7 +177,7 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, Socket socket) throws CertificateException {
         try {
             m_innerTrustManager.checkClientTrusted(x509Certificates, authType, socket);
-        }catch (CertificateException e) {
+        } catch (CertificateException e) {
             //When SSL handshake failed, call home ssl handler needs to extract peer certificate
             //so, throw PeerCertificateException that wraps certificate
             throw new PeerCertificateException(e, x509Certificates);
@@ -176,9 +186,9 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
 
     @Override
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, Socket socket) throws CertificateException {
-        try{
+        try {
             m_innerTrustManager.checkServerTrusted(x509Certificates, authType, socket);
-        }catch (CertificateException e) {
+        } catch (CertificateException e) {
             //When SSL handshake failed, call home ssl handler needs to extract peer certificate
             //so, throw PeerCertificateException that wraps certificate
             throw new PeerCertificateException(e, x509Certificates);
@@ -187,9 +197,9 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
 
     @Override
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine) throws CertificateException {
-        try{
+        try {
             m_innerTrustManager.checkClientTrusted(x509Certificates, authType, sslEngine);
-        }catch (CertificateException e) {
+        } catch (CertificateException e) {
             //When SSL handshake failed, call home ssl handler needs to extract peer certificate
             //so, throw PeerCertificateException that wraps certificate
             throw new PeerCertificateException(e, x509Certificates);
@@ -198,9 +208,9 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
 
     @Override
     public void checkServerTrusted(X509Certificate[] x509Certificates, String authType, SSLEngine sslEngine) throws CertificateException {
-        try{
+        try {
             m_innerTrustManager.checkServerTrusted(x509Certificates, authType, sslEngine);
-        }catch (CertificateException e) {
+        } catch (CertificateException e) {
             //When SSL handshake failed, call home ssl handler needs to extract peer certificate
             //so, throw PeerCertificateException that wraps certificate
             throw new PeerCertificateException(e, x509Certificates);
@@ -209,6 +219,7 @@ public class DynamicX509TrustManagerImpl extends X509ExtendedTrustManager implem
 
     /**
      * For UT only.
+     *
      * @param innerTrustManager
      */
     void setInnerTrustManager(X509ExtendedTrustManager innerTrustManager) {

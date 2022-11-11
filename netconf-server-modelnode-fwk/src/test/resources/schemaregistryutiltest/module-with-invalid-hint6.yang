@@ -1,0 +1,24 @@
+module module-with-invalid-hint6 {
+  namespace "urn:module-with-invalid-hint6";
+  prefix modulehint;
+
+  revision 2018-06-28 {
+    description
+      "Initial version.";
+  }
+    
+  import nc-stack-extensions {
+      prefix "ncext";
+  }
+  
+  import module-with-node-hints {
+      prefix "nodehints";
+  }
+  
+  ncext:validation-hints "/nodehints:hintContainer/nodehints:nodeWithHint3" {
+      ncext:expression "../nodeWithHint4='hello' and ../nodeWithHint5='test'" ;
+      ncext:hints "/nodehints:hintContainer/nodehints:nodeWithHint4->SKIP_IMPACT_ON_CREATE->test  /nodehints:hintContainer/nodehints:nodeWithHint5->SKIP_IMPACT_VALIDATION";
+      ncext:description "The impact of nodeWithHint4 and nodeWithHint5 is nodeWithHint3";
+  }
+  
+}

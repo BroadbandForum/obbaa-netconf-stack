@@ -22,4 +22,5 @@ package org.broadband_forum.obbaa.netconf.persistence;
 public interface DataStoreMetaProvider {
     long getDataStoreVersion(String moduleId);
     void updateDataStoreVersion(String name, long newVersion);
+    String getAllDataStoreVersions();
 }

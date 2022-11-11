@@ -2,7 +2,7 @@ module datastore-validator-test {
 	
 	yang-version 1;
     
-	namespace "urn:org:bbf:pma:validation";
+	namespace "urn:org:bbf2:pma:validation";
 	
 	prefix "validation";
 	
@@ -80,6 +80,19 @@ module datastore-validator-test {
         }
         leaf group-id {
             mandatory true;
+            type string;
+        }
+    }
+    
+    container otherRootContainer {
+        leaf otherRootContainerLeaf {
+            type string;
+        }
+    }
+    
+    list otherRootList {
+        key "key1";
+        leaf key1 {
             type string;
         }
     }
@@ -244,7 +257,7 @@ module datastore-validator-test {
 					
 					choice choice-leaf {
 						case choice-leaf1 {
-							when "key1 < 10 ";
+						    when "key1 < 10";
 							leaf choiceLeaf1 {
 								type int8;
 							}
@@ -257,7 +270,7 @@ module datastore-validator-test {
 							}
 						}
 						case choice-leaf2 {
-							when "key1 > 10 ";
+							when "key1 > 10";
 							leaf choiceLeaf2 {
 								type int8;
 							}

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import java.lang.reflect.Field;
@@ -17,8 +33,8 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.DataStoreException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.StringToObjectTransformer;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.TransformerException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.TransformerUtil;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentId;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
@@ -38,11 +54,17 @@ public class EMNKeyUtil {
     static Object buildPrimaryKey(Class klass, ModelNodeId parentNodeId,
                                   ModelNodeKey keys, EntityRegistry entityRegistry, EntityDataStoreManager entityDataStoreManager) throws DataStoreException {
         EntityType entityType = entityDataStoreManager.getMetaModel().entity(klass);
-        Type type = entityType.getIdType();
+
         Object idObject = null;
+        IdClass annotation = (IdClass) klass.getAnnotation(IdClass.class);
         Class idClass = null;
+        if(annotation != null) {
+            idClass = annotation.value();
+        }
+
         try {
-            if (type != null) {
+            if (idClass == null) {
+                Type type = entityType.getIdType();
                 idClass = type.getJavaType();
                 if(idClass.equals(String.class) ){
                     idObject= parentNodeId.getModelNodeIdAsString();
@@ -50,10 +72,8 @@ public class EMNKeyUtil {
                     LOGGER.debug("Java idType {} is nto supported", type);
                 }
             } else {
-                //FIXME: FNMS-10111 ugly needs to be fixed by using metamodel
-                idClass = ((IdClass) klass.getAnnotation(IdClass.class)).value();
                 idObject = idClass.newInstance();
-                if (!(idObject instanceof String || idObject instanceof String)) {
+                if (!(idObject instanceof String)) {
                     for (Map.Entry<QName, String> keyEntry : keys.entrySet()) {
                         String fieldName = entityRegistry.getFieldName(klass, keyEntry.getKey());
                         setFieldValue(idClass, idObject, fieldName, keyEntry.getValue());
@@ -66,7 +86,8 @@ public class EMNKeyUtil {
                     setFieldValue(idClass, idObject, parentIdFieldName, parentNodeId.getModelNodeIdAsString());
                 } else {
                     try {
-                        idObject = StringToObjectTransformer.transform(keys.getKeys().entrySet().iterator().next().getValue(),
+                        Type type = entityType.getIdType();
+                        idObject = TransformerUtil.transform(keys.getKeys().entrySet().iterator().next().getValue(),
                                 type.getJavaType());
                     } catch (TransformerException e) {
                         throw new DataStoreException(e);
@@ -116,7 +137,7 @@ public class EMNKeyUtil {
      * @return
      */
     public static ModelNodeId getParentId(DataSchemaNode schemaNode, ModelNodeId nodeId) {
-        List<ModelNodeRdn> parentKeyRdns = new ArrayList<>(nodeId.getRdns());
+        List<ModelNodeRdn> parentKeyRdns = new ArrayList<>(nodeId.getRdnsReadOnly());
         if(schemaNode instanceof ListSchemaNode){
             //remove the key rdns
             parentKeyRdns = parentKeyRdns.subList(0, parentKeyRdns.size() - ((ListSchemaNode)schemaNode).getKeyDefinition().size());
@@ -139,9 +160,16 @@ public class EMNKeyUtil {
     public static ModelNodeId getModelNodeId(ModelNodeKey key, ModelNodeId parentId, SchemaPath schemaPath) {
         ModelNodeId modelNodeId = new ModelNodeId(parentId);
         QName qname = schemaPath.getLastComponent();
-        modelNodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, qname.getNamespace().toString(), qname.getLocalName()));
-
-        for(Map.Entry<QName, String> keyEntry : key.entrySet()){
+        String parentName = "";
+        if (schemaPath.getParent().getLastComponent() != null) {
+            parentName = schemaPath.getParent().getLastComponent().getLocalName();
+        }
+        if (modelNodeId.getLastRdn() == null || (parentName.equals(schemaPath.getLastComponent().getLocalName())
+                || modelNodeId.getLastRdn() != null && !(modelNodeId.getLastRdn().compareTo(
+                        new ModelNodeRdn(ModelNodeRdn.CONTAINER, qname.getNamespace().toString(), qname.getLocalName())) == 0))) {
+            modelNodeId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, qname.getNamespace().toString(), qname.getLocalName()));
+        }
+        for (Map.Entry<QName, String> keyEntry : key.entrySet()) {
             modelNodeId.addRdn(new ModelNodeRdn(keyEntry.getKey(), keyEntry.getValue()));
         }
         return modelNodeId;
@@ -173,7 +201,7 @@ public class EMNKeyUtil {
             nodeType = nodeType.getParent();
         }
 
-        List<ModelNodeRdn> superNodeIdRdns = superNodeId.getRdns();
+        List<ModelNodeRdn> superNodeIdRdns = superNodeId.getRdnsReadOnly();
         for(int i=0; i<count && i<superNodeIdRdns.size(); i++){
             ModelNodeRdn rdn = superNodeIdRdns.get(i);
             scopedId.addRdn(rdn);
@@ -208,7 +236,7 @@ public class EMNKeyUtil {
     public static ModelNodeId populateNamespaces(ModelNodeId nodeId, SchemaPath schemaPath, SchemaRegistry schemaRegistry) throws
             IllegalArgumentException {
         ModelNodeId modifiedNodeId = new ModelNodeId();
-        List<ModelNodeRdn> rdns = nodeId.getRdns();
+        List<ModelNodeRdn> rdns = nodeId.getRdnsReadOnly();
         if(rdns.size() < 1){
             return modifiedNodeId;
         }
@@ -281,4 +309,22 @@ public class EMNKeyUtil {
         parentIdMap.put(fieldName, parentId.getModelNodeIdAsString());
         return parentIdMap;
     }
+
+    public static ModelNodeId constructParentIdFromEntity(SchemaPath schemaPath, Class<?> klass, String parentIdStr,
+                                                          EntityRegistry entityRegistry, SchemaRegistry schemaRegistry) {
+        ModelNodeId parentId = new ModelNodeId(parentIdStr, entityRegistry.getQName(klass)
+                .getNamespace().toString());
+        if(parentId.getRdnsReadOnly().size() > 0){
+            SchemaPath parentSchemaPath;
+            DataSchemaNode nonChoiceParent = schemaRegistry.getNonChoiceParent(schemaPath);
+            if(nonChoiceParent != null){
+                parentSchemaPath = nonChoiceParent.getPath();
+            }else {
+                parentSchemaPath = SchemaPath.ROOT;
+            }
+            parentId = EMNKeyUtil.populateNamespaces(parentId, parentSchemaPath, schemaRegistry);
+        }
+        return parentId;
+    }
+
 }

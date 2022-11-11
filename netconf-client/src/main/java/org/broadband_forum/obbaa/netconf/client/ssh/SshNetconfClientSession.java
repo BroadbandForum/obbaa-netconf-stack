@@ -16,14 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
-import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.CHUNK_SIZE;
 import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.DATE_TIME_FORMATTER;
-import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.MAXIMUM_SIZE_OF_CHUNKED_MESSAGES;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -35,20 +33,21 @@ import org.apache.sshd.common.io.nio2.Nio2Session;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
 import org.apache.sshd.common.util.buffer.ByteArrayBuffer;
-import org.w3c.dom.Document;
-
+import org.broadband_forum.obbaa.netconf.api.ClosureReason;
 import org.broadband_forum.obbaa.netconf.api.LogAppNames;
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodec;
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodecImpl;
-import org.broadband_forum.obbaa.netconf.api.NetconfMessageCodec;
 import org.broadband_forum.obbaa.netconf.api.NetconfSessionClosedException;
 import org.broadband_forum.obbaa.netconf.api.client.AbstractNetconfClientSession;
+import org.broadband_forum.obbaa.netconf.api.client.NetconfResponseFuture;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.FrameAwareNetconfMessageCodecV2;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.FrameAwareNetconfMessageCodecV2Impl;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.NetconfMessageCodecV2;
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
-import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import org.broadband_forum.obbaa.netconf.api.utils.SystemPropertyUtils;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.w3c.dom.Document;
 
 public class SshNetconfClientSession extends AbstractNetconfClientSession {
     private ChannelSubsystem m_clientChannel;
@@ -57,7 +56,7 @@ public class SshNetconfClientSession extends AbstractNetconfClientSession {
     private final ExecutorService m_executorService;// NOSONAR
     private SshClient m_sshClient;
     private final long m_creationTime;
-    private FrameAwareNetconfMessageCodec m_codec = new FrameAwareNetconfMessageCodecImpl();
+    private FrameAwareNetconfMessageCodecV2 m_codec = new FrameAwareNetconfMessageCodecV2Impl();
 
     public SshNetconfClientSession(ExecutorService executorService) {// NOSONAR
         m_executorService = executorService;
@@ -65,45 +64,59 @@ public class SshNetconfClientSession extends AbstractNetconfClientSession {
     }
 
     @Override
-    public synchronized CompletableFuture<NetConfResponse> sendRpcMessage(final String currentMessageId, Document requestDocument, final long messageTimeOut) {
-        LOGGER.debug("Sending RPC request, message-id: " + currentMessageId);
+    public synchronized NetconfResponseFuture sendRpcMessage(final String currentMessageId, Document requestDocument, final long messageTimeOut) {
+        LOGGER.debug("Sending RPC request, message-id: {}", currentMessageId);
         if (m_clientSession.isClosed() || m_clientSession.isClosing()) {
             throw new NetconfSessionClosedException("Session is closed/closing, cannot send messages now");
         }
         try {
-            LOGGER.debug("Session is opening, sending...");
+            LOGGER.debug("Session is opening, sending message-id {} ...", currentMessageId);
             DocumentToPojoTransformer.addNetconfNamespace(requestDocument, NetconfResources.NETCONF_RPC_NS_1_0);
             final byte[] temp = m_codec.encode(requestDocument);
-            LOGGER.debug("Channel is writing, requestDocument: {}", LOGGER.sensitiveData(requestDocument));
-            TimeoutFutureResponse futureResponse = new TimeoutFutureResponse(messageTimeOut, TimeUnit.MILLISECONDS);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Channel is writing, encoded document: {}", LOGGER.sensitiveData(new String(temp)));
+            }
+            NetconfResponseFuture futureResponse = new NetconfResponseFuture(messageTimeOut, TimeUnit.MILLISECONDS);
             m_responseFutures.put(currentMessageId, futureResponse);
-            IoWriteFuture writeFuture = m_clientChannel.getAsyncIn().write(new ByteArrayBuffer(temp));
+            IoWriteFuture writeFuture = m_clientChannel.getAsyncIn().writePacket(new ByteArrayBuffer(temp));
             writeFuture.addListener(future -> {
-                if(!future.isWritten()){
-                    futureResponse.complete(null);
-                    LOGGER.error("The RPC with message-id {} could not be completed successfully, closing the session", currentMessageId);
+                if (!future.isWritten()) {
                     try {
-                        close();
-                    } catch (IOException e) {
-                        LOGGER.error("Error while closing the session", e);
+                        LOGGER.error("The RPC message {} could not be completed successfully, closing the session {}",
+                                DocumentUtils.documentToPrettyString(requestDocument), toString());
+                    } catch (NetconfMessageBuilderException e) {
+                        LOGGER.error("Error while converting request document to String");
                     }
+                    completeFutureAndCloseSession(futureResponse);
                 }
             });
             boolean isWritten = writeFuture.await(messageTimeOut, TimeUnit.MILLISECONDS);
             if (isWritten) {
                 LOGGER.debug("Channel wrote successfully");
             } else {
-                LOGGER.warn("The RPC with message-id {} could not be written to be channel", currentMessageId);
+				LOGGER.error(
+						"The RPC message {} with message-id {} could not be written to the channel for {} milliseconds, hence closing the session {}",
+						DocumentUtils.documentToPrettyString(requestDocument), currentMessageId,
+						String.valueOf(messageTimeOut), toString());
+                completeFutureAndCloseSession(futureResponse);
             }
-
             return futureResponse;
         } catch (Exception e) {
-            LOGGER.error("Error while sending a RPC message", e);
+            LOGGER.error("Error while sending RPC with message-id " + currentMessageId, e);
         }
         return null;
     }
 
-    public NetconfMessageCodec getCodec() {
+    private void completeFutureAndCloseSession(NetconfResponseFuture futureResponse) {
+        futureResponse.complete(null);
+        try {
+            closeAsync();
+        } catch (Exception e) {
+            LOGGER.error("Error while closing the session " + toString(), e);
+        }
+    }
+
+    public NetconfMessageCodecV2 getCodec() {
         return m_codec;
     }
 
@@ -128,6 +141,7 @@ public class SshNetconfClientSession extends AbstractNetconfClientSession {
             @Override
             public void sessionClosed(Session session) {
                 LOGGER.debug("Session closed : " + session);
+                m_sshClient.close(true);
                 SshNetconfClientSession.this.sessionClosed();
             }
 
@@ -144,9 +158,7 @@ public class SshNetconfClientSession extends AbstractNetconfClientSession {
     }
 
     public void useChunkedFraming() {
-        int chunkSize = Integer.parseInt(SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(CHUNK_SIZE, "65536"));
-        int maxSizeOfChunkMag = Integer.parseInt(SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(MAXIMUM_SIZE_OF_CHUNKED_MESSAGES, "67108864"));
-        m_codec.useChunkedFraming(maxSizeOfChunkMag, chunkSize);
+        m_codec.useChunkedFraming();
     }
 
     @Override
@@ -156,12 +168,15 @@ public class SshNetconfClientSession extends AbstractNetconfClientSession {
 
     @Override
     public void close() throws IOException {
-        if (!m_clientSession.isClosed()) {
+        if (m_clientSession.isOpen()) {
             m_clientSession.close(true).await();
+            LOGGER.debug("closed client session of {}", toString());
         }
-        if (!m_sshClient.isClosed()) {
+        if (m_sshClient.isOpen()) {
             m_sshClient.close(true).await();
+            LOGGER.debug("closed ssh client session of {}", toString());
         }
+        LOGGER.debug("session {} has been closed", toString());
     }
 
     public void setSshClient(SshClient sshClient) {
@@ -196,23 +211,37 @@ public class SshNetconfClientSession extends AbstractNetconfClientSession {
     }
 
     @Override
-    public void closeAsync() {
-        if (!m_clientSession.isClosed()) {
-            m_clientSession.close(true);
-        }
-        if (!m_sshClient.isClosed()) {
-            m_sshClient.close(true);
-        }
+    public void closeAsync(ClosureReason closureReason) {
+        super.closeAsync(closureReason);
+        //Close in a separate thread to make it asynchronous
+        m_executorService.submit(new Callable<Void>() {
+            @Override
+            public Void call() {
+                if (m_clientSession.isOpen()) {
+                    m_clientSession.close(true);
+                    LOGGER.debug("closed client session of {}", toString());
+                }
+                if (m_sshClient.isOpen()) {
+                    m_sshClient.close(true);
+                    LOGGER.debug("closed ssh client session of {}", toString());
+                }
+                LOGGER.info("session {} has been closed async", toString());
+                return null;
+            }
+        });
     }
 
     @Override
     public void closeGracefully() throws IOException {
-        if (!m_clientSession.isClosed()) {
+        if (m_clientSession.isOpen()) {
             m_clientSession.close(false).await();
+            LOGGER.debug("closed gracefully client session of {}", toString());
         }
-        if (!m_sshClient.isClosed()) {
+        if (m_sshClient.isOpen()) {
             m_sshClient.close(false).await();
+            LOGGER.debug("closed gracefully client session of {}", toString());
         }
+        LOGGER.info("session {} has been closed gracefully", toString());
     }
 
     @Override

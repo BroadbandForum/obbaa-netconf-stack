@@ -1,0 +1,12 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <rpc-error>
+    <error-type>application</error-type>
+    <error-tag>bad-attribute</error-tag>
+    <error-severity>error</error-severity>
+    <error-info>
+        <bad-attribute>operation</bad-attribute>
+    </error-info>
+    <error-path xmlns:pma="urn:org:bbf2:pma">/pma:operation-example/pma:list-a</error-path>
+    <error-message>Bad attribute: namespace 'urn:ietf:params:xml:ns:netcon:base:1.0', attribute name 'operation'</error-message>
+  </rpc-error>
+</rpc-reply>

@@ -20,11 +20,12 @@ import org.w3c.dom.Document;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.w3c.dom.Element;
 
 /**
  * An abstract class providing implementation for netconf message-id and reply timeout.
  * 
- *
+ * 
  * 
  */
 public abstract class AbstractNetconfRequest {
@@ -34,6 +35,12 @@ public abstract class AbstractNetconfRequest {
     protected long m_replyTimeout = DEFAULT_REPLY_TIMEOUT;
     protected int m_withDelay;
     private NetconfClientInfo m_clientInfo;
+    private Element m_rpcElement;
+    protected String m_userContext;
+    protected String m_contextSessionId;
+    private boolean m_forceInstanceCreation = false;
+    protected String m_application;
+    private long m_requestLength = -1;
 
     public Document getRequestDocument() throws NetconfMessageBuilderException {
         synchronized (this){
@@ -61,6 +68,14 @@ public abstract class AbstractNetconfRequest {
         return this;
     }
 
+    public long getRequestLength() {
+        return m_requestLength;
+    }
+
+    public void setRequestLength(long requestLength) {
+        m_requestLength = requestLength;
+    }
+
     public int getWithDelay() {
         return m_withDelay;
     }
@@ -75,6 +90,14 @@ public abstract class AbstractNetconfRequest {
 
     public void setClientInfo(NetconfClientInfo clientInfo) {
         this.m_clientInfo = clientInfo;
+    }
+
+    public boolean isForceInstanceCreation() {
+        return m_forceInstanceCreation;
+    }
+
+    public void setForceInstanceCreation(boolean forceInstanceCreation) {
+        this.m_forceInstanceCreation = forceInstanceCreation;
     }
 
     public String requestToString() {
@@ -92,4 +115,45 @@ public abstract class AbstractNetconfRequest {
 		return "NetconfRequest [m_messageId=" + m_messageId + ", m_clientInfo=" + m_clientInfo + "]";
 	}
 
+    public abstract String getRpcType();
+
+    public String getRpcAttribute(String attrNs, String attr) {
+        if(m_rpcElement == null){
+            return null;
+        }
+        return m_rpcElement.getAttributeNS(attrNs, attr);
+    }
+
+    public void setRpcElement(Element rpcElement) {
+        m_rpcElement = rpcElement;
+    }
+
+    public Element getRpcElement() {
+        return m_rpcElement;
+    }
+    
+    public String getAdditionalUserContext() {
+        return m_userContext;
+    }
+
+    public void setUserContext(String context) {
+        this.m_userContext = context;
+    }
+
+    public String getAdditionalUserSessionId() {
+        return m_contextSessionId;
+    }
+
+    public void setContextSessionId(String sessionId) {
+        this.m_contextSessionId = sessionId;
+    }
+
+	public String getApplication() {
+		return m_application;
+	}
+
+	public void setApplication(String application) {
+		this.m_application = application;
+	}
+    
 }

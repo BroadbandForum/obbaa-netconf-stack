@@ -16,8 +16,6 @@
 
 package org.broadband_forum.obbaa.netconf.persistence;
 
-import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
-
 /**
  * Created by keshava on 11/3/15.
  */

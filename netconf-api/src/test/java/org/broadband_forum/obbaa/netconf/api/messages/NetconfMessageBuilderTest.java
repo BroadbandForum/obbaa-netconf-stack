@@ -35,7 +35,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.Difference;
 import org.custommonkey.xmlunit.DifferenceConstants;
@@ -51,14 +57,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-
 public class NetconfMessageBuilderTest extends XMLTestCase {
 
-    private static final Logger LOGGER = Logger.getLogger(NetconfMessageBuilderTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfMessageBuilderTest.class, LogAppNames.NETCONF_LIB);
 
     @Override
     protected void setUp() throws Exception {
@@ -130,9 +131,9 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         EditConfigElement editConfigElement = new EditConfigElement().setConfigElementContents(Collections.singletonList(topElement));
         editConfigElement.toString();
 
-        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addEditConfigElement("backup",
+        PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addEditConfigElement(false,"backup",
                 EditConfigDefaultOperations.MERGE, EditConfigTestOptions.TEST_THEN_SET, EditConfigErrorOptions.CONTINUE_ON_ERROR, 0,
-                editConfigElement);
+                editConfigElement, "test", "testId");
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
         Node editConfig = rpc.getChildNodes().item(0);
@@ -167,7 +168,7 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
     @Test
     public void testCopyConfigRpcDocumentBuild() throws Exception {
         PojoToDocumentTransformer docBuilder = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addCopyConfigElement(
-                "https://user:password@example.com/cfg/backup.txt", true, StandardDataStores.RUNNING, false, null);
+                false, "https://user:password@example.com/cfg/backup.txt", true, StandardDataStores.RUNNING, false, null);
         Node rpc = getRPCNodeWithAssertCheck(docBuilder);
 
         Node copyConfig = rpc.getChildNodes().item(0);
@@ -252,7 +253,8 @@ public class NetconfMessageBuilderTest extends XMLTestCase {
         DocumentUtils.prettyPrint(tempDoc);
         NetconfFilter axsFilter = new NetconfFilter().setType(NetconfResources.SUBTREE_FILTER).addXmlFilter(topElement);
         axsFilter.toString();// to make sure this does not end up failing..
-        Document actualDoc = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addGetElement(axsFilter, null, 0, NetconfQueryParams.UNBOUNDED, Collections.<String, List<QName>>emptyMap()).build();
+        Document actualDoc = new PojoToDocumentTransformer().newNetconfRpcDocument("101").addGetElement(axsFilter, null,null, 0,
+                NetconfQueryParams.UNBOUNDED, Collections.<String, List<QName>>emptyMap()).build();
 
         Node rpc = actualDoc.getChildNodes().item(0);
         assertNotNull(rpc);

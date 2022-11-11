@@ -16,8 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
-import org.apache.log4j.Logger;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.net.Socket;
@@ -28,7 +27,10 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.junit.Test;
 
 /**
  * Created by keshava on 4/29/15.
@@ -280,8 +282,7 @@ public class DynamicX509KeyManagerImplTest {
             "lBIiP20uRgEJKeq/ADK9W5XkUN8zvKqJ+YTyq139RyugQ1iKeo2vU8AW8W643vtc\n" +
             "8/Amd1Pkr/6UoVGRvzQFsf16gA==\n" +
             "-----END PRIVATE KEY-----";
-    private static final String CERTIFICATE_FOR_RSA_PRIVATE_KEY2 = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIDIDCCAggCCQCUl58dC4o32TANBgkqhkiG9w0BAQsFADBdMQswCQYDVQQGEwJJ\n" +
+    private static final String CERTIFICATE_FOR_RSA_PRIVATE_KEY2 = "MIIDIDCCAggCCQCUl58dC4o32TANBgkqhkiG9w0BAQsFADBdMQswCQYDVQQGEwJJ\n" +
             "TjESMBAGA1UECAwJS2FybmF0YWthMRIwEAYDVQQHDAlCYW5nYWxvcmUxJjAkBgNV\n" +
             "BAoMHUR1bW15IENlcnRpZmljYXRlIEF1dGhvcml0eSAxMCAXDTE2MDgxMTExMTYy\n" +
             "MloYDzMzODUwNzI1MTExNjIyWjBFMQswCQYDVQQGEwJJTjETMBEGA1UECAwKU29t\n" +
@@ -297,11 +298,10 @@ public class DynamicX509KeyManagerImplTest {
             "RpMhsT8ni0BfTRw1w3QL93p1+po4TBaVf0s/ucek03N82O5svdLf5XyZXZP+PzUo\n" +
             "eUu6EasQzLThLuEYlZ4R1g+T64lg5PTUaIBiX1VvaaMldwpylWmkGeBDWxfr1v31\n" +
             "XGqwQslROrUP0NbahPlRNs4o7J+7FVkxh46hmUHN9zbuUoBZXDR5TvukkmEuuPCt\n" +
-            "KBS+6pBcjZZPfXm7AEL/KNtCDwnDH1YjbY0nqr5Wmdxn7c4y\n" +
-            "-----END CERTIFICATE-----\n";
+            "KBS+6pBcjZZPfXm7AEL/KNtCDwnDH1YjbY0nqr5Wmdxn7c4y\n";
 
     DynamicX509KeyManager m_x509KeyManager = null;
-    private static final Logger LOGGER = Logger.getLogger(DynamicX509TrustManagerImplTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(DynamicX509TrustManagerImplTest.class, LogAppNames.NETCONF_LIB);
 
     @Test
     public void testInitializationFromFile() throws KeyManagerInitException, CertificateException {
@@ -332,7 +332,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -356,7 +356,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -381,7 +381,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -406,7 +406,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -431,7 +431,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA256withRSA", certChain[0].getSigAlgName());
@@ -457,7 +457,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -482,7 +482,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -507,7 +507,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("RSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "RSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"RSA"}, (Principal[]) null, (Socket) null));
 
         X509Certificate[] certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());
@@ -530,7 +530,7 @@ public class DynamicX509KeyManagerImplTest {
         assertEquals("key", clientAlias[0]);
 
         assertEquals("key", m_x509KeyManager.chooseServerAlias("DSA", (Principal[]) null, (Socket) null));
-        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[] { "DSA" }, (Principal[]) null, (Socket) null));
+        assertEquals("key", m_x509KeyManager.chooseClientAlias(new String[]{"DSA"}, (Principal[]) null, (Socket) null));
 
         certChain = m_x509KeyManager.getCertificateChain("key");
         assertEquals("SHA1withRSA", certChain[0].getSigAlgName());

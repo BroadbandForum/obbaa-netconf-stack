@@ -25,6 +25,31 @@ module datastore-validator-augment-test {
             }
         }
     }
+    
+    augment "/validation:validation/validation:mustOnEmptyTypeLeaf" {
+    	leaf emptyTypeLeaf {
+			type empty;
+		}
+		leaf mustOnEmptyLeaf{
+			must "boolean(current()/../emptyTypeLeaf)";
+			type string;
+		}
+		
+		leaf stringLeaf {
+			type string;
+		}
+		leaf mustOnStringLeaf{
+			must "boolean(current()/../stringLeaf)";
+			type string;
+		}
+		leaf-list leafList{
+			type string;
+		}
+		leaf mustOnLeafList{
+			must "boolean(current()/../leafList)";
+			type string;
+		}
+    }
 
     augment "/validation:testNotification/validation:notif-container" {
         leaf sample-leaf {
@@ -32,6 +57,13 @@ module datastore-validator-augment-test {
             must "/validation:validation/validation:test-interfaces/validation:test-interface[validation:name=current()]/validation:type='sampleType1'" {
                error-message "must reference a channel-leaf";
             }
+        }
+    }
+    
+    augment "/validation:validation/validation:sampleContainer/validation:innerContainer" {
+    	when "../master = 'sample'";
+        leaf innerMostLeaf {
+            type string;
         }
     }
 }

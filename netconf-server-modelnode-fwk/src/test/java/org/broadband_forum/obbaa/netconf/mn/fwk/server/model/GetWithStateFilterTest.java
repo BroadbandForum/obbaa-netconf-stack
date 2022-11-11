@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ARTIST_SCHEMA_PATH;
@@ -15,17 +31,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
@@ -59,15 +64,27 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EntityR
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TestTxUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.StateAttributeUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
 import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
 import org.broadband_forum.obbaa.netconf.persistence.jpa.JPAEntityManagerFactory;
 import org.broadband_forum.obbaa.netconf.persistence.jpa.ThreadLocalPersistenceManagerUtil;
 import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
-
+@RunWith(RequestScopeJunitRunner.class)
 public class GetWithStateFilterTest {
 
     private static final String YANG_FILE = "/getwithstatefiltertest/example-jukebox-with-state-attributes.yang";
@@ -75,14 +92,16 @@ public class GetWithStateFilterTest {
     private static final String COMPONENT_ID = "Jukebox";
     private static final String MODULE_NAME = "example-jukebox-with-state-attributes";
 
-    private static final QName ALBUM_COUNT_QNAME = QName.create(JukeboxConstants.JB_NS,JB_REVISION,"album-count");
-    private static final QName AWARDS_QNAME = QName.create(JukeboxConstants.JB_NS,JB_REVISION,"awards");
+    private static final QName ALBUM_COUNT_QNAME = QName.create(JukeboxConstants.JB_NS, JB_REVISION, "album-count");
+    private static final QName AWARDS_QNAME = QName.create(JukeboxConstants.JB_NS, JB_REVISION, "awards");
 
     private static final String GET_UNFILTERED_RESPONSE_XML = "/getwithstatefiltertest/get-unfiltered-response.xml";
     private static final String GET_WITH_FILTER_ALBUM_COUNT_REQUEST = "/getwithstatefiltertest/get-with-filter-album-count-request.xml";
     private static final String GET_WITH_FILTER_ALBUM_COUNT_RESPONSE_XML = "/getwithstatefiltertest/get-with-filter-album-count-response.xml";
     private static final String GET_WITH_FILTER_AWARD_REQUEST = "/getwithstatefiltertest/get-with-filter-award-request.xml";
     private static final String GET_WITH_FILTER_AWARD_RESPONSE_XML = "/getwithstatefiltertest/get-with-filter-award-response.xml";
+    public static final String PRUNED_SUBTREE = "pruned-subtree";
+    public static final String MESSAGE_ID = "1";
 
     private SchemaRegistry m_schemaRegistry;
     private EntityRegistry m_entityRegistry;
@@ -108,10 +127,11 @@ public class GetWithStateFilterTest {
         m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         m_entityRegistry = new EntityRegistryImpl();
         m_subSystemRegistry = new SubSystemRegistryImpl();
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_subsystem = new ArtistSubSystem();
-        m_subSystemRegistry.register(COMPONENT_ID,ARTIST_SCHEMA_PATH,m_subsystem);
-        m_subSystemRegistry.register(COMPONENT_ID, new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH).appendLocalName("album-count").build(),m_subsystem);
-        m_subSystemRegistry.register(COMPONENT_ID, new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH).appendLocalName("awards").build(),m_subsystem);
+        m_subSystemRegistry.register(COMPONENT_ID, ARTIST_SCHEMA_PATH, m_subsystem);
+        m_subSystemRegistry.register(COMPONENT_ID, new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH).appendLocalName("album-count").build(), m_subsystem);
+        m_subSystemRegistry.register(COMPONENT_ID, new SchemaPathBuilder().withParent(ARTIST_SCHEMA_PATH).appendLocalName("awards").build(), m_subsystem);
         m_modelNodeHelperRegistry = new ModelNodeHelperRegistryImpl(m_schemaRegistry);
         m_modelNodeDSMRegistry = new ModelNodeDSMRegistryImpl();
         m_aggregatedDSM = new AggregatedDSM(m_modelNodeDSMRegistry);
@@ -132,7 +152,7 @@ public class GetWithStateFilterTest {
         addRootNodeHelper();
         m_dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry);
         m_nbiNotificationHelper = mock(NbiNotificationHelper.class);
-        when(m_nbiNotificationHelper.getNetconfConfigChangeNotifications(Matchers.any(),Matchers.any(),Matchers.any())).thenReturn(Collections.emptyList());
+        when(m_nbiNotificationHelper.getNetconfConfigChangeNotifications(Matchers.anyMap(), Matchers.any())).thenReturn(Collections.emptyList());
         m_dataStore.setNbiNotificationHelper(m_nbiNotificationHelper);
         updateDSMRegistry();
         m_server.setRunningDataStore(m_dataStore);
@@ -141,26 +161,36 @@ public class GetWithStateFilterTest {
     }
 
     @Test
-    public void testGetWithStateFilter() throws NetconfMessageBuilderException, IOException, SAXException {
-        TestUtil.verifyGet(m_server, (NetconfFilter) null, GET_UNFILTERED_RESPONSE_XML, "1");
+    public void testGetWithStateFilterHavingPrunedSubtreeOption() throws NetconfMessageBuilderException, IOException, SAXException {
+        TestUtil.verifyGet(m_server, (NetconfFilter) null, GET_UNFILTERED_RESPONSE_XML, MESSAGE_ID);
 
         // Get with filter on a state attribute
-        TestUtil.verifyGet(m_server, GET_WITH_FILTER_ALBUM_COUNT_REQUEST, GET_WITH_FILTER_ALBUM_COUNT_RESPONSE_XML, "1");
+        TestUtil.verifyGet(m_server, GET_WITH_FILTER_ALBUM_COUNT_REQUEST, GET_WITH_FILTER_ALBUM_COUNT_RESPONSE_XML, MESSAGE_ID, PRUNED_SUBTREE);
 
         // Get with filter on a state leaf-list attribute
-        TestUtil.verifyGet(m_server, GET_WITH_FILTER_AWARD_REQUEST, GET_WITH_FILTER_AWARD_RESPONSE_XML, "1");
+        TestUtil.verifyGet(m_server, GET_WITH_FILTER_AWARD_REQUEST, GET_WITH_FILTER_AWARD_RESPONSE_XML, MESSAGE_ID, PRUNED_SUBTREE);
+    }
+
+    @Test
+    public void testGetWithStateFilterHavingSubtreeOption() throws NetconfMessageBuilderException, IOException, SAXException {
+
+        // Get with filter on a state attribute
+        TestUtil.verifyGet(m_server, GET_WITH_FILTER_ALBUM_COUNT_REQUEST, GET_WITH_FILTER_ALBUM_COUNT_RESPONSE_XML, MESSAGE_ID, PRUNED_SUBTREE);
+
+        // Get with filter on a state leaf-list attribute
+        TestUtil.verifyGet(m_server, GET_WITH_FILTER_AWARD_REQUEST, GET_WITH_FILTER_AWARD_RESPONSE_XML, MESSAGE_ID, PRUNED_SUBTREE);
     }
 
     private void updateDSMRegistry() {
-        m_modelNodeDSMRegistry.register(COMPONENT_ID,JUKEBOX_SCHEMA_PATH,m_annotationBasedDSM);
+        m_modelNodeDSMRegistry.register(COMPONENT_ID, JUKEBOX_SCHEMA_PATH, m_annotationBasedDSM);
         m_modelNodeDSMRegistry.register(COMPONENT_ID, LIBRARY_SCHEMA_PATH, m_annotationBasedDSM);
-        m_modelNodeDSMRegistry.register(COMPONENT_ID,ARTIST_SCHEMA_PATH,m_annotationBasedDSM);
+        m_modelNodeDSMRegistry.register(COMPONENT_ID, ARTIST_SCHEMA_PATH, m_annotationBasedDSM);
     }
 
     private void addRootNodeHelper() {
         ContainerSchemaNode schemaNode = (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(JukeboxConstants.JUKEBOX_SCHEMA_PATH);
         ChildContainerHelper containerHelper = new RootEntityContainerModelNodeHelper(schemaNode, m_modelNodeHelperRegistry, m_subSystemRegistry,
-                m_schemaRegistry,m_aggregatedDSM);
+                m_schemaRegistry, m_aggregatedDSM);
         m_rootModelNodeAggregator.addModelServiceRootHelper(JukeboxConstants.JUKEBOX_SCHEMA_PATH, containerHelper);
     }
 
@@ -173,33 +203,38 @@ public class GetWithStateFilterTest {
 
     private class ArtistSubSystem extends AbstractSubSystem {
         @Override
+        protected boolean byPassAuthorization() {
+            return true;
+        }
+
+        @Override
         public Map<ModelNodeId, List<Element>> retrieveStateAttributes(Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>> mapAttributes) throws GetAttributeException {
             Map<ModelNodeId, List<Element>> stateInfo = new HashMap<>();
 
             Document doc = DocumentUtils.createDocument();
-            for(Map.Entry<ModelNodeId,Pair<List<QName>, List<FilterNode>>> entry : mapAttributes.entrySet()){
+            for (Map.Entry<ModelNodeId, Pair<List<QName>, List<FilterNode>>> entry : mapAttributes.entrySet()) {
                 ModelNodeId modelNodeId = entry.getKey();
                 Map<QName, Object> stateAttributes = new LinkedHashMap<>();
                 boolean isArtistNameLenny = modelNodeId.getRdns().get((modelNodeId.getRdns().size() - 1)).getRdnValue()
                         .equalsIgnoreCase("Lenny");
                 List<QName> qNames = entry.getValue().getFirst();
-                if(isArtistNameLenny){
-                    if(qNames.contains(ALBUM_COUNT_QNAME)){
-                        stateAttributes.put(ALBUM_COUNT_QNAME,"2");
+                if (isArtistNameLenny) {
+                    if (qNames.contains(ALBUM_COUNT_QNAME)) {
+                        stateAttributes.put(ALBUM_COUNT_QNAME, "2");
                     }
-                    if(qNames.contains(AWARDS_QNAME)){
+                    if (qNames.contains(AWARDS_QNAME)) {
                         List<String> awardNames = new ArrayList<>();
                         awardNames.add("Lenny's 1st award");
                         awardNames.add("Lenny's 2nd award");
                         awardNames.add("Lenny's 3rd award");
-                        stateAttributes.put(AWARDS_QNAME,awardNames);
+                        stateAttributes.put(AWARDS_QNAME, awardNames);
                     }
-                }else{
-                    if(qNames.contains(ALBUM_COUNT_QNAME)){
-                        stateAttributes.put(ALBUM_COUNT_QNAME,"3");
+                } else {
+                    if (qNames.contains(ALBUM_COUNT_QNAME)) {
+                        stateAttributes.put(ALBUM_COUNT_QNAME, "3");
                     }
-                    if(qNames.contains(AWARDS_QNAME)){
-                        stateAttributes.put(AWARDS_QNAME,"Penny's 1st award");
+                    if (qNames.contains(AWARDS_QNAME)) {
+                        stateAttributes.put(AWARDS_QNAME, "Penny's 1st award");
                     }
                 }
                 List<Element> stateElements = StateAttributeUtil.convertToStateElements(stateAttributes, "jbox", doc);

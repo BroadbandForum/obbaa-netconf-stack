@@ -1,5 +1,29 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+
+import java.util.Collections;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.KillSessionRequest;
@@ -15,22 +39,16 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHe
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.mock;
+import org.junit.runner.RunWith;
 
-import java.util.Collections;
-
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.createJukeBoxModel;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+@RunWith(RequestScopeJunitRunner.class)
 public class LockUnLockKillCloseTest {
-    private static final Logger LOGGER = Logger.getLogger(LockUnLockKillCloseTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(LockUnLockKillCloseTest.class);
     private NetConfServerImpl m_server;
 	private SubSystemRegistry m_subSystemRegistry = new SubSystemRegistryImpl();
     private SchemaRegistry m_schemaRegistry;
@@ -41,8 +59,9 @@ public class LockUnLockKillCloseTest {
     public void initServer() throws SchemaBuildException {
         m_schemaRegistry = new SchemaRegistryImpl(TestUtil.getJukeBoxYangs(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         m_server = new NetConfServerImpl(m_schemaRegistry);
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         RootModelNodeAggregator rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
-                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, createJukeBoxModel(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry));
+                mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, null);
 		DataStore dataStore = new DataStore(StandardDataStores.RUNNING, rootModelNodeAggregator, m_subSystemRegistry);
 		dataStore.setNotificationService(mock(NotificationService.class));
 		m_server.setRunningDataStore(dataStore);

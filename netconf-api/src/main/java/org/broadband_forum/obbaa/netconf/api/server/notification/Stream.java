@@ -19,6 +19,7 @@ package org.broadband_forum.obbaa.netconf.api.server.notification;
 import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.DATE_TIME_WITH_TZ;
 
 import java.text.ParseException;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -32,7 +33,7 @@ import org.joda.time.DateTime;
  *
  * 
  */
-@XmlType(propOrder = { "name", "description", "replaySupport" })
+@XmlType(propOrder = { "name", "description", "replaySupport", "destination", "access" })
 @XmlRootElement(name = "stream")
 public class Stream {
 
@@ -41,7 +42,8 @@ public class Stream {
     private boolean m_replaySupport;
     private String m_replayLogCreationTime;
     private String m_replayLogAgedTime;
-
+    private String m_destination;
+    private List<Access> m_access;
 
     public String getName() {
         return m_name;
@@ -73,8 +75,6 @@ public class Stream {
         return this;
     }
 
-   
-
     public String getReplayLogCreationTime() {
         return m_replayLogCreationTime;
     }
@@ -96,6 +96,26 @@ public class Stream {
         if (this.m_replaySupport) {
             this.m_replayLogAgedTime = DATE_TIME_WITH_TZ.print(new DateTime(replayLogAgedTime));
         }
+        return this;
+    }
+    
+    public String getDestination() {
+        return m_destination;
+    }
+
+    @XmlElement(name = "destination")
+    public Stream setDestination(String destination) throws ParseException {
+        this.m_destination = destination;
+        return this;
+    }
+
+    public List<Access> getAccess() {
+        return m_access;
+    }
+
+    @XmlElement(name = "access")
+    public Stream setAccess(List<Access> accessList) {
+        this.m_access = accessList;
         return this;
     }
 
@@ -142,6 +162,13 @@ public class Stream {
         } else if (!m_replayLogAgedTime.equals(other.m_replayLogAgedTime)) {
             return false;
         }
+        if (m_access == null) {
+            if (other.m_access != null) {
+                return false;
+            }
+        } else if (!m_access.equals(other.m_access)) {
+            return false;
+        }
         if (!m_replaySupport == other.m_replaySupport) {
             return false;
         }
@@ -151,6 +178,7 @@ public class Stream {
     @Override
     public String toString() {
         return "Stream [name=" + m_name + ", description=" + m_description + ", replaySupport=" + m_replaySupport
-                + ", replayLogCreationTime=" + m_replayLogCreationTime + ", replayLogAgedTime=" + m_replayLogAgedTime + "]";
+                + ", replayLogCreationTime=" + m_replayLogCreationTime + ", replayLogAgedTime=" + m_replayLogAgedTime 
+                + ", destination=" + m_destination+ ", m_access=" + m_access +"]";
     }
 }

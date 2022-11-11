@@ -1,0 +1,24 @@
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <data>
+        <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+            <jbox:library>
+                <jbox:artist>
+                    <jbox:name>Penny</jbox:name>
+                </jbox:artist>
+                <jbox:artist>
+                    <jbox:album>
+                        <jbox:album-song-count>2</jbox:album-song-count>
+                        <jbox:album-state-container>
+                            <jbox:album-state-leaf-list>value1</jbox:album-state-leaf-list>
+                            <jbox:album-state-leaf-list>value2</jbox:album-state-leaf-list>
+                            <jbox:album-state-leaf1>value1</jbox:album-state-leaf1>
+                            <jbox:album-state-leaf2>value2</jbox:album-state-leaf2>
+                        </jbox:album-state-container>
+                        <jbox:name>Greatest hits</jbox:name>
+                    </jbox:album>
+                    <jbox:name>Lenny</jbox:name>
+                </jbox:artist>
+            </jbox:library>
+        </jbox:jukebox>
+    </data>
+</rpc-reply>

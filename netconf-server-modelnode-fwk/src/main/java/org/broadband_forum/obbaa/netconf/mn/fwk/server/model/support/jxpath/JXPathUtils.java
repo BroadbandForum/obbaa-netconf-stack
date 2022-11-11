@@ -1,12 +1,20 @@
-package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath;
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath;
 
 import org.apache.commons.jxpath.JXPathContext;
 import org.apache.commons.jxpath.ri.Compiler;
@@ -22,11 +30,32 @@ import org.apache.commons.jxpath.ri.compiler.CoreOperationNegate;
 import org.apache.commons.jxpath.ri.compiler.CoreOperationRelationalExpression;
 import org.apache.commons.jxpath.ri.compiler.CoreOperationSubtract;
 import org.apache.commons.jxpath.ri.compiler.Expression;
+import org.apache.commons.lang3.StringUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil;
 import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JXPathUtils {
 	
@@ -47,6 +76,19 @@ public class JXPathUtils {
 	}
 
 	private static final String EXPRESSION_CACHE = "EXPRESSION_CACHE";
+
+    private static XPath m_xPath = XPathFactory.newInstance().newXPath();
+    private static final String XPATH_EXPRESSION_LOCAL_NAME_FORMAT = "/*[local-name()='%s']";
+    private static final String XPATH_EXPRESSION_LOCAL_VALUE_FORMAT = "[*[local-name()='%s' and . %s %s]]";
+
+    public static final String PIPE = "|";
+    public static final String PIPE_REGEX = "\\|";
+    public static final String SLASH = "/";
+    public static final String COLON = ":";
+    public static final String EMPTY = "";
+    public static final String SQUARE_BRACE_OPEN = "[";
+    public static final String SQUARE_BRACE_CLOSE = "]";
+
 	public static Expression getExpression(JXPathCompiledExpression compiledExpression) {
 		if (compiledExpression != null) {
 			try {
@@ -87,7 +129,7 @@ public class JXPathUtils {
 
     /**
      * Given a JXPath function code and a list of object, a CoreFunction is returned
-     * @param value
+     * @param values
      * @return
      */
     @SuppressWarnings("rawtypes")
@@ -103,7 +145,7 @@ public class JXPathUtils {
                 continue;
             }
             String constantValue = DataStoreValidationUtil.isConstant(value) ? ((Constant)value).computeValue(null).toString() : value.toString();
-            if (functionCode == Compiler.FUNCTION_NOT) {
+            if (functionCode == Compiler.FUNCTION_NOT || functionCode == Compiler.FUNCTION_BOOLEAN ) {
                 /*
                  * reference: http://saxon.sourceforge.net/saxon6.5.3/expressions.html#BooleanExpressions 
                  * Numeric values: 0 is treated as false, everything else as true. 
@@ -114,10 +156,13 @@ public class JXPathUtils {
                  * directly unlike other core functions.
                  */
                 if (value instanceof Boolean && !((Boolean) value)) {
-                    constantValue = new String();
+                    constantValue = new String(); // for boolean function, we should not send "string value of false", it treats it as string and by length it evaluates the value to true.
                 }
             } else if (value instanceof Collection) {
                 constantValue = String.valueOf(((Collection) value).size());
+                if(functionCode == Compiler.FUNCTION_COUNT){
+                    functionCode = Compiler.FUNCTION_NUMBER;
+                }
             }
     
             if (DataStoreValidationUtil.isExpression(value)){
@@ -199,7 +244,129 @@ public class JXPathUtils {
         }
         return returnValue;
     }
-    
+
+    public static Expression getExpressionWithoutCache(String xPathCondition) {
+        return getExpression((JXPathCompiledExpression) JXPathContext.compile(xPathCondition));
+    }
+
+    public static boolean isInvalidFilter(String filter) {
+        if (StringUtils.isEmpty(filter)) {
+            return false;
+        }
+
+        // filter=/a/b='1'|/c/d='2' -> having PIPE (|)
+        // filters = [ /a/b='1' ,  /e/f='2' ]
+        // Need to loop and validate every single filter
+        if (isBracketOutsideQuote(filter)) {
+            LOGGER.error("XPath {} predicate special characters [ or ] is present outside single/double quotes", filter);
+            return true;
+        }
+
+        String[] paths = filter.split(PIPE_REGEX);
+        for (String path : paths) {
+            if (StringUtils.isNotEmpty(path)) {
+                Expression expression = buildExpression(path.trim());
+                if (expression == null) {
+                    return true;
+                }
+                if (expression instanceof CoreOperationCompare || expression instanceof CoreOperationRelationalExpression) {
+                    CoreOperation operation = (CoreOperation) expression;
+                    if (operation.getArguments()[0] != null && operation.getArguments()[0].toString().contains(COLON)) {
+                        LOGGER.error("Invalid XPath {}. The axes '{}' is specified in the form of <prefix>:<name>", path, operation.getArguments()[0].toString());
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static Expression buildExpression(String xPath) {
+        try {
+            return JXPathUtils.getExpression((JXPathCompiledExpression) JXPathContext.compile(xPath));
+        } catch (Exception e) {
+            LOGGER.error("Error while compile xPath {}, ", xPath, e);
+            return null;
+        }
+    }
+
+    public static boolean isNotificationMatchesXpath(Document notification, String xPath, String xPathExpression) throws Exception {
+        NodeList nodeList = getListDataFromXpath(notification, xPathExpression);
+
+        if (nodeList != null && nodeList.getLength() > 0) {
+            LOGGER.debug("Found the notification {} is matched with xPath {}", notification, xPath);
+            return true;
+        } else {
+            LOGGER.debug("The notification {} does not match with xPath {}", notification, xPath);
+            return false;
+        }
+    }
+
+    public static String buildExpressionFromXpath(String xPathStr) {
+        if (StringUtils.isEmpty(xPathStr)) {
+            return null;
+        }
+        Set<String> expressions = new HashSet<>();
+        String[] xPaths = xPathStr.contains(PIPE) ? xPathStr.split(PIPE_REGEX) : new String[]{ xPathStr };
+        for (String xPath : xPaths) {
+            String[] paths = xPath.split(SLASH);
+            StringBuilder xPathBuilder = new StringBuilder();
+            for (String path : paths) {
+                if (StringUtils.isNotEmpty(path)) {
+                    Expression expression = buildExpression(path);
+                    // CoreOperationCompare: =,  !=
+                    // CoreOperationRelationalExpression: <, <=, >, >=
+                    if (expression instanceof CoreOperationCompare || expression instanceof CoreOperationRelationalExpression) {
+                        CoreOperation operation = (CoreOperation) expression;
+                        xPathBuilder.append(String.format(XPATH_EXPRESSION_LOCAL_VALUE_FORMAT, operation.getArguments()[0], operation.getSymbol(), operation.getArguments()[1]));
+                    } else {
+                        xPathBuilder.append(String.format(XPATH_EXPRESSION_LOCAL_NAME_FORMAT, path));
+                    }
+                }
+            }
+            expressions.add(xPathBuilder.toString());
+        }
+
+        return StringUtils.join(expressions, " | ");
+    }
+
+    private static NodeList getListDataFromXpath(Document document, String xPathExpression) {
+        try {
+            return (NodeList) m_xPath.evaluate(xPathExpression, document, XPathConstants.NODESET); // NOSONAR;
+        } catch (XPathExpressionException e) {
+            LOGGER.error("Failed to fetch data from XPath expression {}", xPathExpression, e);
+        }
+        return null;
+    }
+
+    private static boolean isBracketOutsideQuote(String xPathStr) {
+        String[] xPaths = xPathStr.split(PIPE_REGEX);
+        for (String xPath : xPaths) {
+            xPath = xPath.startsWith(SLASH) ? xPath.substring(1) : xPath;
+            String[] paths = xPath.split(SLASH);
+            for(int i = 0; i< paths.length; i++) {
+                String content = paths[i];
+                String temp = content;
+                //double quote
+                Pattern pattern = Pattern.compile("\"([^\"]*)\"");
+                Matcher matcher = pattern.matcher(content);
+                while (matcher.find()) {
+                    temp = temp.replace(matcher.group(1), EMPTY);
+                }
+                //single quote
+                pattern = Pattern.compile("\'([^\"]*)\'");
+                matcher = pattern.matcher(content);
+                while (matcher.find()) {
+                    temp = temp.replace(matcher.group(1), EMPTY);
+                }
+                if(temp.contains(SQUARE_BRACE_OPEN) || temp.contains(SQUARE_BRACE_CLOSE)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     private static Expression getExpressionFromCache(String xPathCondition) {
         RequestScope currentScope = RequestScope.getCurrentScope();

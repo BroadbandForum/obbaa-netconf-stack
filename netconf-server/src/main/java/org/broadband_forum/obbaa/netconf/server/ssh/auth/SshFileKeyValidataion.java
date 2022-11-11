@@ -16,8 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh.auth;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.utils.PemReader;
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -31,7 +33,7 @@ import java.security.PublicKey;
  */
 public class SshFileKeyValidataion implements SshKeyValidataion {
 
-    private static final Logger LOGGER = Logger.getLogger(SshFileKeyValidataion.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SshFileKeyValidataion.class, LogAppNames.NETCONF_LIB);
 
     /**
      * This method will compare the input public key with the public keys in the authorized key file and if it is present it will return

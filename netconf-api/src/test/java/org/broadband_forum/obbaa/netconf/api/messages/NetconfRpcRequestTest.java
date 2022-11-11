@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -63,10 +64,14 @@ public class NetconfRpcRequestTest {
     public void testGetDocument() throws NetconfMessageBuilderException{
         Element element = DocumentUtils.createDocument().createElementNS("test", "test");
         m_netconfRpcRequest.setRpcInput(element);
+        m_netconfRpcRequest.setUserContext("admin");
+        m_netconfRpcRequest.setContextSessionId("12345");
         Document document = m_netconfRpcRequest.getRequestDocument();
         Node node = document.getFirstChild();
         if (node instanceof Element){
             assertTrue(((Element)node).getLocalName().equals("rpc"));
+            assertEquals("admin",((Element) node).getAttribute(NetconfResources.CTX_USER_CONTEXT));
+            assertEquals("12345",((Element) node).getAttribute(NetconfResources.CTX_SESSION_ID));
             if (node.getFirstChild() instanceof Element){
                 assertTrue(((Element)node.getFirstChild()).getLocalName().equals("test"));
                 assertTrue(((Element)node.getFirstChild()).getNamespaceURI().equals("test"));

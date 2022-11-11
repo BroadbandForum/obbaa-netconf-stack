@@ -1,21 +1,36 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.MustDefinition;
-
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.WhenValidationException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.MustDefinition;
 
 /**
  * A utility class helps in generation of various ValidationException with NetconfRpcError during validation
@@ -49,28 +64,42 @@ public class DataStoreValidationErrors {
     }
 
     public static ValidationException getViolateMaxElementException(String nodeType, int maxElements) {
+        NetconfRpcError rpcError = getViolateMaxElementRPCError(nodeType, maxElements);
+        return new ValidationException(rpcError);
+    }
+    
+    public static NetconfRpcError getViolateMaxElementRPCError(String nodeType, int maxElements) {
         NetconfRpcError rpcError = getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED);
         rpcError.setErrorMessage(String.format("Maximum elements allowed for %s is %s.", nodeType, maxElements));
         rpcError.setErrorAppTag("too-many-elements");
-        return new ValidationException(rpcError);
+        return rpcError;
     }
 
     public static ValidationException getMissingDataException(String errorMessage, String errorPath, Map<String, String> prefixContext) {
-    	NetconfRpcError rpcError = getDataMissingRpcError(errorMessage, errorPath, prefixContext);
+        NetconfRpcError rpcError = getDataMissingRpcError(errorMessage, errorPath, prefixContext);
         return new ValidationException(rpcError);
     }
 
     public static void throwDataMissingException(SchemaRegistry schemaRegistry, ModelNode modelNode, QName qname) {
         ModelNodeId modelNodeId = new ModelNodeId(modelNode.getModelNodeId());
         modelNodeId.addRdn(ModelNodeRdn.CONTAINER, qname.getNamespace().toString(), qname.getLocalName());
-        throw getMissingDataException(DataStoreValidationUtil.MISSING_MANDATORY_NODE, modelNodeId.xPathString(schemaRegistry), modelNodeId.xPathStringNsByPrefix(schemaRegistry));
+        String errorMessage = DataStoreValidationUtil.MISSING_MANDATORY_NODE;
+        if(qname.getLocalName() != null && !qname.getLocalName().isEmpty()) {
+            errorMessage += " - " + qname.getLocalName();
+        }
+        throw getMissingDataException(errorMessage, modelNodeId.xPathString(schemaRegistry), modelNodeId.xPathStringNsByPrefix(schemaRegistry));
     }
 
     public static ValidationException getViolateMinElementException(String nodeType, int minElements) {
+        NetconfRpcError rpcError = getViolateMinElementRPCError(nodeType, minElements);
+        return new ValidationException(rpcError);
+    }
+    
+    public static NetconfRpcError getViolateMinElementRPCError(String nodeType, int minElements) {
         NetconfRpcError rpcError = getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED);
         rpcError.setErrorMessage(String.format("Minimum elements required for %s is %s.", nodeType ,minElements));
         rpcError.setErrorAppTag("too-few-elements");
-        return new ValidationException(rpcError);
+        return rpcError;
     }
 
     public static ValidationException getViolateWhenConditionExceptionThrownUnknownElement(String whenXPath) {
@@ -98,9 +127,8 @@ public class DataStoreValidationErrors {
         return new ValidationException(rpcError);
     }
 
-    public static ValidationException getUniqueConstraintException(String message) {
+    public static ValidationException getUniqueConstraintException() {
         NetconfRpcError rpcError = getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED);
-        rpcError.setErrorMessage(message);
         rpcError.setErrorAppTag("data-not-unique");
         return new ValidationException(rpcError);
     }
@@ -109,12 +137,6 @@ public class DataStoreValidationErrors {
         ModelNodeId id = new ModelNodeId(modelNode.getModelNodeId());
         id.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, namespace, elementName));
         return id.xPathString();
-    }
-    public static NetconfRpcError getViolateMinElementRPCError(String nodeType, int minElements) {
-        NetconfRpcError rpcError = getApplicationError(NetconfRpcErrorTag.OPERATION_FAILED);
-        rpcError.setErrorMessage(String.format("Minimum elements required for %s is %s.", nodeType ,minElements));
-        rpcError.setErrorAppTag("too-few-elements");
-        return rpcError;
     }
 
 }

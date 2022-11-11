@@ -23,10 +23,11 @@ import static org.junit.Assert.fail;
 
 import java.io.UnsupportedEncodingException;
 
-import org.apache.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.utils.FileUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.custommonkey.xmlunit.Diff;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +38,7 @@ import org.w3c.dom.Document;
 import io.netty.channel.ChannelHandlerContext;
 
 public class ChunkedNetconfMessageCodecTest {
-    private static final Logger LOGGER = Logger.getLogger(ChunkedNetconfMessageCodecTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ChunkedNetconfMessageCodecTest.class, LogAppNames.NETCONF_LIB);
 
     private ChunkedNetconfMessageCodec m_chunkedNetconfMessageCodec;
     @Mock

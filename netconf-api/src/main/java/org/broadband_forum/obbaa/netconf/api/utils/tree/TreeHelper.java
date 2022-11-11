@@ -212,7 +212,7 @@ public class TreeHelper {
 
             @Override
             public boolean hasNext() {
-                return m_position > 0 ? true : false;
+                return m_position > 0;
             }
 
             @Override

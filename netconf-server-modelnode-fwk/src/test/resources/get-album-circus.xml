@@ -1,5 +1,4 @@
-<rpc-reply message-id="1"
-	xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
 	<data>
 		<jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
 			<jbox:library>
@@ -8,24 +7,12 @@
 						<jbox:admin>
 							<jbox:label>Sony</jbox:label>
 						</jbox:admin>
-						<jbox:name>AlbumWithoutGenre</jbox:name>
-						<jbox:song>
-							<jbox:format>amr</jbox:format>
-							<jbox:location>desktop/mymusic</jbox:location>
-							<jbox:name>SomeSong</jbox:name>
-						</jbox:song>
-						<jbox:year>1995</jbox:year>
-					</jbox:album>
-					<jbox:album>
-						<jbox:admin>
-							<jbox:label>Sony</jbox:label>
-						</jbox:admin>
 						<jbox:genre>jbox:rock</jbox:genre>
 						<jbox:name>Circus</jbox:name>
 						<jbox:song>
-							<jbox:format>mp3</jbox:format>
+							<jbox:format>amr</jbox:format>
 							<jbox:location>desktop/mymusic</jbox:location>
-							<jbox:name>Beyond the 7th Sky</jbox:name>
+							<jbox:name>Rock and roll is dead</jbox:name>
 						</jbox:song>
 						<jbox:song>
 							<jbox:format>wma</jbox:format>
@@ -33,29 +20,11 @@
 							<jbox:name>Circus</jbox:name>
 						</jbox:song>
 						<jbox:song>
-							<jbox:format>amr</jbox:format>
-							<jbox:location>desktop/mymusic</jbox:location>
-							<jbox:name>Rock and roll is dead</jbox:name>
-						</jbox:song>
-						<jbox:year>1995</jbox:year>
-					</jbox:album>
-					<jbox:album>
-						<jbox:admin>
-							<jbox:label>Sony</jbox:label>
-						</jbox:admin>
-						<jbox:genre>jbox:jazz</jbox:genre>
-						<jbox:name>Greatest hits</jbox:name>
-						<jbox:song>
 							<jbox:format>mp3</jbox:format>
 							<jbox:location>desktop/mymusic</jbox:location>
-							<jbox:name>Are you gonne go my way</jbox:name>
+							<jbox:name>Beyond the 7th Sky</jbox:name>
 						</jbox:song>
-						<jbox:song>
-							<jbox:format>flac</jbox:format>
-							<jbox:location>desktop/mymusic</jbox:location>
-							<jbox:name>Fly Away</jbox:name>
-						</jbox:song>
-						<jbox:year>2000</jbox:year>
+						<jbox:year>1995</jbox:year>
 					</jbox:album>
 					<jbox:name>Lenny</jbox:name>
 				</jbox:artist>

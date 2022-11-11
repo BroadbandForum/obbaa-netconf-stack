@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jukebox xmlns="http://example.com/ns/example-jukebox-with-singer">
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album>
+				<name>Greatest hits</name>
+				<genre xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">jbox:jazz</genre>
+				<song>
+					<name>Are you gonne go my way</name>
+					<singer>Michael</singer>
+					<singer>Jackson</singer>
+				</song>
+			</album>
+		</artist>
+	</library>
+</jukebox>

@@ -1,0 +1,24 @@
+<netconf-config-change xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-notifications">
+    <changed-by>
+        <session-id>1</session-id>
+        <source-host/>
+        <username>unit-test</username>
+    </changed-by>
+    <datastore>running</datastore>
+    <edit>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Circus']/jbox:singer</target>
+        <operation>delete</operation>
+    </edit>
+    <edit>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Circus']/jbox:format</target>
+        <operation>delete</operation>
+    </edit>
+    <edit>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Circus']/jbox:length</target>
+        <operation>delete</operation>
+    </edit>
+    <edit>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Circus']/jbox:location</target>
+        <operation>merge</operation>
+    </edit>
+</netconf-config-change>

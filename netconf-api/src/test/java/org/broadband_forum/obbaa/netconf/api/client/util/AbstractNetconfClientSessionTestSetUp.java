@@ -27,13 +27,13 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.URL;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.broadband_forum.obbaa.netconf.api.client.AbstractNetconfClientSession;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
+import org.broadband_forum.obbaa.netconf.api.client.NetconfResponseFuture;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfDelimiters;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
@@ -90,8 +90,8 @@ public class AbstractNetconfClientSessionTestSetUp {
             }
 
             @Override
-            protected CompletableFuture<NetConfResponse> sendRpcMessage(final String currentMessageId, Document requestDocument,
-                                                                        final long timoutMillis) {
+            protected NetconfResponseFuture sendRpcMessage(final String currentMessageId, Document requestDocument,
+                                                           final long timoutMillis) {
                 String xmlString = "";
                 try {
                     xmlString = DocumentUtils.documentToString(requestDocument) + NetconfDelimiters.rpcEndOfMessageDelimiterString();
@@ -100,7 +100,7 @@ public class AbstractNetconfClientSessionTestSetUp {
                 }
                 m_obtainedXmlString = xmlString;
                 serverChannel.writeAndFlush(xmlString);
-                TimeoutFutureResponse future = new TimeoutFutureResponse(timoutMillis, TimeUnit.MILLISECONDS);
+                NetconfResponseFuture future = new NetconfResponseFuture(timoutMillis, TimeUnit.MILLISECONDS);
                 m_responseFutures.put(currentMessageId, future);
 
                 return future;

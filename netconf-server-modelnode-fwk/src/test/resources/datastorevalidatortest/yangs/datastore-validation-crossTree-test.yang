@@ -28,7 +28,7 @@ module datastore-validation-crossTree-test {
 				
 				leaf leaf1 {
 					type leafref {
-						path "/validation:validation/validation:xml-subtree/validation:list1[current()/../key]/listLeaf";					
+						path "/validation:validation/validation:xml-subtree/validation:list1[validation:someKey = current()/../key]/listLeaf";					
 					}
 				}
 			}

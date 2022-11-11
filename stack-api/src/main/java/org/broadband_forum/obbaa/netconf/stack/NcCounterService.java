@@ -16,7 +16,9 @@
 
 package org.broadband_forum.obbaa.netconf.stack;
 
+
 import java.util.Collection;
+
 
 /**
  * An interface to to record and retrieve request counters in NCY Stack.
@@ -35,9 +37,9 @@ public interface NcCounterService {
     public static final String NUMBER_OF_RESTCONF_PATCH_REQUESTS = "number-of-restconf-patch-requests";
     public static final String NUMBER_OF_RESTCONF_DELETE_REQUESTS = "number-of-restconf-delete-requests";
     
-    public static final String IN_RPCS = "in-rpcs";
-    public static final String OUT_RPC_ERRORS = "out-rpc-errors";
-    public static final String IN_BAD_RPCS = "in-bad-rpcs";
+    public static final String IN_RPCS = "nbi.in-rpcs.count";
+    public static final String OUT_RPC_ERRORS = "nbi.out-rpc.errors.count";
+    public static final String IN_BAD_RPCS = "nbi.in-bad-rpcs.count";
 
     /**
      * Add a username whose requests are not to be included in counters.
@@ -52,19 +54,11 @@ public interface NcCounterService {
 
     long getNumberOfGetRequests();
 
-    void increaseNumberOfGetRequests();
-
     long getNumberOfGetConfigRequests();
-
-    void increaseNumberOfGetConfigRequests();
 
     long getNumberOfEditConfigRequests();
 
-    void increaseNumberOfEditConfigRequests();
-
     long getNumberOfRpcRequests();
-
-    void increaseNumberOfRpcRequests();
 
     long getNumberOfRestconfGetRequests();
 

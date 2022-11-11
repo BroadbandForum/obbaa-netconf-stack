@@ -1,0 +1,65 @@
+module schema-mount-deviation-test {
+    
+    yang-version 1.1;
+    
+    namespace "schema-mount-deviation-test";
+    
+    prefix "smt-dev";
+    
+    include schema-mount-submodule;
+    import test-interfaces {
+        prefix test;
+    }
+    
+    import schema-mount-test {
+        prefix test1;
+    }
+    
+    revision "2018-01-03" {
+        description "Initial version.";
+    }
+
+    deviation "/test1:schemaMount/test1:idRefContainerForDeviations/test1:leaf8" {
+        deviate add
+        {
+          must 'derived-from-or-self(../test1:leaf6, "test:english")'
+          {
+              error-message "leaf6 should be of type english";
+          }
+        }
+      }
+    
+    deviation "/test1:schemaMount/test1:idRefContainerForDeviations/test1:leaf12" {
+        deviate add
+        {
+          must "../leaf11 = 'test:english'"
+          {
+              error-message "leaf11 should be of type english";
+          }
+        }
+      }
+    
+    deviation "/test1:schemaMount/test1:idRefContainerForDeviations/test1:component/test1:model-name" {
+        deviate add
+        {
+            must "
+                (current()/../test1:class = 'test:english' and (
+                  (
+                    (
+                      substring(current(), 1, 8) = '3FE68653' or
+                      substring(current(), 1, 8) = '3FE62600' or
+                      substring(current(), 1, 8) = '3FE65831'
+                    )
+                    and (not(boolean(/test1:schemaMount/test1:idRefContainerForDeviations/test1:component[test1:parent = current()/../test1:name]
+                      [test1:class != 'test:french']
+                      )))
+                  )
+                  )
+                )"
+          {
+              error-message "component mismatch error";
+          }
+        }
+      }
+    
+}

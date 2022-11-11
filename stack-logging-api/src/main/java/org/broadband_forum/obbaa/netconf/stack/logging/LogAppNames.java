@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.stack.logging;
 
 public enum LogAppNames implements ApplicationName {
+    NETCONF_LIB("netconf.lib"),
     NETCONF_STACK("netconf.stack"),
     NETCONF_NOTIFICATION("netconf.notification");
 

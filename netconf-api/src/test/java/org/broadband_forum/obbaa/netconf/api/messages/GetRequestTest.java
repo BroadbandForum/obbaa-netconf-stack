@@ -18,6 +18,7 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.assertXMLEquals;
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -26,7 +27,7 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-public class GetRequestTest {
+public class GetRequestTest extends RpcTypeTest {
 
     public static final String RUNNING_DATA_STORE = StandardDataStores.RUNNING;
     private NetconfFilter m_filter = new NetconfFilter();
@@ -36,6 +37,10 @@ public class GetRequestTest {
     private String m_messageId = "101";
     private int m_withDelay = 1;
     private int m_depth = 1;
+
+    public GetRequestTest() {
+        super(new GetRequest());
+    }
 
     @Test
     public void testIsIncludeConfig() {
@@ -52,9 +57,15 @@ public class GetRequestTest {
     }
 
     @Test
+    public void testSetAndGetSliceOwner() {
+        m_getRequest.setSliceOwner(DocumentToPojoTransformer.SLICE_OWNER);
+        assertEquals(DocumentToPojoTransformer.SLICE_OWNER, m_getRequest.getSliceOwner());
+    }
+
+    @Test
     public void testSetAndGetWithDefaults() {
 
-        WithDefaults withDefaults = m_getRequest.getWithDefault();
+        WithDefaults withDefaults = m_getRequest.getWithDefaults();
         m_getRequest.setWithDefaults(m_withDefaults);
         assertNotEquals(withDefaults, m_withDefaults);
     }

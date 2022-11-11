@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util;
 
 import java.util.Collection;
@@ -28,6 +44,7 @@ public class ModelNodeUtil {
      */
 	public static ModelNode getParentModelNode(Element request, SchemaRegistry globalRegistry,
 			ModelNodeDataStoreManager modelNodeDSManager) {
+		SchemaRegistry schemaRegistry = globalRegistry;
 		if (request != null) {
 			QName rootQname = globalRegistry.lookupQName(request.getNamespaceURI(), request.getLocalName());
 			Collection<DataSchemaNode> rootNodes = globalRegistry.getRootDataSchemaNodes();
@@ -40,16 +57,18 @@ public class ModelNodeUtil {
 					break;
 				}
 			}
-			if (SchemaRegistryUtil.getMountRegistry() != null && SchemaRegistryUtil.getMountRegistry().getMountPath() !=null){
-				mountPath = SchemaRegistryUtil.getMountRegistry().getMountPath();
+			SchemaRegistry mountRegistry = SchemaRegistryUtil.getMountRegistryFromXmlRequest(request, globalRegistry);
+			if (mountRegistry != null && mountRegistry.getMountPath() !=null){
+				schemaRegistry = mountRegistry;
+				mountPath = mountRegistry.getMountPath();
 			}
 			if (rootDsn == null || mountPath == null) {
 				return null;
 			}
 			//Get the root modelNode
-			List<ModelNode> rootModelNodes = modelNodeDSManager.listChildNodes(rootDsn.getPath(), new ModelNodeId());
+			List<ModelNode> rootModelNodes = modelNodeDSManager.listChildNodes(rootDsn.getPath(), new ModelNodeId(), schemaRegistry);
 			List<ModelNode> modelNodeList = getParentModelNode(request, rootDsn, rootModelNodes,
-					modelNodeDSManager, mountPath);
+					modelNodeDSManager, mountPath, schemaRegistry);
 			if (modelNodeList != null && !modelNodeList.isEmpty()) {
 				return modelNodeList.get(0);
 			}
@@ -62,7 +81,7 @@ public class ModelNodeUtil {
 	 */
 	private static List<ModelNode> getParentModelNode(Node request, DataSchemaNode parentSchemaNode,
 			List<ModelNode> parentModelNodeList, ModelNodeDataStoreManager manager,
-			SchemaPath mountPath) {
+			SchemaPath mountPath, SchemaRegistry schemaRegistry) {
 		NodeList childNodes = request.getChildNodes();
 		for (int index = 0; index < childNodes.getLength(); index++) {
 			Node childNode = childNodes.item(index);
@@ -70,16 +89,16 @@ public class ModelNodeUtil {
 				if (parentSchemaNode instanceof DataNodeContainer) {
 					for (DataSchemaNode childSchemaNode : ((DataNodeContainer) parentSchemaNode).getChildNodes()) {
 						if (childSchemaNode.getQName().getNamespace().toString()
-								.equals(childNode.getNamespaceURI().toString())
+								.equals(childNode.getNamespaceURI())
 								&& childSchemaNode.getQName().getLocalName().equals(childNode.getLocalName())) {
 							if (childSchemaNode instanceof DataNodeContainer) {
 								List<ModelNode> modelNode = manager.listChildNodes(childSchemaNode.getPath(),
-										parentModelNodeList.get(0).getModelNodeId());
+										parentModelNodeList.get(0).getModelNodeId(), schemaRegistry);
 								// If reached is mountpath, then return the modelnode, otherwise call recursively
 								if (childSchemaNode.getPath().equals(mountPath)) {
 									return modelNode;
 								} else {
-									return getParentModelNode(childNode, childSchemaNode, modelNode, manager, mountPath);
+									return getParentModelNode(childNode, childSchemaNode, modelNode, manager, mountPath, schemaRegistry);
 								}
 							} else if (childSchemaNode instanceof LeafSchemaNode) {
 								ModelNode matchedModelNode = null;

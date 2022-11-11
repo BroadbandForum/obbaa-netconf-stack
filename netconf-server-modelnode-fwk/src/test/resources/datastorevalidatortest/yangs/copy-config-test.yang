@@ -1,0 +1,96 @@
+module copy-config-test {
+
+    yang-version 1.1;
+
+    namespace "copy-config-test";
+
+    prefix "copyconfig";
+
+    typedef string-type {
+        type string;
+        default "abc";
+    }
+
+    container copy-config-container {
+        container container1 {
+
+            leaf default-leaf {
+                type string;
+                default "enabled";
+            }
+            leaf type {
+                type string;
+            }
+            container inner-container {
+                leaf default-leaf1 {
+                    type int8;
+                    default 10;
+                }
+            }
+            leaf typedef-leaf {
+                type string-type;
+                default "xyz";
+            }
+        }
+
+        list list1 {
+            key "name";
+            leaf name {
+                type string;
+            }
+
+            leaf default-leaf2 {
+                type string;
+                default "list1";
+            }
+        }
+
+        container choice-container {
+            choice choice1 {
+                default case1;
+                case case1 {
+                    leaf case1-leaf1 {
+                        type string;
+                    }
+                    leaf case1-leaf2 {
+                        type string;
+                        default "case1";
+                    }
+                }
+
+                case case2 {
+                    leaf case2-leaf1 {
+                        type string;
+                    }
+                }
+
+            }
+        }
+
+        container container2 {
+            presence "inner";
+
+            leaf default-leaf {
+                type string;
+                default "presence";
+            }
+
+            leaf inner-leaf {
+                type string;
+            }
+        }
+
+        list default-key-list {
+            key "name";
+            leaf name {
+                type string;
+                default "Bbf";
+            }
+            leaf name2 {
+                type string;
+            }
+        }
+
+    }
+
+}

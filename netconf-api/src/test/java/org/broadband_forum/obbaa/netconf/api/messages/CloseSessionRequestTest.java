@@ -24,10 +24,14 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-public class CloseSessionRequestTest {
+public class CloseSessionRequestTest extends RpcTypeTest{
 
     CloseSessionRequest m_closeSessionRequest = new CloseSessionRequest();
     private String m_messageId = "101";
+
+    public CloseSessionRequestTest() {
+        super(new CloseSessionRequest());
+    }
 
     @Test
     public void testGetRequestDocument() throws NetconfMessageBuilderException, SAXException, IOException {

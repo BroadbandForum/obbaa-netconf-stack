@@ -40,6 +40,7 @@ public class NetconfTransportOrder {
     // SSH stuff
     private String m_serverSshHostKeyPath;
     InetSocketAddress m_serverSocketAddress;
+    private String m_serverSshHostKeyPassword;
 
     private String m_callHomeIp;
     private Integer m_callHomePort;
@@ -94,11 +95,19 @@ public class NetconfTransportOrder {
         return this.m_serverSshHostKeyPath;
     }
 
+    public String getServerSshHostKeyPassword() {
+        return this.m_serverSshHostKeyPassword;
+    }
+
     public void setServerSshHostKeyPath(String sshHostKeyPath) {
         if (sshHostKeyPath != null) {
             sshHostKeyPath = sshHostKeyPath.trim();
         }
         this.m_serverSshHostKeyPath = sshHostKeyPath;
+    }
+
+    public void setServerSshHostKeyPassword(String password) {
+        this.m_serverSshHostKeyPassword = password;
     }
 
     public boolean validate() throws NetconfConfigurationBuilderException {

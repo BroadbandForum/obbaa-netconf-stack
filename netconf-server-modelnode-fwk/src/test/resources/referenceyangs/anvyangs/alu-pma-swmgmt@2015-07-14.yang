@@ -2,7 +2,7 @@ module alu-pma-swmgmt {
 
 	yang-version 1;
 	
-	namespace "urn:org:bbf:pma:alu-pma-swmgmt";
+	namespace "urn:org:bbf2:pma:alu-pma-swmgmt";
 	
 	prefix "swmgmt";
 	

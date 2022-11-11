@@ -17,7 +17,12 @@
 package org.broadband_forum.obbaa.netconf.server;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,10 +30,16 @@ import org.junit.Test;
 public class RequestContextTest {
 
     private RequestContext m_requestContext;
-    
+    private UserContext m_loggedInUser;
+    private UserContext m_additionalUser;
+
     @Before
     public void init() {
         m_requestContext = new RequestContext(RequestCategory.BACKGROUND);
+        RequestContext.clearUserCtxtTLs();
+        assertUserContextsNotSet();
+        m_loggedInUser = new UserContext("Kuncha", "session1");
+        m_additionalUser = new UserContext("Dhooma", "session2");
     }
     
     @Test
@@ -39,9 +50,45 @@ public class RequestContextTest {
         m_requestContext.setRequestCategory(RequestCategory.NBI);
         assertEquals(RequestCategory.NBI, m_requestContext.getRequestCategory());
     }
-    
+
+    @Test
+    public void testUserContextTLs(){
+        assertUserContextsNotSet();
+
+        RequestContext.setLoggedInUserCtxtTL(m_loggedInUser);
+        assertEquals(new UserContext("Kuncha", "session1"), RequestContext.getLoggedInUserCtxtTL());
+        assertNotEquals(new UserContext("Kuncha2", "session1"), RequestContext.getLoggedInUserCtxtTL());
+        assertNotEquals(new UserContext("Kuncha", "session2"), RequestContext.getLoggedInUserCtxtTL());
+        assertNull(RequestContext.getAdditionalUserCtxtTL());
+
+        RequestContext.setAdditionalUserCtxtTL(m_additionalUser);
+        assertEquals(m_loggedInUser, RequestContext.getLoggedInUserCtxtTL());
+        assertEquals(m_additionalUser, RequestContext.getAdditionalUserCtxtTL());
+
+        RequestContext.clearUserCtxtTLs();
+        assertUserContextsNotSet();
+    }
+
+    @Test
+    public void testByPassedContext() {
+        assertFalse(RequestContext.isByPassed());
+        RequestContext.enableIsByPass();
+        assertTrue(RequestContext.isByPassed());
+
+        assertNull(RequestContext.getByPassPermissions());
+        RequestContext.setByPassPermissions(Sets.newHashSet("permission"));
+        assertEquals(1, RequestContext.getByPassPermissions().size());
+    }
+
+    private void assertUserContextsNotSet() {
+        assertNull(RequestContext.getLoggedInUserCtxtTL());
+        assertNull(RequestContext.getAdditionalUserCtxtTL());
+    }
+
     @After
     public void destroy() {
         m_requestContext = null;
+        RequestContext.clearUserCtxtTLs();
+        RequestContext.reset();
     }
 }

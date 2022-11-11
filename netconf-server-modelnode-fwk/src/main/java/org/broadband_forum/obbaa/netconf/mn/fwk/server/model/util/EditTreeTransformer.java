@@ -1,8 +1,25 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigDefaultOperations;
+import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
@@ -47,8 +64,9 @@ public class EditTreeTransformer {
         String namespace = editNode.getNamespace();
         Element node = doc.createElementNS(namespace, resolveLocalName(schemaRegistry, namespace, editNode.getName()));
         if(includeOperationAttr) {
-            setOperaionAttribute(editNode, node, defaultEditOperation);
+            setOperationAttribute(editNode, node, defaultEditOperation);
         }
+        includeInsertOperation(editNode, node);
         addNodeData(schemaRegistry, editNode, doc, node);
         addChildNodeChanges(schemaRegistry, editNode, doc, node, includeOperationAttr, defaultNamespace);
         return node;
@@ -83,20 +101,43 @@ public class EditTreeTransformer {
             } else {
                 changeNode = doc.createElementNS(namespace, resolveLocalName(schemaRegistry, namespace, editChangeNode.getName()));
             	changeNode.setTextContent(editChangeNode.getValue());
+                includeInsertOperation(editChangeNode, changeNode);
                 node.appendChild(changeNode);
             }
             if(editChangeNode.getOperation()!=null &&
                     !editChangeNode.getOperation().equalsIgnoreCase(EditConfigDefaultOperations.MERGE)){
-                changeNode.setAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG_OPERATION,
+                changeNode.setAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.NETCONF_RPC_NS_PREFIX+NetconfResources.EDIT_CONFIG_OPERATION,
                         editChangeNode.getOperation());
             }
         }
     }
 
-    private static void setOperaionAttribute(EditContainmentNode editNode, Element node, String defaultEditOperation) {
+    private static void setOperationAttribute(EditContainmentNode editNode, Element node, String defaultEditOperation) {
         String editOperation = editNode.getEditOperation();
 		if(editOperation!= null && !editOperation.equals(defaultEditOperation)){
-            node.setAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.EDIT_CONFIG_OPERATION, editOperation);
+            node.setAttributeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.NETCONF_RPC_NS_PREFIX+NetconfResources.EDIT_CONFIG_OPERATION, editOperation);
+        }
+    }
+
+    private static void includeInsertOperation(EditContainmentNode editNode, Element node){
+        InsertOperation insertOperation = editNode.getInsertOperation();
+        if(insertOperation != null){
+            node.setAttributeNS(NetconfResources.NETCONF_YANG_1, NetconfResources.NETCONF_YANG_PREFIX+NetconfResources.INSERT, insertOperation.getName());
+            //Check for operation value, in case of null, simply dont add the attribute
+            if(insertOperation.getValue() != null) {
+                node.setAttributeNS(NetconfResources.NETCONF_YANG_1, NetconfResources.NETCONF_YANG_PREFIX+NetconfResources.KEY, insertOperation.getValue());
+            }
+        }
+    }
+
+    private static void includeInsertOperation(EditChangeNode editChangeNode, Element changeNode){
+        InsertOperation insertOperation = editChangeNode.getInsertOperation();
+        if(insertOperation != null){
+            changeNode.setAttributeNS(NetconfResources.NETCONF_YANG_1, NetconfResources.NETCONF_YANG_PREFIX+NetconfResources.INSERT, insertOperation.getName());
+            //Check for operation value, in case of null, simply dont add the attribute
+            if(insertOperation.getValue() != null) {
+                changeNode.setAttributeNS(NetconfResources.NETCONF_YANG_1, NetconfResources.NETCONF_YANG_PREFIX+NetconfResources.VALUE, insertOperation.getValue());
+            }
         }
     }
     
@@ -108,6 +149,12 @@ public class EditTreeTransformer {
 		} else {
 			localName = name;
 		}
+//        String moduleName = schemaRegistry.getModuleNameByNamespace(namespace);
+//        if (m_includePrefix && moduleName != null && !moduleName.isEmpty()) {
+//            localName = moduleName + COLON + name;
+//        } else {
+//            localName = name;
+//        }
 		return localName;
     }
     

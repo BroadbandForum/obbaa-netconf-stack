@@ -1,0 +1,6 @@
+<config >
+    <jukebox xmlns="http://example.com/ns/example-jukebox2">
+        <library>
+        </library>
+    </jukebox>
+</config>

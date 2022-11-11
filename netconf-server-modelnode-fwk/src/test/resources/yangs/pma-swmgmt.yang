@@ -1,6 +1,6 @@
 module pma-swmgmt {
 
-    namespace "urn:org:bbf:pma";
+    namespace "urn:org:bbf2:pma";
     prefix "pma";
     
     revision "2015-07-14" {

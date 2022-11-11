@@ -25,6 +25,7 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.messages.RpcName;
+import org.broadband_forum.obbaa.netconf.server.ssh.auth.AccessDeniedException;
 
 public interface MultiRpcRequestHandler {
 
@@ -40,6 +41,14 @@ public interface MultiRpcRequestHandler {
 	 */
 
 	public String checkForRpcSupport(RpcName rpcName);
+
+	/**
+	 * Check required permission before executing action/rpcs
+	 * @param clientInfo
+	 * @param operation
+	 * @throws AccessDeniedException
+	 */
+	void checkRequiredPermissions(NetconfClientInfo clientInfo, String operation) throws AccessDeniedException;
 
 	/**
 	 * A basic level of yang-based validation is available. Special cases need to be implemented by the RpcRequestHandlers

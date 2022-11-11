@@ -16,13 +16,15 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.GET_CONFIG;
+
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <get-config>} operation.
  * 
- *
+ * 
  * 
  */
 public class GetConfigRequest extends AbstractNetconfGetRequest {
@@ -32,8 +34,6 @@ public class GetConfigRequest extends AbstractNetconfGetRequest {
     private String m_source = RUNNING_DATA_STORE;
 
     private NetconfFilter m_filter;
-
-    private WithDefaults m_withDefaults;
 
     public String getSource() {
         return m_source;
@@ -58,19 +58,16 @@ public class GetConfigRequest extends AbstractNetconfGetRequest {
         return this;
     }
 
-    public WithDefaults getWithDefaults() {
-        return m_withDefaults;
-    }
-
-    public void setWithDefaults(WithDefaults withDefault) {
-        this.m_withDefaults = withDefault;
-    }
-
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
         Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId)
-                .addGetConfigElement(m_source, m_filter, m_withDefaults, m_withDelay, m_depth, m_fieldValues).build();
+                .addGetConfigElement(m_source, m_filter, getWithDefaults(), m_withDelay, m_depth, m_fieldValues).build();
         return doc;
+    }
+
+    @Override
+    public String getRpcType() {
+        return GET_CONFIG;
     }
 
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.dsm;
 
 import java.util.ArrayList;
@@ -77,7 +93,7 @@ public class DsmChildLeafListHelper extends YangConstraintHelper implements Chil
         SchemaRegistry registry = SchemaRegistryUtil.getSchemaRegistry(modelNode, m_schemaRegistry);
         try{
             values.addAll(getValue(m_modelNodeDSM.findNode(modelNode.getModelNodeSchemaPath(), MNKeyUtil.getModelNodeKey(modelNode, registry),
-                    EMNKeyUtil.getParentId(registry, modelNode.getModelNodeSchemaPath(), modelNode.getModelNodeId()))));
+                    EMNKeyUtil.getParentId(registry, modelNode.getModelNodeSchemaPath(), modelNode.getModelNodeId()), modelNode.getSchemaRegistry())));
         } catch (GetAttributeException e) {
             LOGGER.error("Failed while retrieving child leaf lists {}" , modelNode.getModelNodeId().getModelNodeIdAsString(), e);
             throw new SetAttributeException(e);
@@ -125,7 +141,7 @@ public class DsmChildLeafListHelper extends YangConstraintHelper implements Chil
             return;
 		}
 
-		ArrayList<ConfigLeafAttribute> children = (ArrayList<ConfigLeafAttribute>)childList;
+		ArrayList<ConfigLeafAttribute> children = (ArrayList<ConfigLeafAttribute>) childList;
         int indexValueToInsert = 0;
         for(ConfigLeafAttribute leafAttribute : children){
             if(leafAttribute.getStringValue().equals(insertOperation.getValue())){
@@ -180,7 +196,7 @@ public class DsmChildLeafListHelper extends YangConstraintHelper implements Chil
         SchemaPath modelNodeSchemaPath = modelNode.getModelNodeSchemaPath();
         if (modelNode instanceof ModelNodeWithAttributes) {
             freshModelNode = modelNodeDSM.findNode(modelNodeSchemaPath, modelNodeKey,
-                        EMNKeyUtil.getParentId(schemaRegistry, modelNodeSchemaPath, modelNode.getModelNodeId()));
+                        EMNKeyUtil.getParentId(schemaRegistry, modelNodeSchemaPath, modelNode.getModelNodeId()), modelNode.getSchemaRegistry());
         }
         return freshModelNode;
     }

@@ -1,0 +1,12 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-list-multikeys">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <studio>
+                    <name/>
+                </studio>
+            </album>
+        </artist>
+    </library>
+</jukebox>

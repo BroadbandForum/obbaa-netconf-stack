@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.UNLOCK;
+
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
 
@@ -24,7 +26,7 @@ import org.w3c.dom.Document;
  * Netconf <unlock> request.
  * }
  * 
- *
+ * 
  * 
  */
 public class UnLockRequest extends AbstractNetconfRequest {
@@ -65,6 +67,11 @@ public class UnLockRequest extends AbstractNetconfRequest {
     @Override
     public String toString() {
         return "UnLockRequest [target=" + m_target + "]";
+    }
+
+    @Override
+    public String getRpcType() {
+        return UNLOCK;
     }
 
 }

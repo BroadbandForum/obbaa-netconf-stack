@@ -1,19 +1,45 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLStringEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
 
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class EditContainmentNodeTest {
 
     private static final String TEST_LOCAL_NAME = "testLocalName";
@@ -32,24 +58,25 @@ public class EditContainmentNodeTest {
     private EditContainmentNode m_testChildNode;
     private EditChangeNode m_editChangeNode;
     private EditMatchNode m_editMatchNode;
+    private SchemaRegistry m_schemaRegistry = Mockito.mock(SchemaRegistry.class);
 
     @Before
     public void initialize() {
         m_qName = QName.create(TEST_NAMESPACE, TEST_LOCAL_NAME);
-        m_editContainmentNode = new EditContainmentNode(m_qName, TEST_OPERATION);
-        m_testChildNode = new EditContainmentNode(QName.create(TEST_NAMESPACE2, TEST_LOCAL_NAME2), TEST_OPERATION2);
+        m_editContainmentNode = new TestEditContainmentNode(m_qName, TEST_OPERATION, m_schemaRegistry);
+        m_testChildNode = new TestEditContainmentNode(QName.create(TEST_NAMESPACE2, TEST_LOCAL_NAME2), TEST_OPERATION2, m_schemaRegistry);
         m_editMatchNode = new EditMatchNode(m_qName, new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
         m_editChangeNode = new EditChangeNode(m_qName, new GenericConfigAttribute(TEST_LOCAL_NAME, TEST_NAMESPACE, TEST_NODE_VALUE));
     }
 
     @Test
     public void testParentEditContainmentNode() {
-        EditContainmentNode child = new EditContainmentNode(m_qName, TEST_NODE_VALUE);
+        EditContainmentNode child = new TestEditContainmentNode(m_qName, TEST_NODE_VALUE, m_schemaRegistry);
         ModelNodeId parentId = new ModelNodeId();
         parentId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, m_editContainmentNode.getNamespace(), m_editContainmentNode.getName()));
         assertEquals(parentId, m_editContainmentNode.getModelNodeId());
 
-        InsertOperation ins = new InsertOperation("name", "value");
+        InsertOperation ins = InsertOperation.get("name", "value");
         child.setInsertOperation(ins);
         m_editContainmentNode.addChild(child);
         assertEquals(m_editContainmentNode, child.getParent());
@@ -74,7 +101,7 @@ public class EditContainmentNodeTest {
 
         assertEquals(childWithMatchNodeId, m_testChildNode.getModelNodeId());
 
-        EditContainmentNode newChild = new EditContainmentNode(m_testChildNode);
+        EditContainmentNode newChild = new TestEditContainmentNode(m_testChildNode);
         assertEquals(newChild, newChild.getChildren().get(0).getParent());
         assertEquals(m_editMatchNode, newChild.getMatchNodes().get(0));
         assertEquals(m_editChangeNode, newChild.getChangeNodes().get(0));
@@ -183,7 +210,7 @@ public class EditContainmentNodeTest {
     @Test
     public void testEqualsWhenObjectsDiffer() {
         assertFalse(m_editContainmentNode.equals(m_editChangeNode));
-        EditContainmentNode otherNode = new EditContainmentNode(m_qName, TEST_OPERATION);
+        EditContainmentNode otherNode = new TestEditContainmentNode(m_qName, TEST_OPERATION, m_schemaRegistry);
         assertEquals(m_editContainmentNode, otherNode);
         otherNode.getModelNodeId().addRdn(new ModelNodeRdn(m_qName, "test"));
         assertFalse(m_editContainmentNode.equals(otherNode));
@@ -191,17 +218,17 @@ public class EditContainmentNodeTest {
 
     @Test
     public void testEqualsWhenEditOperationIsNull() {
-        EditContainmentNode editContainmentNode2 = new EditContainmentNode(m_qName, null);
-        EditContainmentNode editContainmentNode3 = new EditContainmentNode(m_qName, TEST_OPERATION3);
+        EditContainmentNode editContainmentNode2 = new TestEditContainmentNode(m_qName, null, m_schemaRegistry);
+        EditContainmentNode editContainmentNode3 = new TestEditContainmentNode(m_qName, TEST_OPERATION3, m_schemaRegistry);
         assertFalse(editContainmentNode2.equals(editContainmentNode3));
-        editContainmentNode3 = new EditContainmentNode(m_qName, null);
+        editContainmentNode3 = new TestEditContainmentNode(m_qName, null, m_schemaRegistry);
         assertTrue(editContainmentNode2.equals(editContainmentNode3));
     }
 
     @Test
     public void testEqualsWhenEditOperationIsNotNull() {
-        EditContainmentNode editContainmentNode2 = new EditContainmentNode(m_qName, TEST_OPERATION2);
-        EditContainmentNode editContainmentNode3 = new EditContainmentNode(m_qName, TEST_OPERATION3);
+        EditContainmentNode editContainmentNode2 = new TestEditContainmentNode(m_qName, TEST_OPERATION2, m_schemaRegistry);
+        EditContainmentNode editContainmentNode3 = new TestEditContainmentNode(m_qName, TEST_OPERATION3, m_schemaRegistry);
         assertFalse(editContainmentNode2.equals(editContainmentNode3));
     }
 
@@ -246,18 +273,18 @@ public class EditContainmentNodeTest {
     public void testGetChildNodeWhenChildNodeQNameIsDifferent() {
         m_editContainmentNode.addChild(m_testChildNode);
         QName qName2 = QName.create(TEST_NAMESPACE3, TEST_LOCAL_NAME3);
-        EditContainmentNode testChildNode2 = new EditContainmentNode(qName2, TEST_OPERATION3);
+        EditContainmentNode testChildNode2 = new TestEditContainmentNode(qName2, TEST_OPERATION3, m_schemaRegistry);
         m_editContainmentNode.addChild(testChildNode2);
         assertEquals(testChildNode2, m_editContainmentNode.getChildNode(qName2));
     }
 
     @Test
-    public void testAddChildShouldThrowExceptionInCaseOfDuplicateContainer() {
-        EditContainmentNode node1 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION);
+    public void testAddChildShouldThrowExceptionInCaseOfDuplicateContainer() throws SAXException, IOException {
+        EditContainmentNode node1 = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION, m_schemaRegistry);
         QName qname1 = QName.create(TEST_NAMESPACE, "test1");
         EditChangeNode changeNode = new EditChangeNode(qname1, new GenericConfigAttribute("test1", TEST_NAMESPACE, "value1"));
         node1.addChangeNode(changeNode);
-        EditContainmentNode node2 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION);
+        EditContainmentNode node2 = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION, m_schemaRegistry);
         QName qname2 = QName.create(TEST_NAMESPACE, "test2");
         EditChangeNode changeNode2 = new EditChangeNode(qname2, new GenericConfigAttribute("test2", TEST_NAMESPACE, "value2"));
         node2.addChangeNode(changeNode2);
@@ -268,7 +295,7 @@ public class EditContainmentNodeTest {
         } catch (EditConfigException e) {
             NetconfRpcError rpcError = e.getRpcError();
             NetConfResponse response = new NetConfResponse().addError(rpcError).setMessageId("1");
-            assertEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+            assertXMLStringEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                     "  <rpc-error>\n" +
                     "    <error-type>application</error-type>\n" +
                     "    <error-tag>operation-failed</error-tag>\n" +
@@ -282,12 +309,12 @@ public class EditContainmentNodeTest {
     }
 
     @Test
-    public void testAddChildShouldThrowExceptionInCaseOfDuplicateList() {
-        EditContainmentNode node1 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "List1"), TEST_OPERATION);
+    public void testAddChildShouldThrowExceptionInCaseOfDuplicateList() throws SAXException, IOException {
+        EditContainmentNode node1 = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "List1"), TEST_OPERATION, m_schemaRegistry);
         QName qname1 = QName.create(TEST_NAMESPACE, "name1");
         EditMatchNode matchNode = new EditMatchNode(qname1, new GenericConfigAttribute("name1", TEST_NAMESPACE, "value1"));
         node1.addMatchNode(matchNode);
-        EditContainmentNode node2 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "List1"), TEST_OPERATION);
+        EditContainmentNode node2 = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "List1"), TEST_OPERATION, m_schemaRegistry);
         QName qname2 = QName.create(TEST_NAMESPACE, "name1");
         EditMatchNode matchNode2 = new EditMatchNode(qname2, new GenericConfigAttribute("name1", TEST_NAMESPACE, "value1"));
         node2.addMatchNode(matchNode2);
@@ -298,7 +325,7 @@ public class EditContainmentNodeTest {
         } catch (EditConfigException e) {
             NetconfRpcError rpcError = e.getRpcError();
             NetConfResponse response = new NetConfResponse().addError(rpcError).setMessageId("1");
-            assertEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+            assertXMLStringEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                     "  <rpc-error>\n" +
                     "    <error-type>application</error-type>\n" +
                     "    <error-tag>operation-failed</error-tag>\n" +
@@ -312,8 +339,8 @@ public class EditContainmentNodeTest {
     }
 
     @Test
-    public void testAddChildShouldThrowExceptionInCaseOfDuplicateLeaf() {
-        EditContainmentNode node1 = new EditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION);
+    public void testAddChildShouldThrowExceptionInCaseOfDuplicateLeaf() throws SAXException, IOException {
+        EditContainmentNode node1 = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "Container1"), TEST_OPERATION, m_schemaRegistry);
         QName qname1 = QName.create(TEST_NAMESPACE, "test1");
         ConfigLeafAttribute leaf1 = new GenericConfigAttribute("test1", "testNamespace", "value1");
         ConfigLeafAttribute leaf2 = leaf1;
@@ -324,7 +351,7 @@ public class EditContainmentNodeTest {
         } catch (EditConfigException e) {
             NetconfRpcError rpcError = e.getRpcError();
             NetConfResponse response = new NetConfResponse().addError(rpcError).setMessageId("1");
-            assertEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+            assertXMLStringEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
                     "  <rpc-error>\n" +
                     "    <error-type>application</error-type>\n" +
                     "    <error-tag>operation-failed</error-tag>\n" +
@@ -337,4 +364,44 @@ public class EditContainmentNodeTest {
         }
     }
 
+    @Test
+    public void testCopyConstructorForRootNode() {
+        EditContainmentNode jukeboxNode = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "jukebox"), TEST_OPERATION, m_schemaRegistry);
+        EditContainmentNode libraryNode = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "library"), TEST_OPERATION, m_schemaRegistry);
+        EditContainmentNode artistNode = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "artist"), TEST_OPERATION, m_schemaRegistry);
+        jukeboxNode.addChild(libraryNode);
+        libraryNode.addChild(artistNode);
+
+        EditContainmentNode jukeboxCopyNode =  new EditContainmentNode(jukeboxNode);
+        EditContainmentNode libraryCopyNode = jukeboxCopyNode.getChildren().get(0);
+        EditContainmentNode artistCopyNode = jukeboxCopyNode.getChildren().get(0).getChildren().get(0);
+        assertNull(jukeboxCopyNode.getParent());
+
+        assertNull(jukeboxNode.getParent());
+        assertNull(jukeboxCopyNode.getParent());
+        assertNotEquals(jukeboxNode, libraryCopyNode.getParent());
+        assertNotEquals(libraryNode, artistCopyNode.getParent());
+
+        assertEquals(jukeboxNode.getModelNodeId(), jukeboxCopyNode.getModelNodeId());
+        assertEquals(libraryNode.getModelNodeId(), libraryCopyNode.getModelNodeId());
+        assertEquals(artistNode.getModelNodeId(), artistCopyNode.getModelNodeId());
+    }
+
+    @Test
+    public void testCopyConstructorForIntermediateNode() {
+        EditContainmentNode jukeboxNode = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "jukebox"), TEST_OPERATION, m_schemaRegistry);
+        EditContainmentNode libraryNode = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "library"), TEST_OPERATION, m_schemaRegistry);
+        EditContainmentNode artistNode = new TestEditContainmentNode(QName.create(TEST_NAMESPACE, "artist"), TEST_OPERATION, m_schemaRegistry);
+        jukeboxNode.addChild(libraryNode);
+        libraryNode.addChild(artistNode);
+
+        EditContainmentNode libraryCopyNode = new EditContainmentNode(libraryNode);
+        EditContainmentNode artistCopyNode = libraryCopyNode.getChildren().get(0);
+
+        assertEquals(jukeboxNode, libraryCopyNode.getParent());
+        assertNotEquals(libraryNode, artistCopyNode.getParent());
+
+        assertEquals(libraryNode.getModelNodeId(), libraryCopyNode.getModelNodeId());
+        assertEquals(artistNode.getModelNodeId(), artistCopyNode.getModelNodeId());
+    }
 }

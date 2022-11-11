@@ -63,5 +63,24 @@ public class HashLocks<T> {
             }
         }
     }
+    
+	/**
+	 * Returns true if the {@code object} is not already present in locked objects
+	 * list and acquires a lock on the given object else returns false
+	 *
+	 * @param object Object on which the lock is sought
+	 * @return {@code true} if the lock was acquired and {@code false} otherwise
+	 */
+	public boolean tryLock(T object) {
+		synchronized (this) {
+			if (m_lockedObjects.contains(object)) {
+				return false;
+			} else {
+				m_lockedObjects.add(object);
+				return true;
+			}
+		}
+	}
+
 
 }

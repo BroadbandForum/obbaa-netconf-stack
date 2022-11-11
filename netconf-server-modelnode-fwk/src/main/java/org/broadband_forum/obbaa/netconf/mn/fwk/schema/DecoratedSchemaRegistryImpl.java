@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema;
 
 import java.net.URI;
@@ -9,24 +25,28 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.xml.bind.DatatypeConverter;
+import java.util.stream.Collectors;
 
 import org.apache.commons.jxpath.ri.compiler.Expression;
+import org.apache.commons.jxpath.ri.compiler.LocationPath;
 import org.apache.commons.lang3.StringUtils;
 import org.broadband_forum.obbaa.netconf.api.NetconfCapability;
 import org.broadband_forum.obbaa.netconf.api.parser.SettableSchemaProvider;
 import org.broadband_forum.obbaa.netconf.api.parser.YangParserUtil;
+import org.broadband_forum.obbaa.netconf.api.util.DataPath;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.ConstraintValidatorFactoryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.SchemaNodeConstraintParser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.TypeValidator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.ChoiceCaseNodeUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.dom.YinAnnotationService;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.notification.listener.YangLibraryChangeNotificationListener;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath.JXPathUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.DefaultConcurrentHashMap;
@@ -36,34 +56,50 @@ import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.common.YangVersion;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
+import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.DeviateDefinition;
+import org.opendaylight.yangtools.yang.model.api.DeviateKind;
+import org.opendaylight.yangtools.yang.model.api.Deviation;
 import org.opendaylight.yangtools.yang.model.api.FeatureDefinition;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.api.MustDefinition;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
+import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
-import org.opendaylight.yangtools.yang.model.repo.api.SchemaSourceException;
 import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.opendaylight.yangtools.yang.parser.rfc7950.repo.ASTSchemaSource;
 import org.opendaylight.yangtools.yang.parser.rfc7950.repo.TextToASTTransformer;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServiceReference;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.CheckedFuture;
 import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
+import javax.xml.bind.DatatypeConverter;
 
 /**
  * Created by keshava on 11/18/15.
@@ -73,18 +109,52 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     public static final String VNO = "VNO";
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(DecoratedSchemaRegistryImpl.class, LogAppNames.NETCONF_STACK);
     static final String PATHMAPPINGCACHE = DecoratedSchemaRegistryImpl.class + "_PATHMAPPING";
+    public static final String REVISION = "?revision=";
 
     private SchemaContext m_schemaContext;
 
     private Map<SchemaPath, RpcDefinition> m_allRpcDefinitions = new LinkedHashMap<>();
     private Map<String, List<YangTextSchemaSource>> m_componentModules = new LinkedHashMap<>();
+    private Map<String, Set<LocationPath>> m_expressionsWithoutKeysInList = new HashMap<>();
+    private Map<SchemaPath, String> m_shortPaths = new HashMap<>();
+    private static ServiceListener c_serviceListener;
+    private static YinAnnotationService c_yinAnnotationService;
+    private Map<String, List<String>> m_prefixes = new LinkedHashMap<>();
 
-    protected Map<SchemaPath, DataSchemaNode> getSchemaNodes() {
+    static {
+        c_serviceListener = event -> {
+            try {
+                ServiceReference<?> ref = event.getServiceReference();
+                Bundle bundle = ref.getBundle();
+                Object service = bundle.getBundleContext().getService(ref);
+
+                switch (event.getType()) {
+                    case ServiceEvent.UNREGISTERING:
+                        if (service instanceof YinAnnotationService) {
+                            c_yinAnnotationService = null;
+                        }
+                        break;
+                    case ServiceEvent.REGISTERED: {
+                        if (service instanceof YinAnnotationService) {
+                            c_yinAnnotationService = (YinAnnotationService) service;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.error(null, "Error when registering/unregistering YinAnnotationService ", e);
+            }
+        };
+
+        registerYinAnnotationService();
+    }
+
+    @Override
+    public Map<SchemaPath, DataSchemaNode> getSchemaNodes() {
         return m_schemaNodes;
     }
 
-    protected Map<SchemaPath, ActionDefinition> getActionDefinitions() {
-        return m_actionDefinitions;
+    protected Map<DataPath, ActionDefinition> getActionDefinitions() {
+        return m_actionDefinitionsByDataPath;
     }
 
     protected Map<SchemaPath, NotificationDefinition> getNotificationDefinitions() {
@@ -93,13 +163,19 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     private Map<SchemaPath, DataSchemaNode> m_schemaNodes = new LinkedHashMap<>();
     private Map<SchemaPath, DataSchemaNode> m_rootSchemaNodes = new LinkedHashMap<>();
-    private Map<SchemaPath, ActionDefinition> m_actionDefinitions = new LinkedHashMap<>();
+    private Map<DataPath, ActionDefinition> m_actionDefinitionsByDataPath = new LinkedHashMap<>();
     private Map<SchemaPath, NotificationDefinition> m_notificationDefinitions = new LinkedHashMap<>();
     private Map<String, Module> m_modules = new LinkedHashMap<>();
     private String m_repoName = DecoratedSchemaRegistryImpl.class.getName();
     private ConcurrentHashMap<SchemaPath, TreeImpactNode<ImpactNode>> m_schemaPathToTreeImpactNode = new ConcurrentHashMap<SchemaPath, TreeImpactNode<ImpactNode>>();
-    
-    private DefaultConcurrentHashMap<String, HashSet<SchemaPath>> m_componentIdSchemaPathMap = new DefaultConcurrentHashMap<>(new HashSet<SchemaPath>(), true);
+    private DefaultConcurrentHashMap<SchemaPath, Map<SchemaPath, Expression>> m_whenReferringNodes = new DefaultConcurrentHashMap<>(new HashMap<SchemaPath, Expression>(), true);
+    private ConcurrentHashMap<String, WhenReferringNode> m_componentWhenReferringNodes = new ConcurrentHashMap<String, WhenReferringNode>();
+    private ConcurrentHashMap<String, MustReferringNode> m_componentMustReferringNodes = new ConcurrentHashMap<String, MustReferringNode>();
+
+    private ConcurrentHashMap<String, WhenReferringNode> m_componentIdWhenReferringNodesForAllSchemaNodes = new ConcurrentHashMap<String, WhenReferringNode>();
+    private ConcurrentHashMap<String, MustReferringNode> m_componentIdMustReferringNodesForAllSchemaNodes = new ConcurrentHashMap<String, MustReferringNode>();
+    private DefaultConcurrentHashMap<String, HashSet<SchemaPath>> m_componentIdReferredSchemaPathMap = new DefaultConcurrentHashMap<>(new HashSet<SchemaPath>(), true);
+    private DefaultConcurrentHashMap<String, HashSet<SchemaPath>> m_componentIdReferringSchemaPathMap = new DefaultConcurrentHashMap<>(new HashSet<SchemaPath>(), true);
     private Map<SchemaPath, String> m_appAugmentedPathToComponentIdMap = new HashMap<>();
     private Map<String, SchemaPath> m_appAugmentedPathToSchemaPathMap = new HashMap<>();
     private Map<TypeDefinition<?>, TypeValidator> m_validators = new HashMap<TypeDefinition<?>, TypeValidator>();
@@ -108,6 +184,9 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     private final Set<String> m_relativePath = Collections.synchronizedSet(new HashSet<String>());
     private final Map<String, Map<DataSchemaNode, Expression>> m_relativePaths = new DefaultConcurrentHashMap<>(new HashMap<DataSchemaNode, Expression>(), true);
 
+    private final Set <SchemaPath> m_childBigListSchemaNodes = Sets.newConcurrentHashSet();
+    private Map<SchemaPath, HashMap<String, String>> m_xPathWithPrefixToXPathWithModuleNameInPrefixMap = new ConcurrentHashMap<>();
+    private Map<SchemaPath, Set<String>> m_attributesWithSameLocalNameDifferentNameSpace = new ConcurrentHashMap<>();
     private final DefaultConcurrentHashMap<String, HashSet<String>> m_componentIdAbsSchemaPaths =
             new DefaultConcurrentHashMap<>(new HashSet<String>(), true);
 
@@ -124,7 +203,11 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     private SchemaMountRegistry m_schemaMountRegistry;
     private SchemaPath m_parentMountPath;
     private SchemaRegistry m_parent;
-
+    private SchemaSupportVerifierImpl m_schemaSupportVerifier = new SchemaSupportVerifierImpl();
+    private final ConcurrentHashMap<SchemaPath, Set<String>> m_skipValidationHintSchemaPaths = new ConcurrentHashMap<>();
+    private final Map<DataSchemaNode, Map<Expression, Module>> m_nodeConstraintsDefinedModules = new DefaultConcurrentHashMap<>(new HashMap<Expression, Module>(), true);
+    private boolean m_isYangLibraryIgnored = false;
+    private Set<ActionDefinition> m_actionDefinitionsWithListAndLeafRef = new LinkedHashSet<>();
 
     @SuppressWarnings("unchecked")
     private Map<SchemaPath, Map<QName, DataSchemaNode>> getIndexedCache() {
@@ -216,22 +299,38 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
      */
     @Deprecated
     public DecoratedSchemaRegistryImpl(List<YangTextSchemaSource> coreYangModelFiles, boolean isYangLibrarySupportedInHelloMessage) throws SchemaBuildException {
-        this(coreYangModelFiles, null, null, isYangLibrarySupportedInHelloMessage);
+        this(coreYangModelFiles, null, null, isYangLibrarySupportedInHelloMessage, false);
     }
 
-    public DecoratedSchemaRegistryImpl(List<YangTextSchemaSource> coreYangModelFiles, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations) throws SchemaBuildException {
-        this(coreYangModelFiles, supportedFeatures, supportedDeviations, true);
+    public DecoratedSchemaRegistryImpl(List<YangTextSchemaSource> coreYangModelFiles, Set<QName> supportedFeatures, Map<QName,
+            Set<QName>> supportedDeviations) throws SchemaBuildException {
+        this(coreYangModelFiles, supportedFeatures, supportedDeviations, true, false);
     }
 
-    public DecoratedSchemaRegistryImpl(List<YangTextSchemaSource> coreYangModelFiles, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibrarySupportedInHelloMessage) throws SchemaBuildException {
+    public DecoratedSchemaRegistryImpl(List<YangTextSchemaSource> coreYangModelFiles, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibraryIgnored) throws SchemaBuildException {
+        this(coreYangModelFiles, supportedFeatures, supportedDeviations, true, isYangLibraryIgnored);
+    }
+
+    public DecoratedSchemaRegistryImpl(List<YangTextSchemaSource> coreYangModelFiles, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibrarySupportedInHelloMessage, boolean isYangLibraryIgnored) throws SchemaBuildException {
         m_isYangLibrarySupportedInHelloMessage = isYangLibrarySupportedInHelloMessage;
-        buildSchemaContext(coreYangModelFiles, supportedFeatures, supportedDeviations);
+        setYangLibraryIgnored(isYangLibraryIgnored);
+        if (isYangLibraryIgnored()) {
+            buildSchemaContext(coreYangModelFiles, null, null);
+        } else {
+            buildSchemaContext(coreYangModelFiles, supportedFeatures, supportedDeviations);
+        }
+        LOGGER.debug("DecoratedSchemaRegistry created from files {}", coreYangModelFiles, new RuntimeException("Just to get stack trace"));
     }
 
     @Override
     public SchemaContext getSchemaContext() {
         LOGGER.debug("getSchemaContext called");
         return m_schemaContext;
+    }
+
+    @Override
+    public SchemaRegistry unwrap() {
+        return this;
     }
 
     /*
@@ -257,6 +356,9 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
             SchemaRegistryUtil.resetCache();
             if (supportedFeatures != null) {
                 m_supportedPlugFeatures.addAll(supportedFeatures);
+            } else if (isYangLibraryIgnored()) {
+                m_supportedPlugFeatures = null;
+                m_supportedPlugDeviations = null;
             } else {
                 throw new RuntimeException("Supported features have to be provided for the YANG model");
             }
@@ -264,15 +366,15 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                 m_supportedPlugDeviations.putAll(supportedDeviations);
             }
             m_schemaContext = YangParserUtil.parseSchemaSources(m_repoName, coreYangModelByteSources, m_supportedPlugFeatures, m_supportedPlugDeviations);
+            m_schemaSupportVerifier.verify(m_schemaContext);
             m_componentModules.put(CORE_COMPONENT_ID, coreYangModelByteSources);
             updateIndexes();
             updateCapabilities(null, supportedFeatures, supportedDeviations, true, isYangLibNotificationSupported);
         } catch (Exception e) {
-            LOGGER.error("Error while building schema context", e);
             throw new LockServiceException("Error while building schema context", e);
         }
     }
-    
+
     private void addAllSupportedFeatures(String componentId) {
         Set<Module> modules = m_schemaContext.getModules();
         Set<ModuleIdentifier> moduleIdentifiers = new HashSet<>();
@@ -303,21 +405,52 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                 moduleIdentifiers.add(moduleIdentifier);
             }
         }
+        addDeviationsToModule(modules);
         m_componentIdModuleIdentifiersMap.put(componentId, moduleIdentifiers);
+    }
+
+    private QName getQName(String name, Optional<Revision> revision, URI namespace) {
+        QName module;
+        if ( revision.isPresent() ){
+            module = QName.create(namespace, revision, name);
+        } else {
+            module = QName.create(namespace, name);
+        }
+        return module;
+    }
+
+    private void addDeviationsToModule(Set<Module> modules) {
+        for(Module module: modules){
+            for ( Deviation deviation : module.getDeviations()) {
+                QNameModule deviatedQNameModule = deviation.getTargetPath().getLastComponent().getModule();
+                URI namespace = deviatedQNameModule.getNamespace();
+                String deviatedModule =getModuleNameByNamespace(namespace.toString());
+                ModuleIdentifier moduleIdentifier = ModuleIdentifierImpl.create(deviatedModule, Optional.of(namespace),
+                        deviatedQNameModule.getRevision());
+                Set<QName> deviationQNames = m_supportedDeviations.get(moduleIdentifier);
+
+                deviationQNames.add(getQName(module.getName(), module.getRevision(), module.getNamespace()));
+            }
+        }
     }
 
     private void updateSupportedFeatures(String componentId, Set<QName> supportedFeatures) {
         Set<ModuleIdentifier> moduleIdentifiers = new HashSet<>();
         for (QName supportedFeature : supportedFeatures) {
             Module module = getModuleByNamespace(supportedFeature.getModule().getNamespace().toString());
-            ModuleIdentifier moduleIdentifier = ModuleIdentifierImpl.create(module.getName(), Optional.of(module.getNamespace()), module.getRevision());
-            Set<QName> supportedFeaturesPerModule = m_supportedFeatures.get(moduleIdentifier);
-            if (supportedFeaturesPerModule == null) {
-                supportedFeaturesPerModule = new HashSet<>();
-                m_supportedFeatures.put(moduleIdentifier, supportedFeaturesPerModule);
-                moduleIdentifiers.add(moduleIdentifier);
+            if (module != null) {
+                ModuleIdentifier moduleIdentifier = ModuleIdentifierImpl.create(module.getName(), Optional.of(module.getNamespace()),
+                        module.getRevision());
+                Set<QName> supportedFeaturesPerModule = m_supportedFeatures.get(moduleIdentifier);
+                if (supportedFeaturesPerModule == null) {
+                    supportedFeaturesPerModule = new HashSet<>();
+                    m_supportedFeatures.put(moduleIdentifier, supportedFeaturesPerModule);
+                    moduleIdentifiers.add(moduleIdentifier);
+                }
+                supportedFeaturesPerModule.add(supportedFeature);
+            } else {
+                LOGGER.error("Unsupported module entry in the supported features");
             }
-            supportedFeaturesPerModule.add(supportedFeature);
         }
         m_componentIdModuleIdentifiersMap.put(componentId, moduleIdentifiers);
     }
@@ -327,14 +460,17 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         for (Map.Entry<QName, Set<QName>> entry : supportedDeviations.entrySet()) {
             for (QName deviation : entry.getValue()) {
                 Module module = getModuleByNamespace(entry.getKey().getNamespace().toString());
-                ModuleIdentifier moduleIdentifier = ModuleIdentifierImpl.create(module.getName(), Optional.of(module.getNamespace()), module.getRevision());
-                Set<QName> supportedDeviationsPerModule = m_supportedDeviations.get(moduleIdentifier);
-                if (supportedDeviationsPerModule == null) {
-                    supportedDeviationsPerModule = new HashSet<>();
-                    m_supportedDeviations.put(moduleIdentifier, supportedDeviationsPerModule);
-                    moduleIdentifiers.add(moduleIdentifier);
+                if (module != null) {
+                    ModuleIdentifier moduleIdentifier = ModuleIdentifierImpl.create(module.getName(), Optional.of(module.getNamespace()),
+                            module.getRevision());
+                    Set<QName> supportedDeviationsPerModule = m_supportedDeviations.get(moduleIdentifier);
+                    if (supportedDeviationsPerModule == null) {
+                        supportedDeviationsPerModule = new HashSet<>();
+                        m_supportedDeviations.put(moduleIdentifier, supportedDeviationsPerModule);
+                        moduleIdentifiers.add(moduleIdentifier);
+                    }
+                    supportedDeviationsPerModule.add(deviation);
                 }
-                supportedDeviationsPerModule.add(deviation);
             }
         }
         m_componentIdModuleIdentifiersMap.put(componentId, moduleIdentifiers);
@@ -358,8 +494,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     public Optional<Module> getModule(final String name, final Revision revision) {
         if (revision == null) {
             return m_schemaContext.findModule(name);
-        }
-        else {
+        } else {
             return m_schemaContext.findModule(name, revision);
         }
     }
@@ -376,11 +511,17 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     @Override
     public synchronized void loadSchemaContext(final String componentId, final List<YangTextSchemaSource> yangModelByteSources, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations) throws SchemaBuildException {
-        loadSchemaContext(componentId, yangModelByteSources, supportedFeatures, supportedDeviations, true);
+        loadSchemaContext(componentId, yangModelByteSources, supportedFeatures, supportedDeviations, true, false);
     }
 
     @Override
-    public synchronized void loadSchemaContext(final String componentId, final List<YangTextSchemaSource> yangModelByteSources, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported) throws SchemaBuildException {
+    public void loadSchemaContext(String componentId, List<YangTextSchemaSource> yangModelFiles, Set<QName> supportedFeatures, Map<QName,
+            Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported) throws SchemaBuildException {
+        loadSchemaContext(componentId, yangModelFiles, supportedFeatures, supportedDeviations, isYangLibNotificationSupported, false);
+    }
+
+    @Override
+    public synchronized void loadSchemaContext(final String componentId, final List<YangTextSchemaSource> yangModelByteSources, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported, boolean isYangLibraryIgnored) throws SchemaBuildException {
         LOGGER.debug("loading YANG modules from component {}", componentId);
         if (m_componentModules.get(componentId) != null) {
             throw new LockServiceException("Schema Registry already contains modules of component: " + componentId);
@@ -390,6 +531,9 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                 m_componentModules.put(componentId, yangModelByteSources);
                 if (supportedFeatures != null) {
                     m_supportedPlugFeatures.addAll(supportedFeatures);
+                } else if (isYangLibraryIgnored) {
+                    m_supportedPlugFeatures = null;
+                    m_supportedPlugDeviations = null;
                 } else {
                     throw new RuntimeException("Supported features have to be provided in the plug");
                 }
@@ -401,29 +545,38 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
             }
             updateCapabilities(componentId, supportedFeatures, supportedDeviations, true, isYangLibNotificationSupported);
         } catch (Exception e) {
-            LOGGER.error("Error while updating schema context", e);
             m_componentModules.remove(componentId);
             throw new LockServiceException("Error while updating schema context", e);
         }
         LOGGER.debug("loading YANG modules from component {} complete", componentId);
         SchemaRegistryUtil.resetCache();
     }
-    
+
     @Override
     public synchronized void unloadSchemaContext(final String componentId, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations) throws SchemaBuildException {
-        unloadSchemaContext(componentId, supportedFeatures, supportedDeviations, true);
+        unloadSchemaContext(componentId, supportedFeatures, supportedDeviations, true, false);
     }
 
     @Override
     public synchronized void unloadSchemaContext(final String componentId, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported) throws SchemaBuildException {
+        unloadSchemaContext(componentId, supportedFeatures, supportedDeviations, isYangLibNotificationSupported, false);
+    }
+
+    @Override
+    public synchronized void unloadSchemaContext(final String componentId, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported, boolean isYangLibraryIgnored) throws SchemaBuildException {
         LOGGER.debug("unloadSchemaContext called for componentId : {}", componentId);
         m_validators.clear();
+        clearLazilyLoadedCaches();
         m_constraintValidators.clear();
+        setYangLibraryIgnored(isYangLibraryIgnored);
         if (m_componentModules.get(componentId) != null) {
             m_componentModules.remove(componentId);
             try {
                 if (supportedFeatures != null) {
                     m_supportedPlugFeatures.remove(supportedFeatures);
+                } else if (isYangLibraryIgnored()) {
+                    m_supportedPlugFeatures = null;
+                    m_supportedPlugDeviations = null;
                 } else {
                     throw new RuntimeException("Supported features have to be provided in the plug");
                 }
@@ -438,7 +591,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
             updateCapabilities(componentId, null, null, false, isYangLibNotificationSupported);
         }
     }
-    
+
     private void removeSupportedFeatures(String componentId) {
         Set<ModuleIdentifier> moduleIdentifiers = m_componentIdModuleIdentifiersMap.get(componentId);
         if (moduleIdentifiers != null) {
@@ -463,7 +616,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         for (Module module: m_schemaContext.getModules()) {
             result.add(ModuleIdentifierImpl.create(module.getName(), Optional.of(module.getNamespace()), module.getRevision()));
             for (Module submodule : module.getSubmodules()) {
-                result.add(ModuleIdentifierImpl.create(submodule.getName(), Optional.of(submodule.getNamespace()), submodule.getRevision()));                
+                result.add(ModuleIdentifierImpl.create(submodule.getName(), Optional.of(submodule.getNamespace()), submodule.getRevision()));
             }
         }
         return result;
@@ -474,15 +627,14 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         return m_schemaContext.getModules();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public Map<SourceIdentifier, YangTextSchemaSource> getAllYangTextSchemaSources() throws SchemaBuildException {
         Map<SourceIdentifier, YangTextSchemaSource> yangTextSchemaSources = new HashMap<>();
         try {
             for (List<YangTextSchemaSource> byteSources : m_componentModules.values()) {
                 for (YangTextSchemaSource schemaSource : byteSources) {
-                    CheckedFuture<ASTSchemaSource, SchemaSourceException> aSTSchemaSource = Futures
-                            .immediateCheckedFuture(TextToASTTransformer.transformText(schemaSource));
+                    ListenableFuture<ASTSchemaSource> aSTSchemaSource = Futures
+                            .immediateFuture(TextToASTTransformer.transformText(schemaSource));
                     SettableSchemaProvider<ASTSchemaSource> schemaProvider = SettableSchemaProvider.createImmediate(
                             aSTSchemaSource.get(), ASTSchemaSource.class);
                     SourceIdentifier id = schemaProvider.getId();
@@ -492,7 +644,6 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("Error parsing files", e);
             throw new SchemaBuildException("Error while getting yang schema context", e);
         }
         return yangTextSchemaSources;
@@ -506,9 +657,9 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         try {
             LOGGER.debug("rebuilding schemaContext");
             m_schemaContext = YangParserUtil.parseSchemaSources(DecoratedSchemaRegistryImpl.class.getName(), allYangSources, m_supportedPlugFeatures, m_supportedPlugDeviations);
+            m_schemaSupportVerifier.verify(m_schemaContext);
             LOGGER.debug("rebuilding schemaContext done");
         } catch (Exception e) {
-            LOGGER.error("Error while reloading schema context", e);
             throw new SchemaBuildException("Error while reloading schema context", e);
         }
     }
@@ -540,7 +691,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         }
         DataSchemaNode parentNode = getDataSchemaNode(parentSchemaPath);
         if (parentNode != null && parentNode instanceof DataNodeContainer) {
-            return ((DataNodeContainer) parentNode).getDataChildByName(childQName);
+            return ((DataNodeContainer) parentNode).findDataChildByName(childQName).orElse(null);
         }
         return null;
     }
@@ -603,11 +754,9 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                     return childNode;
                 } else if (childNode instanceof ChoiceSchemaNode) {
                     ChoiceSchemaNode choiceNode = (ChoiceSchemaNode) childNode;
-                    for (CaseSchemaNode caseNode : choiceNode.getCases().values()) {
-                        for (DataSchemaNode caseChild : caseNode.getChildNodes()) {
-                            if (caseChild.getQName().equals(qname)) {
-                                return caseChild;
-                            }
+                    for (DataSchemaNode caseChild : ChoiceCaseNodeUtil.getImmediateChildrenOfChoice(choiceNode)) {
+                        if (caseChild.getQName().equals(qname)) {
+                            return caseChild;
                         }
                     }
                 }
@@ -617,9 +766,24 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     }
 
     @Override
+    public void clear() {
+        m_schemaPathToTreeImpactNode.clear();
+        m_whenReferringNodes.clear();
+        m_supportedFeatures.clear();
+        m_supportedDeviations.clear();
+        m_componentIdModuleIdentifiersMap.clear();
+        m_supportedPlugDeviations.clear();
+        m_relativePaths.clear();
+        m_expressionsWithoutKeysInList.clear();
+        m_childBigListSchemaNodes.clear();
+        m_skipValidationHintSchemaPaths.clear();
+        m_nodeConstraintsDefinedModules.clear();
+    }
+
+    @Override
     public Collection<DataSchemaNode> getNonChoiceChildren(final SchemaPath parentSchemaPath) {
 
-        Collection<DataSchemaNode> effectiveChildSchemaNode = new HashSet<DataSchemaNode>();
+        Collection<DataSchemaNode> effectiveChildSchemaNode = new LinkedHashSet<>();
         Collection<DataSchemaNode> childrenSchemaNodes = getChildren(parentSchemaPath);
         for (DataSchemaNode dataSchemaNode : childrenSchemaNodes) {
             if (dataSchemaNode instanceof ChoiceSchemaNode) {
@@ -633,6 +797,9 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     @Override
     public DataSchemaNode getNonChoiceChild(SchemaPath parentSchemaPath, QName qName) {
+        if (parentSchemaPath.equals(m_parentMountPath)) {
+            return getDataSchemaNode(getDescendantSchemaPath(parentSchemaPath, qName));
+        }
         Map<QName, DataSchemaNode> children = getIndexedChildren(parentSchemaPath);
         return children.get(qName);
     }
@@ -699,18 +866,28 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     @Override
     public String getNamespaceURI(final String prefix) {
-        for (Module module : m_modules.values()) {
-            if (module.getPrefix().equals(prefix)) {
-                return module.getNamespace().toString();
-            }
+        List<String> namespaces = m_prefixes.get(prefix);
+        if(namespaces == null || namespaces.isEmpty()){
+            return null;
         }
-        return null;
+        return namespaces.get(0);
     }
 
     @Override
     public String getModuleNameByNamespace(final String namespace) {
         Module module = m_modules.get(namespace);
         return module != null ? module.getName() : null;
+    }
+
+    @Override
+    public String getComponentIdByNamespace(final String namespace) {
+        Module module = m_modules.get(namespace);
+        if (module != null) {
+            String moduleName = module.getName();
+            Optional<Revision> optRevision = module.getRevision();
+            return optRevision.isPresent() ? moduleName + REVISION + optRevision.get().toString() : moduleName;
+        }
+        return null;
     }
 
     @Override
@@ -741,15 +918,22 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     }
 
     private void updateIndexes() throws SchemaBuildException {
+        clearLazilyLoadedCaches();
         indexRpcDefinitions();
         indexDataSchemaNodes();
         indexRootSchemaNodes();
         indexNamespaces();
+        indexDeviationsAndAugmentsYangs();
+    }
 
+    private void clearLazilyLoadedCaches(){
+        m_xPathWithPrefixToXPathWithModuleNameInPrefixMap.clear();
+        m_attributesWithSameLocalNameDifferentNameSpace.clear();
+        m_shortPaths.clear();
     }
 
     public void updateCapabilities(String componentId, Set<QName> supportedFeatures,
-                                   Map<QName, Set<QName>> supportedDeviations, boolean isDeploy, boolean isYangLibNotificationSupported) {
+            Map<QName, Set<QName>> supportedDeviations, boolean isDeploy, boolean isYangLibNotificationSupported) {
         if (!isDeploy) {
             removeSupportedFeatures(componentId);
             removeSupportedDeviations(componentId);
@@ -782,8 +966,18 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     private void indexNamespaces() {
         m_modules.clear();
+        m_prefixes.clear();
         for (Module module : m_schemaContext.getModules()) {
             m_modules.put(module.getNamespace().toString(), module);
+        }
+        for(Module module: m_modules.values()){
+            String prefix = module.getPrefix();
+            List<String> namespaces = m_prefixes.get(prefix);
+            if(namespaces == null){
+                namespaces = new ArrayList<>();
+                m_prefixes.put(prefix, namespaces);
+            }
+            namespaces.add(module.getNamespace().toString());
         }
     }
 
@@ -796,9 +990,10 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     private void indexDataSchemaNodes() {
         m_schemaNodes.clear();
-        m_actionDefinitions.clear();
+        m_actionDefinitionsByDataPath.clear();
         m_notificationDefinitions.clear();
-        DataNodeContainerTraverser.traverse(m_schemaContext, new SchemaNodeIndexBuilder(m_schemaNodes, m_actionDefinitions, m_notificationDefinitions));
+        DataNodeContainerTraverser.traverse(m_schemaContext, new SchemaNodeIndexBuilder(m_schemaNodes, m_actionDefinitionsByDataPath,
+                m_actionDefinitionsWithListAndLeafRef, m_notificationDefinitions, m_schemaContext));
     }
 
     private void indexRpcDefinitions() {
@@ -809,6 +1004,45 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         }
 
         m_allRpcDefinitions.putAll(rpcs);
+    }
+
+    private void indexDeviationsAndAugmentsYangs() {
+        if (m_supportedPlugDeviations != null) {
+            for (Map.Entry<QName, Set<QName>> entry : m_supportedPlugDeviations.entrySet()) {
+                for (QName deviationModule : entry.getValue()) {
+                    Module module = getModuleByNamespace(deviationModule.getNamespace().toString());
+                    if (module != null) {
+                        for (Deviation deviation : module.getDeviations()) {
+                            for (DeviateDefinition deviateDef : deviation.getDeviates()) {
+                                if (deviateDef.getDeviateType().equals(DeviateKind.ADD) || deviateDef.getDeviateType().equals(DeviateKind.REPLACE)) {
+                                    DataSchemaNode deviatedNode = getDataSchemaNode(deviation.getTargetPath());
+                                    Collection<MustDefinition> mustConstraints = deviateDef.getDeviatedMusts();
+                                    if (mustConstraints != null) {
+                                        for (MustDefinition mustConstraint : mustConstraints) {
+                                            String constraint = mustConstraint.getXpath().getOriginalString();
+                                            registerNodeConstraintDefinedModule(deviatedNode, constraint, module);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for(Module module : getAllModules()) {
+            for (AugmentationSchemaNode augmentationSchema : module.getAugmentations()) {
+                SchemaPath targetPath = augmentationSchema.getTargetPath();
+                DataSchemaNode augmentedNode = getDataSchemaNode(targetPath);
+                Optional<RevisionAwareXPath> optWhenCondition = augmentationSchema.getWhenCondition();
+                if (augmentedNode != null && optWhenCondition != null && optWhenCondition.isPresent()) {
+                    String constraint = optWhenCondition.get().getOriginalString();
+                    registerNodeConstraintDefinedModule(augmentedNode, constraint, module);
+                }
+            }
+        }
+
     }
 
     /*
@@ -832,7 +1066,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
      */
     @Deprecated
     public static SchemaRegistry buildSchemaRegistry(List<String> coreYangModelFilesPaths,
-                                                     Map<String, Set<String>> deviations) throws SchemaBuildException {
+            Map<String, Set<String>> deviations) throws SchemaBuildException {
         Map<QName, Set<QName>> supportedDeviations = null;
         if (deviations != null) {
             supportedDeviations = new HashMap<>();
@@ -853,7 +1087,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
      */
     @Deprecated
     public static SchemaRegistry buildSchemaRegistry(List<String> coreYangModelFilesPaths,
-                                                     Map<String, Set<String>> deviations, boolean isYangLibrarySupportedInHelloMessage) throws SchemaBuildException {
+            Map<String, Set<String>> deviations, boolean isYangLibrarySupportedInHelloMessage) throws SchemaBuildException {
         Map<QName, Set<QName>> supportedDeviations = null;
         if (deviations != null) {
             supportedDeviations = new HashMap<>();
@@ -870,7 +1104,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     }
 
     public static SchemaRegistry buildSchemaRegistry(List<String> coreYangModelFilesPaths, Set<String> features,
-                                                     Map<String, Set<String>> deviations) throws SchemaBuildException {
+            Map<String, Set<String>> deviations) throws SchemaBuildException {
 
         Set<QName> supportedFeatures = null;
         Map<QName, Set<QName>> supportedDeviations = null;
@@ -916,7 +1150,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         DataSchemaNode parentSchemaNode = m_schemaNodes.get(parentSchemaPath);
         if (parentSchemaNode instanceof DataNodeContainer) {
             DataNodeContainer containerSchemaNode = (DataNodeContainer) parentSchemaNode;
-            DataSchemaNode childDataSchemaNode = containerSchemaNode.getDataChildByName(qname);
+            DataSchemaNode childDataSchemaNode = containerSchemaNode.findDataChildByName(qname).orElse(null);
             if (childDataSchemaNode != null) {
                 return childDataSchemaNode.getPath();
             }
@@ -950,7 +1184,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     }
 
     @Override
-    public void registerNodesReferencedInConstraints(String componentId, SchemaPath referencedSchemaPath, SchemaPath nodeSchemaPath, String accessPath) {
+    public void registerNodesReferredInConstraints(String componentId, ReferringNode referringNode) {
         /**
          * container validation {
          *    leaf validation{
@@ -962,17 +1196,17 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
          *    }
          * }
          *
-         * Here when a modification on leaf validation happens, the node (validation1) on which it is referenced as a constraint 
-         * must also be validated. 
+         * Here when a modification on leaf validation happens, the node (validation1) on which it is referenced as a constraint
+         * must also be validated.
          *
-         * So here for the nodeSchemaPath (validation), referencedSchemaPath(validation1) must also be validated 
-         * when leaf validation undergoes a change. 
-         */                
-        ImpactNode impactNode = getImpactNode(nodeSchemaPath);         
-        impactNode.addImpactNodes(referencedSchemaPath, JXPathUtils.getExpression(accessPath));
+         * So here for the nodeSchemaPath (validation), referencedSchemaPath(validation1) must also be validated
+         * when leaf validation undergoes a change.
+         */
+        ImpactNode impactNode = getImpactNode(referringNode.getReferredSP());
+        impactNode.addImpactNodes(referringNode);
         TreeImpactNode<ImpactNode> node = new TreeImpactNode<ImpactNode>(impactNode);
-        m_schemaPathToTreeImpactNode.put(nodeSchemaPath, node);
-        SchemaPath currentSchemaPath = nodeSchemaPath.getParent();
+        m_schemaPathToTreeImpactNode.put(referringNode.getReferredSP(), node);
+        SchemaPath currentSchemaPath = referringNode.getReferredSP().getParent();
         while (currentSchemaPath.getLastComponent() != null) {
             if (m_schemaPathToTreeImpactNode.get(currentSchemaPath) != null) {
                 TreeImpactNode<ImpactNode> parentNode = m_schemaPathToTreeImpactNode.get(currentSchemaPath);
@@ -988,9 +1222,94 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                 currentSchemaPath = currentSchemaPath.getParent();
             }
         }
-                
-        Collection<SchemaPath> schemaPathList = m_componentIdSchemaPathMap.get(componentId);
-        schemaPathList.add(nodeSchemaPath);
+
+        Collection<SchemaPath> schemaPathList = m_componentIdReferredSchemaPathMap.get(componentId);
+        schemaPathList.add(referringNode.getReferredSP());
+        Collection<SchemaPath> referringSchemaPathList = m_componentIdReferringSchemaPathMap.get(componentId);
+        referringSchemaPathList.add(referringNode.getReferringSP());
+    }
+
+    @Override
+    public void registerWhenReferringNodes(String componentId, SchemaPath referencedSchemaPath, SchemaPath nodeSchemaPath, String accessPath) {
+        Map<SchemaPath, Expression> referringNodes = m_whenReferringNodes.get(nodeSchemaPath);
+        referringNodes.put(referencedSchemaPath, JXPathUtils.getExpression(accessPath));
+
+        WhenReferringNode whenReferringNode = m_componentWhenReferringNodes.get(componentId);
+        if(whenReferringNode == null){
+            whenReferringNode = new WhenReferringNode(componentId) ;
+            m_componentWhenReferringNodes.put(componentId, whenReferringNode);
+        }
+        whenReferringNode.registerWhenReferringNodes(referencedSchemaPath, nodeSchemaPath, accessPath);
+    }
+
+    @Override
+    public Map<SchemaPath, Expression> getWhenReferringNodes(SchemaPath nodeSchemaPath) {
+        return m_whenReferringNodes.get(nodeSchemaPath);
+    }
+
+    @Override
+    public Map<SchemaPath, Expression> getWhenReferringNodes(String componentId, SchemaPath nodeSchemaPath) {
+        WhenReferringNode whenReferringNode = m_componentWhenReferringNodes.get(componentId);
+        if(whenReferringNode != null){
+            return whenReferringNode.getWhenReferringNodes(nodeSchemaPath);
+        }
+        return Collections.EMPTY_MAP;
+    }
+
+    public void registerWhenReferringNodesForAllSchemaNodes(String componentId, SchemaPath referencedSchemaPath, SchemaPath nodeSchemaPath, String accessPath) {
+        WhenReferringNode whenReferringNode = m_componentIdWhenReferringNodesForAllSchemaNodes.get(componentId);
+        if(whenReferringNode == null){
+            whenReferringNode = new WhenReferringNode(componentId) ;
+            m_componentIdWhenReferringNodesForAllSchemaNodes.put(componentId, whenReferringNode);
+        }
+        whenReferringNode.registerWhenReferringNodes(referencedSchemaPath, nodeSchemaPath, accessPath);
+    }
+
+    public Map<SchemaPath, Expression> getWhenReferringNodesForAllSchemaNodes(String componentId, SchemaPath nodeSchemaPath) {
+        WhenReferringNode whenReferringNode = m_componentIdWhenReferringNodesForAllSchemaNodes.get(componentId);
+        if(whenReferringNode != null){
+            return whenReferringNode.getWhenReferringNodes(nodeSchemaPath);
+        }
+        return Collections.EMPTY_MAP;
+    }
+
+    public void registerMustReferringNodesForAllSchemaNodes(String componentId, SchemaPath referencedSchemaPath, SchemaPath nodeSchemaPath, String accessPath) {
+        MustReferringNode mustReferringNode = m_componentIdMustReferringNodesForAllSchemaNodes.get(componentId);
+        if(mustReferringNode == null){
+            mustReferringNode = new MustReferringNode(componentId);
+            m_componentIdMustReferringNodesForAllSchemaNodes.put(componentId, mustReferringNode);
+        }
+        mustReferringNode.registerMustReferringNodes(referencedSchemaPath, nodeSchemaPath, accessPath);
+    }
+
+    public Map<SchemaPath, Expression> getMustReferringNodesForAllSchemaNodes(String componentId, SchemaPath nodeSchemaPath) {
+        MustReferringNode mustReferringNode = m_componentIdMustReferringNodesForAllSchemaNodes.get(componentId);
+        if(mustReferringNode != null){
+            return mustReferringNode.getMustReferringNodes(nodeSchemaPath);
+        }
+        return Collections.EMPTY_MAP;
+    }
+
+    @Override
+    public String getShortPath(SchemaPath path) {
+        String sp = m_shortPaths.get(path);
+        if(sp != null){
+            return m_shortPaths.get(path);
+        }
+        StringBuilder sb = new StringBuilder();
+        String prevModule = null;
+        for (QName qName : path.getPathFromRoot()) {
+            String currentModule = getModuleByNamespace(qName.getModule().getNamespace().toString()).getName();
+            sb.append("/");
+            if(!currentModule.equals(prevModule)){
+                sb.append(currentModule).append(":");
+            }
+            sb.append(qName.getLocalName());
+            prevModule = currentModule;
+        }
+        sp = sb.toString();
+        m_shortPaths.put(path, sp);
+        return sp;
     }
 
     private ImpactNode getImpactNode(SchemaPath schemaPath) {
@@ -1000,15 +1319,25 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
             return new ImpactNode(schemaPath);
         }
     }
-    
+
+    @Override
+    public ConcurrentHashMap<SchemaPath, TreeImpactNode<ImpactNode>> getImpactNodeMap(){
+        return m_schemaPathToTreeImpactNode;
+    }
+
     @Override
     public void deRegisterNodesReferencedInConstraints(final String componentId) {
-        Collection<SchemaPath> schemaPathList = m_componentIdSchemaPathMap.get(componentId);
+        Collection<SchemaPath> schemaPathList = m_componentIdReferredSchemaPathMap.get(componentId);
         for (SchemaPath schemaPath : schemaPathList) {
-            TreeImpactNode<ImpactNode> parentNode = m_schemaPathToTreeImpactNode.get(schemaPath.getParent());
-            parentNode.removeChild(new ImpactNode(schemaPath));
+            TreeImpactNode<ImpactNode> node = m_schemaPathToTreeImpactNode.get(schemaPath);
+            Map<SchemaPath, Set<ReferringNode>> schemaPathToReferringNodes = node.getData().getImpactNodes().getReferringNodes();
+            Collection<SchemaPath> referringSchemaPathList = m_componentIdReferringSchemaPathMap.get(componentId);
+            for(SchemaPath referringpath : referringSchemaPathList){
+                schemaPathToReferringNodes.remove(referringpath);
+            }
         }
-        m_componentIdSchemaPathMap.remove(componentId);
+        m_componentIdReferredSchemaPathMap.remove(componentId);
+        m_componentIdReferringSchemaPathMap.remove(componentId);
 
         Collection<String> absPaths = m_componentIdAbsSchemaPaths.get(componentId);
         for (String absPath : absPaths) {
@@ -1016,13 +1345,15 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         }
 
         m_componentIdAbsSchemaPaths.remove(componentId);
-
+        m_componentWhenReferringNodes.remove(componentId);
+        m_componentMustReferringNodes.remove(componentId);
+        m_componentIdWhenReferringNodesForAllSchemaNodes.remove(componentId);
+        m_componentIdMustReferringNodesForAllSchemaNodes.remove(componentId);
     }
 
     @Override
-    public ActionDefinition getActionDefinitionNode(List<QName> paths) {
-        SchemaPath actionPath = SchemaPath.create(paths, true);
-        return m_actionDefinitions.get(actionPath);
+    public ActionDefinition getActionDefinitionNode(DataPath actionDataPath) {
+        return m_actionDefinitionsByDataPath.get(actionDataPath);
     }
 
     @Override
@@ -1033,42 +1364,49 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     @Override
     public Collection<SchemaPath> getSchemaPathsForComponent(final String componentId) {
-        return m_componentIdSchemaPathMap.get(componentId);
-    }    
-    
-    @Override
-    public Map<SchemaPath, Expression> getReferencedNodesForSchemaPaths(final SchemaPath schemaPath) {
-        if(m_schemaPathToTreeImpactNode.get(schemaPath)==null){
-            return new HashMap<SchemaPath, Expression>();
-        }
-        return m_schemaPathToTreeImpactNode.get(schemaPath).getData().getImpactNodes();
-    } 
+        return m_componentIdReferredSchemaPathMap.get(componentId);
+    }
 
     @Override
-    public Map<SchemaPath, Expression> addChildImpactPaths(SchemaPath changeSchemaPath){
-        Map<SchemaPath, Expression> impactedPaths = new HashMap<>();        
-        addImpactNodeForChild(changeSchemaPath, impactedPaths);
+    public ReferringNodes getReferringNodesForSchemaPath(final SchemaPath schemaPath) {
+        if(m_schemaPathToTreeImpactNode.get(schemaPath)==null){
+            return new ReferringNodes(schemaPath);
+        }
+        return m_schemaPathToTreeImpactNode.get(schemaPath).getData().getImpactNodes();
+    }
+
+    @Override
+    public ReferringNodes addChildImpactPaths(SchemaPath changeSchemaPath, Set<QName> skipImmediateChildQNames){
+        ReferringNodes impactedPaths = new ReferringNodes(changeSchemaPath);
+        addImpactNodeForChild(changeSchemaPath, impactedPaths, skipImmediateChildQNames);
         return impactedPaths;
     }
-    
-    private void addImpactNodeForChild(SchemaPath schemaPath, Map<SchemaPath, Expression> impactedPaths) {
+
+    @Override
+    public void addImpactNodeForChild(SchemaPath schemaPath, ReferringNodes impactedPaths, Set<QName> skipImmediateChildQNames) {
         TreeImpactNode<ImpactNode> parentNode = m_schemaPathToTreeImpactNode.get(schemaPath);
         if (parentNode != null) {
             for (TreeImpactNode<ImpactNode> child : parentNode.getChildren()) {
-                impactedPaths.putAll(child.getData().getImpactNodes());
+                if(!skipImmediateChildQNames.contains(child.getData().getNodeSchemaPath().getLastComponent())) {
+                    impactedPaths.putAll(child.getData().getImpactNodes());
+                }
                 DataSchemaNode childNode = getDataSchemaNode(child.getData().getNodeSchemaPath());
                 if (childNode instanceof ListSchemaNode || childNode instanceof ContainerSchemaNode) {
-                    addImpactNodeForChild(child.getData().getNodeSchemaPath(), impactedPaths);
+                    addImpactNodeForChild(child.getData().getNodeSchemaPath(), impactedPaths, Collections.EMPTY_SET);
                 }
             }
         }
     }
-    
+
+    @Override
+    public Map<SchemaPath, TreeImpactNode<ImpactNode>> getReferringNodes() {
+        return new HashMap<>(m_schemaPathToTreeImpactNode);
+    }
+
     @Override
     public void registerAppAllowedAugmentedPath(String moduleId, String path, SchemaPath schemaPath) {
         LOGGER.debug("registering app relative path {}", path);
         if (m_relativePath.contains(path)) {
-            LOGGER.error("Augmented path {} is already registered", path);
             throw new RuntimeException("Augmented path " + path + " is already registered");
         } else {
             m_relativePath.add(path);
@@ -1087,6 +1425,22 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         m_appAugmentedPathToComponentIdMap.remove(m_appAugmentedPathToSchemaPathMap.get(path));
         m_appAugmentedPathToSchemaPathMap.remove(path);
         m_relativePath.remove(path);
+    }
+
+    @Override
+    public void addToChildBigList(SchemaPath schemaPath) {
+        LOGGER.debug("Adding to Child Big List schemaPath path: {}", schemaPath);
+        if(schemaPath != null) {
+            m_childBigListSchemaNodes.add(schemaPath);
+        }
+    }
+
+    @Override
+    public boolean isChildBigList(SchemaPath schemaPath) {
+        if(schemaPath == null) {
+            return false;
+        }
+        return m_childBigListSchemaNodes.contains(schemaPath);
     }
 
     @Override
@@ -1123,6 +1477,15 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         m_isYangLibrarySupportedInHelloMessage = value;
     }
 
+
+    public boolean isYangLibraryIgnored() {
+        return m_isYangLibraryIgnored;
+    }
+
+    public void setYangLibraryIgnored(boolean yangLibraryIgnored) {
+        m_isYangLibraryIgnored = yangLibraryIgnored;
+    }
+
     @Override
     public Set<String> getModuleCapabilities(boolean forHello) {
         Set<String> caps = new HashSet<>();
@@ -1136,6 +1499,60 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
             }
             return caps;
         }
+    }
+
+    @Override
+    public Expression getExpressionWithModuleNameInPrefix(SchemaPath schemaPath, Expression expression) {
+        return getExpressionWithModuleNameInPrefix(schemaPath, expression.toString());
+    }
+
+    @Override
+    public Expression getExpressionWithModuleNameInPrefix(SchemaPath schemaPath, String expression) {
+        HashMap <String, String> expressionMap = m_xPathWithPrefixToXPathWithModuleNameInPrefixMap.get(schemaPath);
+        if(expressionMap != null && expressionMap.containsKey(expression)) {
+            return JXPathUtils.getExpression(expressionMap.get(expression));
+        }
+        return null;
+    }
+
+    @Override
+    public void registerExpressionWithModuleNameInPrefix(SchemaPath schemaPath,
+            String expression, String expressionWithPrefix) {
+        HashMap <String, String> expressionMap = m_xPathWithPrefixToXPathWithModuleNameInPrefixMap.get(schemaPath);
+        if(expressionMap == null) {
+            expressionMap = new HashMap<>();
+            m_xPathWithPrefixToXPathWithModuleNameInPrefixMap.put(schemaPath, expressionMap);
+        }
+        expressionMap.put(expression, expressionWithPrefix);
+    }
+
+    @Override
+    public void registerExpressionWithModuleNameInPrefix(SchemaPath schemaPath,
+            Expression expression, String expressionWithPrefix) {
+        registerExpressionWithModuleNameInPrefix(schemaPath, expression.toString(), expressionWithPrefix);
+    }
+
+    /*
+    In most of the cases a schemaNode won't have any child with same localName and different namespace.
+    In this case the list would be empty. "return empty list"
+
+    If this method return's null, it means we hadn't found if there are any child with same localname.
+    So we need to find it out and lazy load into schema registry.
+     */
+    @Override
+    public Set<String> getAttributesWithSameLocalNameDifferentNameSpace(SchemaPath schemaPath) {
+        if(m_attributesWithSameLocalNameDifferentNameSpace.containsKey(schemaPath)) {
+            return m_attributesWithSameLocalNameDifferentNameSpace.get(schemaPath).stream().collect(
+                    Collectors.toSet());
+        }
+        return null;
+    }
+
+    @Override
+    public void registerAttributesWithSameLocalNameDifferentNameSpace(SchemaPath schemaPath,
+            Set<String> attributesWithSameLocalNameDifferentNameSpace) {
+        m_attributesWithSameLocalNameDifferentNameSpace.put(schemaPath, attributesWithSameLocalNameDifferentNameSpace.stream().collect(
+                Collectors.toSet()));
     }
 
     @Override
@@ -1162,7 +1579,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     }
 
     private String getCapability(String url, String revisionDate,
-                                 String moduleName, String supportedFeatures, String supportedDeviations) {
+            String moduleName, String supportedFeatures, String supportedDeviations) {
         return (new NetconfCapability(url, moduleName, revisionDate, supportedFeatures, supportedDeviations)).toString();
     }
 
@@ -1180,7 +1597,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     }
 
     private String getCapability(String url, String revisionDate,
-                                 String moduleName) {
+            String moduleName) {
         return (new NetconfCapability(url, moduleName, revisionDate)).toString();
     }
 
@@ -1261,7 +1678,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     @Override
     public Set<ActionDefinition> retrieveAllActionDefinitions() {
-        return new HashSet<>(m_actionDefinitions.values());
+        return new HashSet<>(m_actionDefinitionsByDataPath.values());
     }
 
     @Override
@@ -1282,7 +1699,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     public DataSchemaNode getRPCInputChildNode(RpcDefinition rpcDef, List<QName> qnames) {
         DataNodeContainer node = rpcDef.getInput();
         for (QName qname : qnames) {
-            DataSchemaNode innerNode = node.getDataChildByName(qname);
+            DataSchemaNode innerNode = node.findDataChildByName(qname).orElse(null);
             if (innerNode != null && innerNode instanceof DataNodeContainer) {
                 node = (DataNodeContainer) innerNode;
             }
@@ -1341,7 +1758,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
             SchemaPathBuilder builder = new SchemaPathBuilder();
             boolean hasRevision = false;
             for (QName qname : schemaPathWithoutRevisions.getPathFromRoot()) {
-                if (qname.getRevision() != null) {
+                if (qname.getRevision().isPresent()) {
                     // incoming qname has a revision,
                     // but we'll override with the currently known revision anyway to be safe
                     hasRevision = true;
@@ -1413,7 +1830,7 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
     public DecoratedSchemaRegistryImpl deepClone() throws SchemaBuildException, LockServiceException {
         DecoratedSchemaRegistryImpl clonedSchemaRegistry = null;
         try {
-            clonedSchemaRegistry = new DecoratedSchemaRegistryImpl(Collections.emptyList(), Collections.emptySet(), Collections.emptyMap());
+            clonedSchemaRegistry = new DecoratedSchemaRegistryImpl(Collections.emptyList(), Collections.emptySet(), Collections.emptyMap(), m_isYangLibraryIgnored);
         } catch (SchemaBuildException e) {
             throw new LockServiceException(e);
         }
@@ -1423,31 +1840,41 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
         clonedSchemaRegistry.m_componentModules.putAll(m_componentModules);
         clonedSchemaRegistry.m_schemaNodes.putAll(m_schemaNodes);
         clonedSchemaRegistry.m_rootSchemaNodes.putAll(m_rootSchemaNodes);
-        clonedSchemaRegistry.m_actionDefinitions.putAll(m_actionDefinitions);
+        clonedSchemaRegistry.m_actionDefinitionsByDataPath.putAll(m_actionDefinitionsByDataPath);
         clonedSchemaRegistry.m_notificationDefinitions.putAll(m_notificationDefinitions);
         clonedSchemaRegistry.m_modules.putAll(m_modules);
+        clonedSchemaRegistry.m_prefixes.putAll(m_prefixes);
         //clonedSchemaRegistry.m_repoName = m_repoName;
         clonedSchemaRegistry.m_schemaPathToTreeImpactNode.putAll(m_schemaPathToTreeImpactNode);
-        clonedSchemaRegistry.m_componentIdSchemaPathMap.putAll(m_componentIdSchemaPathMap);
+        clonedSchemaRegistry.m_componentIdReferredSchemaPathMap.putAll(m_componentIdReferredSchemaPathMap);
+        clonedSchemaRegistry.m_componentWhenReferringNodes.putAll(m_componentWhenReferringNodes);
+        clonedSchemaRegistry.m_componentMustReferringNodes.putAll(m_componentMustReferringNodes);
+        clonedSchemaRegistry.m_componentIdWhenReferringNodesForAllSchemaNodes.putAll(m_componentIdWhenReferringNodesForAllSchemaNodes);
+        clonedSchemaRegistry.m_componentIdMustReferringNodesForAllSchemaNodes.putAll(m_componentIdMustReferringNodesForAllSchemaNodes);
+        clonedSchemaRegistry.m_componentIdReferringSchemaPathMap.putAll(m_componentIdReferringSchemaPathMap);
         clonedSchemaRegistry.m_appAugmentedPathToComponentIdMap.putAll(m_appAugmentedPathToComponentIdMap);
         clonedSchemaRegistry.m_appAugmentedPathToSchemaPathMap.putAll(m_appAugmentedPathToSchemaPathMap);
         clonedSchemaRegistry.m_relativePath.addAll(m_relativePath);
         clonedSchemaRegistry.m_relativePaths.putAll(m_relativePaths);
         clonedSchemaRegistry.m_componentIdAbsSchemaPaths.putAll(m_componentIdAbsSchemaPaths);
+        clonedSchemaRegistry.m_isYangLibraryIgnored = m_isYangLibraryIgnored;
         clonedSchemaRegistry.m_isYangLibrarySupportedInHelloMessage = m_isYangLibrarySupportedInHelloMessage;
         clonedSchemaRegistry.m_yangLibraryChangeNotificationListener = m_yangLibraryChangeNotificationListener;
         //clonedSchemaRegistry.YANG_LIBRARY_CAP_FORMAT
+        if(!clonedSchemaRegistry.isYangLibraryIgnored()) {
+            clonedSchemaRegistry.m_supportedPlugDeviations.putAll(m_supportedPlugDeviations);
+        }
         clonedSchemaRegistry.m_supportedFeatures.putAll(m_supportedFeatures);
         clonedSchemaRegistry.m_supportedDeviations.putAll(m_supportedDeviations);
         clonedSchemaRegistry.m_componentIdModuleIdentifiersMap.putAll(m_componentIdModuleIdentifiersMap);
         clonedSchemaRegistry.m_moduleSetId = new String(m_moduleSetId);
-        clonedSchemaRegistry.m_supportedPlugDeviations.putAll(m_supportedPlugDeviations);
         clonedSchemaRegistry.m_mountPointsSchemaPathMap.putAll(m_mountPointsSchemaPathMap);
         clonedSchemaRegistry.m_schemaMountRegistry = m_schemaMountRegistry;
         clonedSchemaRegistry.m_parentMountPath = m_parentMountPath;
-        clonedSchemaRegistry.m_supportedFeatures.putAll(m_supportedFeatures);
         clonedSchemaRegistry.m_validators.putAll(m_validators);
+        clonedSchemaRegistry.m_whenReferringNodes.putAll(m_whenReferringNodes);
         clonedSchemaRegistry.m_constraintValidators.putAll(m_constraintValidators);
+        clonedSchemaRegistry.c_yinAnnotationService = c_yinAnnotationService;
 
         return clonedSchemaRegistry;
     }
@@ -1463,17 +1890,24 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                 otherSchemaRegistry.m_componentModules.equals(this.m_componentModules) &&
                 otherSchemaRegistry.m_schemaNodes.equals(this.m_schemaNodes) &&
                 otherSchemaRegistry.m_rootSchemaNodes.equals(this.m_rootSchemaNodes) &&
-                otherSchemaRegistry.m_actionDefinitions.equals(this.m_actionDefinitions) &&
+                otherSchemaRegistry.m_actionDefinitionsByDataPath.equals(this.m_actionDefinitionsByDataPath) &&
                 otherSchemaRegistry.m_notificationDefinitions.equals(this.m_notificationDefinitions) &&
                 otherSchemaRegistry.m_modules.equals(this.m_modules) &&
+                otherSchemaRegistry.m_prefixes.equals(this.m_prefixes) &&
                 otherSchemaRegistry.m_schemaPathToTreeImpactNode.equals(this.m_schemaPathToTreeImpactNode) &&
-                otherSchemaRegistry.m_componentIdSchemaPathMap.equals(this.m_componentIdSchemaPathMap) &&
+                otherSchemaRegistry.m_componentIdReferredSchemaPathMap.equals(this.m_componentIdReferredSchemaPathMap) &&
+                otherSchemaRegistry.m_componentWhenReferringNodes.equals(this.m_componentWhenReferringNodes) &&
+                otherSchemaRegistry.m_componentMustReferringNodes.equals(this.m_componentMustReferringNodes) &&
+                otherSchemaRegistry.m_componentIdWhenReferringNodesForAllSchemaNodes.equals(this.m_componentIdWhenReferringNodesForAllSchemaNodes) &&
+                otherSchemaRegistry.m_componentIdMustReferringNodesForAllSchemaNodes.equals(this.m_componentIdMustReferringNodesForAllSchemaNodes) &&
+                otherSchemaRegistry.m_componentIdReferringSchemaPathMap.equals(this.m_componentIdReferringSchemaPathMap) &&
                 otherSchemaRegistry.m_appAugmentedPathToComponentIdMap.equals(this.m_appAugmentedPathToComponentIdMap) &&
                 otherSchemaRegistry.m_appAugmentedPathToSchemaPathMap.equals(this.m_appAugmentedPathToSchemaPathMap) &&
                 otherSchemaRegistry.m_relativePath.equals(this.m_relativePath) &&
                 otherSchemaRegistry.m_relativePaths.equals(this.m_relativePaths) &&
                 otherSchemaRegistry.m_componentIdAbsSchemaPaths.equals(this.m_componentIdAbsSchemaPaths) &&
                 otherSchemaRegistry.m_isYangLibrarySupportedInHelloMessage == this.m_isYangLibrarySupportedInHelloMessage &&
+                otherSchemaRegistry.m_isYangLibraryIgnored == this.m_isYangLibraryIgnored &&
                 otherSchemaRegistry.m_yangLibraryChangeNotificationListener == this.m_yangLibraryChangeNotificationListener &&
                 otherSchemaRegistry.m_supportedFeatures.equals(this.m_supportedFeatures) &&
                 otherSchemaRegistry.m_supportedDeviations.equals(m_supportedDeviations) &&
@@ -1483,11 +1917,25 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
                 otherSchemaRegistry.m_mountPointsSchemaPathMap.equals(m_mountPointsSchemaPathMap) &&
                 otherSchemaRegistry.m_schemaMountRegistry == this.m_schemaMountRegistry &&
                 otherSchemaRegistry.m_parentMountPath == this.m_parentMountPath &&
+                otherSchemaRegistry.m_whenReferringNodes.equals(this.m_whenReferringNodes) &&
+                compareYinAnnotationServices(otherSchemaRegistry.c_yinAnnotationService, this.c_yinAnnotationService) &&
                 otherSchemaRegistry.m_supportedFeatures.equals(this.m_supportedFeatures)) {
             return true;
         }
 
         return false;
+    }
+
+    private boolean compareYinAnnotationServices(YinAnnotationService thisService, YinAnnotationService thatService) {
+        if(thisService == null && thatService == null){
+            return true;
+        }else if(thisService == null && thatService != null){
+            return false;
+        }else if(thisService != null && thatService == null){
+            return false;
+        }else{
+            return thisService.equals(thatService);
+        }
     }
 
 
@@ -1522,12 +1970,148 @@ public class DecoratedSchemaRegistryImpl implements SchemaRegistry {
 
     @Override
     public void putSchemaNodeConstraintParser(DataSchemaNode dataSchemaNode,
-                                              SchemaNodeConstraintParser schemaNodeConstraintParser) {
+            SchemaNodeConstraintParser schemaNodeConstraintParser) {
         m_constraintValidators.put(dataSchemaNode, schemaNodeConstraintParser);
     }
 
-	@Override
-	public void setName(String registryName){
+    @Override
+    public void setName(String registryName){
 
-	}
+    }
+
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public void addToSkipValidationPaths(SchemaPath schemaPath, String constraintXpath) {
+        LOGGER.debug("Adding to skip validation schemaPath path: {} - with constraint xpath :{}", schemaPath, constraintXpath);
+        if(schemaPath != null) {
+            Set<String> xpaths = m_skipValidationHintSchemaPaths.get(schemaPath);
+            if(xpaths == null) {
+                xpaths = new HashSet<String>();
+            }
+            xpaths.add(constraintXpath);
+            m_skipValidationHintSchemaPaths.put(schemaPath, xpaths);
+        }
+    }
+
+    @Override
+    public boolean isSkipValidationBySchemaPathWithConstraintXpath(SchemaPath schemaPath, String constraintXpath) {
+        if(schemaPath == null || m_skipValidationHintSchemaPaths.get(schemaPath) == null) {
+            return false;
+        }
+        return m_skipValidationHintSchemaPaths.get(schemaPath).contains(constraintXpath);
+    }
+
+    @Override
+    public boolean isSkipValidationPath(SchemaPath schemaPath) {
+        if(schemaPath == null) {
+            return false;
+        }
+        return m_skipValidationHintSchemaPaths.containsKey(schemaPath);
+    }
+
+    @Override
+    public void printReferringNodes() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<SchemaPath, TreeImpactNode<ImpactNode>> schemaPathTreeImpactNodeEntry : m_schemaPathToTreeImpactNode.entrySet()) {
+            SchemaPath referrednode = schemaPathTreeImpactNodeEntry.getKey();
+            sb.append("\nNode ").append(getSimplePath(
+                    getDataSchemaNode(referrednode))).append(" -impacts-> {\n");
+            ImpactNode data = schemaPathTreeImpactNodeEntry.getValue().getData();
+            Map<SchemaPath, Set<ReferringNode>> referringNodes = data.getImpactNodes().getReferringNodes();
+            for (Set<ReferringNode> referringNodeSet : referringNodes.values()) {
+                for (ReferringNode referringNode : referringNodeSet) {
+                    sb.append("  ");
+                    sb.append(getSimplePath(getDataSchemaNode(referringNode.getReferringSP())));
+                    if(referringNode.getValidationHint() != null){
+                        sb.append(" With Hint: ").append(referringNode.getValidationHint());
+                    }
+                    sb.append("\n");
+                }
+            }
+            sb.append("}");
+
+        }
+
+        LOGGER.debug("ReferringNodes {}", sb.toString());
+    }
+
+    public static String getSimplePath(DataSchemaNode childSchemaNode) {
+        StringBuilder sb = new StringBuilder();
+        for (QName qName : childSchemaNode.getPath().getPathFromRoot()) {
+            sb.append("/").append(qName.getLocalName());
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public void addExpressionsWithoutKeysInList(String fullExpression, LocationPath expressionWithListAtLowerLevel) {
+        Set<LocationPath> expressionsAtLowerLevel = m_expressionsWithoutKeysInList.get(fullExpression);
+        if ( expressionsAtLowerLevel == null) {
+            expressionsAtLowerLevel = new HashSet<>();
+            m_expressionsWithoutKeysInList.put(fullExpression, expressionsAtLowerLevel);
+        }
+        expressionsAtLowerLevel.add(expressionWithListAtLowerLevel);
+    }
+
+    @Override
+    public Set<LocationPath> getExpressionsWithoutKeysInList(String fullExpression) {
+        Set<LocationPath> locationPaths = m_expressionsWithoutKeysInList.get(fullExpression);
+        if(locationPaths == null) {
+            locationPaths = Collections.emptySet();
+        }
+        return locationPaths;
+    }
+
+    @Override
+    public void registerNodeConstraintDefinedModule(DataSchemaNode schemaNode, String constraint, Module module) {
+        Map<Expression, Module> constraintModules = m_nodeConstraintsDefinedModules.get(schemaNode);
+        constraintModules.putIfAbsent(JXPathUtils.getExpression(constraint), module);
+    }
+
+    @Override
+    public Map<Expression, Module> getNodeConstraintDefinedModule(DataSchemaNode schemaNode) {
+        return m_nodeConstraintsDefinedModules.get(schemaNode);
+    }
+
+    @Override
+    public YinAnnotationService getYinAnnotationService() {
+        return c_yinAnnotationService;
+    }
+
+    @VisibleForTesting
+    public void setYinAnnotationService(YinAnnotationService testService){
+        c_yinAnnotationService = testService;
+    }
+
+    private static void registerYinAnnotationService(){
+        Bundle bundle = FrameworkUtil.getBundle(DecoratedSchemaRegistryImpl.class);
+        if(bundle != null) {
+            BundleContext bundleContext = bundle.getBundleContext();
+            if( bundleContext != null) {
+                try {
+                    bundleContext.addServiceListener(c_serviceListener, "(" + Constants.OBJECTCLASS + "="
+                            + YinAnnotationService.class.getName() + ")");
+                } catch (InvalidSyntaxException e) {
+                    throw new RuntimeException("Error while registering YinAnnotation Service ");
+                }
+                ServiceReference<YinAnnotationService> annotationServiceRef = bundleContext.getServiceReference(YinAnnotationService.class);
+                if (annotationServiceRef != null) {
+                    c_yinAnnotationService = bundleContext.getService(annotationServiceRef);
+                }
+            } else {
+                LOGGER.debug("Error while registering YinAnnotation Service , bundleContext is null");
+            }
+        } else{
+            LOGGER.debug("Error while registering YinAnnotation Service , bundle is null");
+        }
+    }
+
+    @Override
+    public Set<ActionDefinition> getActionDefinitionNodesWithListAndLeafRef() {
+        return m_actionDefinitionsWithListAndLeafRef;
+    }
 }

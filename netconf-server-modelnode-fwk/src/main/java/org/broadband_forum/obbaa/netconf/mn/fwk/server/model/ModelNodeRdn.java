@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil.SINGLE_QUOTE;
@@ -12,13 +28,13 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.CharacterCodec
 
 public class ModelNodeRdn implements Comparable<ModelNodeRdn>, Immutable, Serializable {
 
-	private static final long serialVersionUID = 2403429120956800037L;
+    private static final long serialVersionUID = 2403429120956800037L;
 
-	public static final String CONTAINER = "container";
-	public static final String NAME = "name";
+    public static final String CONTAINER = "container";
+    public static final String NAME = "name";
 
-	private String m_rdnName;
-	private String m_namespace;
+    private String m_rdnName;
+    private String m_namespace;
     private String m_rdnValue;
 
     public ModelNodeRdn(String rdnName, String namespace, String rdnValue) {
@@ -99,6 +115,13 @@ public class ModelNodeRdn implements Comparable<ModelNodeRdn>, Immutable, Serial
                 return false;
             }
         } else if (!this.m_rdnValue.equals(other.m_rdnValue)) {
+            return false;
+        }
+        if (this.m_namespace == null) {
+            if (other.m_namespace != null) {
+                return false;
+            }
+        } else if (!this.m_namespace.equals(other.m_namespace)) {
             return false;
         }
         return true;

@@ -22,22 +22,9 @@ import static org.junit.Assert.assertNotSame;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class RequestScopeTest {
-
-    @BeforeClass
-    public static void setUpClass() {
-        RequestScope.setEnableThreadLocalInUT(true);
-    }
-
-    @AfterClass
-    public static void settearDownClass() {
-        RequestScope.setEnableThreadLocalInUT(false);
-    }
 
     @Test
     public void testGetCurrentScope() {
@@ -59,7 +46,13 @@ public class RequestScopeTest {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                t1Scope.set(RequestScope.getCurrentScope());
+                RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
+                    @Override
+                    public Void execute() {
+                        t1Scope.set(RequestScope.getCurrentScope());
+                        return null;
+                    }
+                });
                 startTest.countDown();
                 try {
                     completeThreads.await();
@@ -70,7 +63,13 @@ public class RequestScopeTest {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                t2Scope.set(RequestScope.getCurrentScope());
+                RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
+                    @Override
+                    public Void execute() {
+                        t2Scope.set(RequestScope.getCurrentScope());
+                        return null;
+                    }
+                });
                 startTest.countDown();
                 try {
                     completeThreads.await();

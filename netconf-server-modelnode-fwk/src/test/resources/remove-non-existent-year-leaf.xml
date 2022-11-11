@@ -1,0 +1,11 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+	<library>
+		<artist>
+			<name>Lenny</name>
+			<album>
+				<name>Circus</name>
+				<year xc:operation="remove">500</year> <!-- Non-existent year value. Actual value is 1995 -->
+			</album>
+		</artist>
+	</library>
+</jukebox>

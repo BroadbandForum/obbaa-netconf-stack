@@ -16,13 +16,18 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
-import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getDocFromFile;
 import static junit.framework.TestCase.fail;
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getDocFromFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,9 +40,12 @@ import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.net.URL;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import io.netty.util.concurrent.Future;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ChannelSubsystem;
 import org.apache.sshd.client.session.ClientSession;
@@ -48,11 +56,7 @@ import org.apache.sshd.common.io.IoSession;
 import org.apache.sshd.common.io.IoWriteFuture;
 import org.apache.sshd.common.io.nio2.Nio2Session;
 import org.apache.sshd.common.util.buffer.Buffer;
-import org.custommonkey.xmlunit.XMLUnit;
-import org.junit.Before;
-import org.junit.Test;
-import org.w3c.dom.Document;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfSessionClosedException;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
@@ -71,9 +75,15 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.custommonkey.xmlunit.XMLUnit;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.stubbing.Answer;
+import org.w3c.dom.Document;
 
 public class SshNetconfClientSessionTest {
 
@@ -82,16 +92,23 @@ public class SshNetconfClientSessionTest {
     private IoOutputStream m_dummyStream;
     private Document m_lastSentMessage;
     private ClientSession m_clientSession;
-    private static final Logger LOGGER = Logger.getLogger(SshNetconfClientSessionTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SshNetconfClientSessionTest.class, LogAppNames.NETCONF_LIB);
     private SshClient m_mockClient;
     private Nio2Session m_nio2Session;
     private AsynchronousSocketChannel m_asynSock;
+    private ExecutorService m_executorService;
 
     @Before
     public void setUp() throws Exception {
         XMLUnit.setIgnoreWhitespace(true);
         NotificationListener notificationListener = mock(NotificationListener.class);
-        m_session = spy(new SshNetconfClientSession(ExecutorServiceProvider.getInstance().getExecutorService()));
+        m_executorService = mock(ExecutorService.class);
+        doAnswer((Answer<Future<?>>) invocation -> {
+            Callable callable = (Callable) invocation.getArguments()[0];
+            callable.call();
+            return null;
+        }).when(m_executorService).submit(any(Callable.class));
+        m_session = new SshNetconfClientSession(m_executorService);
         m_session.addNotificationListener(notificationListener);
         m_clientChannel = mock(ChannelSubsystem.class);
         m_clientSession = mock(ClientSession.class);
@@ -102,10 +119,7 @@ public class SshNetconfClientSessionTest {
         when(m_clientSession.isClosed()).thenReturn(false);
         when(m_clientSession.close(true)).thenReturn(mockFuture);
         when(m_clientSession.close(false)).thenReturn(mockFuture);
-        m_mockClient = mock(SshClient.class);
-        when(m_mockClient.close(true)).thenReturn(mockFuture);
-        when(m_mockClient.close(false)).thenReturn(mockFuture);
-        when(m_mockClient.isClosed()).thenReturn(false);
+        m_mockClient = spy(new SshClient());
         m_session.setSshClient(m_mockClient);
         m_session.setClientChannel(m_clientChannel);
         m_session.setClientSession(m_clientSession);
@@ -146,7 +160,7 @@ public class SshNetconfClientSessionTest {
             }
 
             @Override
-            public IoWriteFuture write(Buffer buffer) {
+            public IoWriteFuture writePacket(Buffer buffer) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 baos.write(buffer.array(), buffer.rpos(), buffer.available());
                 String lastMessageStr = baos.toString();
@@ -163,8 +177,6 @@ public class SshNetconfClientSessionTest {
         };
 
         when(m_clientChannel.getAsyncIn()).thenReturn(m_dummyStream);
-        when(m_clientChannel.isClosed()).thenReturn(false);
-        when(m_clientChannel.isClosing()).thenReturn(false);
         IoSession ioSession = mock(IoSession.class);
         when(ioSession.getLocalAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 4335));
         when(ioSession.getRemoteAddress()).thenReturn(new InetSocketAddress("135.0.0.1", 9496));
@@ -183,6 +195,28 @@ public class SshNetconfClientSessionTest {
 
         m_session.get(request);
         assertTrue(XMLUnit.compareXML(m_lastSentMessage, requestDocument).similar());
+    }
+
+    @Test
+    public void testRPCWriteFailure() throws NetconfMessageBuilderException, IOException {
+        GetRequest request = new GetRequest().setFilter(null);
+
+        IoOutputStream ioOutputStream = mock(IoOutputStream.class);
+        IoWriteFuture writeFuture = mock(IoWriteFuture.class);
+        when(m_clientChannel.getAsyncIn()).thenReturn(ioOutputStream);
+        when(ioOutputStream.writePacket(any(Buffer.class))).thenReturn(writeFuture);
+        when(writeFuture.await(anyLong(), any(TimeUnit.class))).thenReturn(false);
+
+        when(m_clientSession.isOpen()).thenReturn(true);
+        doReturn(true).when(m_mockClient).isOpen();
+
+        verify(m_clientSession, never()).close(true);
+        assertFalse(m_mockClient.isClosed());
+
+        m_session.get(request);
+
+        verify(m_clientSession).close(true);
+        assertTrue(m_mockClient.isClosed());
     }
 
     @Test
@@ -267,8 +301,11 @@ public class SshNetconfClientSessionTest {
 
     @Test
     public void testSshSessionClose() throws NetconfMessageBuilderException, InterruptedException, ExecutionException, IOException {
+        when(m_clientSession.isOpen()).thenReturn(true);
+        doReturn(true).when(m_mockClient).isOpen();
         m_session.close();
-        verify(m_mockClient, times(1)).close(true);
+        verify(m_clientSession, times(1)).close(true);
+        assertTrue(m_session.getSshClient().isClosed());
 
         when(m_clientSession.isClosed()).thenReturn(true);
         CopyConfigRequest request = new CopyConfigRequest().setTargetRunning().setSource("https://user:password@example.com/cfg/new.txt",
@@ -310,12 +347,17 @@ public class SshNetconfClientSessionTest {
 
     @Test
     public void testCloseAsync(){
+        when(m_clientSession.isOpen()).thenReturn(true);
+        doReturn(true).when(m_mockClient).isOpen();
         m_session.closeAsync();
+        verify(m_executorService).submit(any(Callable.class));
         verify(m_clientSession).close(true);
     }
 
     @Test
     public void testCloseGraceFully() throws IOException {
+        when(m_clientSession.isOpen()).thenReturn(true);
+        doReturn(true).when(m_mockClient).isOpen();
         m_session.closeGracefully();
         verify(m_clientSession).close(false);
     }

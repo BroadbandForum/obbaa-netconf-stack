@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static org.junit.Assert.assertEquals;
@@ -10,20 +26,18 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import org.junit.After;
-import org.junit.AfterClass;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
-
+@RunWith(RequestScopeJunitRunner.class)
 public class RequestScopeXmlDSMCacheTest {
 
     private XmlDSMCache m_cache;
@@ -73,11 +87,6 @@ public class RequestScopeXmlDSMCacheTest {
     @Mock
     private XmlModelNodeImpl m_grandChildNode2;
 
-
-    @BeforeClass
-    public static void setUpClass() {
-        RequestScope.setEnableThreadLocalInUT(true);
-    }
 
     @Before
     public void setUp(){
@@ -195,16 +204,6 @@ public class RequestScopeXmlDSMCacheTest {
         assertEquals(m_childNode2,m_treeCache.getFromCache(m_schemaPath2, m_childNode2Id));
         assertEquals(m_grandChildNode1,m_treeCache.getFromCache(m_schemaPath3, m_grandChildNode1Id));
         assertNull(m_treeCache.getFromCache(m_schemaPath4, m_grandChildNode2Id));
-    }
-
-    @After
-    public void tearDown(){
-        RequestScope.resetScope();
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-        RequestScope.setEnableThreadLocalInUT(false);
     }
 
 }

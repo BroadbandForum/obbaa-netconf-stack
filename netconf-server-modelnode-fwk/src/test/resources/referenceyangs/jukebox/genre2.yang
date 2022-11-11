@@ -9,6 +9,15 @@ module genre2 {
     identity base-genre2 {
         description "Base for all genre types";
     }
+
+    identity edm {
+        base base-genre2;
+    }
+
+    identity classical {
+        base base-genre2;
+    }
+
     container genre-1 {
         container genre-2 {
             leaf name {

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.validation;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.MandatoryTypeConstraintParser.checkMandatoryElementExists;
@@ -12,6 +28,7 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContainerHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreConstraintValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationErrors;
@@ -66,8 +83,13 @@ public class ContainerValidator extends AbstractSchemaNodeConstraintParser imple
 	 */
 	@SuppressWarnings("unchecked")
     @Override
-	public void validate(ModelNode modelNode) throws ValidationException {
-	    validateChoiceCase(modelNode, m_containerSchemaNode);
+	public void validate(ModelNode modelNode, DSValidationContext validationContext) throws ValidationException {
+	    validateChoiceCase(modelNode, m_containerSchemaNode, validationContext);
+	}
+
+	@Override
+	public void validateLeafRef(ModelNode modelNode, DSValidationContext validationContext) throws ValidationException {
+		// Nothing to do here.
 	}
 
 	@Override
@@ -81,7 +103,8 @@ public class ContainerValidator extends AbstractSchemaNodeConstraintParser imple
 	@Override
 	public void validate(Element dataNode, RequestType requestType) throws ValidationException {
 		validateChoiceMultiCaseElements(dataNode);
-		if (DataStoreValidationUtil.needsFurtherValidation(dataNode, requestType)) {
+		if (DataStoreValidationUtil.needsFurtherValidation(dataNode, requestType) && 
+		        !DataStoreValidationUtil.skipMandatoryConstaintValidation(m_containerSchemaNode.getPath(), m_schemaRegistry, requestType)) {
 			Collection<DataSchemaNode> childNodes = m_containerSchemaNode.getChildNodes();
 			if (dataNode.getChildNodes().getLength() == 1
 					&& dataNode.getFirstChild().getNodeType() == Element.TEXT_NODE) {

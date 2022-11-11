@@ -27,50 +27,25 @@ public class RequestScope {
 
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(RequestScope.class,
             LogAppNames.NETCONF_LIB);;
-    private static ThreadLocal<Boolean> m_scopeBeingReset = ThreadLocal.withInitial(() -> Boolean.FALSE);
-
+    private static ThreadLocal<Boolean> m_templateIsUsed = ThreadLocal.withInitial(() -> Boolean.FALSE);
     private RequestScope() {
 
     }
 
-    private static ThreadLocal<RequestScope> m_requestScope = new ThreadLocal<RequestScope>() {
-        @Override
-        protected RequestScope initialValue() {
-            return new RequestScope();
-        }
-    };
+    private static ThreadLocal<RequestScope> m_requestScope = ThreadLocal.withInitial(() -> new RequestScope());
 
-    private static boolean enableThreadLocalInUT = false;
-    
-    private static boolean m_useActualRequestScope = false;
+    public static RequestScope getCurrentScope() {
+       /* if (!m_templateIsUsed.get()) {
+            throw new RuntimeException("Could not get the current scope as it is not being reset using template. Encapsulate the base caller with RequestScope.withScope() template to ensure the resetting of cache.");
+        }*/
+        return m_requestScope.get();
+    }
 
     public static void setEnableThreadLocalInUT(boolean newValue) {
         enableThreadLocalInUT = newValue;
         resetScope();
     }
-
-    public static RequestScope getCurrentScope() {
-        /*if (!m_scopeBeingReset.get()) {
-            try {
-                throw new RuntimeException("Scope is not being reset, cannot use cache");
-            } catch (Exception e) {
-                LOGGER.info("RequestScope is not being carefully reset using templates, cache should not be used here", e);
-            }
-        }*/
-        // For UT in Dev & Build Boxes
-        // SelfUT is to exhibit actual behaviour. In other cases; there is no threadLocal behaviour.
-        if (!m_useActualRequestScope) {
-            if (!enableThreadLocalInUT && System.getenv("DB_HOST") != null) {
-                //if DB_HOST is present and Thread local is absent. Means we are starting runkaraf.sh
-                m_useActualRequestScope = true;
-                return m_requestScope.get();
-            } else if (!enableThreadLocalInUT && (System.getenv("MAVEN_HOME") != null || System.getenv
-                    ("JENKINS_HOME") != null)) {
-                return new RequestScope();
-            }
-        }
-        return m_requestScope.get();
-    }
+    private static boolean enableThreadLocalInUT = false;
 
     public static void resetScope() {
         m_requestScope.remove();
@@ -78,8 +53,16 @@ public class RequestScope {
 
     private final Map<String, Object> m_cache = new HashMap<>();
 
+    public static void setScope(RequestScope originalScope) {
+        m_requestScope.set(originalScope);
+    }
+
     public void putInCache(String key, Object value) {
         m_cache.put(key, value);
+    }
+
+    public void removeFromCache(String key) {
+        m_cache.remove(key);
     }
 
     public Object getFromCache(String key) {
@@ -87,18 +70,26 @@ public class RequestScope {
     }
 
     public static <RT> RT withScope(RsTemplate<RT> rsTemplate) throws RsTemplate.RequestScopeExecutionException {
-        return rsTemplate.executeInternal();
+        if (m_templateIsUsed.get()) {
+            return rsTemplate.execute();
+        }
+        return rsTemplate.executeWithReset();
+    }
+
+    public static Boolean isTemplateUsed() {
+        return m_templateIsUsed.get();
     }
 
     public static abstract class RsTemplate<RT> {
         protected abstract RT execute() throws RequestScopeExecutionException;
-        final RT executeInternal() throws RequestScopeExecutionException {
+        final RT executeWithReset() throws RequestScopeExecutionException {
             RequestScope.resetScope();
-            RequestScope.m_scopeBeingReset.set(true);
+            RequestScope.m_templateIsUsed.set(true);
             try{
                 return execute();
             }finally {
                 RequestScope.resetScope();
+                RequestScope.m_templateIsUsed.remove();
             }
         };
 

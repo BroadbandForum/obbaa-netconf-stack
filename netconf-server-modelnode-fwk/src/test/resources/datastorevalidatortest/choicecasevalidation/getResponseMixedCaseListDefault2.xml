@@ -1,6 +1,6 @@
 <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
     <data>
-        <validation:validation xmlns:validation="urn:org:bbf:pma:validation">
+        <validation:validation xmlns:validation="urn:org:bbf2:pma:validation">
             <validation:default-container-or-list-choice-case>
                 <validation:name>Default list case when default value absent for some key</validation:name>
                 <validation:default-container>

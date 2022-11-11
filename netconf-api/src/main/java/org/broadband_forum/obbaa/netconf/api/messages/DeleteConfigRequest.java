@@ -16,13 +16,15 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.DELETE_CONFIG;
+
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <delete-config> } operation.
  * 
- *
+ * 
  * 
  */
 public class DeleteConfigRequest extends AbstractNetconfRequest {
@@ -33,6 +35,11 @@ public class DeleteConfigRequest extends AbstractNetconfRequest {
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
         Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addDeleteConfigElement(m_target).build();
         return doc;
+    }
+
+    @Override
+    public String getRpcType() {
+        return DELETE_CONFIG;
     }
 
     /**

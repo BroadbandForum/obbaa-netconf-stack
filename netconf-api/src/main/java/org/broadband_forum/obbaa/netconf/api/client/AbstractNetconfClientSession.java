@@ -16,14 +16,6 @@
 
 package org.broadband_forum.obbaa.netconf.api.client;
 
-import static org.broadband_forum.obbaa.netconf.api.client.util.CommonConstants.CAPS_CHANGE_NOTIFICATION_TYPE;
-import static org.broadband_forum.obbaa.netconf.api.client.util.CommonConstants.IETF_YANG_LIBRARY_NS;
-import static org.broadband_forum.obbaa.netconf.api.client.util.CommonConstants.MODULES_STATE;
-import static org.broadband_forum.obbaa.netconf.api.client.util.CommonConstants.MODULE_SET_ID;
-import static org.broadband_forum.obbaa.netconf.api.client.util.CommonConstants.YANG_LIBRARY;
-import static org.broadband_forum.obbaa.netconf.api.client.util.ModuleElementUtil.fetchModulesFeaturesDeviationsFromResponse;
-import static org.broadband_forum.obbaa.netconf.api.client.util.ModuleElementUtil.getYangLibraryRequest;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,15 +25,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.api.NetconfCapability;
+import org.broadband_forum.obbaa.netconf.api.ClosureReason;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
@@ -67,6 +56,8 @@ import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -76,13 +67,13 @@ import org.w3c.dom.NodeList;
  * An abstract class that takes care of converting Pojo netconf requests into {@link Document}. The class delegates the actual transport of
  * the {@link Document} to the subclasses via {@link #sendRpcMessage(String, Document, long)}
  *
- *
+ * 
  */
 public abstract class AbstractNetconfClientSession implements NetconfClientSession {
-    private static final Logger LOGGER = Logger.getLogger(AbstractNetconfClientSession.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(AbstractNetconfClientSession.class, LogAppNames.NETCONF_LIB);
     public static final long DEFAULT_MESSAGE_TIMEOUT = 100000;
 
-    protected Map<String, TimeoutFutureResponse> m_responseFutures = new ConcurrentHashMap<>();
+    protected Map<String, NetconfResponseFuture> m_responseFutures = new ConcurrentHashMap<>();
     AtomicLong m_messageId = new AtomicLong(0);
     private Set<String> m_serverCapabilities = new HashSet<>();
     private int m_sessionId;
@@ -90,7 +81,7 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
     private List<NetconfClientSessionListener> m_sessionListeners = new ArrayList<>();
     private Set<NotificationListener> m_notificationListeners = new CopyOnWriteArraySet<>();
     private long m_idleTimeStart;
-    private boolean m_isCapabilityUpdatedWithLatestYangLibrary = false;
+    private ClosureReason m_closureReason;
 
     public AbstractNetconfClientSession() {
         super();
@@ -98,76 +89,99 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> getConfig(GetConfigRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture getConfig(GetConfigRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
-    protected abstract CompletableFuture<NetConfResponse> sendRpcMessage(String currentMessageId, Document requestDocument, long timoutMillis);
+    protected abstract NetconfResponseFuture sendRpcMessage(String currentMessageId, Document requestDocument, long timoutMillis);
 
     protected void responseRecieved(String msgId, NetConfResponse response) {
-        m_responseFutures.get(msgId).complete(response);
+        NetconfResponseFuture responseFuture = m_responseFutures.get(msgId);
+        if (responseFuture != null) {
+            responseFuture.complete(response);
+        } else if(response != null) {
+            LOGGER.error("Unable to handle the response  " + response.responseToString());
+        }
         m_responseFutures.remove(msgId);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> editConfig(EditConfigRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture editConfig(EditConfigRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> copyConfig(CopyConfigRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture copyConfig(CopyConfigRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> deleteConfig(DeleteConfigRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture deleteConfig(DeleteConfigRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> lock(LockRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture lock(LockRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> unlock(UnLockRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture unlock(UnLockRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> get(GetRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture get(GetRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> rpc(NetconfRpcRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture rpc(NetconfRpcRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> action(ActionRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture action(ActionRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> sendRpc(AbstractNetconfRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture sendRpc(AbstractNetconfRequest request) throws NetconfMessageBuilderException {
         setMessageId(request);
         return sendRpcAndGetFuture(request, request.getMessageId());
     }
 
-    protected CompletableFuture<NetConfResponse> sendRpcAndGetFuture(AbstractNetconfRequest request, String currentMessageId) throws NetconfMessageBuilderException {
-        Document requestDocument = request.getRequestDocument();
-        CompletableFuture<NetConfResponse> responseFuture = null;
+    protected NetconfResponseFuture sendRpcAndGetFuture(AbstractNetconfRequest request, String currentMessageId) throws NetconfMessageBuilderException {
+        Document requestDocument = getRequestDocument(request);
+        NetconfResponseFuture responseFuture;
         if (isOpen()) {
             responseFuture = sendRpcMessage(currentMessageId, requestDocument, request.getReplyTimeout());
         } else {
             LOGGER.warn("Session with id=" + getSessionId() + " was closed. Failed to send the " +
                     request.getClass().getName() + " with message id = " + request.getMessageId());
-            responseFuture = new TimeoutFutureResponse(1, TimeUnit.MILLISECONDS);
+            responseFuture = new NetconfResponseFuture(1, TimeUnit.MILLISECONDS);
             responseFuture.complete(null);
         }
         resetIdleTimeStart();
+        unsetConfigElement(request);
         return responseFuture;
+    }
+
+    private void unsetConfigElement(AbstractNetconfRequest request) {
+        if (hasReqStringCopy(request)) {
+            ((EditConfigRequest)request).unsetConfigElement();
+        }
+    }
+
+    private Document getRequestDocument(AbstractNetconfRequest request) throws NetconfMessageBuilderException {
+        if (hasReqStringCopy(request)) {
+            ((EditConfigRequest)request).setConfigElement();
+        }
+        return request.getRequestDocument();
+    }
+
+    private boolean hasReqStringCopy(AbstractNetconfRequest request) {
+        return request instanceof EditConfigRequest && ((EditConfigRequest) request).getReqXmlStrCopy() != null;
     }
 
     @Override
@@ -177,19 +191,19 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> createSubscription(CreateSubscriptionRequest request, NotificationListener notificationListener)
+    public NetconfResponseFuture createSubscription(CreateSubscriptionRequest request, NotificationListener notificationListener)
             throws NetconfMessageBuilderException {
         addNotificationListener(notificationListener);
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> closeSession(CloseSessionRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture closeSession(CloseSessionRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
     @Override
-    public CompletableFuture<NetConfResponse> killSession(KillSessionRequest request) throws NetconfMessageBuilderException {
+    public NetconfResponseFuture killSession(KillSessionRequest request) throws NetconfMessageBuilderException {
         return sendRpc(request);
     }
 
@@ -200,9 +214,6 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
 
     @Override
     public Set<String> getServerCapabilities() {
-        if (!m_isCapabilityUpdatedWithLatestYangLibrary) {
-            addAdditionalCapabilitiesForYang11();
-        }
         return m_serverCapabilities;
     }
 
@@ -211,7 +222,8 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
         return m_sessionId;
     }
 
-    public void responseRecieved(Document responseDoc) throws NetconfMessageBuilderException {
+    public void responseRecieved(DocumentInfo documentInfo) throws NetconfMessageBuilderException {
+        Document responseDoc = documentInfo.getDocument();
         LOGGER.debug("Received response: " + DocumentUtils.prettyPrint(responseDoc));
         resetIdleTimeStart();
         Element rootElement = responseDoc.getDocumentElement();
@@ -232,10 +244,7 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
             NetConfResponse axsNetconfResponse = DocumentToPojoTransformer.getNetconfResponse(responseDoc);
             responseRecieved(msgId, axsNetconfResponse);
         } else if (NetconfResources.NOTIFICATION.equals(rootElement.getNodeName())) {
-            Notification notification = DocumentToPojoTransformer.getNotification(responseDoc);
-            if (CAPS_CHANGE_NOTIFICATION_TYPE.equals(notification.getType())) {
-                m_isCapabilityUpdatedWithLatestYangLibrary = false;
-            }
+            Notification notification = DocumentToPojoTransformer.getNotification(documentInfo);
             notificationReceived(notification);
             LOGGER.debug("called notificationReceived for " + notification.notificationToPrettyString());
         }
@@ -312,8 +321,21 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
             responseFuture.complete(null);
         }
         for (NetconfClientSessionListener listener : m_sessionListeners) {
-            listener.sessionClosed(this.m_sessionId);
+            listener.sessionClosed(this.m_sessionId, m_closureReason);
         }
+    }
+
+    public void closeAsync() {
+        closeAsync(null);
+    }
+
+    public void closeAsync(ClosureReason closureReason) {
+        m_closureReason = closureReason;
+    }
+
+    @Override
+    public void setClosureReason(ClosureReason closureReason) {
+        m_closureReason = closureReason;
     }
 
     private void notificationReceived(Notification notification) {
@@ -363,75 +385,4 @@ public abstract class AbstractNetconfClientSession implements NetconfClientSessi
         return this;
     }
 
-    public class TimeoutFutureResponse extends CompletableFuture<NetConfResponse> {
-        private final long m_messageTimeOut;
-        private final TimeUnit m_timeUnit;
-
-        public TimeoutFutureResponse(long messageTimeOut, TimeUnit timeUnit) {
-            m_messageTimeOut = messageTimeOut;
-            m_timeUnit = timeUnit;
-        }
-
-        @Override
-        public NetConfResponse get() throws InterruptedException, ExecutionException {
-            try {
-                //add a timeout by default to maintain legacy behavior
-                return super.get(m_messageTimeOut, m_timeUnit);
-            } catch (TimeoutException e) {
-                return null;
-            }
-        }
-    }
-
-    private void addAdditionalCapabilitiesForYang11() {
-        if (isYangVersion11(m_serverCapabilities)) {
-            final Element yangLibrarylement = getYangLibraryElement();
-            if (yangLibrarylement != null) {
-                List<NetconfCapability> deviceCapabilities = fetchModulesFeaturesDeviationsFromResponse(yangLibrarylement);
-                for (NetconfCapability capability : getDuplicatesRemovedCapabilities(deviceCapabilities)) {
-                    m_serverCapabilities.add(capability.toString().intern());
-                }
-            } else {
-                return;
-            }
-        }
-        m_isCapabilityUpdatedWithLatestYangLibrary = true;
-    }
-
-    private List<NetconfCapability> getDuplicatesRemovedCapabilities(List<NetconfCapability> deviceCapabilities) {
-        for(final String serverCapability : m_serverCapabilities) {
-            final NetconfCapability capability = new NetconfCapability(serverCapability);
-            deviceCapabilities =  deviceCapabilities.stream()
-                    .filter(deviceCapability -> !capability.identical(deviceCapability))
-                    .collect(Collectors.toList());
-        }
-        return deviceCapabilities;
-    }
-
-    private boolean isYangVersion11(final Set<String> capabilitiesFromDevice) {
-        for (final String capability : capabilitiesFromDevice) {
-            if (capability.contains(YANG_LIBRARY) && capability.contains(MODULE_SET_ID)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private Element getYangLibraryElement() {
-        try {
-            GetRequest req = getYangLibraryRequest();
-            Future<NetConfResponse> netconfResponse = getType().get(req);
-            if (netconfResponse != null) {
-                NetConfResponse response = netconfResponse.get();
-                if (response != null) {
-                    return DocumentUtils.getDirectChildElement(response.getData(), MODULES_STATE, IETF_YANG_LIBRARY_NS);
-                } else {
-                    LOGGER.error("Could not get Yang Library data from device, response is null");
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error while getting YangLibrary for device: {}", e);
-        }
-        return null;
-    }
 }

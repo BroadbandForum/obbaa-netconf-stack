@@ -16,12 +16,15 @@
 
 package org.broadband_forum.obbaa.netconf.server.netty.impl;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 import io.netty.channel.EventLoopGroup;
-import org.apache.log4j.Logger;
 
 public abstract class NettyBasedServerSession implements NetconfServerSession {
-    static final Logger LOGGER = Logger.getLogger(NettyBasedServerSession.class);
+    static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NettyBasedServerSession.class, LogAppNames.NETCONF_LIB);
     protected EventLoopGroup m_bossGroup;
     protected EventLoopGroup m_workerGroup;
 

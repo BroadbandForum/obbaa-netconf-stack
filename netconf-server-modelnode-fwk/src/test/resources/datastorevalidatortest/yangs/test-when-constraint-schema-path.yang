@@ -1,0 +1,85 @@
+module test-when-constraint-schema-path {
+
+    yang-version 1.1;
+
+    namespace "when-constraint";
+
+    prefix "when";
+
+    revision "2020-06-05" {
+	      description "Initial version.";
+	}
+
+    container test-container {
+
+        leaf test-leaf {
+            when "../when-leaf = 'when'";
+            type string;
+        }
+
+        leaf when-leaf {
+            type string;
+        }
+
+        list test-list {
+            when "type = 'type'";
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+            action list-action {
+                input {
+                    leaf device-id {
+                        type string;
+                    }
+                    leaf duid {
+                        when "../device-id = 'AAA'";
+                        type string;
+                    }
+                }
+            }
+        }
+
+        container state-container {
+            when "../when-leaf = 'state'";
+            config false;
+
+            leaf state-leaf {
+                type string;
+            }
+
+            action state-action {
+                input {
+                    list device {
+                        key duid;
+                        leaf device-id {
+                            when "../duid='test'";
+                            type string;
+                        }
+                        leaf duid {
+                            type string;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    rpc when-constraint-rpc {
+        input {
+            list device {
+                key duid;
+                leaf device-id {
+                    when "../duid = 'test'";
+                    type string;
+                }
+                leaf duid {
+                    type string;
+                }
+            }
+        }
+    }
+}

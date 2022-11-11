@@ -1,0 +1,24 @@
+module module-with-invalid-hint1 {
+  namespace "urn:module-with-invalid-hint1";
+  prefix modulehint;
+
+  revision 2018-06-28 {
+    description
+      "Initial version.";
+  }
+    
+  import nc-stack-extensions {
+      prefix "ncext";
+  }
+  
+  import module-with-node-hints {
+      prefix "nodehints";
+  }
+  
+  ncext:validation-hints "/nodehints:hintContainer/nodehints:nodeWithHintNotExists" {
+      ncext:expression "derived-from-or-self 
+          (../nodehints:nodeWithHint2, 'identity3')" ;
+      ncext:hints "*->SKIP_IMPACT_ON_CREATE";
+  }
+  
+}

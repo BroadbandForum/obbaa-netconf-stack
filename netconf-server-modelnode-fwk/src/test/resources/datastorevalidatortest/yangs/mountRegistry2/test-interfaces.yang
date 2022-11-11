@@ -1,0 +1,96 @@
+module test-interfaces {
+    
+    yang-version 1.1;
+    
+    namespace "test-interfaces";
+    
+    prefix "if";
+    
+    typedef intf-ref {
+        type leafref {
+            path "/if:interfaces/if:interface/if:name";
+        }
+        description
+            "This type is used by data models that need to reference
+             configured interfaces.";
+    }    
+    typedef interface-ref {
+        type leafref {
+          path "/if:interfaces/if:interface/if:name";
+        }
+        description
+          "This type is used by data models that need to reference
+           configured interfaces.";
+    }
+    
+    identity interface-type {
+		description
+	      "Base identity from which specific interface types are
+	       derived.";
+	}
+	
+	identity ieee80211 {
+		base interface-type;
+	}
+	
+	identity ieee80212 {
+		base ieee80211;
+	}
+    
+    identity languages {
+      description "Base for all languages";
+    }
+   
+    identity english {
+      base languages;
+      description "English language";
+    }
+   
+	identity french {
+        base languages;
+        description "French language";
+    }
+
+    identity indian-language {
+        base languages;
+        description "Indian language";
+    }
+
+    identity hindi {
+        base indian-language;
+        description "Hindi language";
+    }
+    
+    grouping local-name-and-namespace-uri-grouping {
+	 leaf groupingLeaf1 {
+	  when "local-name(..) = 'local-name-and-ns-uri1'";
+	  type string;
+	 }
+	 
+	 leaf groupingLeaf2 {
+	  when "namespace-uri(..) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+	  type string;
+	 }
+	}
+	
+    container interfaces {
+        list interface {
+            key name;
+            
+            leaf name{
+                type string;
+            }
+            
+            leaf type {
+		        type identityref {
+		          base interface-type;
+		        }
+            }
+            leaf enabled{
+            	type boolean;
+            }
+            
+        }
+    }
+    
+}

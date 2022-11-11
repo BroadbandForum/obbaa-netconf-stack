@@ -26,7 +26,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import  org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.Difference;
 import org.custommonkey.xmlunit.DifferenceConstants;
@@ -41,7 +43,7 @@ import org.xml.sax.SAXException;
 
 public class TestXML {
 
-    private static final Logger LOGGER = Logger.getLogger(TestXML.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(TestXML.class, LogAppNames.NETCONF_LIB);
 
     public static boolean assertXMLEquals(Element expectedElement, Element actualElement) throws SAXException, IOException {
         return assertXMLEquals(expectedElement, actualElement, Collections.EMPTY_LIST);

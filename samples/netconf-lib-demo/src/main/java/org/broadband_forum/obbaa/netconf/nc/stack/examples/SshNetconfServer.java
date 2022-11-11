@@ -23,8 +23,7 @@ import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfiguration;
@@ -40,12 +39,14 @@ import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.server.QueuingMessageHandler;
 import org.broadband_forum.obbaa.netconf.server.dispatcher.NetconfServerDispatcherImpl;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
  * Example SSH Netconf Server.
  */
 public class SshNetconfServer {
-    private static final Logger LOGGER = Logger.getLogger(SshNetconfServer.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SshNetconfServer.class, LogAppNames.NETCONF_LIB);
     public static int c_serverPort = 9292;
     public static long c_connectionTimeout = 1000000L;
     private AuthenticationListener m_authListener;

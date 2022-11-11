@@ -1,4 +1,22 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils;
+
+import static org.broadband_forum.obbaa.netconf.api.util.ReflectionUtils.getAllDeclaredFields;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -33,6 +51,7 @@ import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangOrderByUser;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentId;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentSchemaPath;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangVisibilityController;
 import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangXmlSubtree;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
@@ -109,7 +128,7 @@ public class EntityRegistryBuilder {
         entityRegistry.addComponentClass(componentId, subrootClass);
         entityRegistry.addYangSchemaPathSetter(subrootClass, getYangSchemaPathSetter(subrootClass));
         entityRegistry.addYangSchemaPathGetter(subrootClass, getYangSchemaPathGetter(subrootClass));
-        for(Field field : subrootClass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(subrootClass)){
             YangChild annotation = field.getAnnotation(YangChild.class);
             if(annotation != null){
                 Type type = field.getType();
@@ -140,11 +159,14 @@ public class EntityRegistryBuilder {
     	entityRegistry.addParentIdGetter(subrootClass,getParentIdGetter(subrootClass));
     	entityRegistry.addOrderByUserGetter(subrootClass, getOrderByUserGetters(subrootClass));
     	entityRegistry.addOrderByUserSetter(subrootClass, getOrderByUserSetters(subrootClass));
+        entityRegistry.addYangVisibilityControllerGetter(subrootClass, getYangVisibilityControllerGetters(subrootClass));
+        entityRegistry.addYangVisibilityControllerSetter(subrootClass, getYangVisibilityControllerSetters(subrootClass));
         entityRegistry.addYangLeafListGetters(subrootClass, getYangLeafListGetters(subrootClass, klassQName));
         entityRegistry.addYangLeafListSetters(subrootClass, getYangLeafListSetters(subrootClass, klassQName));
         entityRegistry.addYangAttributeNSGetters(subrootClass, getYangIdentityRefNSGetters(subrootClass,klassQName));
         entityRegistry.addYangAttributeNSSetters(subrootClass, getYangIdentityRefNSSetters(subrootClass,klassQName));
         entityRegistry.addBigListType(subrootClass, getBigListType(subrootClass));
+        entityRegistry.addEagerFetchInfo(subrootClass, getEagerFetchInfoFromYangXmlSubtreeAnnotation(subrootClass));
         Method yangXmlSubtreeGetter = getYangXmlSubtreeGetter(subrootClass);
         if (yangXmlSubtreeGetter!=null) {
             entityRegistry.addYangXmlSubtreeGetter(subrootClass, yangXmlSubtreeGetter);
@@ -157,7 +179,7 @@ public class EntityRegistryBuilder {
 
     private static  Map<QName, String> getJpaAttributesInfo(Class klass, QName klassQName) {
         Map<QName, String> attrsInfo = new HashMap<>();
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangListKey yangListKey = field.getAnnotation(YangListKey.class);
             if(yangListKey != null){
                 String attributeName = field.getName();
@@ -179,11 +201,11 @@ public class EntityRegistryBuilder {
 
     private static Map<QName, Method> getYangIdentityRefNSGetters(Class klass, QName klassQName) {
         Map<QName, Method> getters = new HashMap<>();
-        for(Field attributeField: klass.getDeclaredFields()){
+        for(Field attributeField: getAllDeclaredFields(klass)){
             YangAttribute yangAttribute = attributeField.getAnnotation(YangAttribute.class);
             if(yangAttribute!=null && (yangAttribute.attributeType().equals(AttributeType.IDENTITY_REF_CONFIG_ATTRIBUTE) ||
                     yangAttribute.attributeType().equals(AttributeType.INSTANCE_IDENTIFIER_CONFIG_ATTRIBUTE))){
-                for(Field identityRefField: klass.getDeclaredFields()){
+                for(Field identityRefField: getAllDeclaredFields(klass)){
                     YangAttributeNS yangAttributeNS = identityRefField.getAnnotation(YangAttributeNS.class);
                     QName attributeQName = getQName(attributeField.getName(),attributeField.getDeclaredAnnotations(),klassQName);
                     Optional<Revision> optAttributeRevision = attributeQName.getRevision();
@@ -217,11 +239,11 @@ public class EntityRegistryBuilder {
 
     private static Map<QName, Method> getYangIdentityRefNSSetters(Class klass, QName klassQName) {
         Map<QName, Method> setters = new HashMap<>();
-        for(Field attributeField: klass.getDeclaredFields()){
+        for(Field attributeField: getAllDeclaredFields(klass)){
             YangAttribute yangAttribute = attributeField.getAnnotation(YangAttribute.class);
             if(yangAttribute!=null && (yangAttribute.attributeType().equals(AttributeType.IDENTITY_REF_CONFIG_ATTRIBUTE) ||
                     yangAttribute.attributeType().equals(AttributeType.INSTANCE_IDENTIFIER_CONFIG_ATTRIBUTE))){
-                for(Field identityRefField: klass.getDeclaredFields()){
+                for(Field identityRefField: getAllDeclaredFields(klass)){
                     YangAttributeNS yangAttributeNS = identityRefField.getAnnotation(YangAttributeNS.class);
                     QName attributeQName = getQName(attributeField.getName(),attributeField.getDeclaredAnnotations(),klassQName);
                     Optional<Revision> optAttributeRevision = attributeQName.getRevision();
@@ -254,7 +276,7 @@ public class EntityRegistryBuilder {
     }
 
     private static Method getYangSchemaPathSetter(Class klass) {
-        for(Field field: klass.getDeclaredFields()){
+        for(Field field: getAllDeclaredFields(klass)){
             YangSchemaPath yangChildAnnotation = field.getAnnotation(YangSchemaPath.class);
             if(yangChildAnnotation != null){
                 try {
@@ -268,7 +290,7 @@ public class EntityRegistryBuilder {
     }
 
     private static Method getYangSchemaPathGetter(Class klass) {
-        for(Field field: klass.getDeclaredFields()){
+        for(Field field: getAllDeclaredFields(klass)){
             YangSchemaPath yangSchemaPathAnnotation = field.getAnnotation(YangSchemaPath.class);
             if(yangSchemaPathAnnotation != null){
                 try {
@@ -300,7 +322,7 @@ public class EntityRegistryBuilder {
     }
 
     private static Method getYangXmlSubtreeGetter(Class klass) {
-        for(Field field: klass.getDeclaredFields()){
+        for(Field field: getAllDeclaredFields(klass)){
             YangXmlSubtree yangXmlSubtreeAnnotation = field.getAnnotation(YangXmlSubtree.class);
             if(yangXmlSubtreeAnnotation != null){
                 try {
@@ -313,8 +335,18 @@ public class EntityRegistryBuilder {
         return null;
     }
 
+    private static Boolean getEagerFetchInfoFromYangXmlSubtreeAnnotation(Class entityClass) {
+        for(Field field: getAllDeclaredFields(entityClass)){
+            YangXmlSubtree yangXmlSubtreeAnnotation = field.getAnnotation(YangXmlSubtree.class);
+            if(yangXmlSubtreeAnnotation != null){
+                return yangXmlSubtreeAnnotation.fetchEagerly();
+            }
+        }
+        return false;
+    }
+
     private static Method getYangXmlSubtreeSetter(Class klass) {
-        for(Field field: klass.getDeclaredFields()){
+        for(Field field: getAllDeclaredFields(klass)){
             YangXmlSubtree yangXmlSubtreeAnnotation = field.getAnnotation(YangXmlSubtree.class);
             if(yangXmlSubtreeAnnotation != null){
                 try {
@@ -329,7 +361,7 @@ public class EntityRegistryBuilder {
 
     private static  Map<QName, Method> getConfigAttributeGetters(Class klass, QName klassQName) {
         Map<QName, Method> getters = new HashMap<>();
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangAttribute yangAttributeAnnotation = field.getAnnotation(YangAttribute.class);
 
             if(yangAttributeAnnotation!=null){
@@ -346,7 +378,7 @@ public class EntityRegistryBuilder {
 
     private static  Map<QName, Method> getConfigAttributeSetters(Class klass, QName klassQName) {
         Map<QName, Method> setters = new HashMap<>();
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangAttribute yangAttributeAnnotation = field.getAnnotation(YangAttribute.class);
 
             if(yangAttributeAnnotation!=null){
@@ -361,8 +393,36 @@ public class EntityRegistryBuilder {
         return setters;
     }
     
+    private static Method getYangVisibilityControllerGetters(Class klass) {
+    	for(Field field: getAllDeclaredFields(klass)){
+            YangVisibilityController yangVisibilityControllerAnnotation = field.getAnnotation(YangVisibilityController.class);
+            if(yangVisibilityControllerAnnotation != null){
+                try {
+                    return AnnotationUtil.getGetMethod(klass, field);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Method getYangVisibilityControllerSetters(Class klass) {
+        for(Field field: getAllDeclaredFields(klass)){
+            YangVisibilityController yangVisibilityControllerAnnotation = field.getAnnotation(YangVisibilityController.class);
+            if(yangVisibilityControllerAnnotation != null){
+                try {
+                    return AnnotationUtil.getSetMethod(klass, field);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
+    }
+
     private static  Method getOrderByUserGetters(Class klass) {
-    	for(Field field: klass.getDeclaredFields()){
+    	for(Field field: getAllDeclaredFields(klass)){
             YangOrderByUser yangOrderByUserAnnotation = field.getAnnotation(YangOrderByUser.class);
             if(yangOrderByUserAnnotation != null){
                 try {
@@ -376,7 +436,7 @@ public class EntityRegistryBuilder {
     }
 
     private static  Method getOrderByUserSetters(Class klass) {
-        for(Field field: klass.getDeclaredFields()){
+        for(Field field: getAllDeclaredFields(klass)){
             YangOrderByUser yangOrderByUserAnnotation = field.getAnnotation(YangOrderByUser.class);
             if(yangOrderByUserAnnotation != null){
                 try {
@@ -411,7 +471,7 @@ public class EntityRegistryBuilder {
 
     private static Method getParentIdSetter(Class klass) {
         Method setter = null;
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangParentId yangParentIdAnnotation = field.getAnnotation(YangParentId.class);
             if(yangParentIdAnnotation !=null){
                 try {
@@ -427,7 +487,7 @@ public class EntityRegistryBuilder {
 
     private static Method getParentIdGetter(Class klass) {
         Method getter = null;
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangParentId yangParentIdAnnotation = field.getAnnotation(YangParentId.class);
             if(yangParentIdAnnotation !=null){
                 try {
@@ -443,7 +503,7 @@ public class EntityRegistryBuilder {
 
     private static Map<QName, String> getFieldQNames(Class klass, QName klassQName) {
         Map<QName, String> fieldNames = new HashMap<>();
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangAttribute yangAttributeAnnotation = field.getAnnotation(YangAttribute.class);
 
             if(yangAttributeAnnotation!=null){
@@ -460,7 +520,7 @@ public class EntityRegistryBuilder {
 
     private static Map<QName,Method> getYangLeafListGetters(Class klass, QName klassQName) {
         Map<QName, Method> getters = new HashMap<>();
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangLeafList yangLeafListAnnotation = field.getAnnotation(YangLeafList.class);
 
             if(yangLeafListAnnotation!=null){
@@ -472,7 +532,7 @@ public class EntityRegistryBuilder {
 
     private static Map<QName,Method> getYangLeafListSetters(Class klass, QName klassQName) {
         Map<QName, Method> setters = new HashMap<>();
-        for(Field field : klass.getDeclaredFields()){
+        for(Field field : getAllDeclaredFields(klass)){
             YangLeafList yangLeafListAnnotation = field.getAnnotation(YangLeafList.class);
 
             if(yangLeafListAnnotation!=null){
@@ -599,7 +659,7 @@ public class EntityRegistryBuilder {
         //assume all classes are roots, then start refining
         while(classIter.hasNext()){
             Class klass = classIter.next();
-            for(Field field : klass.getDeclaredFields()){
+            for(Field field : getAllDeclaredFields(klass)){
                 Type effectiveType = field.getType();
                 if(field.getGenericType() instanceof ParameterizedType){
                     ParameterizedType type = (ParameterizedType)field.getGenericType();

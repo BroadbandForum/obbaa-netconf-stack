@@ -95,6 +95,38 @@ public class NetconfRpcResponseTest {
             
         }
     }
+
+    @Test
+    public void testGetResponseDocumentWithTxId() throws NetconfMessageBuilderException{
+        NetConfResponse response = new NetConfResponse();
+        response.setMessageId("1");
+        response.setTxId("tx-id");
+        response.setOk(true);
+        Document document = response.getResponseDocument();
+        Node node = document.getFirstChild();
+        if (node instanceof Element){
+            Element nodeElement = (Element)node;
+            assertTrue(validate(nodeElement,"rpc-reply"));
+            assertTrue(validate(nodeElement,"transaction-id"));
+            assertFalse(validate(nodeElement, "ok"));
+        }
+    }
+
+    @Test
+    public void testGetResponseDocumentWithoutTxId() throws NetconfMessageBuilderException{
+        NetConfResponse response = new NetConfResponse();
+        response.setMessageId("1");
+        response.setTxId(null);
+        response.setOk(true);
+        Document document = response.getResponseDocument();
+        Node node = document.getFirstChild();
+        if (node instanceof Element){
+            Element nodeElement = (Element)node;
+            assertTrue(validate(nodeElement,"rpc-reply"));
+            assertFalse(validate(nodeElement,"transaction-id"));
+            assertTrue(validate(nodeElement, "ok"));
+        }
+    }
     
     private boolean validate(Element element,String localName){
         

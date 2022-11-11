@@ -137,6 +137,28 @@ module example-jukebox {
             } // leaf-list dummy-id-ref
 
           }  // list album
+
+          list album-ordered-by-user {
+            key "name";
+            ordered-by user;
+            description
+              "Represents one song resource within one
+              album resource, within the jukebox library.";
+            leaf name {
+              type string {
+                length "1 .. max";
+              }
+              description
+                "The name of the song";
+            }
+            leaf year {
+              type uint16 {
+                range "1900 .. max";
+              }
+              description
+                "The year the album was released";
+            }
+          } // list album-ordered-by-user
         }  // list artist
       }  // container library
     }  // container jukebox

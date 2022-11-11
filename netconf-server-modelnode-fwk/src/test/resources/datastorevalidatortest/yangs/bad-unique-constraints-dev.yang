@@ -1,0 +1,30 @@
+module bad-unique-constraints-dev {
+    
+    yang-version 1.1;
+    
+    namespace "urn:org:bbf2:pma:bad-unique-constraints-dev";
+    
+    prefix "baduniquedev";
+    
+    import bad-unique-constraints-main {
+        prefix "badunique";
+    }
+    
+    revision "2015-12-14" {
+          description "Initial version.";
+    }
+    
+    container test-dev {
+        
+    }
+    
+    deviation "/badunique:bad-unique-test/badunique:test-list" {
+        deviate add {
+            unique "thirdleaf";
+            unique "ipv4/ip-address";
+            unique "badunique:ipv6/badunique:ip-address";
+            unique "badunique:my-choice/badunique:caseA/badunique:caseA-container/badunique:caseA-leaf";
+        }
+    }
+}   
+        

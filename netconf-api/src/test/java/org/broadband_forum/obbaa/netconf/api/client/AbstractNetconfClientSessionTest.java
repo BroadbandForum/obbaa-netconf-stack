@@ -16,9 +16,6 @@
 
 package org.broadband_forum.obbaa.netconf.api.client;
 
-import static org.broadband_forum.obbaa.netconf.api.client.util.AbstractNetconfClientSessionGetServerCapabilityTestUtil.getNetConfResponses;
-import static org.broadband_forum.obbaa.netconf.api.client.util.AbstractNetconfClientSessionGetServerCapabilityTestUtil.getYangModulesResponseElementWithDeviations;
-import static org.broadband_forum.obbaa.netconf.api.client.util.AbstractNetconfClientSessionGetServerCapabilityTestUtil.getYangModulesResponseElementWithSimYang;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -27,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -37,6 +35,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import org.broadband_forum.obbaa.netconf.api.client.util.AbstractNetconfClientSessionTestSetUp;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.CopyConfigRequest;
@@ -57,9 +56,9 @@ import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.api.utils.FileUtil;
 import org.joda.time.DateTime;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.w3c.dom.Document;
 
 public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessionTestSetUp {
@@ -87,7 +86,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         getConfigRequest.setSource(TEST_SOURCE);
         assertNotNull(m_abstractNetconfClientSession.getConfig(getConfigRequest));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<get-config>"
                         + "<source>"
                         + "<testSource/>"
@@ -108,7 +107,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         editConfigRequest.setConfigElement(editConfigElement);
         assertNotNull(m_abstractNetconfClientSession.editConfig(editConfigRequest));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<edit-config>"
                         + "<target><testTarget/></target>"
                         + "<default-operation>testOperation</default-operation>"
@@ -122,13 +121,63 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
     }
 
     @Test
+    public void testEditConfigWithXmlStrCopy() throws Exception {
+        EditConfigRequest editConfigRequest = spy(new EditConfigRequest());
+        editConfigRequest.setTarget(TEST_TARGET);
+        editConfigRequest.setDefaultOperation(TEST_OPERATION);
+        editConfigRequest.setTestOption(TEST_OPTION);
+        EditConfigElement editConfigElement = new EditConfigElement();
+        editConfigElement.addConfigElementContent(DocumentUtils.stringToDocument("<some-configuration-node/>").getDocumentElement());
+        editConfigRequest.setConfigElement(editConfigElement);
+        assertNotNull(m_abstractNetconfClientSession.editConfig(editConfigRequest));
+        assertEquals(
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
+                        + "<edit-config>"
+                        + "<target><testTarget/></target>"
+                        + "<default-operation>testOperation</default-operation>"
+                        + "<test-option>testOption</test-option>"
+                        + "<error-option>stop-on-error</error-option>"
+                        + "<config>"
+                        + "<some-configuration-node/>"
+                        + "</config>"
+                        + "</edit-config>"
+                        + "</rpc>]]>]]>",
+                m_obtainedXmlString);
+
+        m_obtainedXmlString = "";
+        assertNotNull(editConfigRequest.getConfigElement());
+        assertNull(editConfigRequest.getReqXmlStrCopy());
+
+        editConfigRequest.setReqXmlStrCopy();
+        verify(editConfigRequest).unsetConfigElement();
+
+        assertNull(editConfigRequest.getConfigElement());
+        assertNotNull(editConfigRequest.getReqXmlStrCopy());
+        assertNotNull(m_abstractNetconfClientSession.editConfig(editConfigRequest));
+        assertEquals(
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"2\">"
+                        + "<edit-config>"
+                        + "<target><testTarget/></target>"
+                        + "<default-operation>testOperation</default-operation>"
+                        + "<test-option>testOption</test-option>"
+                        + "<error-option>stop-on-error</error-option>"
+                        + "<config>"
+                        + "<some-configuration-node/>"
+                        + "</config>"
+                        + "</edit-config>"
+                        + "</rpc>]]>]]>",
+                m_obtainedXmlString);
+        verify(editConfigRequest, times(2)).unsetConfigElement();
+    }
+
+    @Test
     public void testCopyConfig() throws NetconfMessageBuilderException {
         CopyConfigRequest configRequest = new CopyConfigRequest();
         configRequest.setSourceRunning();
         configRequest.setTargetRunning();
         assertNotNull(m_abstractNetconfClientSession.copyConfig(configRequest));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<copy-config>"
                         + "<target><running/></target>"
                         + "<source><running/></source>"
@@ -144,7 +193,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         deleteConfigRequest.setTarget(TEST_TARGET);
         assertNotNull(m_abstractNetconfClientSession.deleteConfig(deleteConfigRequest));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<delete-config>"
                         + "<target><testTarget/></target>"
                         + "</delete-config>"
@@ -159,7 +208,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         lockRequest.setTargetRunning();
         assertNotNull(m_abstractNetconfClientSession.lock(lockRequest));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<lock>"
                         + "<target><running/></target>"
                         + "</lock>"
@@ -174,7 +223,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         unLockRequest.setTargetRunning();
         assertNotNull(m_abstractNetconfClientSession.unlock(unLockRequest));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<unlock>"
                         + "<target><running/></target>"
                         + "</unlock>"
@@ -188,7 +237,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         GetRequest request = new GetRequest();
         assertNotNull(m_abstractNetconfClientSession.get(request));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<get/>"
                         + "</rpc>]]>]]>",
                 m_obtainedXmlString);
@@ -198,7 +247,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
     @Test
     public void testNetconfRpcRequest() throws NetconfMessageBuilderException {
         String rpcRequest =
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<get/>"
                         + "</rpc>";
         NetconfRpcRequest netconfRpcRequest = DocumentToPojoTransformer
@@ -210,7 +259,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
 
     @Test
     public void testActionRequest() throws NetconfMessageBuilderException {
-        String actionRequest = "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+        String actionRequest = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">" +
                 "<action xmlns=\"urn:ietf:params:xml:ns:yang:1\">" +
                 "<test:test-action-container xmlns:test=\"urn:example:test-action\">" +
                 "<test:action-list>" +
@@ -236,7 +285,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         killSessionReq.setSessionId(10);
         assertNotNull(m_abstractNetconfClientSession.killSession(killSessionReq));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<kill-session>"
                         + "<session-id>10</session-id>"
                         + "</kill-session>"
@@ -251,7 +300,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         CloseSessionRequest closeRequest = new CloseSessionRequest();
         assertNotNull(m_abstractNetconfClientSession.closeSession(closeRequest));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<close-session/>"
                         + "</rpc>]]>]]>",
                 m_obtainedXmlString);
@@ -267,7 +316,8 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         future.whenComplete((netConfResponse, throwable) -> called[0] = true);
         verify(m_abstractNetconfClientSession).resetIdleTimeStart();
         assertFalse(called[0]);
-        m_abstractNetconfClientSession.responseRecieved(getDocumentFromFilePath("sampleRpcReply.xml"));
+        DocumentInfo documentInfo = new DocumentInfo(getDocumentFromFilePath("sampleRpcReply.xml"), FileUtil.loadAsString("/sampleRpcReply.xml"));
+        m_abstractNetconfClientSession.responseRecieved(documentInfo);
         assertTrue(called[0]);
         NetConfResponse netConfResponse = future.get();
         assertTrue(isRpcReplyDocument(netConfResponse));
@@ -279,7 +329,8 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
     @Test
     public void testResponseReceivedForRpcReplyDocumentForException() {
         try {
-            m_abstractNetconfClientSession.responseRecieved(getDocumentFromFilePath("missing-message-id-error.xml"));
+            DocumentInfo documentInfo = new DocumentInfo(getDocumentFromFilePath("missing-message-id-error.xml"), FileUtil.loadAsString("/missing-message-id-error.xml"));
+            m_abstractNetconfClientSession.responseRecieved(documentInfo);
             fail("Should have thrown an exception");
         } catch (NetconfMessageBuilderException e) {
             assertEquals(
@@ -294,20 +345,20 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
 
     @Test
     public void testResponseReceivedForNotificationDocument() throws NetconfMessageBuilderException {
-        Document helloDocument = getDocumentFromFilePath("stateChangeNotification.xml");
-        final Notification notification = DocumentToPojoTransformer.getNotification(helloDocument);
+        DocumentInfo documentInfo = new DocumentInfo(getDocumentFromFilePath("stateChangeNotification.xml"), FileUtil.loadAsString("/stateChangeNotification.xml"));
+        final Notification notification = DocumentToPojoTransformer.getNotification(documentInfo);
         NotificationListener listener = new NotificationListener() {
             @Override
             public void notificationReceived(Notification notif) {
                 assertEquals(notification.notificationToString(), notif.notificationToString());
             }
         };
-        NotificationListener mockListener = Mockito.spy(listener);
+        NotificationListener mockListener = spy(listener);
         m_abstractNetconfClientSession.addNotificationListener(mockListener);
-        m_abstractNetconfClientSession.responseRecieved(helloDocument);
+        m_abstractNetconfClientSession.responseRecieved(documentInfo);
 
-        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime("2016-02-02T13:33:35+07:00");
-        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.parseDateTime(notification.getEventTime());
+        DateTime expectedDateTime = NetconfResources.DATE_TIME_WITH_TZ.parseDateTime("2016-02-02T13:33:35.357+07:00");
+        DateTime actualDateTime = NetconfResources.DATE_TIME_WITH_TZ.parseDateTime(notification.getEventTime());
 
         assertEquals(expectedDateTime, actualDateTime);
 
@@ -331,7 +382,8 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         m_abstractNetconfClientSession.addSessionListener(netconfClientSessionListener);
 
         // This will set Server Capabilities using the document
-        m_abstractNetconfClientSession.responseRecieved(getDocumentFromFilePath("hello.xml"));
+        DocumentInfo documentInfo = new DocumentInfo(getDocumentFromFilePath("hello.xml"), FileUtil.loadAsString("/hello.xml"));
+        m_abstractNetconfClientSession.responseRecieved(documentInfo);
 
         assertTrue(m_abstractNetconfClientSession.getServerCapability("urn:ietf:params:netconf:capability:candidate:1.0"));
         assertFalse(m_abstractNetconfClientSession.getServerCapability("urn:ietf:params:netconf:base:1.2"));
@@ -359,7 +411,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         request.setStream(TEST_STREAM);
         assertNotNull(m_abstractNetconfClientSession.createSubscription(request, m_notificationListener));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">"
                         + "<stream>testStream</stream>"
                         + "</create-subscription>"
@@ -381,7 +433,7 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
         }
         assertNotNull(m_abstractNetconfClientSession.createSubscription(request, m_notificationListener));
         assertEquals(
-                "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                         + "<create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">"
                         + "<stream>testStream</stream>"
                         + "</create-subscription>"
@@ -407,16 +459,13 @@ public class AbstractNetconfClientSessionTest extends AbstractNetconfClientSessi
     }
 
     @Test
-    public void testWhetherCapabilityUpdatedWithLatestYangLibraryFlagUpdatedDuringCapabilityChangeNotificationMessage() throws NetconfMessageBuilderException {
-        Mockito.doReturn(null).when(m_abstractNetconfClientSession).get(any());
-        m_abstractNetconfClientSession.responseRecieved(getDocumentFromFilePath("hello_yang1.1.xml"));
-        Mockito.doReturn(getNetConfResponses(getYangModulesResponseElementWithDeviations())).when(m_abstractNetconfClientSession).get(any());
-        m_abstractNetconfClientSession.getServerCapabilities();
-        assertEquals(12, m_abstractNetconfClientSession.getServerCapabilities().size());
-        m_abstractNetconfClientSession.responseRecieved(getDocumentFromFilePath("CapabilityChangeNotification.xml"));
-        Mockito.doReturn(getNetConfResponses(getYangModulesResponseElementWithSimYang())).when(m_abstractNetconfClientSession).get(any());
-        m_abstractNetconfClientSession.getServerCapabilities();
-        assertEquals(18, m_abstractNetconfClientSession.getServerCapabilities().size());
+    public void testResponseReceivedCalledTwiceForSameRequest() throws Exception{
+        testResponseReceivedForRpcReplyDocument();
+        try {
+            DocumentInfo documentInfo = new DocumentInfo(getDocumentFromFilePath("sampleRpcReply.xml"), FileUtil.loadAsString("/sampleRpcReply.xml"));
+            m_abstractNetconfClientSession.responseRecieved(documentInfo);
+        }catch(Exception ex){
+            fail("Got Exception : " + ex.getMessage());
+        }
     }
-
 }

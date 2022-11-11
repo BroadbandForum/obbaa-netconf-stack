@@ -1,0 +1,30 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+    <library>
+        <artist>
+            <name>Lenny</name><!-- Matcher -->
+            <album xc:operation="replace" yang:insert="before" yang:key="[jbox:name='Greatest hits']">
+                <name>Circus</name><!-- Matcher -->
+                <admin>
+                    <label>Sony</label>
+                </admin>
+                <genre>rock</genre>
+                <song>
+                    <format>amr</format>
+                    <location>desktop/mymusic</location>
+                    <name>Rock and roll is dead</name>
+                </song>
+                <song>
+                    <format>wma</format>
+                    <location>desktop/mymusic</location>
+                    <name>Circus</name>
+                </song>
+                <song>
+                    <format>mp3</format>
+                    <location>desktop/mymusic</location>
+                    <name>Beyond the 7th Sky</name>
+                </song>
+                <year>1995</year>
+            </album>
+        </artist>
+    </library>
+</jukebox>

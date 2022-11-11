@@ -21,6 +21,7 @@ import java.net.SocketAddress;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import org.broadband_forum.obbaa.netconf.api.ClosureReason;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.CloseSessionRequest;
@@ -37,7 +38,6 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.w3c.dom.Element;
 
 /**
  * A session given to netconf clients, can be used to send netconf messages to a netconf server. Following is an example on how to build a
@@ -48,7 +48,7 @@ import org.w3c.dom.Element;
  * LockRequest lockReq = new LockRequest().setTarget("running");
  * NetConfResponse res = session.lock(lockReq).get();
  *
- *
+ * 
  */
 public interface NetconfClientSession {
 
@@ -58,7 +58,8 @@ public interface NetconfClientSession {
     String EDIT_CONFIG_METHOD = "editConfig";
     String COPY_CONFIG_METHOD = "copyConfig";
     String RPC_METHOD = "rpc";
-    long DEFAULT_CONNECT_TIMEOUT_SECS = 10L;
+    String DEFAULT_CONNECT_TIMEOUT_MS = "15000";
+    String DEFAULT_SOCKET_READ_TIMEOUT_MS = String.valueOf(Long.MAX_VALUE);
 
     void setMessageId(AbstractNetconfRequest request);
 
@@ -100,7 +101,7 @@ public interface NetconfClientSession {
      * @return A Future reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> getConfig(GetConfigRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture getConfig(GetConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <edit-config>}operation.
@@ -151,7 +152,7 @@ public interface NetconfClientSession {
      * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException if the the request is not valid.
      */
-    CompletableFuture<NetConfResponse> editConfig(EditConfigRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture editConfig(EditConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code<copy-config>} operation.
@@ -186,7 +187,7 @@ public interface NetconfClientSession {
      *  @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> copyConfig(CopyConfigRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture copyConfig(CopyConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code<delete-config>} operation. <b>Example:</b>
@@ -214,7 +215,7 @@ public interface NetconfClientSession {
      *  @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> deleteConfig(DeleteConfigRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture deleteConfig(DeleteConfigRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <lock>} operation
@@ -245,7 +246,7 @@ public interface NetconfClientSession {
      * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> lock(LockRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture lock(LockRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <unlock>} operation
@@ -275,7 +276,7 @@ public interface NetconfClientSession {
      *  @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> unlock(UnLockRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture unlock(UnLockRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <get>} operation.
@@ -313,7 +314,7 @@ public interface NetconfClientSession {
      * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> get(GetRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture get(GetRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <rpc>} operation.
@@ -345,7 +346,7 @@ public interface NetconfClientSession {
      * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> rpc(NetconfRpcRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture rpc(NetconfRpcRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Method to send a RPC Message directly without using Message POJOs.
@@ -354,7 +355,7 @@ public interface NetconfClientSession {
      * @return
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> sendRpc(AbstractNetconfRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture sendRpc(AbstractNetconfRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <create-subscription>} operation.
@@ -380,7 +381,7 @@ public interface NetconfClientSession {
      * @return
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> createSubscription(CreateSubscriptionRequest request, NotificationListener notificationListener)
+    NetconfResponseFuture createSubscription(CreateSubscriptionRequest request, NotificationListener notificationListener)
             throws NetconfMessageBuilderException;
 
     /**
@@ -407,7 +408,7 @@ public interface NetconfClientSession {
      * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> closeSession(CloseSessionRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture closeSession(CloseSessionRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Perform Netconf {@code <kill-session> } operation
@@ -436,9 +437,9 @@ public interface NetconfClientSession {
      * @return A CompletableFuture reference to get the response.
      * @throws NetconfMessageBuilderException
      */
-    CompletableFuture<NetConfResponse> killSession(KillSessionRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture killSession(KillSessionRequest request) throws NetconfMessageBuilderException;
 
-    CompletableFuture<NetConfResponse> action(ActionRequest request) throws NetconfMessageBuilderException;
+    NetconfResponseFuture action(ActionRequest request) throws NetconfMessageBuilderException;
 
     /**
      * Get the capability of the connected server. The capabilities are exchanged during session establishment via netconf {@code <hello>}
@@ -469,6 +470,8 @@ public interface NetconfClientSession {
 
     void addSessionListener(NetconfClientSessionListener listener);
 
+    void addNotificationListener(NotificationListener listener);
+
     void sessionClosed();
 
     /**
@@ -488,6 +491,8 @@ public interface NetconfClientSession {
     void close() throws InterruptedException, IOException;
 
     void closeAsync();
+
+    void closeAsync(ClosureReason closureReason);
 
     /**
      * Get the capabilities of the connected server. The capabilities are exchanged during session establishment via netconf {@code <hello>}
@@ -513,4 +518,6 @@ public interface NetconfClientSession {
     void closeGracefully() throws IOException;
 
     NetconfClientSession getType();
+
+    void setClosureReason(ClosureReason closureReason);
 }

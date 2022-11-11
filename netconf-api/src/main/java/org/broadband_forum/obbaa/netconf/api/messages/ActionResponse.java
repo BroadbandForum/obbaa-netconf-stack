@@ -31,6 +31,8 @@ public class ActionResponse extends NetConfResponse {
 
 	private ActionDefinition m_actionDefinition;
 
+	private Element m_actionContext;
+
 	public ActionDefinition getActionDefinition() {
 		return m_actionDefinition;
 	}
@@ -63,5 +65,12 @@ public class ActionResponse extends NetConfResponse {
             return responseBuilder.build();
         }
     }
+	
+	public Element getActionContext() {
+		return m_actionContext;
+	}
 
+	public void setActionContext(Element actionContext) {
+		this.m_actionContext = actionContext;
+	}
 }

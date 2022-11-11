@@ -23,7 +23,7 @@ import java.security.Provider;
 /**
  * A X509 TrustManagerFactory which lets the users supply an implementation of {@link TrustManager} via {@link X509TrustManagerFactorySpi}.
  * 
- *
+ * 
  * 
  */
 public class X509TrustManagerFactory extends TrustManagerFactory {

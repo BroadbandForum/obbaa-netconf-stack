@@ -1,11 +1,34 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
+import static org.broadband_forum.obbaa.netconf.api.util.CryptUtil2.ENCR_STR_PATTERN;
 import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.stringToDocument;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.DSMTimingLogger.endPhase;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.DSMTimingLogger.startPhase;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.DSMUtils.getXmlSubtree;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.DSMUtils.setVisibility;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EMNKeyUtil.constructParentIdFromEntity;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.XmlModelNodeToXmlMapper.nodesMatch;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,17 +39,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.broadband_forum.obbaa.netconf.api.IndexedList;
+import org.broadband_forum.obbaa.netconf.api.logger.NetconfExtensions;
+import org.broadband_forum.obbaa.netconf.api.util.CryptUtil2;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaMountRegistryProvider;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
@@ -38,7 +59,6 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.HelperDrive
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.InvalidIdentityRefException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
@@ -59,24 +79,26 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
 
     private final ModelNodeHelperRegistry m_modelNodeHelperRegistry;
     private final XmlDSMCache m_dsmCache;
+    private final XmlSubtreeDSM m_dsm;
     private SchemaRegistry m_schemaRegistry;
     private SubSystemRegistry m_subSystemRegistry;
     private EntityRegistry m_entityRegistry;
-    private static DocumentBuilder m_builder;
-    private Document m_doc;
 
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(XmlModelNodeToXmlMapperImpl.class, LogAppNames.NETCONF_STACK);
 
-    public XmlModelNodeToXmlMapperImpl(XmlDSMCache dsmCache, SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry, SubSystemRegistry subsystemRegistry, EntityRegistry entityRegistry) {
+    public XmlModelNodeToXmlMapperImpl(XmlDSMCache dsmCache, SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry, SubSystemRegistry subsystemRegistry, EntityRegistry entityRegistry, XmlSubtreeDSM xmlSubtreeDSM) {
         m_schemaRegistry = schemaRegistry;
         m_modelNodeHelperRegistry = modelNodeHelperRegistry;
         m_subSystemRegistry = subsystemRegistry;
         m_entityRegistry = entityRegistry;
         m_dsmCache = dsmCache;
+        m_dsm = xmlSubtreeDSM;
     }
 
     @Override
-    public XmlModelNodeImpl getModelNodeFromParentSchemaPath(Element nodeXml, SchemaPath parentSchemaPath, ModelNodeId parentId, XmlModelNodeImpl parentModelNode, ModelNodeDataStoreManager modelNodeDsm) {
+    public XmlModelNodeImpl getModelNodeFromParentSchemaPath(Element nodeXml, SchemaPath parentSchemaPath,
+                                                             ModelNodeId parentId, XmlModelNodeImpl parentModelNode,
+                                                             ModelNodeDataStoreManager modelNodeDsm, Object storedParentEntity, SchemaPath storedParentSchemaPath) {
 
         // Get the childSchemaPath using element's rootNode and parentSchemaPath
         SchemaPath childSchemaPath = null;
@@ -90,23 +112,26 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             if (nodesMatch(nodeXml, qName)) {
                 childSchemaPath = dataSchemaNode.getPath();
                 return buildModelNodeForXml(nodeXml, parentId, parentModelNode, modelNodeDsm, childSchemaPath, schemaRegistry,
-                        helperRegistry, subSystemRegistry);
+                        helperRegistry, subSystemRegistry, storedParentEntity, storedParentSchemaPath);
             }
         }
 
         if (AnvExtensions.MOUNT_POINT.isExtensionIn(schemaRegistry.getDataSchemaNode(parentSchemaPath))) {
             SchemaMountRegistryProvider provider = schemaRegistry.getMountRegistry().getProvider(parentSchemaPath);
             if (provider != null) {
-                schemaRegistry = provider.getSchemaRegistry(parentModelNode);
-                ModelNodeHelperRegistry helperRegistry = provider.getModelNodeHelperRegistry(parentModelNode);
-                SubSystemRegistry subSystemRegistry = provider.getSubSystemRegistry(parentModelNode);
-                childSchemaNodes = schemaRegistry.getNonChoiceChildren(parentSchemaPath);
-                for (DataSchemaNode dataSchemaNode : childSchemaNodes) {
-                    QName qName = dataSchemaNode.getQName();
-                    if (nodesMatch(nodeXml, qName)) {
-                        childSchemaPath = dataSchemaNode.getPath();
-                        return buildModelNodeForXml(nodeXml, parentId, parentModelNode, modelNodeDsm, childSchemaPath, schemaRegistry,
-                                helperRegistry, subSystemRegistry);
+                if(parentModelNode != null) {
+                    ModelNodeId parentNodeId = parentModelNode.getModelNodeId();
+                    schemaRegistry = provider.getSchemaRegistry(parentNodeId);
+                    ModelNodeHelperRegistry helperRegistry = provider.getModelNodeHelperRegistry(parentNodeId);
+                    SubSystemRegistry subSystemRegistry = provider.getSubSystemRegistry(parentNodeId);
+                    childSchemaNodes = schemaRegistry.getNonChoiceChildren(parentSchemaPath);
+                    for (DataSchemaNode dataSchemaNode : childSchemaNodes) {
+                        QName qName = dataSchemaNode.getQName();
+                        if (nodesMatch(nodeXml, qName)) {
+                            childSchemaPath = dataSchemaNode.getPath();
+                            return buildModelNodeForXml(nodeXml, parentId, parentModelNode, modelNodeDsm, childSchemaPath, schemaRegistry,
+                                    helperRegistry, subSystemRegistry, storedParentEntity, storedParentSchemaPath);
+                        }
                     }
                 }
             }
@@ -116,23 +141,28 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
 
     protected XmlModelNodeImpl buildModelNodeForXml(Element nodeXml, ModelNodeId parentId, XmlModelNodeImpl parentModelNode,
                                                     ModelNodeDataStoreManager modelNodeDsm, SchemaPath childSchemaPath, SchemaRegistry schemaRegistry,
-                                                    ModelNodeHelperRegistry helperRegistry, SubSystemRegistry subSystemRegistry) {
+                                                    ModelNodeHelperRegistry helperRegistry, SubSystemRegistry subSystemRegistry, Object storedParentEntity, SchemaPath storedParentSchemaPath) {
+        startPhase("XmlModelNodeToXmlMapperImpl.buildModelNodeForXml");
         Map<QName, ConfigLeafAttribute> nodeAttrs = new LinkedHashMap<>();
         List<Element> childrenXml = new ArrayList<>();
         Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs = new HashMap<>();
 
         fillNodeAttributes(nodeXml, childSchemaPath, nodeAttrs, childrenXml, leafListAttrs, Collections.emptyMap(), parentModelNode);
 
-        XmlModelNodeImpl node = new XmlModelNodeImpl(childSchemaPath, nodeAttrs, childrenXml, parentModelNode, parentId, this,
-                helperRegistry, schemaRegistry, subSystemRegistry, modelNodeDsm);
+        startPhase("XmlModelNodeToXmlMapperImpl.buildModelNodeForXml.XmlModelNodeImpl");
+        XmlModelNodeImpl node = new XmlModelNodeImpl(nodeXml.getOwnerDocument(), childSchemaPath, nodeAttrs, childrenXml, parentModelNode, parentId, this,
+                helperRegistry, schemaRegistry, subSystemRegistry, modelNodeDsm, storedParentEntity, true, storedParentSchemaPath);
+        endPhase("XmlModelNodeToXmlMapperImpl.buildModelNodeForXml.XmlModelNodeImpl", false);
         node.setLeafLists(leafListAttrs);
+        endPhase("XmlModelNodeToXmlMapperImpl.buildModelNodeForXml", false);
         return node;
     }
 
     @Override
-    public List<XmlModelNodeImpl> getModelNodeFromNodeSchemaPath(Element nodeXml, Map<QName, ConfigLeafAttribute> configAttrsFromEntity,
+    public List<XmlModelNodeImpl> getModelNodeFromNodeSchemaPath(boolean xmlLoaded, Element nodeXml, Map<QName, ConfigLeafAttribute> configAttrsFromEntity,
+                                                                 Map<QName, LinkedHashSet<ConfigLeafAttribute>> configLeafListsFromEntity,
                                                                  SchemaPath nodeSchemaPath, ModelNodeId parentId,
-                                                                 XmlModelNodeImpl parentModelNode, ModelNodeDataStoreManager modelNodeDsm) {
+                                                                 XmlModelNodeImpl parentModelNode, ModelNodeDataStoreManager modelNodeDsm, Object storedParentEntity, SchemaPath storedParentSchemaPath) {
         List<XmlModelNodeImpl> nodes = new ArrayList<>();
         if (nodeXml != null) {
             List<Element> xmlNodes = new ArrayList<>();
@@ -150,8 +180,8 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             for (Element xmlNode : xmlNodes) {
                 if (nodesMatch(xmlNode, nodeSchemaPath.getLastComponent())) {
                     HelperDrivenModelNode.checkForGetTimeOut();
-                    prepareNode(configAttrsFromEntity, nodeSchemaPath, parentId, parentModelNode, modelNodeDsm,
-                            nodes, xmlNode);
+                    prepareNode(xmlLoaded, configAttrsFromEntity, configLeafListsFromEntity, nodeSchemaPath, parentId, parentModelNode, modelNodeDsm,
+                            nodes, xmlNode, storedParentEntity, storedParentSchemaPath);
                 }
             }
         } else {
@@ -168,27 +198,36 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
                 }
             }
             if (allKeysFound) {
-                prepareNode(configAttrsFromEntity, nodeSchemaPath, parentId, parentModelNode, modelNodeDsm,
-                        nodes, null);
+                prepareNode(xmlLoaded, configAttrsFromEntity, configLeafListsFromEntity, nodeSchemaPath, parentId, parentModelNode, modelNodeDsm,
+                        nodes, null, storedParentEntity, storedParentSchemaPath);
             }
         }
 
         return nodes;
     }
 
-    private void prepareNode(Map<QName, ConfigLeafAttribute> configAttrsFromEntity, SchemaPath nodeSchemaPath, ModelNodeId parentId, XmlModelNodeImpl parentModelNode, ModelNodeDataStoreManager modelNodeDsm, List<XmlModelNodeImpl> nodes, Element xmlNode) {
+    private void prepareNode(boolean xmlLoaded, Map<QName, ConfigLeafAttribute> configAttrsFromEntity, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs, SchemaPath nodeSchemaPath, ModelNodeId parentId, XmlModelNodeImpl parentModelNode, ModelNodeDataStoreManager modelNodeDsm, List<XmlModelNodeImpl> nodes, Element xmlNode, Object storedParentEntity, SchemaPath storedParentSchemaPath) {
+        startPhase("XmlModelNodeToXmlMapperImpl.prepareNode");
         Map<QName, ConfigLeafAttribute> nodeAttrs = new LinkedHashMap<>();
         List<Element> childrenXml = new ArrayList<>();
-        Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs = new HashMap<>();
 
         fillNodeAttributes(xmlNode, nodeSchemaPath, nodeAttrs, childrenXml, leafListAttrs, configAttrsFromEntity, parentModelNode);
-        XmlModelNodeImpl node = getXmlModelNode(nodeSchemaPath, parentId, parentModelNode, modelNodeDsm, nodeAttrs, childrenXml, leafListAttrs);
+
+        Document document = ConfigAttributeFactory.getDocument();
+        if(xmlNode != null){
+            document = xmlNode.getOwnerDocument();
+        }
+        startPhase("XmlModelNodeToXmlMapperImpl.prepareNode.getXmlModelNode");
+        XmlModelNodeImpl node = getXmlModelNode(xmlLoaded, document, nodeSchemaPath, parentId, parentModelNode, modelNodeDsm, nodeAttrs, childrenXml, leafListAttrs, storedParentEntity, storedParentSchemaPath);
+        endPhase("XmlModelNodeToXmlMapperImpl.prepareNode.getXmlModelNode", false);
 
         node.setLeafLists(leafListAttrs);
         nodes.add(node);
+        endPhase("XmlModelNodeToXmlMapperImpl.prepareNode", false);
     }
 
     private void fillNodeAttributes(Element nodeXml, SchemaPath nodeSchemaPath, Map<QName, ConfigLeafAttribute> nodeAttrs, List<Element> childrenXml, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs, Map<? extends QName, ? extends ConfigLeafAttribute> configAttrsFromEntity, XmlModelNodeImpl parentModelNode) {
+        startPhase("XmlModelNodeToXmlMapperImpl.fillNodeAttributes");
         List<Element> childElements = getChildElements(nodeXml);
         SchemaRegistry schemaRegistry = parentModelNode == null ? m_schemaRegistry : parentModelNode.getSchemaRegistry();
         Collection<DataSchemaNode> dataSchemaNodes = schemaRegistry.getNonChoiceChildren(nodeSchemaPath);
@@ -198,28 +237,23 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
         if (schemaNode != null && AnvExtensions.MOUNT_POINT.isExtensionIn(schemaNode)) {
             SchemaMountRegistryProvider provider = schemaRegistry.getMountRegistry().getProvider(nodeSchemaPath);
             if (provider != null) {
-                schemaRegistry = schemaRegistry.getMountRegistry().getProvider(nodeSchemaPath).getSchemaRegistry(parentModelNode);
-                RequestScope.getCurrentScope().putInCache(SchemaRegistryUtil.MOUNT_CONTEXT_PROVIDER, provider);
-                RequestScope.getCurrentScope().putInCache(SchemaRegistryUtil.MOUNT_CONTEXT_SCHEMA_REGISTRY, schemaRegistry);
-                if (schemaRegistry != null) {
-                    dataSchemaNodes = schemaRegistry.getNonChoiceChildren(nodeSchemaPath);
-                    fillChildren(nodeSchemaPath, nodeAttrs, childrenXml, leafListAttrs, childElements, dataSchemaNodes, schemaRegistry);
+                if(parentModelNode != null) {
+                    schemaRegistry = schemaRegistry.getMountRegistry().getProvider(nodeSchemaPath).getSchemaRegistry(parentModelNode.getModelNodeId());
+                    if (schemaRegistry != null) {
+                        dataSchemaNodes = schemaRegistry.getNonChoiceChildren(nodeSchemaPath);
+                        fillChildren(nodeSchemaPath, nodeAttrs, childrenXml, leafListAttrs, childElements, dataSchemaNodes, schemaRegistry);
+                    }
                 }
             }
-        } else if (schemaNode == null) {
-            schemaRegistry = SchemaRegistryUtil.getMountRegistry();
-            if (schemaRegistry != null) {
-                dataSchemaNodes = schemaRegistry.getNonChoiceChildren(nodeSchemaPath);
-                fillChildren(nodeSchemaPath, nodeAttrs, childrenXml, leafListAttrs, childElements, dataSchemaNodes, schemaRegistry);
-            }
         }
-
+        endPhase("XmlModelNodeToXmlMapperImpl.fillNodeAttributes", false);
         nodeAttrs.putAll(configAttrsFromEntity);
     }
 
     protected void fillChildren(SchemaPath nodeSchemaPath, Map<QName, ConfigLeafAttribute> nodeAttrs, List<Element> childrenXml,
                                 Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs, List<Element> childElements,
                                 Collection<DataSchemaNode> dataSchemaNodes, SchemaRegistry schemaRegistry) {
+        startPhase("XmlModelNodeToXmlMapperImpl.fillNodeAttributes.fillChildren");
         for (Element childElement : childElements) {
             for (DataSchemaNode dataSchemaNode : dataSchemaNodes) {
                 QName qName = dataSchemaNode.getQName();
@@ -248,6 +282,7 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
                 }
             }
         }
+        endPhase("XmlModelNodeToXmlMapperImpl.fillNodeAttributes.fillChildren", false);
     }
 
     @Override
@@ -256,6 +291,7 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
         SchemaPath schemaPath;
         Map<QName, ConfigLeafAttribute> attributes;
         List<Element> childrenXml = new ArrayList<>();
+        Document document = ConfigAttributeFactory.getDocument();
         try {
             //Get parentId and Schemapath
             Class<?> klass = getEntityClass(entity);
@@ -265,8 +301,7 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             schemaPath = SchemaPathUtil.fromString((String) schemaPathMethod.invoke(entity));
             schemaPath = m_schemaRegistry.addRevisions(schemaPath);
             if (parentIdStr != null) {
-                parentId = new ModelNodeId(parentIdStr, m_entityRegistry.getQName(klass)
-                        .getNamespace().toString());
+                parentId = constructParentIdFromEntity(schemaPath, klass, parentIdStr, m_entityRegistry, m_schemaRegistry);
             }
             attributes = getConfigAttributesFromEntity(m_schemaRegistry, schemaPath, m_entityRegistry, klass, entity);
             ModelNodeKey key = MNKeyUtil.getKeyFromCriteria(schemaPath, attributes, m_schemaRegistry);
@@ -276,11 +311,11 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
                 node.updateConfigAttributes(attributes);
                 return node;
             }
-            Map<QName, List<Object>> leafListAttrs = new HashMap<>();
+            Map<QName, Collection<Object>> leafListAttrs = new HashMap<>();
             //Get leafList attributes
             Map<QName, Method> leafListGetters = m_entityRegistry.getYangLeafListGetters(klass);
             for (Map.Entry<QName, Method> getter : leafListGetters.entrySet()) {
-                List<Object> values = (List<Object>) getter.getValue().invoke(entity);
+                Collection<Object> values = (Collection<Object>) getter.getValue().invoke(entity);
                 leafListAttrs.put(getter.getKey(), values);
             }
 
@@ -289,7 +324,14 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             String xmlSubtree = (String) yangXmlSubtreeGetter.invoke(entity);
 
             if (xmlSubtree != null && !xmlSubtree.isEmpty()) {
-                Collection<Element> rootElements = getChildElements(stringToDocument(xmlSubtree));
+                document = stringToDocument(xmlSubtree);
+                Element docElement = document.getDocumentElement();
+                Collection<Element> rootElements = null;
+                if ( docElement.getLocalName().equals(NetconfResources.RPC_REPLY_DATA)){
+                    rootElements = getChildElements(docElement);
+                } else {
+                    rootElements = Arrays.asList(docElement);
+                }
                 List<Element> childElements = new ArrayList<>();
                 for (Element element : rootElements) {
                     Collection<Element> children = getChildElements(element);
@@ -315,8 +357,9 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             throw new RuntimeException("Error while getting model node", e);
         }
 
-        XmlModelNodeImpl xmlModelNode = new XmlModelNodeImpl(schemaPath, attributes, childrenXml, null,
-                parentId, this, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, modelNodeDSM);
+        XmlModelNodeImpl xmlModelNode = new XmlModelNodeImpl(document, schemaPath, attributes, childrenXml, null,
+                parentId, this, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, modelNodeDSM, entity, true, schemaPath);
+        setVisibility(m_entityRegistry, entity, xmlModelNode);
         m_dsmCache.putInCache(schemaPath, xmlModelNode.getModelNodeId(), xmlModelNode);
         return xmlModelNode;
     }
@@ -325,64 +368,176 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
     public Element getXmlValue(XmlModelNodeImpl xmlModelNode) {
         SchemaPath schemaPath = xmlModelNode.getModelNodeSchemaPath();
         QName qName = schemaPath.getLastComponent();
-        Element element = getDocument().createElementNS(qName.getNamespace().toString(), qName.getLocalName());
+        Element element = xmlModelNode.getDocument().createElementNS(qName.getNamespace().toString(), qName.getLocalName());
 
         //copy attributes
         Class klass = m_entityRegistry.getEntityClass(schemaPath);
-        Set<QName> xmlModelNodeAttributes = new LinkedHashSet<>(xmlModelNode.getAttributes().keySet());
-        Set<QName> attributesTobeStoredInXml = new LinkedHashSet<>(xmlModelNodeAttributes);
 
-        if (klass != null) {
-            // attributes without separate column in entity class
-            Set<QName> attributeGettersKeyset = new LinkedHashSet<>(m_entityRegistry.getAttributeGetters(klass).keySet());
-            attributesTobeStoredInXml.removeAll(attributeGettersKeyset);
-        }
+        copyAttributes(xmlModelNode, element, klass);
 
-        for (QName attributeQName : attributesTobeStoredInXml) {
-            appendConfigAttributeToParentElement(xmlModelNode.getAttribute(attributeQName), element);
-        }
+        copyLeafLists(xmlModelNode, element, klass);
+        copyChildren(xmlModelNode, element);
 
-        //copy leaf Lists
-        Set<QName> leafListsTobeStoredInXml = new LinkedHashSet<>(xmlModelNode.getLeafLists().keySet());
-        if (klass != null) {
-            // leaf lists without separate column in entity class
-            Set<QName> leafListGettersKeyset = new LinkedHashSet<>(m_entityRegistry.getYangLeafListGetters(klass).keySet());
-            leafListsTobeStoredInXml.removeAll(leafListGettersKeyset);
-        }
+        return element;
+    }
 
-        for (QName leafListQName : leafListsTobeStoredInXml) {
-            for (ConfigLeafAttribute value : xmlModelNode.getLeafList(leafListQName)) {
-                appendConfigAttributeToParentElement(value, element);
-            }
-        }
-
+    private void copyChildren(XmlModelNodeImpl xmlModelNode, Element element) {
         //copy children
-        for (Map.Entry<QName, IndexedList<ModelNodeId, XmlModelNodeImpl>> childrenOfType : xmlModelNode.getChildren().entrySet()) {
-            for (XmlModelNodeImpl child : childrenOfType.getValue().list()) {
-                element.appendChild(getDocument().importNode(getXmlValue(child), true));
+        if(xmlModelNode.childrenMaterialised()) {
+            //if the children are materialised, most likely they are modified, so do the copy recursively
+            for (Map.Entry<QName, IndexedList<ModelNodeId, XmlModelNodeImpl>> childrenOfType : xmlModelNode.getChildren().entrySet()) {
+                for (XmlModelNodeImpl child : childrenOfType.getValue().list()) {
+                    Element childXml = getXmlValue(child);
+                    try {
+                        startPhase("XmlSubtreeDSM.endModify.getXmlValue.appendingMaterialisedChildXml");
+                        element.appendChild(element.getOwnerDocument().importNode(childXml, true));
+                    } finally {
+                        endPhase("XmlSubtreeDSM.endModify.getXmlValue.appendingMaterialisedChildXml", false);
+                    }
+                }
+            }
+        } else {
+            //children xml is not materialised, so append as is
+            for (Element childXml : xmlModelNode.getChildrenXml()) {
+                try {
+                    startPhase("XmlSubtreeDSM.endModify.getXmlValue.appendingChildXml");
+                    element.appendChild(element.getOwnerDocument().importNode(childXml, true));
+                } finally {
+                    endPhase("XmlSubtreeDSM.endModify.getXmlValue.appendingChildXml", false);
+                }
             }
         }
+    }
 
-        Element returnElement = element;
-        /*if(xmlModelNode.isRoot()){
-            returnElement = getDocument().createElementNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources.RPC_REPLY_DATA);
-            returnElement.appendChild(getDocument().importNode(element, true));
-        }*/
-        return returnElement;
+    private void copyLeafLists(XmlModelNodeImpl xmlModelNode, Element element, Class klass) {
+        try {
+            startPhase("XmlSubtreeDSM.endModify.getXmlValue.copyLeafLists");
+            //copy leaf Lists
+            Set<QName> leafListsTobeStoredInXml = new LinkedHashSet<>(xmlModelNode.getLeafLists().keySet());
+            if (klass != null) {
+                // leaf lists without separate column in entity class
+                Set<QName> leafListGettersKeyset = new LinkedHashSet<>(m_entityRegistry.getYangLeafListGetters(klass).keySet());
+                leafListsTobeStoredInXml.removeAll(leafListGettersKeyset);
+            }
+
+            for (QName leafListQName : leafListsTobeStoredInXml) {
+                for (ConfigLeafAttribute value : xmlModelNode.getLeafList(leafListQName)) {
+                    appendConfigAttributeToParentElement(value, element);
+                }
+            }
+
+        } finally {
+            endPhase("XmlSubtreeDSM.endModify.getXmlValue.copyLeafLists", false);
+        }
+    }
+
+    private void copyAttributes(XmlModelNodeImpl xmlModelNode, Element element, Class klass) {
+        try {
+            startPhase("XmlSubtreeDSM.endModify.getXmlValue.copyAttributes");
+            //copy attributes
+            Set<QName> xmlModelNodeAttributes = new LinkedHashSet<>(xmlModelNode.getAttributes().keySet());
+            Set<QName> attributesTobeStoredInXml = new LinkedHashSet<>(xmlModelNodeAttributes);
+
+            if (klass != null) {
+                // attributes without separate column in entity class
+                Set<QName> attributeGettersKeyset = new LinkedHashSet<>(m_entityRegistry.getAttributeGetters(klass).keySet());
+                attributesTobeStoredInXml.removeAll(attributeGettersKeyset);
+            }
+
+            for (QName attributeQName : attributesTobeStoredInXml) {
+                appendConfigAttributeToParentElement(xmlModelNode.getAttribute(attributeQName), element);
+            }
+
+        } finally {
+            endPhase("XmlSubtreeDSM.endModify.getXmlValue.copyAttributes", false);
+        }
     }
 
     @Override
     public XmlModelNodeImpl getRootXmlModelNode(ModelNodeWithAttributes modelNode, ModelNodeDataStoreManager dsm) {
-        XmlModelNodeImpl xmlModelNode = new XmlModelNodeImpl(modelNode.getModelNodeSchemaPath(), modelNode.getAttributes(), new
-                ArrayList<>(), null,
-                new ModelNodeId(), this, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, dsm);
+        XmlModelNodeImpl xmlModelNode = new XmlModelNodeImpl(ConfigAttributeFactory.getDocument(), modelNode.getModelNodeSchemaPath(), modelNode.getAttributes(), new
+                ArrayList<>(), null, new ModelNodeId(),
+                this, m_modelNodeHelperRegistry, m_schemaRegistry, m_subSystemRegistry, dsm, null, true, null);
         m_dsmCache.putInCache(modelNode.getModelNodeSchemaPath(), modelNode.getModelNodeId(), xmlModelNode);
         return xmlModelNode;
     }
 
+    @Override
+    public List<Element> loadXmlValue(Object storedParentEntity, SchemaPath schemaPath, SchemaRegistry schemaRegistry, SchemaPath storedParentSchemaPath) {
+        startPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue");
+        List<Element> childElements = new LinkedList<>();
+        if (storedParentEntity != null) {
+            Class storedParentClass = storedParentEntity.getClass();
+            startPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue.getXmlSubtree");
+            String xmlString = getXmlSubtree(storedParentEntity, storedParentClass, m_entityRegistry);
+            endPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue.getXmlSubtree", false);
+            startPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue.string2Dom");
+            Element xmlElement = m_dsm.string2Dom(storedParentSchemaPath, storedParentEntity, xmlString);
+            endPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue.string2Dom", false);
+            if (xmlElement != null) {
+                List<Element> xmlNodes = new ArrayList<>();
+                if (SchemaPathUtil.isRootSchemaPath(schemaPath) && !nodesMatch(xmlElement, schemaPath.getLastComponent())) {
+                    List<Element> rootNodes = DocumentUtils.getChildElements(xmlElement);
+                    for (Element rootNode : rootNodes) {
+                        if (nodesMatch(rootNode, schemaPath.getLastComponent())) {
+                            xmlNodes.add(rootNode);
+                        }
+                    }
+                } else {
+                    xmlNodes.add(xmlElement);
+                }
+
+                for (Element xmlNode : xmlNodes) {
+                    if (nodesMatch(xmlNode, schemaPath.getLastComponent())) {
+                        startPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue.getChildContainmentElements");
+                        childElements.addAll(getChildContainmentElements(xmlNode, schemaPath, schemaRegistry));
+                        endPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue.getChildContainmentElements", false);
+                    }
+                }
+            }
+        }
+        endPhase("XmlModelNodeToXmlMapperImpl.loadXmlValue", false);
+        return childElements;
+    }
+
+    private List<Element> getChildContainmentElements(Element parent, SchemaPath schemaPath, SchemaRegistry schemaRegistry) {
+        List<Element> childContainmentElements = new ArrayList<>();
+        if (parent != null) {
+            NodeList childNodes = parent.getChildNodes();
+            if (childNodes != null) {
+                Collection<DataSchemaNode> childSchemaNodes = schemaRegistry.getNonChoiceChildren(schemaPath);
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node child = childNodes.item(i);
+                    if (child instanceof Element) {
+                        for(DataSchemaNode childSchemaNode : childSchemaNodes) {
+                            if(childSchemaNode.getQName().getLocalName().equals(child.getLocalName()) &&
+                                    childSchemaNode.getQName().getNamespace().toString().equals(child.getNamespaceURI())) {
+                                if(childSchemaNode instanceof ListSchemaNode || childSchemaNode instanceof ContainerSchemaNode) {
+                                    childContainmentElements.add((Element) child);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return childContainmentElements;
+    }
+
     private void appendConfigAttributeToParentElement(ConfigLeafAttribute attribute, Element parentElement) {
         Element domElement = attribute.getDOMValue(parentElement.getNamespaceURI(), parentElement.getPrefix());
-        parentElement.appendChild(getDocument().importNode(domElement, true));
+        //cannot avoid import without major refactoring, but this phase is only few milliseconds so far and this is not going to be deep.
+        if(attribute.isPassword()){
+            Element encryptedLeafDom = (Element) domElement.cloneNode(true);
+            if(!ENCR_STR_PATTERN.matcher(domElement.getTextContent()).matches()){
+                encryptedLeafDom.setTextContent(CryptUtil2.encrypt(encryptedLeafDom.getTextContent()));
+            }
+            encryptedLeafDom.setAttribute(NetconfExtensions.IS_PASSWORD.getModuleName(), "true");
+            parentElement.appendChild(parentElement.getOwnerDocument().importNode(encryptedLeafDom,true));
+        }else{
+            parentElement.appendChild(parentElement.getOwnerDocument().importNode(domElement, true));
+        }
     }
 
     static Map<QName, ConfigLeafAttribute> getConfigAttributesFromEntity(SchemaRegistry schemaRegistry, SchemaPath schemaPath,
@@ -411,12 +566,20 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
         return attributes;
     }
 
-    private XmlModelNodeImpl getXmlModelNode(SchemaPath nodeSchemaPath, ModelNodeId parentId, XmlModelNodeImpl parentModelNode, ModelNodeDataStoreManager modelNodeDsm, Map<QName, ConfigLeafAttribute> nodeAttrs, List<Element> childrenXml, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs) {
-        ModelNodeKey key = MNKeyUtil.getKeyFromCriteria(nodeSchemaPath, nodeAttrs, m_schemaRegistry);
+    private XmlModelNodeImpl getXmlModelNode(boolean xmlLoaded, Document document, SchemaPath nodeSchemaPath,
+                                             ModelNodeId parentId, XmlModelNodeImpl parentModelNode,
+                                             ModelNodeDataStoreManager modelNodeDsm, Map<QName, ConfigLeafAttribute> nodeAttrs,
+                                             List<Element> childrenXml, Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttrs,
+                                             Object storedParentEntity, SchemaPath storedParentSchemaPath) {
+    	SchemaRegistry schemaRegistry = m_schemaRegistry;
+    	if ( parentModelNode !=  null){
+    		schemaRegistry = parentModelNode.getSchemaRegistry();
+    	}
+        ModelNodeKey key = MNKeyUtil.getKeyFromCriteria(nodeSchemaPath, nodeAttrs, schemaRegistry);
         ModelNodeId nodeId = EMNKeyUtil.getModelNodeId(key, parentId, nodeSchemaPath);
         XmlModelNodeImpl node = m_dsmCache.getFromCache(nodeSchemaPath, nodeId);
         if (node == null) {
-            SchemaRegistry schemaRegistry = m_schemaRegistry;
+            schemaRegistry = m_schemaRegistry;
             ModelNodeHelperRegistry helperRegistry = m_modelNodeHelperRegistry;
             SubSystemRegistry subSystemRegistry = m_subSystemRegistry;
             if (parentModelNode != null) {
@@ -431,8 +594,8 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
                 }
             }
             LOGGER.debug("Adding node of type {} with id {} into DSM cache", nodeSchemaPath, nodeId);
-            node = new XmlModelNodeImpl(nodeSchemaPath, nodeAttrs, childrenXml, parentModelNode, parentId, this, helperRegistry,
-                    schemaRegistry, subSystemRegistry, modelNodeDsm);
+            node = new XmlModelNodeImpl(document, nodeSchemaPath, nodeAttrs, childrenXml, parentModelNode, parentId, this, helperRegistry,
+                    schemaRegistry, subSystemRegistry, modelNodeDsm, storedParentEntity, xmlLoaded, storedParentSchemaPath);
             node.setLeafLists(leafListAttrs);
             m_dsmCache.putInCache(nodeSchemaPath, nodeId, node);
         } else {
@@ -440,30 +603,6 @@ public class XmlModelNodeToXmlMapperImpl implements XmlModelNodeToXmlMapper {
             LOGGER.debug("Found node of type {} with id {} in DSM cache, re-using the instance from cache", nodeSchemaPath, nodeId);
         }
         return node;
-    }
-
-    public static DocumentBuilder getDocBuilder() throws ParserConfigurationException {
-        if (m_builder == null) {
-            synchronized (XmlModelNodeToXmlMapperImpl.class) {
-                if (m_builder == null) {
-                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                    factory.setNamespaceAware(true);
-                    m_builder = factory.newDocumentBuilder();
-                }
-            }
-        }
-        return m_builder;
-    }
-
-    private Document getDocument() {
-        if (m_doc == null) {
-            try {
-                m_doc = getDocBuilder().newDocument();
-            } catch (ParserConfigurationException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return m_doc;
     }
 
     private Class<?> getEntityClass(Object entityObject) {

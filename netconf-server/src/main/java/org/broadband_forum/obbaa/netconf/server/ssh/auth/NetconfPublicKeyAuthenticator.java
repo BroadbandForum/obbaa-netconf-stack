@@ -16,12 +16,14 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh.auth;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.authentication.FailureInfo;
 import org.broadband_forum.obbaa.netconf.api.authentication.PointOfFailure;
 import org.broadband_forum.obbaa.netconf.api.authentication.SuccessInfo;
 import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.apache.sshd.server.auth.pubkey.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 
@@ -33,14 +35,14 @@ import java.security.PublicKey;
  * This class wraps around ssh public key authenticators supplied by the netconf server. It also provides a call back to the supplied
  * AuthenticationListener when a authenticate succeeds or fails.
  * 
- *
+ * 
  * 
  */
 public class NetconfPublicKeyAuthenticator implements PublickeyAuthenticator {
 
     private final NetconfServerAuthenticationHandler m_axsNetconfAuthenticationHandler;
     private AuthenticationListener m_authenticationListener;
-    private static final Logger LOGGER = Logger.getLogger(NetconfPublicKeyAuthenticator.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfPublicKeyAuthenticator.class, LogAppNames.NETCONF_LIB);
 
     /**
      * Creates a public key authenticator.

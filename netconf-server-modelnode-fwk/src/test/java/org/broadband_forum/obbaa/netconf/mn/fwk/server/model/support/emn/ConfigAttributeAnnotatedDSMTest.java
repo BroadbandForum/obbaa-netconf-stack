@@ -1,8 +1,25 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
-import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.EMPTY_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.EMPTY_NODE_ID;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_LOCAL_NAME;
+import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_ORDERED_BY_USER_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ALBUM_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ARTIST_LOCAL_NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.ARTIST_SCHEMA_PATH;
@@ -23,10 +40,13 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.YEAR_QNAME;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,34 +59,14 @@ import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.IdentityRefConfigAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.InstanceIdentifierConfigAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.xml.sax.SAXException;
-
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Album;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Artist;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.DummyLeaflistIdRef;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Jukebox;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Library;
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Singer;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryTraverser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryVisitor;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
@@ -76,12 +76,35 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNode
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.EntityRegistryBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.IdentityRefConfigAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.InstanceIdentifierConfigAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Album;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Artist;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.DummyLeaflistIdRef;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Jukebox;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Library;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.jukeboxwithconfigattr.Singer;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.xml.sax.SAXException;
 
 /**
  * Created by sgs on 2/1/17.
  */
+@RunWith(RequestScopeJunitRunner.class)
 public class ConfigAttributeAnnotatedDSMTest {
 
     public static final String TEST_APPLICATION_CONTEXT_XML = "/configattributetest/test-applicationContext.xml";
@@ -141,21 +164,26 @@ public class ConfigAttributeAnnotatedDSMTest {
     public void testDSMReads() throws AnnotationAnalysisException, DataStoreException, ParserConfigurationException, SAXException, IOException {
 
         initialiseJukeboxEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
-        assertEquals(1, m_aggregatedDSM.listChildNodes(JUKEBOX_SCHEMA_PATH, EMPTY_NODE_ID).size());
-        assertEquals(1, m_aggregatedDSM.listChildNodes(LIBRARY_SCHEMA_PATH, m_jukeboxNodeId).size());
-        assertEquals(1, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH,m_libraryNodeId).size());
-        assertEquals(1, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH,m_artistNodeId).size());
+        assertFalse(m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).get(0).isVisible());
+
+        assertEquals(1, m_aggregatedDSM.listChildNodes(JUKEBOX_SCHEMA_PATH, EMPTY_NODE_ID, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(LIBRARY_SCHEMA_PATH, m_jukeboxNodeId, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(ARTIST_SCHEMA_PATH,m_libraryNodeId, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH,m_artistNodeId, m_schemaRegistry).size());
+
+        assertFalse(m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH,m_artistNodeId, m_schemaRegistry).get(0).isVisible());
 
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME,ALBUM_NAME);
         ModelNodeKey modelNodeKey = new ModelNodeKey(keys);
-        ModelNodeWithAttributes albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH,modelNodeKey,m_artistNodeId);
+        ModelNodeWithAttributes albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH,modelNodeKey,m_artistNodeId, m_schemaRegistry);
 
+        assertFalse(albumModelNode.isVisible());
         verifyAlbumAttributes(albumModelNode);
 
         // Verify findNodes with match criteria work
@@ -163,14 +191,16 @@ public class ConfigAttributeAnnotatedDSMTest {
         matchAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, "1948"));
         matchAttributes.put(GENRE_QNAME, albumModelNode.getAttribute(GENRE_QNAME));
 
-        albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchAttributes,m_artistNodeId).get(0);
+        albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchAttributes,m_artistNodeId, m_schemaRegistry).get(0);
+        assertFalse(albumModelNode.isVisible());
         verifyAlbumAttributes(albumModelNode);
 
         //Verify findNode with match criteria works with just key
         matchAttributes = new HashMap<>();
         matchAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, ALBUM_NAME));
 
-        albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchAttributes,m_artistNodeId).get(0);
+        albumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchAttributes,m_artistNodeId, m_schemaRegistry).get(0);
+        assertFalse(albumModelNode.isVisible());
         verifyAlbumAttributes(albumModelNode);
 
     }
@@ -179,10 +209,12 @@ public class ConfigAttributeAnnotatedDSMTest {
     public void testDSMWrites() throws DataStoreException, AnnotationAnalysisException, ParserConfigurationException, SAXException,
             IOException {
         initialiseJukeboxEntity();
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+
+        assertFalse(m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).get(0).isVisible());
 
         ModelNodeWithAttributes albumToBeCreated = new ModelNodeWithAttributes(ALBUM_SCHEMA_PATH,m_artistNodeId,
                 m_modelNodeHelperRegistry,m_subSystemRegistry,m_schemaRegistry,m_annotationDSM);
@@ -211,13 +243,14 @@ public class ConfigAttributeAnnotatedDSMTest {
         leafListAttributesMap.put(DUMMY_LEAFLIST_IDREF_QNAME,dummyleafList);
 
         albumToBeCreated.setLeafLists(leafListAttributesMap);
+        albumToBeCreated.setVisibility(false);
         m_annotationDSM.createNode(albumToBeCreated,m_artistNodeId);
 
         // find the created modelnode and make assertions
         Map<QName, String> keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME,"newalbum");
         ModelNodeKey modelNodeKey = new ModelNodeKey(keys);
-        ModelNodeWithAttributes newAlbumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH,modelNodeKey,m_artistNodeId);
+        ModelNodeWithAttributes newAlbumModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH,modelNodeKey,m_artistNodeId, m_schemaRegistry);
 
         assertEquals("newalbum", newAlbumModelNode.getAttribute(NAME_QNAME).getStringValue());
         assertEquals(JB_NS,getNodeValue(newAlbumModelNode.getAttribute(GENRE_QNAME), XMLNS_JBOX));
@@ -228,7 +261,8 @@ public class ConfigAttributeAnnotatedDSMTest {
         assertEquals(2, newAlbumModelNode.getLeafLists().size());
         assertEquals(1, newAlbumModelNode.getLeafList(SINGER_QNAME).size());
         assertEquals(1, newAlbumModelNode.getLeafList(DUMMY_LEAFLIST_IDREF_QNAME).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
+        assertFalse(newAlbumModelNode.isVisible());
 
         //update the new modelnode created
         configAttributes = new HashMap<>();
@@ -254,7 +288,7 @@ public class ConfigAttributeAnnotatedDSMTest {
 
         // find the updated modelnode and make assertions
         ModelNodeWithAttributes updatedAlbumNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH,modelNodeKey,
-                m_artistNodeId);
+                m_artistNodeId, m_schemaRegistry);
 
         assertEquals("newalbum", updatedAlbumNode.getAttribute(NAME_QNAME).getStringValue());
         assertEquals(JUKEBOX_TYPES_NS, getNodeValue(updatedAlbumNode.getAttribute(GENRE_QNAME), XMLNS_EJT));
@@ -272,29 +306,117 @@ public class ConfigAttributeAnnotatedDSMTest {
         assertEquals(1, updatedAlbumNode.getLeafList(DUMMY_LEAFLIST_IDREF_QNAME).size());
 
         //remove all
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(2, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(2, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
         keys = new LinkedHashMap<>();
         keys.put(NAME_QNAME,ARTIST_NAME);
         modelNodeKey = new ModelNodeKey(keys);
-        ModelNodeWithAttributes artistModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH,modelNodeKey,m_libraryNodeId);
+        ModelNodeWithAttributes artistModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(ARTIST_SCHEMA_PATH,modelNodeKey,m_libraryNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeAllNodes(artistModelNode,ALBUM_SCHEMA_PATH,m_libraryNodeId);
 
-        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
-        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
-        assertEquals(0, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry).size());
 
         // remove
         m_aggregatedDSM.removeNode(artistModelNode,m_libraryNodeId);
-        assertEquals(0, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
 
         ModelNodeWithAttributes libraryModelNode = (ModelNodeWithAttributes) m_aggregatedDSM.findNode(LIBRARY_SCHEMA_PATH,new
-                ModelNodeKey(new LinkedHashMap<>()),m_jukeboxNodeId);
+                ModelNodeKey(new LinkedHashMap<>()),m_jukeboxNodeId, m_schemaRegistry);
         m_aggregatedDSM.removeNode(libraryModelNode,m_jukeboxNodeId);
-        assertEquals(0, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+    }
+
+    @Test
+    public void testUpdateIndex() throws AnnotationAnalysisException {
+        initialiseJukeboxEntityForOrderedByData();
+        assertEquals(1, m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(LIBRARY_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(1, m_aggregatedDSM.listNodes(ARTIST_SCHEMA_PATH, m_schemaRegistry).size());
+        assertEquals(0, m_aggregatedDSM.listNodes(ALBUM_ORDERED_BY_USER_SCHEMA_PATH, m_schemaRegistry).size());
+
+        ModelNodeWithAttributes albumA = getAlbumWithAttributes("AlbumA", "2000");
+        m_annotationDSM.createNode(albumA, m_artistNodeId, 0);
+        ModelNodeWithAttributes albumB = getAlbumWithAttributes("AlbumB", "2002");
+        m_annotationDSM.createNode(albumB, m_artistNodeId, 1);
+        ModelNodeWithAttributes albumC = getAlbumWithAttributes("AlbumC", "2004");
+        m_annotationDSM.createNode(albumC, m_artistNodeId, 2);
+        ModelNodeWithAttributes albumD = getAlbumWithAttributes("AlbumD", "2006");
+        m_annotationDSM.createNode(albumD, m_artistNodeId, 3);
+        ModelNodeWithAttributes albumE = getAlbumWithAttributes("AlbumE", "2008");
+        m_annotationDSM.createNode(albumE, m_artistNodeId, 4);
+
+        List<String> albumNames = Arrays.asList("AlbumA", "AlbumB", "AlbumC", "AlbumD", "AlbumE");
+        List<String> years = Arrays.asList("2000", "2002", "2004", "2006", "2008");
+        List<ModelNode> storedAlbums = m_aggregatedDSM.findNodes(ALBUM_ORDERED_BY_USER_SCHEMA_PATH, Collections.emptyMap(), m_artistNodeId, m_schemaRegistry);
+        assertStoredAlbums(storedAlbums, 5 , albumNames, years);
+
+        //updating index to higher position
+        m_annotationDSM.updateIndex(albumB, m_artistNodeId, 3);
+        albumNames = Arrays.asList("AlbumA", "AlbumC", "AlbumD", "AlbumB", "AlbumE");
+        years = Arrays.asList("2000", "2004", "2006", "2002", "2008");
+        storedAlbums = m_aggregatedDSM.findNodes(ALBUM_ORDERED_BY_USER_SCHEMA_PATH, Collections.emptyMap(), m_artistNodeId, m_schemaRegistry);
+        assertStoredAlbums(storedAlbums, 5 , albumNames, years);
+
+        //updating index to first position
+        m_annotationDSM.updateIndex(albumD, m_artistNodeId, 0);
+        albumNames = Arrays.asList("AlbumD", "AlbumA", "AlbumC", "AlbumB", "AlbumE");
+        years = Arrays.asList("2006", "2000", "2004", "2002", "2008");
+        storedAlbums = m_aggregatedDSM.findNodes(ALBUM_ORDERED_BY_USER_SCHEMA_PATH, Collections.emptyMap(), m_artistNodeId, m_schemaRegistry);
+        assertStoredAlbums(storedAlbums, 5 , albumNames, years);
+
+        //updating index to lower position
+        m_annotationDSM.updateIndex(albumE, m_artistNodeId, 1);
+        albumNames = Arrays.asList("AlbumD", "AlbumE", "AlbumA", "AlbumC", "AlbumB");
+        years = Arrays.asList("2006", "2008", "2000", "2004", "2002");
+        storedAlbums = m_aggregatedDSM.findNodes(ALBUM_ORDERED_BY_USER_SCHEMA_PATH, Collections.emptyMap(), m_artistNodeId, m_schemaRegistry);
+        assertStoredAlbums(storedAlbums, 5 , albumNames, years);
+
+        //updating index to last position
+        m_annotationDSM.updateIndex(albumA, m_artistNodeId, 4);
+        albumNames = Arrays.asList("AlbumD", "AlbumE", "AlbumC", "AlbumB", "AlbumA");
+        years = Arrays.asList("2006", "2008", "2004", "2002", "2000");
+        storedAlbums = m_aggregatedDSM.findNodes(ALBUM_ORDERED_BY_USER_SCHEMA_PATH, Collections.emptyMap(), m_artistNodeId, m_schemaRegistry);
+        assertStoredAlbums(storedAlbums, 5 , albumNames, years);
+
+        //updating index with invalid value
+        testUpdateIndexWithInvalidValue(albumA, -1);
+        testUpdateIndexWithInvalidValue(albumA, 10);
+    }
+
+    private void testUpdateIndexWithInvalidValue(ModelNodeWithAttributes albumA, int newIndex) {
+        try {
+            m_annotationDSM.updateIndex(albumA, m_artistNodeId, newIndex);
+            fail("Expected an exception");
+        } catch (Exception e) {
+            assertEquals("Specified index is invalid", e.getCause().getCause().getMessage());
+            assertTrue(e.getCause().getCause() instanceof DataStoreException);
+        }
+    }
+
+    private void assertStoredAlbums(List<ModelNode> storedAlbums, int count, List<String> names, List<String> year) {
+        assertEquals(count, storedAlbums.size());
+        assertEquals(count, names.size());
+        assertEquals(count, year.size());
+        for(int i=0; i < count; i++) {
+            Map<QName, ConfigLeafAttribute> attributes = ((ModelNodeWithAttributes) storedAlbums.get(i)).getAttributes();
+            assertEquals(names.get(i), attributes.get(NAME_QNAME).getStringValue());
+            assertEquals(year.get(i), attributes.get(YEAR_QNAME).getStringValue());
+        }
+    }
+
+    private ModelNodeWithAttributes getAlbumWithAttributes(String albumName, String albumYear) {
+        ModelNodeWithAttributes albumToBeCreated = new ModelNodeWithAttributes(ALBUM_ORDERED_BY_USER_SCHEMA_PATH,m_artistNodeId,
+                m_modelNodeHelperRegistry,m_subSystemRegistry,m_schemaRegistry,m_annotationDSM);
+        Map<QName, ConfigLeafAttribute> configAttributes = new HashMap<>();
+        configAttributes.put(NAME_QNAME, new GenericConfigAttribute(NAME, JB_NS, albumName));
+        configAttributes.put(YEAR_QNAME, new GenericConfigAttribute(YEAR, JB_NS, albumYear));
+        albumToBeCreated.setAttributes(configAttributes);
+        return  albumToBeCreated;
     }
 
     private void verifyAlbumAttributes(ModelNodeWithAttributes albumModelNode) throws SAXException, IOException, ParserConfigurationException {
@@ -343,6 +465,19 @@ public class ConfigAttributeAnnotatedDSMTest {
         createJukebox();
     }
 
+
+    private void initialiseJukeboxEntityForOrderedByData() throws AnnotationAnalysisException {
+        List<Class> classes = new ArrayList<>();
+        classes.add(Jukebox.class);
+        EntityRegistryBuilder.updateEntityRegistry(JUKEBOX_LOCAL_NAME, classes, m_entityRegistry, m_schemaRegistry, m_persistenceManagerUtil.getEntityDataStoreManager(), m_modelNodeDSMRegistry);
+        ModelNodeDSMRegistry modelNodeDSMRegistry = (ModelNodeDSMRegistry) m_context.getBean("modelNodeDSMRegistry");
+        modelNodeDSMRegistry.register(JUKEBOX_LOCAL_NAME, JUKEBOX_SCHEMA_PATH, m_annotationDSM);
+        modelNodeDSMRegistry.register(JUKEBOX_LOCAL_NAME, LIBRARY_SCHEMA_PATH, m_annotationDSM);
+        modelNodeDSMRegistry.register(JUKEBOX_LOCAL_NAME, ARTIST_SCHEMA_PATH, m_annotationDSM);
+        modelNodeDSMRegistry.register(JUKEBOX_LOCAL_NAME, ALBUM_ORDERED_BY_USER_SCHEMA_PATH, m_annotationDSM);
+        createJukeboxForOrderedByData();
+    }
+
     private void createJukebox() {
         Jukebox jukebox = new Jukebox();
         jukebox.setParentId(EMPTY_NODE_ID.getModelNodeIdAsString());
@@ -373,6 +508,7 @@ public class ConfigAttributeAnnotatedDSMTest {
         // leaf instance identifier value
         album.setResourceNS(JB_TYPES_PREFIX+" " +JUKEBOX_TYPES_NS);
         album.setResource("ejt:dummycontainer/ejt:dummyleaf");
+        album.setVisibility(false);
         albums.add(album);
         artist.setAlbums(albums);
 
@@ -414,9 +550,36 @@ public class ConfigAttributeAnnotatedDSMTest {
         library.setArtists(artists);
         jukebox.setLibrary(library);
 
-        EntityDataStoreManager enityDataStoreManager = m_persistenceManagerUtil.getEntityDataStoreManager();
+        EntityDataStoreManager entityDataStoreManager = m_persistenceManagerUtil.getEntityDataStoreManager();
         try {
-            enityDataStoreManager.create(jukebox);
+            entityDataStoreManager.create(jukebox);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    private void createJukeboxForOrderedByData() {
+        Jukebox jukebox = new Jukebox();
+        jukebox.setParentId(EMPTY_NODE_ID.getModelNodeIdAsString());
+        jukebox.setSchemaPath(SchemaPathUtil.toStringNoRev(JUKEBOX_SCHEMA_PATH));
+
+        Library library = new Library();
+        library.setParentId(m_jukeboxNodeId.getModelNodeIdAsString());
+        library.setSchemaPath(SchemaPathUtil.toStringNoRev(LIBRARY_SCHEMA_PATH));
+
+        Artist artist = new Artist();
+        artist.setName(ARTIST_NAME);
+        artist.setParentId(m_libraryNodeId.getModelNodeIdAsString());
+        artist.setSchemaPath(SchemaPathUtil.toStringNoRev(ARTIST_SCHEMA_PATH));
+
+        List<Artist> artists = new ArrayList<>();
+        artists.add(artist);
+        library.setArtists(artists);
+        jukebox.setLibrary(library);
+
+        EntityDataStoreManager entityDataStoreManager = m_persistenceManagerUtil.getEntityDataStoreManager();
+        try {
+            entityDataStoreManager.create(jukebox);
         } catch (Exception e) {
             throw e;
         }

@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +45,44 @@ public class SchemaPathBuilder {
     private String m_revision;
     private List<Object> m_schemaPathChildComponents = new ArrayList<>();
     private SchemaPath m_parentSchemaPath;
+
+    public static SchemaPath fromMultipleStrings(String spStr) {
+        String [] split = spStr.split("\\?\\?");
+        return fromString(split);
+    }
+
+    public static String prepareNSWithRev(String ns, String revision) {
+        return "(" + ns + "?revision=" + revision + ")";
+    }
+
+    public static String toString(SchemaPath schemaPath) {
+        StringBuilder sb = new StringBuilder();
+        String ns = "";
+        String rev = "";
+        List<String> parts = new ArrayList<>();
+        List<String> localNames = new ArrayList<>();
+        for (QName qName : schemaPath.getPathFromRoot()) {
+            if(!ns.equals(qName.getNamespace().toString()) || !rev.equals(qName.getRevision().get().toString())){
+                appendParts(sb, parts, localNames);
+                sb = new StringBuilder();
+                ns = qName.getNamespace().toString();
+                rev = qName.getRevision().get().toString();
+                sb.append("(").append(ns).append(REVISION_DELIMITER).append(rev).append(")");
+            }
+            localNames.add(qName.getLocalName());
+        }
+        appendParts(sb, parts, localNames);
+
+        return String.join("??", parts);
+    }
+
+    private static void appendParts(StringBuilder sb, List<String> parts, List<String> localNames) {
+        sb.append(String.join(",", localNames));
+        localNames.clear();
+        if(sb.length() > 0) {
+            parts.add(sb.toString());
+        }
+    }
 
     /**
      * Use with appendLocalName and withRevision
@@ -128,7 +167,7 @@ public class SchemaPathBuilder {
     public static SchemaPath fromString(String ... schemaPaths) throws SchemaPathBuilderException {
         SchemaPath path = SchemaPath.ROOT;
         for (String schemaPath : schemaPaths){
-            Matcher matcher = PATTERN_FULL.matcher(schemaPath);
+            Matcher matcher = PATTERN_FULL.matcher(schemaPath.trim());
             String namespace;
             String revision;
             String localNames;
@@ -156,5 +195,37 @@ public class SchemaPathBuilder {
         return path;
 
     }
+    
+    public static SchemaPath getSchemaPathFromString(Map<String, String> prefixToNsMap, String pathStr){
+        List<QName> qnames = new ArrayList<>();
+        String[] paths = pathStr.split(DocumentUtils.SEPARATED);
+        for(String path : paths){
+            if(!path.isEmpty()) {
+                String prefix = null;
+                String namespace = null;
+                String localName = null;
+                QName qname = null;
+                String[] pathWithPrefix = path.split(DocumentUtils.COLON);
+                if(pathWithPrefix.length > 2){
+                    throw new RuntimeException(String.format("Invalid path %s specified in the schemapath string %s", path, pathStr));
+                }else if(pathWithPrefix.length == 2){
+                    prefix = pathWithPrefix[0];
+                    localName = pathWithPrefix[1];
+                } else {
+                    localName = pathWithPrefix[0];
+                    prefix = DocumentUtils.XMLNS;
+                }
+                namespace = prefixToNsMap.get(prefix);
+                if(namespace != null){
+                    qname = QName.create(namespace, localName);
+                    qnames.add(qname);
+                } else {
+                    throw new RuntimeException(String.format("Could not find the namespace for the prefix %s in the pathStr %s", prefix, pathStr));
+                }
+            }
+        }
+        return SchemaPath.create(qnames, true);
+    }
+
 
 }

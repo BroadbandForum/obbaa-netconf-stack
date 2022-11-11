@@ -1,0 +1,85 @@
+module test-must-constraint-schema-path {
+
+    yang-version 1.1;
+
+    namespace "must-constraint";
+
+    prefix "must";
+
+    revision "2021-04-13" {
+	      description "Initial version.";
+	}
+
+    container test-container {
+
+        leaf test-leaf {
+            must "../must-leaf = 'must'";
+            type string;
+        }
+
+        leaf must-leaf {
+            type string;
+        }
+
+        list test-list {
+            must "type = 'type'";
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+            action list-action {
+                input {
+                    leaf device-id {
+                        type string;
+                    }
+                    leaf duid {
+                        must "../device-id = 'AAA'";
+                        type string;
+                    }
+                }
+            }
+        }
+
+        container state-container {
+            must "../must-leaf = 'state'";
+            config false;
+
+            leaf state-leaf {
+                type string;
+            }
+
+            action state-action {
+                input {
+                    list device {
+                        key duid;
+                        leaf device-id {
+                            must "../duid='test'";
+                            type string;
+                        }
+                        leaf duid {
+                            type string;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    rpc must-constraint-rpc {
+        input {
+            list device {
+                key duid;
+                leaf device-id {
+                    must "../duid = 'test'";
+                    type string;
+                }
+                leaf duid {
+                    type string;
+                }
+            }
+        }
+    }
+}

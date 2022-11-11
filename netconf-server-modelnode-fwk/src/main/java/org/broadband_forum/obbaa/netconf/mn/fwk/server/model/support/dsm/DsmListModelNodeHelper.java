@@ -1,20 +1,27 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.dsm;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDeleteException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeSetException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.YangConstraintHelper;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
@@ -24,10 +31,18 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildListHelper;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeDeleteException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeSetException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.EMNKeyUtil;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.YangConstraintHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.XmlUtil;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 /**
  * Created by keshava on 21/12/15.
@@ -53,13 +68,15 @@ public class DsmListModelNodeHelper extends YangConstraintHelper implements Chil
     @Override
     public Collection<ModelNode> getValue(ModelNode parentNode, Map<QName, ConfigLeafAttribute> matchCriteria) throws ModelNodeGetException {
         ModelNodeId parentNodeId;
+        SchemaRegistry registry = m_schemaRegistry;
         if (parentNode != null) {
             parentNodeId = parentNode.getModelNodeId();
+            registry = parentNode.getSchemaRegistry();
         } else {
             parentNodeId = new ModelNodeId();
         }
         Collection<ModelNode> modelNodes = XmlUtil.createCollection(m_schemaNode);
-        modelNodes.addAll(m_modelNodeDSM.findNodes(m_schemaNode.getPath(), matchCriteria, parentNodeId));
+        modelNodes.addAll(m_modelNodeDSM.findNodes(m_schemaNode.getPath(), matchCriteria, parentNodeId, registry));
         return modelNodes;
     }
 
@@ -80,27 +97,28 @@ public class DsmListModelNodeHelper extends YangConstraintHelper implements Chil
     }
 
     @Override
-    public ModelNode addChild(ModelNode parentNode, String childUri, Map<QName, ConfigLeafAttribute> keyAttrs, Map<QName, ConfigLeafAttribute> configAttrs)
+    public ModelNode addChild(ModelNode parentNode, boolean visibility, Map<QName, ConfigLeafAttribute> keyAttrs, Map<QName, ConfigLeafAttribute> configAttrs)
             throws ModelNodeCreateException {
         ModelNodeWithAttributes newNode = getNewModelNode(parentNode);
         Map<QName, ConfigLeafAttribute> allAttributes = new LinkedHashMap<>();
         allAttributes.putAll(keyAttrs);
         allAttributes.putAll(configAttrs);
         newNode.setAttributes(allAttributes);
+        newNode.setVisibility(visibility);
         m_modelNodeDSM.createNode(newNode, parentNode.getModelNodeId());
         return newNode;
     }
 
     @Override
     public ModelNode addChildByUserOrder(ModelNode parentNode, Map<QName, ConfigLeafAttribute> keyAttrs,
-                                         Map<QName, ConfigLeafAttribute> configAttrs, InsertOperation insertOperation, ModelNode indexNode)
+                                         Map<QName, ConfigLeafAttribute> configAttrs, InsertOperation insertOperation, ModelNode indexNode, boolean visibility)
             throws ModelNodeCreateException {
         ModelNodeWithAttributes childNode = getNewModelNode(parentNode);
         Map<QName, ConfigLeafAttribute> allAttributes = new LinkedHashMap<>();
         allAttributes.putAll(keyAttrs);
         allAttributes.putAll(configAttrs);
         childNode.setAttributes(allAttributes);
-
+        childNode.setVisibility(visibility);
         return addChildByUserOrder(parentNode, childNode, indexNode, insertOperation);
     }
 
@@ -115,6 +133,48 @@ public class DsmListModelNodeHelper extends YangConstraintHelper implements Chil
             throw new ModelNodeCreateException("could not add child ModelNode to parent", e);
         }
         return childNode;
+    }
+
+    @Override
+    public void updateChildByUserOrder(ModelNode parentNode, ModelNode childNode, int insertIndex) {
+        m_modelNodeDSM.updateIndex(childNode, parentNode.getModelNodeId(), insertIndex);
+    }
+
+    @Override
+    public boolean isOrderUpdateNeededForChild(Collection<ModelNode> children, ModelNode childNode, int insertIndex) {
+        if(insertIndex != ((List<ModelNode>)children).indexOf(childNode)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int getNewInsertIndex(Collection<ModelNode> childList, InsertOperation insertOperation,
+                                 ModelNode indexNode, ModelNode childNode) {
+        String position = insertOperation.getName();
+        List<ModelNode> children = (List<ModelNode>) childList;
+        if (childList.isEmpty() || position.equals(InsertOperation.FIRST)) {
+            return 0;
+        }
+        else if (position.equals(InsertOperation.LAST)) {
+            return childList.size() - 1;
+        }
+        int specifiedNodeIndex = children.indexOf(indexNode);
+        int affectedNodeIndex = children.indexOf(childNode);
+        if (position.equals(InsertOperation.BEFORE)) {
+            if(specifiedNodeIndex > affectedNodeIndex) {
+                return --specifiedNodeIndex;
+            } else {
+                return specifiedNodeIndex;
+            }
+        } else {
+            if(specifiedNodeIndex > affectedNodeIndex) {
+                return specifiedNodeIndex;
+            } else {
+                return ++specifiedNodeIndex;
+            }
+        }
     }
 
     @Override
@@ -197,6 +257,6 @@ public class DsmListModelNodeHelper extends YangConstraintHelper implements Chil
 
     @Override
     public boolean isChildBigList() {
-        return m_modelNodeDSM.isChildTypeBigList(m_schemaNode.getPath());
+        return m_modelNodeDSM.isChildTypeBigList(m_schemaNode.getPath(), m_schemaRegistry);
     }
 }

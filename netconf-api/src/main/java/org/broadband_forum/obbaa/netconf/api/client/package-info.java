@@ -1,3 +1,6 @@
+/**
+ * Provides classes to build various netconf messages.
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,7 +17,4 @@
  * limitations under the License.
  */
 
-/**
- * Provides classes to build various netconf messages.
- */
 package org.broadband_forum.obbaa.netconf.api.client;

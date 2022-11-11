@@ -34,8 +34,18 @@ public class DefaultNetconfLogger implements NetconfLogger {
     public static final String SBI_REQUEST_MSG = "Sent request to";
     public static final String SBI_RESPONSE_MSG = "Got response from";
     public static final String SBI_NOTIF_MSG = "Got notification from";
+    public static final String NETCONF_REQUEST_TIMEDOUT_MSG = "Netconf request timed out on";
 
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NETCONF_LOGGER_NAME, LogAppNames.NETCONF_LIB);
+    private final AdvancedLogger m_logger;
+
+    public DefaultNetconfLogger() {
+        this(LOGGER);
+    }
+
+    public DefaultNetconfLogger(AdvancedLogger logger) {
+        m_logger = logger;
+    }
 
     @Override
     public void logRequest(String remoteHost, String remotePort, String userName, String sessionId, Document request) {
@@ -43,7 +53,23 @@ public class DefaultNetconfLogger implements NetconfLogger {
     }
 
     @Override
+    public void logRequest(String remoteHost, String remotePort, String userName, String sessionId, AbstractNetconfRequest request) {
+        try {
+            logRequest(remoteHost, remotePort, userName, sessionId, request.getRequestDocument());
+        } catch (NetconfMessageBuilderException e) {
+            m_logger.error("Could not get request document", e);
+            //ignore
+        }
+    }
+
+    @Override
     public void logResponse(String remoteHost, String remotePort, String userName, String sessionId, Document response, AbstractNetconfRequest request) {
+        logResponse(remoteHost, remotePort, userName, sessionId, response, request, null);
+    }
+
+    @Override
+    public void logResponse(String remoteHost, String remotePort, String userName, String sessionId, Document response,
+                            AbstractNetconfRequest request, Long responseTimeMillis) {
         log(NBI_RESPONSE_MSG, remoteHost, remotePort, userName, sessionId, response);
     }
 
@@ -54,7 +80,7 @@ public class DefaultNetconfLogger implements NetconfLogger {
 
     @Override
     public void logNotificationOut(String stream, Notification notification) {
-        LOGGER.debug("broadcasting notification to stream {}", stream, notification.notificationToPrettyString());
+        m_logger.debug("broadcasting notification to stream {}", stream, notification.notificationToPrettyString());
     }
 
     @Override
@@ -64,10 +90,10 @@ public class DefaultNetconfLogger implements NetconfLogger {
 
     private void log(String message, String remoteHost, String remotePort, String userName, String sessionId, Document doc) {
         try {
-            LOGGER.debug(message + " {}/{} ( {} ) session-id {} \n {} \n", LOGGER.sensitiveData(remoteHost), LOGGER.sensitiveData(remotePort),
-                    LOGGER.sensitiveData(userName), LOGGER.sensitiveData(sessionId), DocumentUtils.documentToPrettyString(doc));
+            m_logger.debug(message + " {}/{} ( {} ) session-id {} \n {} \n", m_logger.sensitiveData(remoteHost), m_logger.sensitiveData(remotePort),
+                    m_logger.sensitiveData(userName), m_logger.sensitiveData(sessionId), DocumentUtils.documentToPrettyString(doc));
         } catch (NetconfMessageBuilderException e) {
-            LOGGER.error("Error while logging ", e);
+            m_logger.error("Error while logging ", e);
         }
 
     }

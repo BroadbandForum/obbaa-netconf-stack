@@ -16,14 +16,17 @@
 
 package org.broadband_forum.obbaa.netconf.server.tls;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.server.netty.impl.NettyBasedServerSession;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
-import org.apache.log4j.Logger;
 
 public class TlsNetconfServerSession extends NettyBasedServerSession {
     private Channel m_channel;
-    private static final Logger LOGGER = Logger.getLogger(TlsNetconfServerSession.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(TlsNetconfServerSession.class, LogAppNames.NETCONF_LIB);
 
     public TlsNetconfServerSession(EventLoopGroup bossGroup, EventLoopGroup workerGroup) {
         this.m_bossGroup = bossGroup;

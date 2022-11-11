@@ -1,0 +1,12 @@
+<restaurant xmlns="http://example.com/ns/example-restaurant">
+    <menu>
+        <name>breakfast</name>
+        <count-viands>3</count-viands>
+        <viand>
+            <name>Crawfish pasta</name>
+            <price>180</price>
+        </viand>
+    </menu>
+</restaurant>
+
+

@@ -16,10 +16,14 @@
 
 package org.broadband_forum.obbaa.netconf.server;
 
-import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -27,20 +31,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import static junit.framework.TestCase.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.ArgumentMatcher;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.w3c.dom.Document;
+import java.util.concurrent.TimeUnit;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
+import org.broadband_forum.obbaa.netconf.api.logger.ual.NCUserActivityLogHandler;
+import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
@@ -55,12 +55,24 @@ import org.broadband_forum.obbaa.netconf.api.server.notification.NotificationSer
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.ual.UALLogger;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.w3c.dom.Document;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class RequestTaskTest {
 
     private NetconfServerMessageListener m_serverMessageListener;
     private EditConfigRequest m_editConfigRequest;
     NetconfConfigChangeNotification m_netconfConfigChangeNotification;
+    NetconfConfigChangeNotification m_failNotification;
     private List<Notification> m_notifications;
     @Mock
     private NotificationService m_notificationService;
@@ -68,7 +80,15 @@ public class RequestTaskTest {
     protected ResponseChannel m_responseChannel;
     @Mock
     private NetconfLogger m_netconfLogger;
+    @Mock
+    private NCUserActivityLogHandler m_ncUserActivityLogHandler;
     private NetconfClientInfo m_clientInfo;
+    @Mock
+    private RequestContext m_requestContext;
+    @Mock
+    private UALLogger m_ualLogger;
+    @Mock
+    RequestTaskPostRequestExecuteListener m_requestTaskPostRequestExecuteListener;
 
     @Before
     public void setUp() throws NetconfMessageBuilderException {
@@ -76,9 +96,12 @@ public class RequestTaskTest {
         m_clientInfo.setRemoteHost("keshava-nilaya-gudra");
         m_clientInfo.setRemotePort("574241");
         MockitoAnnotations.initMocks(this);
+        when(m_requestContext.getLoggedInUserCtxt()).thenReturn(new UserContext("ut", "1"));
         m_serverMessageListener = Mockito.mock(NetconfServerMessageListener.class);
         m_netconfConfigChangeNotification = new NetconfConfigChangeNotification();
+        m_failNotification = new NetconfConfigChangeNotification();
         m_notifications = new ArrayList<>();
+        m_notifications.add(m_failNotification);
         m_notifications.add(m_netconfConfigChangeNotification);
         m_editConfigRequest = new EditConfigRequest();
         m_editConfigRequest.setConfigElement(new EditConfigElement().addConfigElementContent(DocumentUtils.stringToDocument("<adh:device xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" > \n" +
@@ -97,39 +120,118 @@ public class RequestTaskTest {
                 return editConfig.getMessageId().equals("1");
             }
         };
-        when(m_serverMessageListener.onEditConfig(any(NetconfClientInfo.class), argThat(ediConfigRequest), any(NetConfResponse.class)))
+
+        ArgumentMatcher<NetConfResponse> netconfResponse = new ArgumentMatcher<NetConfResponse>() {
+
+            @Override
+            public boolean matches(Object argument) {
+                NetConfResponse netConfResponse = (NetConfResponse) argument;
+                netConfResponse.setOk(true);
+                return netConfResponse.getMessageId().equals("1");
+            }
+        };
+        when(m_serverMessageListener.onEditConfig(any(NetconfClientInfo.class), argThat(ediConfigRequest), argThat(netconfResponse)))
                 .thenReturn(m_notifications);
 
     }
 
     @Test
-    public void testSentNetConfConfigChangeNotification() throws NetconfMessageBuilderException {
-        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener, m_netconfLogger);
-        requestTask.setNotificationService(m_notificationService);
+    public void testEnqueueTimerSet() throws NetconfMessageBuilderException, InterruptedException {
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener,
+                m_netconfLogger, m_ncUserActivityLogHandler, m_ualLogger);
+        assertFalse(requestTask.getEnQueueTimer().isRunning());
+        requestTask.enqueued();
+        assertTrue(requestTask.getEnQueueTimer().isRunning());
+        assertNull(requestTask.getWaitingTimeInQueue());
+        TimeUnit.MILLISECONDS.sleep(10);
         requestTask.doExecuteRequest();
+        assertTrue(new Long(0) < requestTask.getWaitingTimeInQueue());
+    }
+    @Test
+    public void testEnqueueTimerNotSet() throws NetconfMessageBuilderException, InterruptedException {
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener,
+                m_netconfLogger, m_ncUserActivityLogHandler, m_ualLogger);
+        assertFalse(requestTask.getEnQueueTimer().isRunning());
+        assertNull(requestTask.getWaitingTimeInQueue());
+        requestTask.doExecuteRequest();
+        assertNull(requestTask.getWaitingTimeInQueue());
+    }
+
+    @Test
+    public void testSentNetConfConfigChangeNotification() throws NetconfMessageBuilderException {
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener,
+                m_netconfLogger, m_ncUserActivityLogHandler, m_ualLogger);
+        requestTask.setNotificationService(m_notificationService);
+        requestTask.setRequestContext(m_requestContext);
+        requestTask.setRequestTaskPostRequestListener(m_requestTaskPostRequestExecuteListener);
+        requestTask.doExecuteRequest();
+        verify(m_requestTaskPostRequestExecuteListener).postExecuteRequest(any(AbstractNetconfRequest.class), any(NetConfResponse.class),
+                any(Long.class), any(Long.class));
         ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class);
         verify(m_notificationService, times(1)).sendNotification(NetconfResources.CONFIG_CHANGE_STREAM, m_netconfConfigChangeNotification);
+        verify(m_requestTaskPostRequestExecuteListener, times(1)).postExecuteRequest(any(), any(), any(), any());
+        verify(m_netconfLogger, times(2)).setThreadLocalDeviceLogId(any(Document.class));
         verify(m_netconfLogger).logRequest(eq("keshava-nilaya-gudra"), eq("574241"), eq("ut"), eq("1"), documentArgumentCaptor.capture());
         assertEquals(DocumentUtils.documentToPrettyString(m_editConfigRequest.getRequestDocument()), DocumentUtils.documentToPrettyString(documentArgumentCaptor.getValue()));
-        verify(m_netconfLogger).logResponse(eq("keshava-nilaya-gudra"), eq("574241"), eq("ut"), eq("1"), any(Document.class), eq(m_editConfigRequest));
+        verify(m_netconfLogger).logResponse(eq("keshava-nilaya-gudra"), eq("574241"), eq("ut"), eq("1"), any(Document.class),
+                eq(m_editConfigRequest), anyLong());
+        verify(m_netconfLogger).setThreadLocalDeviceLogId(null);
     }
 
     @Test
     public void testResponseSentWhenThereIsExceptionWhileHandlingRpcMessage() throws NetconfMessageBuilderException {
-        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener, m_netconfLogger);
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener,
+                m_netconfLogger, m_ncUserActivityLogHandler, m_ualLogger);
+        requestTask.setRequestContext(m_requestContext);
         requestTask.setNotificationService(m_notificationService);
         doThrow(new RuntimeException("I feel like failing today")).when(m_serverMessageListener).onEditConfig(anyObject(), anyObject(), anyObject());
         requestTask.run();
         ArgumentCaptor<NetConfResponse> responseCaptor = ArgumentCaptor.forClass(NetConfResponse.class);
         verify(m_responseChannel).sendResponse(responseCaptor.capture(), eq(m_editConfigRequest));
 
-        assertEquals("<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                "  <rpc-error>\n" +
-                "    <error-type>application</error-type>\n" +
-                "    <error-tag>operation-failed</error-tag>\n" +
-                "    <error-severity>error</error-severity>\n" +
-                "    <error-message>I feel like failing today</error-message>\n" +
-                "  </rpc-error>\n" +
+        assertEquals("<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "   <rpc-error>\n" +
+                "      <error-type>application</error-type>\n" +
+                "      <error-tag>operation-failed</error-tag>\n" +
+                "      <error-severity>error</error-severity>\n" +
+                "      <error-message>I feel like failing today</error-message>\n" +
+                "   </rpc-error>\n" +
+                "</rpc-reply>\n", responseCaptor.getValue().responseToString());
+    }
+
+    @Test
+    public void testRequestTaskWillNotSendTwoResponse() throws NetconfMessageBuilderException {
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener,
+                m_netconfLogger, m_ncUserActivityLogHandler, m_ualLogger);
+        requestTask.setRequestContext(m_requestContext);
+        requestTask.setNotificationService(m_notificationService);
+        doThrow(new RuntimeException("I feel like not to send notification today")).when(m_notificationService).sendNotification(anyString(),
+                anyObject());
+        requestTask.run();
+        ArgumentCaptor<NetConfResponse> responseCaptor = ArgumentCaptor.forClass(NetConfResponse.class);
+        verify(m_responseChannel).sendResponse(responseCaptor.capture(), eq(m_editConfigRequest));
+        assertEquals(1, responseCaptor.getAllValues().size());
+        assertEquals("<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "   <ok/>\n" +
+                "</rpc-reply>\n", responseCaptor.getValue().responseToString());
+    }
+
+    @Test
+    public void testRequestTaskWillContinueToSendNotificationsIfOneFails() throws NetconfMessageBuilderException {
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, m_serverMessageListener,
+                m_netconfLogger, m_ncUserActivityLogHandler, m_ualLogger);
+        requestTask.setRequestContext(m_requestContext);
+        requestTask.setNotificationService(m_notificationService);
+        doThrow(new RuntimeException("I feel like not to send notification today")).when(m_notificationService).sendNotification(anyString(),
+                eq(m_failNotification));
+        requestTask.run();
+        ArgumentCaptor<NetConfResponse> responseCaptor = ArgumentCaptor.forClass(NetConfResponse.class);
+        verify(m_notificationService).sendNotification(anyString(), eq(m_failNotification));
+        verify(m_notificationService).sendNotification(anyString(), eq(m_netconfConfigChangeNotification));
+        verify(m_responseChannel).sendResponse(responseCaptor.capture(), eq(m_editConfigRequest));
+        assertEquals(1, responseCaptor.getAllValues().size());
+        assertEquals("<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "   <ok/>\n" +
                 "</rpc-reply>\n", responseCaptor.getValue().responseToString());
     }
 
@@ -157,12 +259,15 @@ public class RequestTaskTest {
                 return null;
             }
         };
-        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, listener, m_netconfLogger);
+        RequestTask requestTask = new RequestTask(m_clientInfo, m_editConfigRequest, m_responseChannel, listener, m_netconfLogger,
+                m_ncUserActivityLogHandler, m_ualLogger);
+        requestTask.setRequestContext(m_requestContext);
         requestTask.run();
 
         NetconfRpcRequest rpcReq = new CreateSubscriptionRequest();
         rpcReq.setMessageId("rpc-id");
-        requestTask = new RequestTask(m_clientInfo, rpcReq, m_responseChannel, listener, m_netconfLogger);
+        requestTask = new RequestTask(m_clientInfo, rpcReq, m_responseChannel, listener, m_netconfLogger, m_ncUserActivityLogHandler, m_ualLogger);
+        requestTask.setRequestContext(m_requestContext);
         requestTask.run();
 
     }

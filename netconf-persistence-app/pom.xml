@@ -20,13 +20,14 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>netconf-persistence-app</artifactId>
     <packaging>bundle</packaging>
     <name>netconf-fwk/netconf-persistence-app</name>
+
     <dependencies>
         <!-- External -->
         <dependency>
@@ -43,10 +44,6 @@
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.hibernate.javax.persistence</groupId>
-            <artifactId>hibernate-jpa-2.1-api</artifactId>
-        </dependency>
 
         <!--  test -->
         <dependency>
@@ -61,11 +58,6 @@
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -91,6 +83,7 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+                <version>${bundle.plugin.version}</version>
                 <extensions>true</extensions>
                 <inherited>true</inherited>
                 <configuration>
@@ -114,7 +107,7 @@
                 </executions>
                 <configuration>
                     <excludes>
-                        <exclude>**/log4j.xml</exclude>
+                        <exclude>**/log4j2.xml</exclude>
                     </excludes>
                 </configuration>
             </plugin>

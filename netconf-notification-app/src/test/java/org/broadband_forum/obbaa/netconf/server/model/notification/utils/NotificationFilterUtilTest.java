@@ -22,6 +22,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
 
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
+import org.broadband_forum.obbaa.netconf.api.utils.FileUtil;
 import org.junit.Test;
 
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
@@ -31,6 +33,7 @@ import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.FilterNode;
+import org.w3c.dom.Document;
 
 /**
  * Created by pregunat on 2/5/16.
@@ -39,7 +42,9 @@ public class NotificationFilterUtilTest {
 
     @Test
     public void testMatches() throws NetconfMessageBuilderException {
-        Notification notification = DocumentToPojoTransformer.getNotification(DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-state-change-notification.xml")));
+        Document doc = DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-state-change-notification.xml"));
+        DocumentInfo documentInfo = new DocumentInfo(doc, FileUtil.loadAsString("/sample-state-change-notification.xml"));
+        Notification notification = DocumentToPojoTransformer.getNotification(documentInfo);
         FilterNode filterNode = new FilterNode();
         filterNode.addSelectNode(NetconfResources.STATE_CHANGE_NOTIFICATION, NetconfResources.IETF_NOTIFICATION_NS);
 
@@ -66,8 +71,9 @@ public class NotificationFilterUtilTest {
 
         // test filter match failing case
         assertFalse(NotificationFilterUtil.matches(notification, filterNode));
-
-        notification = DocumentToPojoTransformer.getNotification(DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-netconf-config-change-notification.xml")));
+        doc = DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-netconf-config-change-notification.xml"));
+        documentInfo = new DocumentInfo(doc, FileUtil.loadAsString("/sample-netconf-config-change-notification.xml"));
+        notification = DocumentToPojoTransformer.getNotification(documentInfo);
         filterNode = new FilterNode();
         filterNode.addContainmentNode("netconf-config-change", NetconfResources.IETF_NOTIFICATION_NS)
                 .addContainmentNode("edit", NetconfResources.IETF_NOTIFICATION_NS)
@@ -82,7 +88,9 @@ public class NotificationFilterUtilTest {
 
     @Test
     public void testFilterNotificationMatches() throws NetconfMessageBuilderException {
-        Notification notification = DocumentToPojoTransformer.getNotification(DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-alarm-notification.xml")));
+        Document doc = DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-alarm-notification.xml"));
+        DocumentInfo documentInfo = new DocumentInfo(doc, FileUtil.loadAsString("/sample-alarm-notification.xml"));
+        Notification notification = DocumentToPojoTransformer.getNotification(documentInfo);
         NetconfFilter filter = new NetconfFilter();
         String xmlFilter = "<filter type=\"subtree\">\n" +
                 "  <alarm-notification xmlns=\"http://www.test.com/solutions/anv-alarms\">\n" +
@@ -194,7 +202,9 @@ public class NotificationFilterUtilTest {
 
     @Test
     public void testFilterNotificationMissMatches() throws NetconfMessageBuilderException {
-        Notification notification = DocumentToPojoTransformer.getNotification(DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-alarm-notification.xml")));
+        Document doc = DocumentUtils.loadXmlDocument(NotificationFilterUtilTest.class.getResourceAsStream("/sample-alarm-notification.xml"));
+        DocumentInfo documentInfo = new DocumentInfo(doc, FileUtil.loadAsString("/sample-alarm-notification.xml"));
+        Notification notification = DocumentToPojoTransformer.getNotification(documentInfo);
         NetconfFilter filter = new NetconfFilter();
         String xmlFilter = "<filter type=\"subtree\">\n" +
                 "  <alarm-notification xmlns=\"http://www.test.com/solutions/anv-alarms\">\n" +

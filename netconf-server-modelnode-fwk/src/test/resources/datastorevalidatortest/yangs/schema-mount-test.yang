@@ -1,35 +1,87 @@
-module shcema-mount-test {
+module schema-mount-test {
 	
-	yang-version 1;
+	yang-version 1.1;
     
 	namespace "schema-mount-test";
 	
 	prefix "smt";
 	
+	include schema-mount-submodule;
 	import test-interfaces {
-	    prefix if;
+	    prefix test1;
 	}
 	
 	import bbf-interface-usage {
 	    prefix bbf-if-usg;
 	}
 	  
+	import nc-stack-extensions {
+	    prefix ncext;
+	}
+
+    import iana-hardware {
+        prefix ianahw;
+    }
+
+	import bbf-hardware-types {
+	    prefix bbf-hwt;
+	}
+	
 	revision "2018-01-03" {
 	      description "Initial version.";
 	}
+	
+	feature pre-emption {
+	    description "Pre-emption is supported";
+	}
+	
+	typedef mybits-type {
+       type bits {
+         bit firstBit {
+           position 0;
+         }
+         bit secondBit {
+           position 1;
+         }
+         bit thirdBit {
+           position 2;
+         }
+         bit fourthBit {
+           position 3;
+         }
+       }
+     }
 	  
 	typedef interface-ref {
 		type leafref {
 		    path "/smt:schemaMount/smt:container1/smt:list1/smt:key";
 		}
-	}	
+	}
+	
+	typedef hardware-ref {
+		type leafref {
+		    path "/smt:schemaMount1/smt:hardware/smt:name";
+		}
+	}
 	
 	typedef profile-ref {
         type leafref {
             path "/smt:schemaMount1/smt:profile/smt:name";
         }
     }
-	  
+    
+    identity vegetables {
+        description "Base for all vegetables";
+    }
+    
+    identity carrot {
+      base vegetables;
+    }
+    
+    identity brinjal {
+        base vegetables;
+    }
+    
 	list testStateList {
         config false;
             key "name";
@@ -44,6 +96,27 @@ module shcema-mount-test {
 
     }
 
+	container test-must-with-count{
+	    
+	    list list1{
+	        key name;
+	        
+	        leaf name{
+	            type string;
+	        }
+	    }
+	
+	    container container-with-must-outside-the-node{
+	        must "count(current()/../smt:list1) < 1";
+	        
+	        leaf leaf1{
+	            type string;
+	            default "test";
+	        }
+	    
+	    }
+	}
+
 	container stateContainer {
 		config false;
 		list stateList {
@@ -56,8 +129,40 @@ module shcema-mount-test {
 			}
 		}
 	}
+
+	grouping configured-device-properties-container-group {
+        container configured-device-properties {
+            leaf username {
+                type string;
+            }
+        }
+    }
 	
-	    container schemaMount {
+    grouping local-idref-grouping {
+	    leaf identityref-type {
+            type identityref {
+               base "test1:languages";
+            }
+            default "test1:english";
+        }
+           
+        leaf local-identityref-type {
+            type identityref {
+               base "vegetables";
+            }
+            default "carrot";
+        }
+        
+        leaf local-whenidentityref-type {
+            when "../../leaf1 = 'myleaf1'";
+            type identityref {
+               base "vegetables";
+            }
+            default "carrot";
+        }
+    }
+        
+    container schemaMount {
     	
     	leaf leaf1 {
     		type string;
@@ -67,9 +172,449 @@ module shcema-mount-test {
     	    type boolean;
     	}
     	
+    	leaf leaf3 {
+    	    type string;
+    	}
+    	
+    	leaf leaf4 {
+    	    type string;
+    	}
+
+    	leaf aggregatedExampleEnabled {
+    	    type boolean;
+    	}
+    	
+    	container aggregatedExampleTopContainer {
+            when '../aggregatedExampleEnabled = "true"';
+            leaf aggregatedExampleLeaf1 {
+                type string;
+            }
+            
+            leaf-list aggregatedExampleLeafList1 {
+                type string;
+            }
+            
+            choice aggregatedExampleChoice1 {
+                case aggregatedExampleChoice1Case1 {
+                    leaf case1Leaf1 {
+                        type string;
+                    }
+                    
+                    container case1Container1 {
+                        leaf case1Container1Leaf1 {
+                            type string;
+                        }
+                    }
+                }
+                
+                case aggregatedExampleChoice1Case2 {
+                    leaf case2Leaf1 {
+                        type string;
+                    }
+                    
+                    container case2Container1 {
+                        leaf case2Container1Leaf1 {
+                            type string;
+                        }
+                    }
+                    
+                    choice nestedChoice1 {
+                        case nestedCase1 {
+                             leaf nestedCase1Leaf1 {
+                                type string;
+                             }
+                             
+                             container nestedCase1Container1{
+                                 leaf nestedCase1Container1Leaf1{
+                                     type string;
+                                 }
+                             }
+                        }
+                        case nestedCase2 {
+                            leaf nestedCase2Leaf1 {
+                               type string;
+                            }
+                       }
+                    }
+                    
+                    list case2List1 {
+                        key name;
+                        leaf name {
+                            type string;
+                        }
+                        leaf nonKeyLeaf {
+                            type string;
+                        }
+                        choice nestedChoiceInsideList {
+                            case nestedCase1InsideList {
+                                 leaf nestedCase1Leaf1 {
+                                    type string;
+                                 }
+                            }
+                            case nestedCase2InsideList {
+                                leaf nestedCase2Leaf1 {
+                                   type string;
+                                }
+                           }
+                        }
+                    }
+                }
+            }
+            
+            container aggregatedExampleContainer1 {
+                leaf aggregatedExampleContainerLeaf1 {
+                    type string;
+                }
+                
+                list aggregatedExampleContainerList1 {
+                    key "name1 name2";
+                    leaf name1 {
+                        type string;
+                    }
+                    leaf name2 {
+                        type string;
+                    }
+                    
+                    leaf name3 {
+                        type string;
+                    }
+                    
+                    container aggregatedExampleList1Container1{
+                        leaf test1{
+                            type string;
+                        }
+                    }
+                }
+            }
+    	}
+    	
+    	container pae {
+            container port-capabilities {
+                leaf auth{
+                    type boolean;
+                }
+                leaf supp {
+                    type boolean;
+                }
+            }
+            container authenticator {
+                when "../port-capabilities/supp = 'false' and
+                              ../port-capabilities/auth = 'true'";
+                leaf dummyLeaf {
+                    type string;
+                }
+            }
+        }
+
+    	list path1List {
+            key namePath1;
+            leaf namePath1 {
+                type string;
+            }
+            container path1Container {
+                leaf whenWithMan{
+                    when "/smt:schemaMount/smt:path2List[smt:namePath2= ../../namePath1]/smt:path2Container/smt:trigger='whenMan'";
+                    type string;
+                    mandatory true;
+                }
+            }
+
+        }
+
+        list path2List {
+            key namePath2;
+            leaf namePath2 {
+                type string;
+            }
+            container path2Container {
+                leaf trigger{
+                    type string;
+                }
+            }
+
+        }
+
+        list listWithCount {
+            must "(count(current()[non-key-leaf = 'ok']) = 1)";
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf non-key-leaf {
+                type string;
+            }
+        }
+
+    	container idRefContainerForDeviations {
+    	    when "../leaf4='leaf4'";
+    	       leaf leaf5{
+    	            type identityref {
+    	                base "test1:languages";
+    	            }
+    	        }
+    	       
+               leaf leaf6{
+                   type identityref {
+                       base "test1:languages";
+                   }
+               }
+               
+               leaf leaf7{
+                   must 'derived-from-or-self(../leaf5, "test1:english")'
+                   {
+                       error-message "leaf5 should be of type english";
+                   }
+                   type string;
+               }
+               
+               leaf leaf8{
+                   type string;
+               }
+               
+               leaf leaf9{
+                   type identityref {
+                       base "test1:languages";
+                   }
+               }
+               
+               leaf leaf10{
+                   must "../leaf9 = 'test1:english'"
+                   {
+                       error-message "leaf9 should be of type english";
+                   }
+                   type string;
+               }
+               
+               leaf leaf11{
+                   type identityref {
+                       base "test1:languages";
+                   }
+               }
+               
+               leaf leaf12{
+                   type string;
+               }
+               
+               leaf leaf13{
+                   type identityref {
+                       base "test1:languages";
+                   }
+                   must "current() = 'test1:english'"
+                   {
+                       error-message "leaf13 should be of type english";
+                   }
+               }
+               
+               leaf leaf14{
+                   type string;
+                   must "current()/../leaf11 = 'test1:english'"
+                   {
+                       error-message "leaf11 should be of type english";
+                   }
+               }
+               
+               list component {
+                   key name;
+                   
+                   leaf name {
+                       type string;
+                   }
+                   
+                   leaf parent{
+                       type string;
+                   }
+                   
+                   leaf class {
+                       type identityref {
+                           base "test1:languages";
+                       }
+                   }
+                   
+                   leaf model-name {
+                       type string;
+                   }
+
+                   leaf model-name1 {
+                       type string;
+                       must "
+                           (current()/../class = 'test1:english' and (
+                             (
+                               (
+                                 substring(current(), 1, 8) = '3FE68653' or
+                                 substring(current(), 1, 8) = '3FE62600' or
+                                 substring(current(), 1, 8) = '3FE65831'
+                               )
+                               and (not(boolean(../../component[parent = current()/../name and class != 'test1:french']
+                                 )))
+                             )
+                             )
+                           )"
+                     {
+                         error-message "component mismatch error";
+                     }
+                   }
+                   
+                   leaf countleaf {
+                       type string;
+                       must "count(../../component[class = 'test1:french'])>1"
+                       {
+                           error-message "class of type french >1";
+                       }
+                   }
+                   
+                   leaf model-name2 {
+                       type string;
+                       must "boolean(../../component[parent = current()/../name and class = 'test1:french'])"
+                       {
+                         error-message "component mismatch error with model-name2";
+                       }
+                   }
+
+               }
+    	       
+    	}
+    	
+    	list hintList {
+    		key "keyLeaf";
+    		
+    		leaf keyLeaf {
+    			type string;
+    		}
+    		
+    		leaf leafWithHint1 {
+    			type string;
+    		}
+    		
+    		leaf leafWithHint2 {
+    			when "count(/smt:schemamount/smt:hintList/smt:leafWithHint1 = 'hello')>1";
+    			type string;
+    		}
+    		
+    		leaf leafWithHint3 {
+    			when "count(/smt:schemamount/smt:hintList/smt:leafWithHint1 = 'hello')>1";
+    			type string;
+    	        ncext:validation-hints-on-node "*->SKIP_VALIDATION";
+    		}
+    		
+    		leaf leafWithHint4 {
+    			type string;
+    		}
+    		
+    		leaf leafWithHint5 {
+    			when "../leafWithHint4 = 'hello'";
+    			type string;
+    	        ncext:validation-hints-on-node "*->SKIP_IMPACT_VALIDATION";
+    		}
+    		
+    	    leaf leafWithHint6{
+    	        //when 'derived-from-or-self 
+    	           // (../smt:leafWithHint7, "carrot")';
+    			when "count(/smt:schemamount/smt:hintList/smt:leafWithHint7 = 'carrot')=1";
+    	        type string;
+    	        ncext:validation-hints-on-node "*->SKIP_IMPACT_ON_CREATE";
+    	    }
+
+    	    leaf leafWithHint7{
+    	        type identityref {
+    	            base vegetables;
+    	        }
+    	    }
+    	}
+    	container id-ref-container {
+    	     when "../leaf3 = 'leaf3'";
+    	     uses local-idref-grouping;
+    	     uses submodule-idref-grouping;
+    	}
+    	
     	container enableContainer {
     	    when '../leaf2 = "true"';
+    	    leaf enableContainerChildLeaf {
+    	        type string;
+    	        default "enableContainerLeaf-default-Value";
+    	    }
     	}
+    	
+    	container nested-predicates {
+			leaf parent-ref {
+	      		type test1:interface-ref;
+			}
+			leaf command-module {
+				type string;
+			}
+			leaf another-leaf {
+				type string;
+				must
+	            "/test1:interfaces/test1:interface
+	              [test1:name=/test1:interfaces/test1:interface[test1:name=current()]/test1:channel-termination/test1:channel-pair-leaf]
+	              /test1:channel-termination/test1:channel-pair-leaf = ../parent-ref";
+			}
+			action apollo11 {
+	           input {
+	             leaf lunar-module {
+	             	when "../../command-module='Collins'";
+	               	type string;
+	              }
+	            }
+	        }
+		}
+		
+		container predicates-with-operation {
+			list list1{
+				key name;
+				leaf name{
+					type string;
+				}
+				leaf leaf1{
+					type string;
+				}
+				leaf leaf2{
+					type string;
+				}
+				leaf leaf3{
+					type string;
+				}
+				leaf leaf4{
+					type string;
+				}
+				leaf leaf5{
+					type int8;
+				}
+				
+				leaf leaf6{
+					type int8;
+				}
+				leaf leaf7 {
+			   		type mybits-type;
+				}
+			}
+			leaf firstLeaf{
+				type string;
+			}
+			leaf predicates-with-and-operation {
+				type string;
+				must "/smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:leaf1='BBF' and smt:name=/smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:name=current()]/smt:leaf3]/smt:leaf2 = ../firstLeaf";
+			}
+			leaf predicates-with-or-operation {
+				type string;
+				must "/smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:leaf1='BBF' or smt:name=/smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:name=current()]/smt:leaf3]/smt:leaf2 = ../firstLeaf";
+			}
+			
+			leaf predicates-with-and-or-operation {
+				type string;
+				must "/smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:leaf1='BBF' or smt:name=/smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:name=current()]/smt:leaf3 and smt:leaf4='FNMS']/smt:leaf2 = ../firstLeaf";
+			}
+			
+			leaf predicates-with-relations-operator {
+				type string;
+				must "/smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:leaf5 < /smt:schemaMount/smt:predicates-with-operation/smt:list1[smt:name=current()]/smt:leaf6]/smt:leaf2 = ../firstLeaf";
+			}
+			
+			leaf predicate-with-function {
+				type string;
+				must "/smt:schemaMount/smt:predicates-with-operation/smt:list1[bit-is-set(leaf7)]/smt:leaf2 = ../firstLeaf";
+			}
+		}
+		
     	container container1 {
     		list list1 {
     			key key;
@@ -78,7 +623,7 @@ module shcema-mount-test {
     			}
     			
     			leaf leaf1 {
-    				when "../../list1[current()]/leaf2 > 10";
+    				must "../../list1[current()]/leaf2 > 10";
     				type string;
     			}
     			
@@ -131,6 +676,128 @@ module shcema-mount-test {
                 }
              }
         }
+        
+        list interface-list {
+        	key "name";
+        	leaf name {
+        		type string;
+        	}
+        }
+
+        list must-validation {
+            must "type = 'must-type'";
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+        }
+
+        list string-validation {
+            key name;
+            leaf name {
+                must "string-length(.) < 10";
+                type string;
+            }
+        }
+
+        list string-validation1 {
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                must "string-length(current()/../name) < 5";
+                type string;
+            }
+        }
+
+
+        list string-validation2 {
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                must "string-length(../name) < 5";
+                type string;
+            }
+        }
+
+        list must-validation2 {
+            must "not(boolean(current()/type))";
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+        }
+
+        list must-validation3 {
+            must "type != 'must-type'";
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+        }
+
+        list must-validation1 {
+            must "type = 'must-type'";
+            key "name name1";
+            leaf name {
+                type string;
+            }
+            leaf name1 {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+        }
+
+        list when-validation {
+            when "type = 'when-type'";
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+        }
+        container boolean-validation {
+            choice testChoice {
+                case testCase{
+                    leaf discard {
+                        must "not(boolean(current()))";
+                        type empty;
+                    }
+                }
+            }
+            leaf non-discard {
+                type string;
+            }
+            
+            list testDiscardList {
+                must "not(boolean(current()))";
+                key name;
+                leaf name {
+                    type string;
+                }
+            }
+            
+            leaf-list testDiscardLeafList {
+                must "not(boolean(current()))";
+                type string;
+            }
+        }
     }
     
     container schemaMount1 {
@@ -152,6 +819,84 @@ module shcema-mount-test {
 				type string;
 			}
 		}
+        
+        list hardware {
+        	key "name";
+        	
+        	leaf name {
+        		type string;
+        	}
+        }
+    }
+    
+    augment "/schemaMount/interface-list" {
+    	leaf-list port-layer {
+    		type hardware-ref;
+    		min-elements 1;
+    	}
+    }
+
+    augment "/schemaMount" {
+        container outerContainer11 {
+                    leaf url-leaf {
+                        type string;
+                    }
+
+                    choice reference-choice {
+                        case reference-case1 {
+                            leaf case1-string-leaf {
+                                type string;
+                            }
+
+                            choice nested-choice {
+                                case nested-case1 {
+                                    leaf nested-case1-enum-leaf {
+                                        type enumeration {
+                                            enum first;
+                                            enum second;
+                                        }
+                                    }
+
+                                    leaf nested-case1-leaf {
+                                        type string;
+                                    }
+
+                                    leaf nested-case1-default-leaf {
+                                        when "../case1-string-leaf = 'mystring'";
+                                        type string;
+                                        default "default-leaf";
+                                    }
+
+                                    container nested-case1-when-container{
+                                        when "../case1-string-leaf = 'mystring'";
+                                        leaf default-leaf{
+                                            type string;
+                                            default "default-leaf";
+                                        }
+                                    }
+                                }
+                                case nested-case2 {
+                                    leaf nested-case2-enum-leaf {
+                                        type enumeration {
+                                            enum enabled;
+                                            enum disabled;
+                                        }
+                                    }
+
+                                    leaf-list nested-case2-leaf-list{
+                                        type string;
+                                        min-elements 2;
+                                    }
+                                }
+                            }
+                        }
+                        case reference-case2 {
+                            leaf reference-case2-leaf {
+                                type string;
+                            }
+                        }
+                    }
+                }
     }
     
     augment "/schemaMount"{
@@ -168,6 +913,576 @@ module shcema-mount-test {
         }
     }
 
+    augment "/schemaMount" {
+        container when-container {
+            leaf when-leaf {
+                type string;
+            }
+
+            container choice-container {
+                choice choice1 {
+                    when "/schemaMount/when-container/when-leaf = 'when'";
+                    case case1 {
+                        leaf leaf1 {
+                            type string;
+                        }
+                    }
+                    case case2 {
+                        leaf leaf2 {
+                            type string;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+	container hardwaresList {
+        must "current()/hardware/name = 'BP'";
+        list hardware {
+            key name;
+
+            leaf name {
+                type string;
+            }
+
+            leaf hardware-type {
+        		type string;
+        	}
+        }
+
+        container hardware-states {
+            leaf hardware-state{
+                type string;
+            }
+        }
+    }
+
+	container hardwares {
+        must "current()/hardware/name = 'BP'";
+        list hardware {
+            key name;
+
+            leaf name {
+                type string;
+            }
+
+            leaf hardware-type {
+        		type string;
+        	}
+        }
+
+        container hardware-states {
+            leaf hardware-state{
+                type string;
+            }
+        }
+    }
+
+    container hardware {
+        list component {
+            key name;
+            leaf name {
+                type string;
+            }
+
+            leaf class {
+                type identityref {
+                    base ianahw:hardware-class;
+                }
+                mandatory true;
+            }
+
+            leaf parent {
+                type leafref {
+                    path "../../component/name";
+                }
+            }
+        }
+    }
+
+    container ethernet {
+        container manual {
+            leaf duplex {
+                type string;
+            }
+            leaf speed {
+                must "((current()/../port-layer-if = /hardware/component[class='bbf-hwt:transceiver-link' "
+                        +"and parent= /hardware/component[class='bbf-hwt:transceiver' "
+                        +"and (parent='FSM1'or parent='FSM2'or parent='FSM3')]/name]/name) "
+                        +"and current()='eth-if-speed-10gb')";
+                type string;
+            }
+            leaf port-layer-if {
+                type string;
+            }
+        }
+    }
+
+    container classifiers {
+        container classifier{
+            leaf state {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+        }
+    }
+
+    grouping dei-marking-list{
+        list dei-marking-list{
+            key index;
+            leaf index{
+                type int32;
+            }
+
+            leaf dei-value{
+               type int32;
+            }
+        }
+    }
+
+    augment "/policies/classifier-entry/filter-method/inline/match-criteria"{
+        list dei-marking-list{
+            key index;
+            leaf index{
+                type int32;
+            }
+
+            leaf dei-value{
+                type int32;
+            }
+        }
+
+        leaf-list flow-color{
+            must "not(current()/../../classifier-action-entry-cfg/action-type = 'dei-marking' and current()/../../classifier-action-entry-cfg/dei-marking-cfg/dei-marking-list/dei-value = 0)"
+                {
+                     error-message "In classfier, if the filter is flow-color and the action is DEI-remarking, the remarked DEI value can only be 1!";
+                }
+
+            type string;
+        }
+    }
+
+    augment "/policies/classifier-entry/filter-method/any-frame/any-frame-inner-choice/case1/any-frame-container"{
+
+        leaf any-frame-augment-leaf{
+            must "not(current()/../../classifier-action-entry-cfg/action-type = 'dei-marking' and current()/../../classifier-action-entry-cfg/dei-marking-cfg/dei-marking-list/dei-value = 0)"
+                {
+                    error-message "For any-frame-augment, dei-value should be greater than 0!";
+                }
+            type string;
+        }
+    }
+
+    container policies {
+
+        list classifier-entry{
+            key name;
+
+            leaf name{
+                type string;
+            }
+
+            list classifier-action-entry-cfg{
+                key action-type;
+
+                leaf action-type{
+                    type string;
+                }
+
+                choice action-cfg-params {
+                    case pbit-marking {
+                        container pbit-marking-cfg {
+                            when "../action-type= 'pbit-marking'";
+                            leaf test{
+                                type string;
+                            }
+                        }
+                    }
+
+                    case dei-marking {
+                        container dei-marking-cfg {
+                            when "../action-type='dei-marking'";
+                            uses dei-marking-list;
+
+                        }
+                    }
+                }
+            }
+
+            leaf outside-choice-leaf{
+                type string;
+            }
+
+            leaf outside-must-leaf{
+                type string;
+                must "not(current()/../classifier-action-entry-cfg/action-type = 'dei-marking' and current()/../classifier-action-entry-cfg/dei-marking-cfg/dei-marking-list/dei-value != 0)"
+                {
+                    error-message "For leaf outside choice, dei-value should be equal to 0!";
+                }
+            }
+
+            choice filter-method{
+                case inline{
+                    container match-criteria{
+                    }
+                }
+
+                case enhanced-classifier{
+                    leaf flow-color{
+                        type string;
+                    }
+                }
+
+                case must-outside-choice{
+                    container must-outside-choice{
+                        leaf outside-must-leaf{
+                            type string;
+                        }
+                    }
+                }
+
+                case by-reference{
+
+                    container by-ref-container{
+                        leaf by-ref-leaf{
+                            must "not(current()/../../classifier-action-entry-cfg/action-type = 'dei-marking' and current()/../../classifier-action-entry-cfg/dei-marking-cfg/dei-marking-list/dei-value = 0)"
+                            {
+                                error-message "For by-ref inside container, dei-value should be greater than 0!";
+                            }
+                            type string;
+                        }
+                    }
+                    choice inner-choice{
+                        case case1{
+                            leaf any-frame-augment-leaf{
+                                type string;
+                            }
+                        }
+
+                        case case2{
+                            choice nested-inner-choice{
+                                case case1{
+                                    leaf by-ref-leaf{
+                                        type string;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                case any-frame{
+                    choice any-frame-inner-choice{
+                        case case1{
+                            container any-frame-container{
+                                leaf any-frame{
+                                    type string;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                case enhanced-filter{
+                    container enhanced-filter{
+                        leaf outside-choice-leaf{
+                            must "not(current()/../../classifier-action-entry-cfg/action-type = 'dei-marking' and current()/../../classifier-action-entry-cfg/dei-marking-cfg/dei-marking-list/dei-value = 0)"
+                            {
+                                error-message "For outside-choice-leaf inside container, dei-value should be greater than 0!";
+                            }
+                            type string;
+                        }
+                    }
+                }
+            }
+
+        }
+        container test-uses-without-when{
+            choice choice1{
+                default case1;
+                case case1{
+                    uses inner-choice-uses;
+                }
+                case case2{
+                    leaf leaf1{
+                        type string;
+                    }
+                }
+            }
+        }
+        container test-uses-with-when{
+            uses inner-choice-uses{
+                when "/policies/policyAugmentContainer/uses-default-leaf = 'enable'";
+            }
+        }
+
+        list test-uses-with-when-under-choice{
+            key name;
+            leaf name{
+                type string;
+            }
+
+            choice choice1{
+                default case1;
+                case case1{
+                    choice inner-choice{
+                        default case1;
+                        case case1{
+                            uses inner-choice-uses{
+                                when "/policies/policyAugmentContainer/uses-default-leaf1 = 'enable'";
+                            }
+                        }
+                        case case2{
+                            leaf inner-case-leaf{
+                                type string;
+                            }
+                        }
+                    }
+                }
+                case case2{
+                    leaf leaf1{
+                        type string;
+                    }
+                }
+            }
+        }
+
+        list policy {
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf type {
+                type string;
+            }
+        }
+        leaf augment-choice-when {
+            type string;
+        }
+        container policyAugmentContainer {
+            leaf uses-default-leaf1 {
+                type string;
+            }
+        }
+        container whenAugmentContainer{
+        }
+
+        container test{
+            leaf when-leaf{
+                type string;
+            }
+            container device-connection-container{
+                choice device-connection{
+                    default non-call-home;
+                    case call-home{
+                        leaf duid{
+                        type string;
+                        }
+                    }
+                    case non-call-home{
+                        leaf ip{
+                            when "../../when-leaf != 'test2'";
+                            type string;
+                            default "p";
+                        }
+
+                        leaf mandatory{
+                            when "../../when-leaf != 'test2'";
+                            type string;
+                            mandatory true;
+                        }
+                    }
+                }
+            }
+        }
+
+        uses main-grouping;
+
+        leaf uses-default-leaf2{
+            type string;
+        }
+    }
+
+    grouping main-grouping{
+        container device-connection{
+            leaf when-leaf{
+                type string;
+            }
+
+            uses choice-case-grouping;
+
+        }
+    }
+
+    grouping choice-case-grouping{
+        choice device-connection{
+            default non-call-home;
+                case call-home{
+                    leaf duid{
+                        type string;
+                    }
+                }
+                case non-call-home{
+                    uses non-call-home;
+                }
+        }
+    }
+
+    grouping non-call-home {
+        leaf ip{
+            when "../when-leaf != 'test2'";
+            type string;
+            default "p";
+        }
+
+        leaf mandatory{
+         when "../when-leaf != 'test2'";
+            type string;
+            mandatory true;
+        }
+    }
+
+    augment "/policies/whenAugmentContainer" {
+        when "/policies/uses-default-leaf2 = 'disable'";
+        leaf name {
+            type string;
+            default "test";
+        }
+        container dummy{
+            leaf test1{
+                type string;
+                default "test";
+            }
+         }
+
+    }
+
+    augment "/policies/policyAugmentContainer" {
+            when "/policies/augment-choice-when = 'default-choice2'";
+    }
+
+
+    augment "/policies/policyAugmentContainer" {
+        when "/policies/augment-choice-when = 'default-choice'";
+        choice default-choice-case {
+            default case22;
+            case case11 {
+                leaf case11leaf1 {
+                    type string;
+                }
+                container case11container {
+                    choice inner-choice {
+                        case case111 {
+                            leaf case111leaf1 {
+                                type string;
+                            }
+                            uses inner-choice-uses {
+                                when "/policies/policyAugmentContainer/uses-default-leaf = 'enable'";
+                            }
+                        }
+                    }
+                }
+            }
+            case case22 {
+                leaf case22leaf1 {
+                    type string;
+                    default "case22";
+                }
+            }
+        }
+
+        leaf uses-default-leaf {
+            type string;
+            default "enable";
+        }
+    }
+
+    grouping inner-choice-uses {
+            leaf uses-inner-leaf {
+            when "/policies/policyAugmentContainer/uses-default-leaf = 'enable'";
+                type string;
+                default "inner-uses";
+            }
+            container innerUsesContainer {
+                leaf uses-inner-leaf1 {
+                default "test";
+                    type string;
+                }
+            }
+    }
+
+    augment "/policies/policyAugmentContainer" {
+        when "/policies/augment-choice-when = 'when'";
+        choice policyAugmentChoice {
+            case case1 {
+                leaf case1leaf1 {
+                    type string;
+                }
+            }
+            case case2 {
+                leaf case2leaf1 {
+                    type string;
+                }
+            }
+        }
+    }
+
+    augment "policies/policyAugmentContainer/policyAugmentChoice/case2" {
+        when "/policies/policy/type = 'case2-type'";
+        leaf case2leaf2 {
+            type string;
+        }
+        uses policyAugment-uses {
+            when "count(/policies/policy/type) > 1";
+        }
+    }
+
+    grouping policyAugment-uses {
+        leaf case2leaf3 {
+            type string;
+        }
+    }
+
+    augment "policies/policyAugmentContainer/policyAugmentChoice" {
+        when "/policies/policy/type = 'case3-type'";
+        case case3 {
+            leaf case3leaf1 {
+                type string;
+            }
+        }
+    }
+
+    augment "/classifiers/classifier"{
+        when "../classifier/type = 'AAA'";
+        leaf when-leaf {
+            type string;
+        }
+        uses classifier-models {
+            when "../classifier/state = 'up'";
+        }
+    }
+
+    grouping classifier-models {
+        container models {
+            leaf model-number {
+                type string;
+            }
+        }
+    }
+
+    augment "/classifiers/classifier/models" {
+        when "count(/policies/policy/name) > 0";
+        container augmentContainer {
+            leaf leaf1 {
+                type string;
+            }
+
+        }
+    }
+
     augment "/schemaMount/container1" {
         leaf profile {
           type profile-ref;
@@ -177,11 +1492,235 @@ module shcema-mount-test {
     augment "/schemaMount/container1" {
         container trap {
                 leaf auth-fail{
-                        when "../../test-auth-fail='apple'";
+                        when "../../test-auth-fail='bbf'";
                         type string;
                         default "test";
                 }
         }
+ 	}
+
+    augment "/test1:interfaces/test1:interface" {
+        container ipv4-security {
+            leaf prevent-ipv4-address-spoofing {
+                type boolean;
+                must '(count(/smt:schemaMount/smt:forwarding/smt:forwarder/smt:ports/smt:port'
+                +'[smt:sub-interface = current()/../../test1:name]) > 0 and current() = "true")'
+                + ' or current() = "false"' {
+                    error-message "First attach the VLAN sub-interface to a forwarder";
+                }
+            }
+        }
+    }
+    
+    augment "/test1:interfaces/test1:interface" {
+    	container traps {
+    		uses dsl_traps {
+    			when "../type = 'test1:fastdsl'";
+    		}
+    		leaf lom-alm-trap {
+    			when "../../type = 'test1:fastdsl'";
+    			type string;
+    			default "enabled";
+    		}
+    	}
+    }
+    
+    grouping dsl_traps {
+    	leaf los-alm-trap {
+    		type string;
+    		default "enabled";
+    	}
+    	leaf lol-alm-trap {
+    		type string;
+    		default "enabled";
+    	}
+    }
+    
+    augment "/test1:interfaces/test1:interface/test1:channel-pair" {
+    	leaf channel-pair-type {
+    		must "boolean(/test1:interfaces/test1:interface[test1:name=current()/../test1:channel-partition-ref]/test1:channel-partition/test1:channel-partition-index)";
+    		type string;
+    	}
+    	
+    	leaf channel-pair-type1 {
+    		must "(boolean(/test1:interfaces/test1:interface[test1:name=current()/../test1:channel-partition-ref]/test1:channel-partition/test1:channel-partition-index) and boolean(/test1:interfaces/test1:interface[test1:name=current()/../test1:channel-group-ref]/test1:channel-group/test1:system-id)) or current() = 'ngpon'";
+    		type string;
+    	}
+    	
+    	leaf boolean-with-relative-path {
+    		must "boolean(../../../test1:interface[test1:name=current()/../test1:channel-partition-ref]/test1:channel-partition/test1:channel-partition-index)";
+    		type string;
+    	}
+    	
+    	leaf string-funtion-leaf {
+    		must "string(/test1:interfaces/test1:interface[test1:name=current()/../test1:channel-partition-ref]/test1:channel-partition/test1:channel-partition-index) = current()";
+    		type string;
+    	}
+    	
+    }
+    
+    augment "/schemaMount" {
+    	container classifiers {
+    		list classifier-entry {
+    			key 'name';
+    			ordered-by user;
+    			leaf name {
+    				type string;
+    			}
+    			
+    			choice filter-method {
+    				case inline {
+    					container match-criteria {
+    						leaf flow-color {
+    							must "not(current()='green' and current()/../../classifier-action-entry-cfg/action-type = 'dei-marking')";
+    							type string;
+    						}
+    					}
+    				}
+    			}
+    			
+    			list classifier-action-entry-cfg {
+    			      key "action-type";
+    			      ordered-by user;
+    			      
+    			      leaf action-type {
+    			    	  type string;
+    			      }
+    			}
+    			
+    			list filter {
+    	            must "not(boolean(current())) or "
+    	                            +"not(boolean(current()/../classifier-action-entry-cfg"
+    	                   +"[action-type != 'orange']"
+    	                   +"[action-type != 'green']))" {
+    	                              error-message "qos-policies filter action-type should be green or orange";
+    	                        }    	            
+    	            
+    			    key "name";
+    			    leaf name {
+    			        type string;
+    			    }
+    			}
+    		}
+    		
+    		list nodeset-list {
+    			key 'name';
+    			ordered-by user;
+    			leaf name {
+    				type string;
+    			}
+    		}
+    		
+    		list nodeset-list1 {
+    			key 'name';
+    			ordered-by user;
+    			leaf name {
+    				type string;
+    			}
+    		}
+    		
+    		leaf-list nodeset-leaflist {
+    			ordered-by user;
+    			type string;
+    		}
+    		
+    		leaf-list nodeset-leaflist1 {
+    			ordered-by user;
+    			type string;
+    		}
+    		
+    		leaf nodeset-list-validation {
+    			must "/schemaMount/classifiers/nodeset-list/name = current()";
+    			type string;
+    		}
+    		
+    		leaf nodeset-leaflist-validation {
+    			must "/schemaMount/classifiers/nodeset-leaflist = current()";
+    			type string;
+    		}
+    		
+    		leaf two-nodeset-leaflist-validation {
+    			must "/schemaMount/classifiers/nodeset-leaflist = current()/../nodeset-leaflist1";
+    			type string;
+    		}
+    		
+    		leaf two-nodeset-list-validation {
+    			must "/schemaMount/classifiers/nodeset-list1/name = current()/../nodeset-list/name";
+    			type string;
+    		}
+    	}
+    }
+    
+    augment "/schemaMount" {
+    	
+    	  container configure {
+    		  
+    			container qos {
+    				
+    				list sap-ingress {
+    					
+    	                key "sap-ingress-policy-name";
+    	                leaf sap-ingress-policy-name {
+    	                    type string;
+    	                }
+    	                
+    					list queue {
+    	                    key "queue-id";
+    	                    leaf queue-id {
+    	                        type int8;
+    	                    }
+    					}
+    				}
+    			}
+    			
+    			container service {
+    				list ies {
+    	                key "service-name";
+
+    	                leaf service-name {
+    	                    type string;
+    	                }
+    					
+    					list interface {
+    	                    key "interface-name";
+
+    	                    leaf interface-name {
+    	                        type string;
+    	                    }
+    						
+    						list sap {
+    	                        key "sap-id";
+    	                        max-elements 1;
+
+    	                        leaf sap-id {
+    	                            type int8;
+    	                        }
+    							container ingress {
+    	                            container qos {
+    	                                container sap-ingress {
+    	                                    leaf policy-name {
+    	                                        type leafref {
+    	                                            path "../../../../../../../../qos/sap-ingress/sap-ingress-policy-name";
+    	                                        }
+    	                                    }
+    										container overrides {
+    	                                        list queue {
+    	                                            key "queue-id";
+    	                                            leaf queue-id {
+    	                                                type leafref {
+    	                                                    path "../../../../../../../../../../qos/sap-ingress[sap-ingress-policy-name=current()/../../../policy-name]/queue/queue-id";
+    	                                                }
+    	                                            }
+    											}
+    										}
+    									}
+    								}
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
     }
     
     augment "/schemaMount" {
@@ -194,7 +1733,7 @@ module shcema-mount-test {
                }
                container ports {
                  must "count(smt:port[smt:sub-interface = "
-                            + "/if:interfaces/if:interface[bbf-if-usg:interface-usage/bbf-if-usg:interface-usage = 'network-port']/if:name]) = 1" {
+                            + "/test1:interfaces/test1:interface[bbf-if-usg:interface-usage/bbf-if-usg:interface-usage = 'network-port']/test1:name]) = 1" {
                error-message
                  "A forwarder must have 1 port with usage network-port.";
                }
@@ -206,6 +1745,12 @@ module shcema-mount-test {
                  }
                 
                  leaf sub-interface {
+                 
+                 	must "not(/test1:interfaces/test1:interface[test1:name=current()]/test1:enabled = 'false' and "
+	          	 		+ "/test1:interfaces/test1:interface[test1:name=current()]/bbf-if-usg:interface-usage/bbf-if-usg:interface-usage = 'network-port')" {
+				        error-message
+				          "A forwarder port with usage network-port must not be disabled.";
+			        }
                     must
                         "count(/smt:schemaMount/smt:forwarding/smt:forwarder
                          /smt:ports/smt:port
@@ -214,11 +1759,419 @@ module shcema-mount-test {
                           "No two forwarder ports can refer to the same 
                            sub-interface.";
                       }
-                    type if:intf-ref;
+                    type test1:intf-ref;
                  }
               }
            }
          }
        }
     }
+
+    augment "/smt:schemaMount/smt:container1" {
+
+        container choice-container {
+            list interface {
+                key 'name';
+                leaf name {
+                    type string;
+                }
+                uses tm-root;
+            }
+        }
+    }
+
+    grouping tm-root {
+
+        container tm-root {
+            choice children-type {
+                case queues {
+                    uses queues;
+                }
+            }
+        }
+    }
+
+    grouping queues {
+        list queue {
+            key "local-queue-id";
+
+            leaf local-queue-id {
+                type int8;
+            }
+            choice queue-scheduling-cfg-type {
+                case inline {
+                    leaf priority {
+                        type int8;
+                    }
+                }
+            }
+
+            leaf pre-emption {
+                if-feature "pre-emption";
+                type boolean;
+            }
+        }
+    }
+
+    augment "/smt:schemaMount/smt:container1/smt:choice-container/smt:interface/smt:tm-root/smt:children-type" {
+
+        case scheduler-node {
+
+            list scheduler-node {
+                key "name";
+                leaf name {
+                    type string;
+                }
+                leaf scheduling-level {
+                    type uint8;
+                    mandatory true;
+                }
+
+                choice children-type {
+                    case scheduler-node {
+                        list child-scheduler-nodes {
+                            key "name";
+                            leaf name {
+                                type leafref {
+                                    path '../../../scheduler-node/name';
+                                }
+
+                                must "../../../scheduler-node [name=current()]/scheduling-level > current()/../../scheduling-level" {
+                                    error-message "The scheduler-level should be bigger than the value of parent node.";
+                                }
+                            }
+                        }
+                    }
+                    case queue {
+                        leaf contains-queues {
+                            type boolean;
+                            default "true";
+                        }
+                        uses queues;
+                    }
+                }
+            }
+            list child-scheduler-nodes {
+                key "name";
+                leaf name {
+                    type leafref {
+                        path '../../scheduler-node/name';
+                    }
+                }
+            }
+        }
+    }
+
+    container interface-container {
+        list interface-list {
+            key name;
+            leaf name {
+                type string;
+            }
+            choice frame-processing {
+                case inline-frame-processing {
+                    container inline-frame-processing {
+                        container ingress-rule {
+                            list rule {
+                                key "rule-name";
+                                leaf rule-name {
+                                    type string;
+                                }
+                                leaf priority {
+                                    type uint16 {
+                                        range "1..max";
+                                    }
+                                    mandatory true;
+                                }
+                                container flexible-match {
+                                    container match-criteria {
+                                        must "not(boolean(current()/ipv6-multicast-address))
+                                                     or (count(current()/../../../../ingress-rule/rule) = 2)";
+                                        uses frame-destination-match;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            container bonding-group {
+                presence "The presence of this container indicates that this interface is a bonding group";
+                leaf bonded-interface-mode {
+                    must "derived-from-or-self(.,'test1:mode-fast')" {
+                           error-message "bonded-interface-mode can only be set to mode-fast";
+                    }
+                    type test1:fastdsl-mode-ref;
+                }
+
+                leaf bonded-interface-enabled {
+                    must "boolean(.)";
+                    type boolean;
+                }
+
+                leaf bonded-interface-low-speed {
+                    must ". < current()/../bonded-interface-high-speed";
+                    type int16;
+                }
+
+                leaf bonded-interface-high-speed {
+                    type int16;
+                }
+            }
+        }
+    }
+
+    grouping frame-destination-match {
+        choice frame-filter {
+            case any-frame {
+                leaf any-frame {
+                    type empty;
+                }
+            }
+            case destination-mac-address {
+                uses mac-address-match;
+            }
+        }
+    }
+
+    grouping mac-address-match {
+        choice mac-address {
+            case unicast-address {
+                leaf unicast-address {
+                    type empty;
+                }
+            }
+            case ipv4-multicast-address {
+                leaf ipv4-multicast-address {
+                    type empty;
+                }
+            }
+            case ipv6-multicast-address {
+                leaf ipv6-multicast-address {
+                    type empty;
+                }
+            }
+        }
+    }
+
+    container ber-tca-profiles {
+      list ber-tca-profile {
+        key "name";
+        max-elements 200;
+
+        leaf name {
+          type string;
+        }
+
+        leaf sd-threshold {
+          mandatory true;
+          must ". > ../sf-threshold" {
+          error-message
+            "The sd-threshold must be lower than the sf-threshold value (i.e., x > y.)";
+          }
+          type uint16{
+            range "4 .. 10";
+          }
+        }
+
+        leaf sf-threshold {
+          mandatory true;
+          type uint16{
+            range "3 .. 8";
+          }
+        }
+     }
+    }
+    
+    container multicast {
+    	container mgmd {
+    		list multicast-vpn {
+    			key "name";
+    			leaf name {
+    				type string;
+    			}
+    			
+    			list multicast-interface-to-host {
+    				key "name";
+    				unique "sub-interface";
+    				leaf name {
+    					type string;
+    				}
+    				
+    				leaf sub-interface {
+    					type test1:interface-ref;
+    					mandatory true;
+    				}
+    			}
+    			
+    			leaf ipv6-address {
+    				type string;
+    				must "(translate(substring(current(), 1, 2), 'f', 'F') != 'FF')" {
+    			          error-message "ipv6-address of network-interface can not be multicast address";
+    			    }
+    			}
+    		}
+    	}
+    }
+    
+    container choice-case-container {
+    	
+    	leaf outer-default-leaf {
+    		type string;
+    		default "one";
+    	}
+    	
+    	leaf outer-leaf {
+    		type string;
+    	}
+    	
+    	leaf outer-must-leaf {
+    		must "../case4-leaf = 'case4'";
+    		type string;
+    	}
+
+    	list testList6{
+            key key;
+            leaf key{
+                type string;
+            }
+            choice device-connection {
+                mandatory true;
+                case call-home-with-duid {
+                    leaf duid {
+                        type string;
+                    }
+                }
+
+                case non-call-home {
+                    uses configured-device-properties-container-group;
+                    leaf supervision-state {
+                        type enumeration {
+                            enum on;
+                            enum off;
+                        }
+                        default on;
+                    }
+                }
+            }  // choice device-connection
+        }
+    	
+    	choice default-choice {
+    		default case1;
+    		case case1 {
+    			leaf case1-default-leaf {
+    				type string;
+    				default "case1";
+    			}
+    			leaf case1-leaf {
+    				type string;
+    			}
+    			leaf case1-must-leaf {
+    				must "../case1-default-leaf = 'case1'";
+    				type string;
+    			}
+    			leaf case1-must-leaf1 {
+    				must "../case1-default-leaf != 'case1'";
+    				type string;
+    			}
+    		}
+    		
+    		case case2 {
+    			leaf case2-leaf {
+    				type string;
+    			}
+    			
+    			leaf case2-must-leaf {
+    				must "../outer-default-leaf = 'one'";
+    				type string;
+    			}
+    		}
+    		
+    		case case3 {
+    			leaf case3-leaf {
+    				type string;
+    			}
+    			leaf case3-default-leaf {
+    				type string;
+    				default "case3";
+    			}
+    			
+    			leaf-list case3-must-leaf-list {
+    				type string;
+    				must "../case3-default-leaf = 'case3'";
+    			}
+    		}
+    		
+    		case case4 {
+    			leaf case4-leaf {
+    				type string;
+    			}
+    		}
+    	}
+    }
+    
+    /*  RPC definitions used by wigig YANG module */
+
+    rpc select-station-ssid {
+    description
+      "Used for specific ssid for station of HOU or AP.";
+       input {
+       leaf wigig-interface {
+            type test1:interface-ref;
+            must
+              "derived-from-or-self(/test1:interfaces/test1:interface
+               [test1:name = current()]/test1:type,
+               'test1:ieee80211')" {
+              description
+                "The single incoming point shall be a
+                 ieee80211 type at the network side of the
+                 node.";
+            }
+            mandatory true;
+            description
+              "This object specifies the wigig interface
+               that select ssid.";
+          }
+        leaf ssid {
+          type string;
+          mandatory false;
+          description
+            "The name of the ssid which HOU or AP can assoicate, if this parameter is empty, it means AP indicate station to rescan SSID with ssid sequence list which is set before";
+         }
+
+       }// input
+
+    } //rpc set-station-ssid
+
+    rpc other-select-station-ssid {
+    description
+      "Used for specific ssid for station of HOU or AP.";
+       input {
+       leaf wigig-interface {
+            type test1:interface-ref;
+            must
+              "derived-from-or-self(/test1:interfaces/test1:interface
+               [test1:name = current()]/test1:type,
+               'test1:ieee80211')" {
+              description
+                "The single incoming point shall be a
+                 ieee80211 type at the network side of the
+                 node.";
+            }
+            mandatory true;
+            description
+              "This object specifies the wigig interface
+               that select ssid.";
+          }
+        leaf ssid {
+          type string;
+          mandatory false;
+          description
+            "The name of the ssid which HOU or AP can assoicate, if this parameter is empty, it means AP indicate station to rescan SSID with ssid sequence list which is set before";
+         }
+
+       }// input
+
+    } //rpc set-station-ssid
 }

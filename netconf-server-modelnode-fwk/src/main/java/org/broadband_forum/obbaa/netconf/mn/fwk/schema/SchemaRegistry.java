@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema;
 
 import java.net.URI;
@@ -6,10 +22,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.namespace.NamespaceContext;
 
 import org.apache.commons.jxpath.ri.compiler.Expression;
+import org.apache.commons.jxpath.ri.compiler.LocationPath;
+import org.broadband_forum.obbaa.netconf.api.util.DataPath;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.SchemaNodeConstraintParser;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.TypeValidator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.dom.YinAnnotationService;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.notification.listener.YangLibraryChangeNotificationListener;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
@@ -23,10 +46,6 @@ import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.SchemaNodeConstraintParser;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.TypeValidator;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.notification.listener.YangLibraryChangeNotificationListener;
-
 /**
  * A registry responsible for maintaining SchemaContext of entire application.
  * Provides methods to
@@ -36,9 +55,9 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.notification.listen
  *
  * Created by keshava on 11/18/15.
  */
-public interface SchemaRegistry extends NamespaceContext{
+public interface SchemaRegistry extends NamespaceContext, WrappedService<SchemaRegistry> {
     String CORE_COMPONENT_ID = "core-component";
-
+    public final static String GLOBAL_SCHEMA_REGISTRY = "GLOBAL-GLABAL";
     public final static String CHILD_NODE_INDEX_CACHE = "ChildNodeIndexCache";
     public final static String CHILD_NODE_CACHE = "ChilNodeCache";
     public final static String SCHEMAPATH_SCHEMANODE_CACHE = "SchemaPathSchemaNodeCache";
@@ -105,12 +124,20 @@ public interface SchemaRegistry extends NamespaceContext{
      */
     void loadSchemaContext(String componentId, List<YangTextSchemaSource> yangModelFiles, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations) throws SchemaBuildException;
 
-    void loadSchemaContext(String componentId, List<YangTextSchemaSource> yangModelFiles, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported) throws SchemaBuildException;
+    void loadSchemaContext(String componentId, List<YangTextSchemaSource> yangModelFiles, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported) throws SchemaBuildException;
+
+    void loadSchemaContext(String componentId, List<YangTextSchemaSource> yangModelFiles, Set<QName> supportedFeatures, Map<QName, Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported, boolean isYangLibraryIgnored) throws SchemaBuildException;
 
     void unloadSchemaContext(String componentId, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations) throws SchemaBuildException;
 
     void unloadSchemaContext(String componentId, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported) throws SchemaBuildException;
 
+    void unloadSchemaContext(String componentId, Set<QName> supportedFeatures, Map<QName,Set<QName>> supportedDeviations, boolean isYangLibNotificationSupported, boolean isYangLibraryIgnored) throws SchemaBuildException;
+
+    Map<SchemaPath, DataSchemaNode> getSchemaNodes();
+    
+    ConcurrentHashMap<SchemaPath, TreeImpactNode<ImpactNode>> getImpactNodeMap();
+    
     /**
      * Get Data schema node by Schema Path.
      * @param dataNodeSchemaPath
@@ -120,10 +147,10 @@ public interface SchemaRegistry extends NamespaceContext{
     
     /**
      * Get ActionSchema node (which is Data schema node) by Path.
-     * @param dataNodeSchemaPath
+     * @param action node data path
      * @return
      */
-    ActionDefinition getActionDefinitionNode(List<QName> path);
+    ActionDefinition getActionDefinitionNode(DataPath actionDataPath);
     
     /**
      * Get Notification node (which is Data schema node) by Path.
@@ -180,6 +207,8 @@ public interface SchemaRegistry extends NamespaceContext{
     SchemaContext getSchemaContext();
     
     String getModuleNameByNamespace(String namespace);
+    
+    String getComponentIdByNamespace(String namespace);
 
     String getNamespaceOfModule(String moduleName);
 
@@ -193,20 +222,19 @@ public interface SchemaRegistry extends NamespaceContext{
      * 
      * Example: leaf test when ../test-key='true' && ../test-value='1'
      * 
-     * constraintSchemaPaths: test-key and test-value nodeSchemaPath: test
+     * constraintSchemaPaths: test-key and test-value referredSP: test
      * 
      * It also builds a map of constraintSchemaPaths corresponding to a particular component
-     * 
-     * @param constraintSchemaPath
-     * @param nodeSchemaPath
+     *
+     * @param referringNode
      */
-    void registerNodesReferencedInConstraints(String componentId, SchemaPath constraintSchemaPath, SchemaPath nodeSchemaPath, String accessPath);
+    void registerNodesReferredInConstraints(String componentId, ReferringNode referringNode);
     
     void deRegisterNodesReferencedInConstraints(String componentId);
     
     Collection<SchemaPath> getSchemaPathsForComponent(String componentId);
 
-    Map<SchemaPath,Expression> getReferencedNodesForSchemaPaths(SchemaPath schemaPath);
+    ReferringNodes getReferringNodesForSchemaPath(SchemaPath schemaPath);
 
     DataSchemaNode getDataSchemaNode(List<QName> paths);
     
@@ -222,7 +250,11 @@ public interface SchemaRegistry extends NamespaceContext{
     void deRegisterAppAllowedAugmentedPath(String path);
 
     String getMatchingPath(String path);
-    
+
+    void addToChildBigList(SchemaPath schemaPath);
+
+    boolean isChildBigList(SchemaPath schemaPath);
+
     /**
      * for a absolute path augmented with app specific path, register the equivalent local path
      * eg : 
@@ -239,7 +271,19 @@ public interface SchemaRegistry extends NamespaceContext{
     boolean isYangLibrarySupportedInHelloMessage();
     
 	public Set<String> getModuleCapabilities(boolean forHello);
-	
+
+	public Expression getExpressionWithModuleNameInPrefix(SchemaPath schemaPath, Expression expression);
+
+	public Expression getExpressionWithModuleNameInPrefix(SchemaPath schemaPath, String expression);
+
+	public void registerExpressionWithModuleNameInPrefix(SchemaPath schemaPath, String expression, String expressionWithPrefix);
+
+	public void registerExpressionWithModuleNameInPrefix(SchemaPath schemaPath, Expression expression, String expressionWithPrefix);
+
+	public Set<String> getAttributesWithSameLocalNameDifferentNameSpace(SchemaPath schemaPath);
+
+	public void registerAttributesWithSameLocalNameDifferentNameSpace(SchemaPath schemaPath, Set<String> attributesWithSameLocalNameDifferentNameSpace);
+
 	public String getCapability(ModuleIdentifier moduleId);
 	
 	public String getModuleSetId();
@@ -296,6 +340,52 @@ public interface SchemaRegistry extends NamespaceContext{
      
      public void putSchemaNodeConstraintParser(DataSchemaNode dataSchemaNode, SchemaNodeConstraintParser schemaNodeConstraintParser);
      public void setName(String schemaRegistryName);
+     public String getName();
 
-    Map<SchemaPath, Expression> addChildImpactPaths(SchemaPath schemaPath);
+    ReferringNodes addChildImpactPaths(SchemaPath schemaPath, Set<QName> skipImmediateChildQNames);
+
+    void registerWhenReferringNodes(String componentId, SchemaPath referencedSchemaPath, SchemaPath nodeSchemaPath, String accessPath);
+
+    Map<SchemaPath, Expression> getWhenReferringNodes(SchemaPath nodeSchemaPath);
+    
+    Map<SchemaPath, Expression> getWhenReferringNodes(String componentId, SchemaPath nodeSchemaPath);
+
+    void registerWhenReferringNodesForAllSchemaNodes(String componentId, SchemaPath referencedSchemaPath, SchemaPath nodeSchemaPath, String accessPath);
+
+    Map<SchemaPath, Expression> getWhenReferringNodesForAllSchemaNodes(String componentId, SchemaPath nodeSchemaPath);
+
+    void registerMustReferringNodesForAllSchemaNodes(String componentId, SchemaPath referencedSchemaPath, SchemaPath nodeSchemaPath, String accessPath);
+
+    Map<SchemaPath, Expression> getMustReferringNodesForAllSchemaNodes(String componentId, SchemaPath nodeSchemaPath);
+
+    String getShortPath(SchemaPath path);
+
+    void addToSkipValidationPaths(SchemaPath schemaPath, String constraintXpath);
+
+    boolean isSkipValidationBySchemaPathWithConstraintXpath(SchemaPath schemaPath, String constraintXpath);
+
+    boolean isSkipValidationPath(SchemaPath schemaPath);
+    
+    void addExpressionsWithoutKeysInList(String fullExpression, LocationPath expressionWithListAtLowerLevel);
+    
+    Set<LocationPath> getExpressionsWithoutKeysInList(String fullExpression);
+
+    void printReferringNodes();
+    
+    public void addImpactNodeForChild(SchemaPath schemaPath, ReferringNodes impactedPaths, Set<QName> skipImmediateChildQNames);
+
+    Map<SchemaPath, TreeImpactNode<ImpactNode>> getReferringNodes();
+    
+    public void registerNodeConstraintDefinedModule(DataSchemaNode schemaNode, String constraint, Module module);
+    
+    public Map<Expression, Module> getNodeConstraintDefinedModule(DataSchemaNode schemaNode);
+
+    YinAnnotationService getYinAnnotationService();
+
+    DataSchemaNode findChild(final DataSchemaNode currentNode, final QName qname);
+
+    void clear();
+
+
+    Set<ActionDefinition> getActionDefinitionNodesWithListAndLeafRef();
 }

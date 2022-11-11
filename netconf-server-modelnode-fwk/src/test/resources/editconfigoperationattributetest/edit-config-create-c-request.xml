@@ -1,5 +1,5 @@
-<operation-example xmlns="urn:org:bbf:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
-  <ag:list-c xmlns:ag="urn:org:bbf:pma:augment" xc:operation="create">
+<operation-example xmlns="urn:org:bbf2:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <ag:list-c xmlns:ag="urn:org:bbf2:pma:augment" xc:operation="create">
     <ag:c1>c1</ag:c1>
     <ag:c2>c2</ag:c2>
   </ag:list-c>

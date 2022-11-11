@@ -1,28 +1,305 @@
 module test-interfaces {
-    
-    yang-version 1;
-    
+
+    yang-version 1.1;
+
     namespace "test-interfaces";
-    
+
     prefix "if";
-    
+
+    feature test-feature {
+        description
+                "This feature means that the system support test-feature";
+    }
+
+    feature test-feature1 {
+        description
+                "This feature means that the system support test-feature-1";
+    }
+
     typedef intf-ref {
         type leafref {
             path "/if:interfaces/if:interface/if:name";
         }
         description
-            "This type is used by data models that need to reference
-             configured interfaces.";
-    }    
-    
+                "This type is used by data models that need to reference configured
+                interfaces.";
+    }
+    typedef interface-ref {
+        type leafref {
+            path "/if:interfaces/if:interface/if:name";
+        }
+        description
+                "This type is used by data models that need to reference configured
+                interfaces.";
+    }
+
+    typedef mybits-type {
+        type bits {
+            bit firstBit {
+                position 0;
+            }
+            bit secondBit {
+                position 1;
+            }
+            bit thirdBit {
+                position 2;
+            }
+            bit fourthBit {
+                position 3;
+            }
+            bit fifthBit {
+                position 4;
+            }
+        }
+        default "fourthBit";
+    }
+
+    typedef custom-bit-type1 {
+        type bits {
+            bit test {
+                if-feature test-feature;
+                position 1;
+            }
+            bit black {
+                position 2;
+            }
+        }
+    }
+
+    typedef custom-bit-type2 {
+        type bits {
+            bit green {
+                if-feature test-feature1;
+            }
+            bit yellow;
+        }
+    }
+
+    typedef matchall-string-type {
+        type string {
+          pattern '\*';
+        }
+    }
+
+    typedef firstlevel-mybits-type {
+        type mybits-type;
+    }
+
+    typedef secondlevel-mybits-type {
+        type firstlevel-mybits-type;
+    }
+
+    identity interface-type {
+        description
+                "Base identity from which specific interface types are derived.";
+    }
+
+    identity ieee80211 {
+        base interface-type;
+    }
+
+    identity ieee80212 {
+        base ieee80211;
+    }
+
+    identity ptm {
+        base if:interface-type;
+    }
+
+    identity vlan-sub-interface {
+        base if:interface-type;
+    }
+
+    identity fastdsl {
+        base if:interface-type;
+    }
+
+    identity languages {
+        description "Base for all languages";
+    }
+
+    identity english {
+        base languages;
+        description "English language";
+    }
+
+    identity french {
+        base languages;
+        description "French language";
+    }
+
+    identity indian-language {
+        base languages;
+        description "Indian language";
+    }
+
+    identity hindi {
+        base indian-language;
+        description "Hindi language";
+    }
+
+    identity fastdsl-mode {
+        description
+          "Base identity for FastDSL modes.";
+    }
+
+    identity mode-fast {
+        base fastdsl-mode;
+        description
+          "ITU-T G.9701 G.fast.";
+      }
+
+    identity mode-vdsl {
+        base fastdsl-mode;
+        description
+          "ITU-T G.993.2 VDSL2 or derived technology.";
+    }
+
+    typedef fastdsl-mode-ref {
+        type identityref {
+            base fastdsl-mode;
+        }
+        description
+            "Reference to a FastDSL mode of operation.";
+    }
+
+    grouping local-name-and-namespace-uri-grouping {
+        leaf groupingLeaf1 {
+            when "local-name(..) = 'local-name-and-ns-uri1'";
+            type string;
+        }
+
+        leaf groupingLeaf2 {
+            when "namespace-uri(..) = 'urn:org:bbf2:pma:whenMustDSExprOnCoreLibraryFunction'";
+            type string;
+        }
+    }
+
     container interfaces {
-        list interface {
+        list testList {
             key name;
-            
-            leaf name{
+            leaf name {
                 type string;
             }
-            
+            container testContainer {
+                leaf bitsUnderContainer {
+                    type mybits-type;
+                }
+                leaf unionBits {
+                    type union {
+                      type matchall-string-type;
+                      type mybits-type;
+                    }
+                }
+                leaf unionTypeWithBitsFirst {
+                    type union {
+                      type mybits-type;
+                      type string;
+                    }
+                }
+            }
+        }
+        list interface {
+            key name;
+
+            leaf name {
+                type string;
+            }
+
+            leaf type {
+                type identityref {
+                    base interface-type;
+                }
+            }
+            leaf enabled {
+                type boolean;
+            }
+
+            leaf mybits {
+                type mybits-type;
+            }
+
+            leaf mybitsoverridden {
+                type firstlevel-mybits-type {
+                    bit thirdBit {
+                        position 2;
+                    }
+
+                    bit fourthBit {
+                        position 3;
+                    }
+                }
+            }
+
+            leaf mybitsdefaultValue {
+                type mybits-type;
+                default "thirdBit";
+            }
+
+            leaf featurebitleaf1 {
+                type custom-bit-type1;
+            }
+
+            leaf featurebitleaf2 {
+                type custom-bit-type2;
+            }
+
+            leaf-list myBitsOfLeafList {
+                ordered-by user;
+                type mybits-type;
+            }
+
+            leaf testBitss {
+                when "bit-is-set(../mybits,'firstBit')";
+                type string;
+            }
+
+            leaf testBitssOfLeafList {
+                when "bit-is-set(../myBitsOfLeafList,'firstBit')";
+                type string;
+            }
+
+            container channel-group {
+                leaf system-id {
+                    type string;
+                }
+            }
+
+            container channel-partition {
+                leaf channel-group-ref {
+                    type intf-ref;
+                }
+
+                leaf channel-partition-index {
+                    type string;
+                }
+            }
+
+            container channel-pair {
+                leaf channel-group-ref {
+                    type intf-ref;
+                }
+
+                leaf channel-partition-ref {
+                    type intf-ref;
+                }
+            }
+
+            container channel-termination {
+                leaf channel-pair-leaf {
+                    type intf-ref;
+                }
+            }
+        }
+        list interfaceCountWithBitIsSet {
+            key name;
+            leaf name {
+                type string;
+            }
+            leaf testBitIsSetWithCount {
+                when "count(/if:interfaces/if:interface[bit-is-set(mybits, 'firstBit')]) > 2";
+                type string;
+            }
         }
     }
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import java.util.List;
@@ -5,6 +21,7 @@ import java.util.List;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ModelService;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ModelServiceDeployer;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ModelServiceDeployerException;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
@@ -40,11 +57,24 @@ public class SimpleNcyApp implements NetconfStack {
     @Override
     public void init() throws ModelServiceDeployerException {
         try {
-            LOGGER.info("deploying app {} ", m_appName);
-            getModelServiceDeployer().deploy(m_modelServices);
-            LOGGER.info("app {} deployed", m_appName);
-        } catch (ModelServiceDeployerException e) {
-            LOGGER.error("Error while deploying: "+m_appName, e);
+            RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
+                @Override
+                protected Void execute() throws RequestScopeExecutionException {
+                    try {
+                        LOGGER.info("deploying app {} ", m_appName);
+                        getModelServiceDeployer().deploy(m_modelServices);
+                        LOGGER.info("app {} deployed", m_appName);
+                    } catch (ModelServiceDeployerException e) {
+                        LOGGER.error("Error while deploying: " + m_appName, e);
+                        throw new RequestScopeExecutionException(e);
+                    }
+                    return null;
+                }
+            });
+        } catch (RequestScope.RsTemplate.RequestScopeExecutionException e) {
+            if (e.getCause() instanceof ModelServiceDeployerException) {
+                throw (ModelServiceDeployerException) e.getCause();
+            }
             throw e;
         }
     }
@@ -63,14 +93,16 @@ public class SimpleNcyApp implements NetconfStack {
     }
 
     @Override
-    public void destroy(){
-        try {
-            LOGGER.info("un-deploying app {} ", m_appName);
-            getModelServiceDeployer().undeploy(m_modelServices);
-            LOGGER.info("app {} un-deployed", m_appName);
-        } catch (ModelServiceDeployerException e) {
-            LOGGER.error( "Error while un-deploying :"+ m_appName, e);
-        }
+    public void destroy() {
+        RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
+            @Override
+            protected Void execute() throws RequestScopeExecutionException {
+                LOGGER.info("un-deploying app {} ", m_appName);
+                getModelServiceDeployer().undeploy(m_modelServices);
+                LOGGER.info("app {} un-deployed", m_appName);
+                return null;
+            }
+        });
     }
 
     public String getAppName() {

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation;
 
 import java.util.ArrayList;
@@ -13,6 +29,7 @@ import java.util.Set;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.ChoiceCaseNodeUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
@@ -94,7 +111,7 @@ public class ChoiceMandatoryChildrenValidator {
     }
 
     private Map<CaseSchemaNode, Collection<DataSchemaNode>> getMandatoryChoiceChildren(ModelNode parentNode,
-            ChoiceSchemaNode choiceNode) {
+            ChoiceSchemaNode choiceNode, DSValidationContext validationContext) {
         Map<CaseSchemaNode, Collection<DataSchemaNode>> caseNodes = new HashMap<CaseSchemaNode, Collection<DataSchemaNode>>();
 
         Collection<CaseSchemaNode> cases = choiceNode.getCases().values();
@@ -103,7 +120,7 @@ public class ChoiceMandatoryChildrenValidator {
             if (caseNode.getWhenCondition().isPresent()) {
                 try {
                     // check for any constraint violation of the case.
-                    m_dataStoreValidator.validateChild(parentNode, caseNode);
+                    m_dataStoreValidator.validateChild(parentNode, caseNode, validationContext);
                 } catch (ValidationException e) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Case constraint failed. No need to validate for its existance for ModelNode {} child {}",
@@ -114,7 +131,7 @@ public class ChoiceMandatoryChildrenValidator {
             }
             if (fetchCases) {
                 // if all good, fetch list of case vs collection(caseChild)
-                caseNodes.put((CaseSchemaNode) caseNode, getMandatoryCaseChildren(parentNode,(CaseSchemaNode) caseNode));
+                caseNodes.put((CaseSchemaNode) caseNode, getMandatoryCaseChildren(parentNode,(CaseSchemaNode) caseNode, validationContext));
             }
         }
         return caseNodes;
@@ -165,33 +182,41 @@ public class ChoiceMandatoryChildrenValidator {
         return mandatory;
     }
 
-    private Collection<DataSchemaNode> getMandatoryCaseChildren(ModelNode parentModelNode, CaseSchemaNode caseNode) {
+    private Collection<DataSchemaNode> getMandatoryCaseChildren(ModelNode parentModelNode, CaseSchemaNode caseNode,
+                                                                DSValidationContext validationContext) {
+        boolean anyCasePresent = ChoiceCaseNodeUtil.hasChoiceChildInModelNode((ChoiceSchemaNode) parentModelNode.getSchemaRegistry().getDataSchemaNode(caseNode.getPath().getParent()), parentModelNode);
         Set<DataSchemaNode> childNodes = new LinkedHashSet<DataSchemaNode>();
         Collection<DataSchemaNode> children = caseNode.getChildNodes();
-        for (DataSchemaNode child : children) {
-            if (!child.isConfiguration()) {
-                // not validating for state presence
-                continue;
-            }
-
-            boolean mandatory = isChildMandatory(child);
-            boolean addChild = true;
-            if (child.getWhenCondition().isPresent()) {
-                try {
-                    addChild = m_dataStoreValidator.getValidator().validateWhenConditionOnModule(parentModelNode, child);
-                } catch (Exception e) {
-                    addChild= false;
+        boolean isCurrentCasePresent = true;
+        if(anyCasePresent && parentModelNode instanceof ModelNodeWithAttributes) {
+            isCurrentCasePresent = ChoiceCaseNodeUtil.hasCaseChildInModelNode(caseNode, parentModelNode);
+        }
+        if(!anyCasePresent || (anyCasePresent && isCurrentCasePresent)) {
+            for (DataSchemaNode child : children) {
+                if (!child.isConfiguration()) {
+                    // not validating for state presence
+                    continue;
                 }
-            }
-            if (addChild && mandatory) {
-                childNodes.add(child);
-            } else if (child instanceof ContainerSchemaNode ){
-                //validate only for non-presence containers
-                childNodes.add(child);
-            } else if (child instanceof ChoiceSchemaNode && mandatory) {
-                // if it is a choiceCase, lets add it. It could well be the only child to this case and we will
-                // lazy load and evaluate it in next cycle
-                childNodes.add(child);
+
+                boolean mandatory = isChildMandatory(child);
+                boolean addChild = true;
+                if (child.getWhenCondition().isPresent()) {
+                    try {
+                        addChild = m_dataStoreValidator.getValidator().validateWhenConditionOnModule(parentModelNode, child, validationContext);
+                    } catch (Exception e) {
+                        addChild = false;
+                    }
+                }
+                if (addChild && mandatory) {
+                    childNodes.add(child);
+                } else if (child instanceof ContainerSchemaNode) {
+                    //validate only for non-presence containers
+                    childNodes.add(child);
+                } else if (child instanceof ChoiceSchemaNode && mandatory) {
+                    // if it is a choiceCase, lets add it. It could well be the only child to this case and we will
+                    // lazy load and evaluate it in next cycle
+                    childNodes.add(child);
+                }
             }
         }
         return childNodes;
@@ -200,7 +225,8 @@ public class ChoiceMandatoryChildrenValidator {
     /**
      * This method will be validated the missing mandatory nodes under choice --> case --> container which is not part of internal or NBI request
      */
-    private void validateMandatoryCaseContainerNodes(ModelNodeWithAttributes modelNode, Collection<DataSchemaNode> caseChildNodes) throws ModelNodeGetException{
+    private void validateMandatoryCaseContainerNodes(ModelNodeWithAttributes modelNode, Collection<DataSchemaNode> caseChildNodes,
+                                                     DSValidationContext validationContext) throws ModelNodeGetException{
         if(!(modelNode instanceof ProxyValidationModelNode)){
             for (DataSchemaNode childNode : caseChildNodes) {
                 if (childNode instanceof ContainerSchemaNode && !(((ContainerSchemaNode)childNode).isPresenceContainer())) {
@@ -208,7 +234,8 @@ public class ChoiceMandatoryChildrenValidator {
                     if(childContainer == null){
                         childContainer = new ProxyValidationModelNode(modelNode, m_modelNodeHelperRegistry, childNode.getPath());
                         // Throw an exception if any mandatory node is missing under container (choice --> case --> container) which is not part of edit-request
-                        throwExceptionIfMissingMandatoryNodes(modelNode.getSchemaRegistry(), (ContainerSchemaNode) childNode, (ModelNodeWithAttributes) childContainer, m_dataStoreValidator);
+                        throwExceptionIfMissingMandatoryNodes(modelNode.getSchemaRegistry(), (ContainerSchemaNode) childNode,
+                                (ModelNodeWithAttributes) childContainer, m_dataStoreValidator, validationContext);
                     } else {
                         // A container node already exists in DS, It means that it was validated when it was created
                         // as part of internal or NBI request for mandatory nodes. No need to validate it further.
@@ -218,20 +245,23 @@ public class ChoiceMandatoryChildrenValidator {
         }
     }
 
-    private static boolean validateMustWhen(DataSchemaNode child, SchemaRegistry schemaRegistry, ModelNodeWithAttributes parentModelNode, DataStoreValidator dataStoreValidator){
+    private static boolean validateMustWhen(DataSchemaNode child, SchemaRegistry schemaRegistry, ModelNodeWithAttributes parentModelNode,
+                                            DataStoreValidator dataStoreValidator, DSValidationContext validationContext){
         boolean mustWhen = DataStoreValidationUtil.containsMustWhen(schemaRegistry, child);
         if ( mustWhen) {
-            return dataStoreValidator.validateChild(parentModelNode, child);
+            return dataStoreValidator.validateChild(parentModelNode, child, validationContext);
         }
         return true;
     }
 
-    private static void throwExceptionIfMissingMandatoryNodes(SchemaRegistry schemaRegistry, ContainerSchemaNode node, ModelNodeWithAttributes parentModelNode, DataStoreValidator dataStoreValidator) {
+    private static void throwExceptionIfMissingMandatoryNodes(SchemaRegistry schemaRegistry, ContainerSchemaNode node,
+                                                              ModelNodeWithAttributes parentModelNode,
+                                                              DataStoreValidator dataStoreValidator, DSValidationContext validationContext) {
         for (DataSchemaNode child : node.getChildNodes()) {
             if (child instanceof LeafSchemaNode) {
                 LeafSchemaNode leafNode = (LeafSchemaNode) child;
                 if ( leafNode.isMandatory() && !leafNode.getType().getDefaultValue().isPresent()) {
-                    boolean validateMustWhen = validateMustWhen(child, schemaRegistry, parentModelNode, dataStoreValidator);
+                    boolean validateMustWhen = validateMustWhen(child, schemaRegistry, parentModelNode, dataStoreValidator, validationContext);
                     if ( !validateMustWhen){
                         continue;
                     }
@@ -239,7 +269,7 @@ public class ChoiceMandatoryChildrenValidator {
                 }
             } else if (child instanceof ChoiceSchemaNode) {
                 if (((ChoiceSchemaNode) child).isMandatory()) {
-                    boolean validateMustWhen = validateMustWhen(child, schemaRegistry, parentModelNode, dataStoreValidator);
+                    boolean validateMustWhen = validateMustWhen(child, schemaRegistry, parentModelNode, dataStoreValidator, validationContext);
                     if ( !validateMustWhen){
                         continue;
                     }
@@ -250,7 +280,7 @@ public class ChoiceMandatoryChildrenValidator {
                 if (optElementCountConstraint.isPresent()) {
                     ElementCountConstraint elementCountConstraint = optElementCountConstraint.get();
                     if (elementCountConstraint != null && elementCountConstraint.getMinElements() != null && elementCountConstraint.getMinElements() > 0){
-                        boolean validateMustWhen = validateMustWhen(child, schemaRegistry, parentModelNode, dataStoreValidator);
+                        boolean validateMustWhen = validateMustWhen(child, schemaRegistry, parentModelNode, dataStoreValidator,validationContext);
                         if ( !validateMustWhen){
                             continue;
                         }
@@ -268,12 +298,12 @@ public class ChoiceMandatoryChildrenValidator {
 
     @SuppressWarnings("rawtypes")
     private boolean validateMandatoryCaseNodes(ModelNodeWithAttributes modelNode, CaseSchemaNode caseNode,
-            Collection<DataSchemaNode> caseChildNodes) throws ModelNodeGetException {
+            Collection<DataSchemaNode> caseChildNodes, DSValidationContext validationContext) throws ModelNodeGetException {
         boolean thisCaseIsPresent = false;
         int nodesFound = 0; // How many nodes were found in this ModelNode of this set
         int totalValidNodes = 0; // total number of valid nodes in this case -> leaf/list/leafList/Container/Choice
         // with mandatory constraint
-        boolean foundChildModelNode = false; // if any one child model node (that is either list or container) under a choice is enough to fulfill mandatory constraint.
+        boolean foundChildModelNode = false; // if any one child model node (that is either list or container) under a choice is enough to fulfill mandatory constraint. 
         // so no need to check totalValid and nodesFound for child model nodes
         List<ValidationException> mandatoryChoiceMissing = new ArrayList<ValidationException>();
         List<QName> notAvailable = new LinkedList<QName>();
@@ -319,8 +349,6 @@ public class ChoiceMandatoryChildrenValidator {
                 } else {
                     notAvailable.add(childQName);
                 }
-
-
             } else if (childNode instanceof ContainerSchemaNode) {
                 ModelNode childContainer = DataStoreValidationUtil.getChildContainerModelNode(modelNode, childNode);
                 if (childContainer != null) {
@@ -331,7 +359,7 @@ public class ChoiceMandatoryChildrenValidator {
             } else if (childNode instanceof ChoiceSchemaNode) {
                 totalValidNodes++;
                 try {
-                    boolean choicePresent = validateMandatoryChoiceChildren(modelNode, (ChoiceSchemaNode) childNode);
+                    boolean choicePresent = validateMandatoryChoiceChildren(modelNode, (ChoiceSchemaNode) childNode, validationContext);
                     if (choicePresent) {
                         nodesFound++;
                     }
@@ -361,7 +389,7 @@ public class ChoiceMandatoryChildrenValidator {
             // check if there are non-mandatory nodes present
             Collection<DataSchemaNode> caseChildren = getNonMandatoryCaseChildren(caseNode);
             if (!caseChildren.isEmpty()) {
-                thisCaseIsPresent = thisCaseIsPresent || checkForCasePresence(modelNode, caseChildren);
+                thisCaseIsPresent = thisCaseIsPresent || checkForCasePresence(modelNode, caseChildren, validationContext);
             }
 
             if (thisCaseIsPresent && totalValidNodes > 0) {
@@ -369,13 +397,14 @@ public class ChoiceMandatoryChildrenValidator {
                 throwValidationException(modelNode, notAvailable, minFailureQNames);
             } else if (thisCaseIsPresent) {
                 // some nodes are present. Check for any defaults with when constraint
-                checkForCreateOrDeleteDefault(modelNode, caseChildren);
+                checkForCreateOrDeleteDefault(modelNode, caseChildren, validationContext);
             }
         }
         return thisCaseIsPresent;
     }
 
-    public boolean checkForCasePresence(ModelNodeWithAttributes modelNode, Collection<DataSchemaNode> caseChildNodes)
+    public boolean checkForCasePresence(ModelNodeWithAttributes modelNode, Collection<DataSchemaNode> caseChildNodes,
+                                        DSValidationContext validationContext)
             throws ModelNodeGetException {
         /**
          * We come here, only if we want to check if there are any non-mandatory children of this case available and all mandatory child of
@@ -405,20 +434,19 @@ public class ChoiceMandatoryChildrenValidator {
                     break;
                 }
             } else if (child instanceof ChoiceSchemaNode) {
-                thisCaseIsPresent = validateMandatoryChoiceChildren(modelNode, (ChoiceSchemaNode) child);
+                thisCaseIsPresent = validateMandatoryChoiceChildren(modelNode, (ChoiceSchemaNode) child, validationContext);
             }
         }
         return thisCaseIsPresent;
 
     }
 
-    @SuppressWarnings("unchecked")
-    private void checkForCreateOrDeleteDefault(ModelNode node, Collection<DataSchemaNode> childNodes) {
+    private void checkForCreateOrDeleteDefault(ModelNode node, Collection<DataSchemaNode> childNodes, DSValidationContext validationContext) {
         for (DataSchemaNode childNode : childNodes) {
-            Collection<SchemaPath> schemaPathsToDelete = DataStoreValidationUtil.getValidationContext().getSchemaPathsToDelete();
+            Collection<SchemaPath> schemaPathsToDelete = validationContext.getSchemaPathsToDelete();
             schemaPathsToDelete.add(childNode.getPath());
             if (childNode instanceof LeafSchemaNode && ((LeafSchemaNode) childNode).getType().getDefaultValue().isPresent()) {
-                m_dataStoreValidator.validateChild(node, childNode);
+                m_dataStoreValidator.validateChild(node, childNode, validationContext);
             }
         }
     }
@@ -430,7 +458,7 @@ public class ChoiceMandatoryChildrenValidator {
      * @param choice
      * @throws ModelNodeGetException
      */
-    public boolean validateMandatoryChoiceChildren(ModelNodeWithAttributes modelNode, ChoiceSchemaNode choice)
+    public boolean validateMandatoryChoiceChildren(ModelNodeWithAttributes modelNode, ChoiceSchemaNode choice, DSValidationContext validationContext)
             throws ModelNodeGetException {
         boolean isValid = true;
         if (!choice.isConfiguration()) {
@@ -439,7 +467,7 @@ public class ChoiceMandatoryChildrenValidator {
         try {
             if (choice.getWhenCondition().isPresent() || choice.isMandatory()) {
                 // if the choice has a constraint, validate it, if it is all good then look for mandatory nodes
-                isValid = m_dataStoreValidator.validateChild(modelNode, choice);
+                isValid = m_dataStoreValidator.validateChild(modelNode, choice, validationContext);
             }
         } catch (ValidationException e) {
             if (LOGGER.isDebugEnabled()) {
@@ -451,11 +479,11 @@ public class ChoiceMandatoryChildrenValidator {
 
         boolean anyChoicePresent = false;
         if (isValid) {            
-            Map<CaseSchemaNode, Collection<DataSchemaNode>> childNodes = getMandatoryChoiceChildren(modelNode, choice);
+            Map<CaseSchemaNode, Collection<DataSchemaNode>> childNodes = getMandatoryChoiceChildren(modelNode, choice, validationContext);
             for (Map.Entry<CaseSchemaNode, Collection<DataSchemaNode>> entry : childNodes.entrySet()) {
-                anyChoicePresent = validateMandatoryCaseNodes(modelNode, entry.getKey(), entry.getValue());
+                anyChoicePresent = validateMandatoryCaseNodes(modelNode, entry.getKey(), entry.getValue(), validationContext);
                 if(anyChoicePresent){
-                    validateMandatoryCaseContainerNodes(modelNode, entry.getValue());
+                    validateMandatoryCaseContainerNodes(modelNode, entry.getValue(),validationContext);
                     break;
                 }
             }

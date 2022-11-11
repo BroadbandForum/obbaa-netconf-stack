@@ -1,0 +1,47 @@
+module datastore-validator-leafref-negative-tests {
+	
+	yang-version 1.1;
+    
+	namespace "urn:org:bbf2:pma:leafref:negative:validation";
+	
+	prefix "lrNegative";
+	
+	revision "2019-02-11" {
+	      description "Initial version.";
+	}
+	
+	container rootNodeNegative {
+		list leafRefTarget{
+			key id;
+			config false;
+			leaf id{
+				type uint8;
+			}
+			leaf name {
+				type string;
+			}
+		}
+		list leafRefHolder{
+			key id;
+			leaf id{
+				type uint8;
+			}
+			leaf lr {
+				type leafref {
+					path "/lrNegative:rootNodeNegative/lrNegative:leafRefTarget[id=current()/../id]/lrNegative:name";
+					require-instance "true";
+				}
+			}			
+			leaf lrPointingToContainer{
+				type leafref {
+					path "../lrNegative:testContainer";
+				}
+			}
+			container testContainer{
+				leaf testLeaf{
+					type string;
+				}
+			}
+		}		
+	}
+}	

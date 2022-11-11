@@ -1,0 +1,10 @@
+<restaurant xmlns="http://example.com/ns/example-restaurant">
+    <table>
+        <tableNumber>10</tableNumber>
+        <bookingStatus>reserved</bookingStatus>
+    </table>
+</restaurant>
+
+
+
+

@@ -16,8 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.Difference;
 import org.custommonkey.xmlunit.DifferenceConstants;
@@ -53,6 +55,44 @@ public class NetconfFilterTest {
         Diff diff = new Diff(filterStr, DocumentUtils.documentToPrettyString(filter.getXmlFilter()));
         ignoreTextNodes(diff);
         assertTrue("XMLs are different :"+diff.toString(), diff.similar());
+    }
+
+    @Test
+    public void testGetXmlFilterPruned() throws Exception {
+        XMLUnit.setIgnoreAttributeOrder(true);
+        XMLUnit.setNormalizeWhitespace(true);
+        String filterStr = "<nc:filter xmlns:nc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" nc:type=\"pruned-subtree\">\n" +
+                "    <world xmlns=\"http://test-company.test/country-universe\"/>"+
+                "    <ut:universe xmlns:ut=\"http://test-company.test/country-universe\">\n" +
+                "        <ut:name>universe 1</ut:name>\n" +
+                "        <galaxy xmlns=\"http://test-company.test/country-universe\">\n" +
+                "            <name>Milky way</name>\n" +
+                "            <pet-name>My home galaxy</pet-name>\n" +
+                "            <planetary-system/>\n" +
+                "        </galaxy>\n" +
+                "    </ut:universe>\n" +
+                "</nc:filter>";
+        String getStr = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\"><get>"+filterStr+"</get></rpc>";
+        Document document = DocumentUtils.stringToDocument(getStr);
+        NetconfFilter filter = DocumentToPojoTransformer.getFilterFromRpcDocument(document);
+        Diff diff = new Diff(filterStr, DocumentUtils.documentToPrettyString(filter.getXmlFilter()));
+        ignoreTextNodes(diff);
+        assertTrue("XMLs are different :"+diff.toString(), diff.similar());
+    }
+
+    @Test
+    public void testTypeAttrInDefaultNamesace() throws NetconfMessageBuilderException {
+        NetconfFilter filter = DocumentToPojoTransformer.getFilterFromRpcDocument(DocumentUtils.stringToDocument(
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "    <get-config>\n" +
+                "        <source>\n" +
+                "                <running/>\n" +
+                "             </source>\n" +
+                "        <filter type=\"pruned-subtree\">\n" +
+                "        </filter>\n" +
+                "    </get-config>\n" +
+                "</rpc>"));
+        assertEquals("pruned-subtree", filter.getType());
     }
 
     private void ignoreTextNodes(Diff diff) {

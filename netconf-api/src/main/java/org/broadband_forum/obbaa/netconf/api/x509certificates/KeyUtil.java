@@ -16,13 +16,6 @@
 
 package org.broadband_forum.obbaa.netconf.api.x509certificates;
 
-import javax.crypto.Cipher;
-import javax.crypto.EncryptedPrivateKeyInfo;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
@@ -34,19 +27,27 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.crypto.Cipher;
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.xml.bind.DatatypeConverter;
+
 /**
- * Utility class that helps prepare a Private Keys. 
+ * Utility class that helps prepare a Private Keys.
  * Created by keshava on 4/29/15.
  */
 public class KeyUtil {
-    private static final Pattern PRIVATE_KEY_PATTERN_WITH_DELIMITER = Pattern.compile("-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+"
-            + "([a-z0-9+/=\\r\\n]+)" + "-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PRIVATE_KEY_PATTERN_WITH_DELIMITER = Pattern.compile("-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s)*"
+            + "([a-z0-9+/=\\s]+)" + "(?:\\s)*-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern PRIVATE_KEY_BINARY_PATTERN = Pattern.compile("([a-z0-9+/=\\r\\n]+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PRIVATE_KEY_BINARY_PATTERN = Pattern.compile("([a-z0-9+/=\\s]+)", Pattern.CASE_INSENSITIVE);
 
     /**
      * Convert a private key from base 64 encoded string to A PrivateKey object.
-     * 
+     *
      * @param encryptedPrivateKeyString
      * @param privateKeyPassword
      * @return
@@ -62,7 +63,7 @@ public class KeyUtil {
 
     /**
      * Convert a private key from Delimited Certificate String to A PrivateKey object. FOR UT purpose
-     * 
+     *
      * @param encryptedPrivateKeyString
      * @param privateKeyPassword
      * @return
@@ -127,7 +128,7 @@ public class KeyUtil {
 
     /**
      * Convert a private key from base 64 encoded string to A PrivateKey object.
-     * 
+     *
      * @param privateKey
      * @return
      * @throws KeyException

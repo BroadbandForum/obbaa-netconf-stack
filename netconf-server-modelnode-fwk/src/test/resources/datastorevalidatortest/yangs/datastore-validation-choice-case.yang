@@ -1,0 +1,2030 @@
+// Contents of "datastore-validation-choice-case"
+module datastore-validation-choice-case {
+
+    yang-version 1.1;
+
+    namespace "urn:org:bbf:pma:choice-case-test";
+
+    prefix "choice-case-test";
+    
+    import dummy-extensions {
+          prefix anvext;
+          revision-date "2016-01-07";
+    }
+
+    revision 2019-02-25 {
+        description "Initial revision";
+    }
+    
+    feature pre-emption {
+        description "Pre-emption is supported";
+    }
+    
+    grouping configured-device-properties-group {
+        description
+                "A set of device attributes that are configured when the PMA initiates
+                communication.";
+        
+        leaf ip-address {
+            type string;
+            anvext:is-sensitive;
+            description "The device IP address.";
+        }
+           
+        leaf ip-port {
+            type string;
+            anvext:is-sensitive;
+            description "The device port number.";
+        }
+            
+        leaf transport-protocol {
+          type string;
+          description
+                "The transport protocol used between PMA and the device. Selected
+                by the device as part of the call-home.";
+        }
+            
+        leaf username {
+            type string;
+            //mandatory true;
+            anvext:is-sensitive;
+            description
+                "The username is only valid for SSH, but applicable to all authentication
+                methods.";
+        }
+            
+        leaf password {
+            type string;
+            anvext:is-password;
+            description
+                "The password is only valid for SSH, and applicable username-and-password
+                authentication methods.";
+        }
+    }
+
+    container choice-container {
+        
+        choice case-nodes-with-when-condition{
+            
+            case case-leaf-with-mandatory{
+                
+                leaf choice-case-leaf-with-pattern{
+                    type string;
+                    mandatory true;
+                    when "../choice-case-leaf = 'test2'";
+                }
+                
+                leaf choice-case-leaf{
+                    type string;
+                }
+            }
+            
+            case case-leaflist-with-when-and-min-elements{
+                
+                leaf-list choice-case-leaf-list-with-pattern{
+                    type string;
+                    min-elements 1;
+                    when "../leaf1 = 'test2'";
+                }
+            
+                leaf leaf1{
+                    type string;
+                }
+            }
+            
+            case case-list-with-when-and-min-elements{
+                
+                list choice-case-list-with-when{
+                    min-elements 1;
+                    when "../leaf-for-list = 'test2'";
+                    key name;
+                    
+                    leaf name{
+                        type string;
+                    }
+                }
+            
+                leaf leaf-for-list{
+                    type string;
+                }
+            }
+            
+            case nested-choice-case{
+                
+                choice nested-choice-for-when{
+                    
+                    case case1{
+                        
+                        leaf choice-case-nested-leaf-with-when{
+                            type string;
+                            mandatory true;
+                            when "../choice-case-nested-leaf = 'test'";
+                        }
+                        
+                        leaf choice-case-nested-leaf{
+                            type string;
+                        }
+                    }
+                    
+                    case case2{
+                        
+                        leaf-list choice-case-nested-leaflist-with-when{
+                            type string;
+                            min-elements 1;
+                            when "../choice-case-nested-leaflist = 'test'";
+                        }
+                        
+                        leaf choice-case-nested-leaflist{
+                            type string;
+                        }
+                    }
+                }
+            }
+               
+        }     
+        
+        
+        container three-level-choice-container{
+            
+            choice level1-choice{
+                
+                case level1-case1{
+                    
+                    leaf level1-case1-leaf1{
+                        type string;
+                    }
+                    
+                    container level1Case1-Container{
+                        
+                        leaf level1-case1-leaf2{
+                            type string;
+                        }
+                        
+                    }
+                    
+                }
+                case level1-case2{
+                    
+                    leaf level1-case2-leaf1{
+                        type string;
+                    }
+                    
+                    container level1Container{
+                    
+                        leaf level1-case2-leaf2{
+                            type string;
+                            default "case2";
+                        }
+                    }
+                    
+                    choice level2-choice{
+                        
+                        case level2-case1{
+                            
+                            leaf level2-case1-leaf1{
+                                type string;
+                            }
+                            leaf level2-case1-leaf2{
+                                type string;
+                                default "level2Case1";
+                            }
+                        }
+                        
+                        case level2-case2{
+                            
+                            leaf level2-case2-leaf2{
+                                type string;
+                                default "level2Case2";
+                            }
+                            
+                            choice level3-choice{
+                                
+                                case level3-case1{
+                                    
+                                    leaf level3-case1-leaf1{
+                                        type string;
+                                    }
+                                    leaf level3-case1-leaf2{
+                                        type string;
+                                    }
+                                }
+                                case level3-case2{
+                                    
+                                    leaf level3-case2-leaf1{
+                                        type string;
+                                    }
+                                    container innerCaseContainer{
+                                        
+                                        leaf level3-case2-leaf2{
+                                            type string;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    
+        leaf mandatory-choice-control-leaf {
+            type string;
+        }
+        
+        container mandatory-choice-container {
+        when "../mandatory-choice-control-leaf ='test'";
+        
+        choice choice-default-test {
+            default case1;
+                case case1 {
+                    leaf leaf1 {
+                        type string;
+                        default "hello";
+                    }
+                }
+                
+                case case2 {
+                    leaf leaf2 {
+                        type string;
+                        default "hello1";
+                    }
+                }
+                
+        }
+        choice choice-test{
+            mandatory true;
+            
+            case case1 {
+                container test-container {
+                    leaf case1Defaultleaf1 {
+                        type string;
+                        default "xxx";
+                    }
+                    
+                }
+                leaf case1Leaf1 {
+                    type string;
+                }
+                
+                leaf case1Leaf2 {
+                    type string;
+                    default "XYZ";
+                }
+            }
+            
+            case case2 {
+                leaf case2Leaf1 {
+                    type string;
+                }
+            }
+            
+            case case3 {
+                leaf case3Leaf1 {
+                    type string;
+                }
+                
+                leaf-list case3Leaf2 {
+                    min-elements 2;
+                    type string;
+                }
+            }
+            
+            case case4 {
+                leaf case4Leaf1 {
+                    type string;
+                }
+                
+                container case4Container1 {
+                    leaf case4Leaf2{
+                        type string;
+                    }
+                }
+                
+                container case4Container2 {
+                    leaf case4Leaf3{
+                        type string;
+                    }
+                }
+                
+                container case4Container3{
+                    
+                }
+            }
+            
+            case case5 {
+                
+                list case5List1 {
+                    key case5Leaf2;
+                    leaf case5Leaf2{
+                        type string;
+                    }
+                }
+                
+                list case5List2 {
+                    key case5Leaf3;
+                    leaf case5Leaf3{
+                        type string;
+                    }
+                }
+                leaf case5Leaf1 {
+                    type string;
+                }
+            }
+            
+            case case6 {
+                leaf case6Leaf1 {
+                    type string;
+                }               
+                container case6Container1 {
+                    leaf case6Leaf2 {
+                        type string;
+                    }
+                }
+                list case6List1 {
+                    key case6Leaf3;
+                    leaf case6Leaf3{
+                        type string;
+                    }
+                }
+            }
+            
+            case case7 {              
+                container case7Container1 {
+                    container case7InnerContainer {
+                        leaf case7Leaf1 {
+                            type string;
+                        }  
+                    }
+                }
+                list case7List1 {
+                    key case7Leaf1;
+                    leaf case7Leaf1{
+                        type string;
+                    }
+                    
+                    list case7InnerList {
+                        key case7InnerListLeaf;
+                        leaf case7InnerListLeaf {
+                            type string;
+                        }
+                        
+                        leaf case7InnerNonKeyLeaf {
+                            type string;
+                        }
+                    }
+                }
+            }
+            
+            case case8 {
+                leaf case8Leaf1{
+                    type string;
+                }
+                choice innerChoice {
+                    case innerCase1 {
+                        leaf innerCase1Leaf1 {
+                            type string;
+                        }
+                        
+                        list innerCase1List1 {
+                            key innerCase1ListKey;
+                            
+                            leaf innerCase1ListKey {
+                                type string;
+                            }
+                            
+                            leaf innerCaseNonKeyLeaf {
+                                type string;
+                            }
+                        }
+                        
+                        container innerCaseContainer1 {
+                            leaf innerCaseContainerLeaf{
+                                type string;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            case case9{
+                list case9List1{
+                    key case9Leaf1;
+                    min-elements 2;
+                    leaf case9Leaf1{
+                        type string;
+                    }
+                }
+            }
+          }
+        }
+        
+        container default-choice-container {
+            when "../mandatory-choice-control-leaf ='defaultEnabled'";
+            
+            choice choice-with-default{
+                default case1;
+                
+                case case1{
+                    leaf case1Leaf1{
+                        type string;
+                        default "XYZ";
+                    }
+                    leaf case1Leaf2{
+                        type string;
+                    }
+                }
+                
+                case case2{
+                    leaf case2Leaf1{
+                        type string;
+                    }
+                    leaf-list case2LeafList1 {
+                        type string;
+                        min-elements 2;
+                        max-elements 3;
+                    }
+                }
+                
+                case case3{
+                    leaf case3Leaf1 {
+                        type string;
+                    }
+                    leaf case3Leaf2{
+                        type string;
+                        mandatory true;
+                    }
+                    container case3Container1{
+                        leaf case3Container1Leaf1{
+                            type string;
+                            mandatory true;
+                        }
+                        leaf-list case3Container1LeafList1{
+                            type string;
+                            min-elements 2;
+                        }
+                        leaf case3Container1Leaf2{
+                            type string;
+                        }
+                    }
+                }
+                
+                case case4{
+                    leaf case4Leaf1{
+                        type string;
+                    }
+                    list case4List1 {
+                        min-elements 2;
+                        max-elements 3;
+                        key case4List1Leaf1;
+                        leaf case4List1Leaf1{
+                            type string;
+                        }
+                        leaf case4List1Leaf2{
+                            type string;
+                            mandatory true;
+                        }
+                        leaf case4List1Leaf3{
+                            type string;
+                        }
+                        
+                        container case4List1Container1 {
+                            leaf case4List1Container1Leaf1{
+                                type string;
+                                mandatory true;
+                            }
+                        }
+                    }
+                    leaf case4Leaf2{
+                        type string;
+                        mandatory true;
+                    }
+                }
+                
+                case case5{
+                    leaf case5Leaf1{
+                        type string;
+                    }
+                    container case5Container1{
+                        leaf case5Container1Leaf1{
+                            type string;
+                            mandatory true;
+                        }
+                        leaf-list case5Container1LeafList1{
+                            type string;
+                            min-elements 2;
+                        }
+                    }
+                    list case5List1 {
+                        min-elements 2;
+                        key case5List1Leaf1;
+                        leaf case5List1Leaf1{
+                            type string;
+                        }
+                        leaf case5List1Leaf2{
+                            type string;
+                        }
+                    }
+                    leaf case5Leaf2{
+                        type string;
+                        mandatory true;
+                    }
+                }
+                
+                case case6 {
+                    leaf case6Leaf1 {
+                        type string;
+                    }
+                    choice case6InnerChoice{
+                        mandatory true;
+                        case case6InnerCase1{
+                            leaf case6InnerLeaf1{
+                                type string;
+                            }
+                            list case6InnerList1{
+                                key case6InnerList1Leaf1;
+                                min-elements 2;
+                                leaf case6InnerList1Leaf1{
+                                    type string;
+                                }
+                                leaf case6InnerList1Leaf2{
+                                    type string;
+                                }
+                            }
+                        }
+                    }
+                    container case6Container1{
+                        leaf case6Container1Leaf1{
+                            type string;
+                            mandatory true;
+                        }
+                        leaf-list case6Container1LeafList1{
+                            type string;
+                            min-elements 2;
+                        }
+                        list case6Container1List1{
+                            key case6Container1List1Leaf1;
+                            min-elements 2;
+                            leaf case6Container1List1Leaf1{
+                                type string;
+                            }
+                            leaf case6Container1List1Leaf2{
+                                type string;
+                            }
+                        }  
+                        leaf case6Container1Leaf2{
+                            type string;
+                        }
+                    }
+                }
+                
+                case case7{
+                    list case7List1 {
+                        min-elements 2;
+                        key "case7List1Leaf1 case7List1Leaf2";
+                        leaf case7List1Leaf1{
+                            type string;
+                        }
+                        leaf case7List1Leaf2{
+                            type string;
+                        }
+                    }
+                }
+            }
+            
+        }
+        list interface {
+            key 'name'; 
+            leaf name {
+                type string;
+            }
+        }
+        leaf rootNodeLeaf{
+			type string;
+		}
+        
+        container leaflistandlistinnestedchoicelevel {
+            choice externalchoice {
+                case externalcase1 {
+                    choice internalchoice {
+                        case internalcase1 {
+                            choice internalchoicelevel2 {
+                                case internalcaselevel2 {
+                                    choice internalchoicelevel3 {
+                                        case internalcaselevel3 {
+                                            list student {
+                                                key studentname;
+                                                leaf studentname {
+                                                    type string;
+                                                }
+                                                leaf schoolname {
+                                                    type string;
+                                                }
+                                            }
+                                            list subject {
+                                                key subjectname;
+                                                leaf subjectname {
+                                                    type string;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        case internalcase2 {
+                            choice internalchoicelevel2 {
+                                case internalcaseleve2 {
+                                    choice internalchoicelevel3 {
+                                        case internalcaselevel3 {
+                                            leaf-list countryname {
+                                                type string;
+                                            }
+                                            leaf-list statename {
+                                                type string;
+                                            }
+                                            leaf currencyname {
+                                                type string;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        case internalcase3 {
+                            choice internalchoicelevel2 {
+                                case internalcaseleve2 {
+                                    choice internalchoicelevel3 {
+                                        case internalcaselevel3 {
+                                            list organization {
+                                                key organizationname;
+                                                leaf organizationname {
+                                                    type string;
+                                                }
+                                                leaf-list areaname {
+                                                    type string;
+                                                }
+                                            }
+                                            leaf zonename {
+                                                type string;
+                                            }
+                                            leaf cityname {
+                                                type string;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        case internalcase4 {
+                            choice internalchoicelevel2 {
+                                case internalcaseleve2 {
+                                    choice internalchoicelevel3 {
+                                        case internalcaselevel3 {
+                                            container listtestcontainer {
+                                                list testlist {
+                                                    key testleafname;
+                                                    leaf testleafname {
+                                                        type string;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        case internalcase5 {
+                            choice internalchoicelevel2 {
+                                case internalcaseleve2 {
+                                    choice internalchoicelevel3 {
+                                        case internalcaselevel3 {
+                                            container leaflisttestcontainer {
+                                                leaf-list testleaflistname {
+                                                    type string;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+       
+        container defaultTest{
+            choice frame-processing {
+            	
+            	case inline-frame-processing {
+            		
+            		container inline-frame-processing {
+            			uses flexible-rewrite;
+            		}
+            	}
+            }
+            
+            grouping flexible-rewrite{
+            	leaf pop-tags{
+            		type string;
+            		default "0";
+            	}
+            	
+            	leaf push-tags{
+            		type string;
+            	}
+            }
+            
+            container outerContainer {
+            	
+            	choice outer-choice {
+            		
+            		case outer-case {
+            			
+            			choice inner-choice {
+            				
+            				case inner-case {
+            					
+            					container inner-case {
+            						uses flexible-rewrite;
+            					}
+            				}
+            			}
+            		}
+            	}
+            }
+        }
+
+		list testList1{
+			key key;
+			leaf key{
+				type string;
+			}
+			choice device-connection {
+	            default call-home-with-duid;
+	            
+	            case call-home-with-duid {        
+	                leaf duid {
+	                    type string;
+	                    default "";
+	                    anvext:is-sensitive;	                    
+	                    description
+	                        "The value of the DUID (DHCP Unique Identifier)
+	                        as defined in RFC 3315 that uniquely identifies
+	                        the device.";
+	                }
+	            }
+	 
+	            case non-call-home {
+	                uses configured-device-properties-group;
+	            }
+	        }  // choice device-connection
+		}
+		
+		// Same case above except a container inside non-default case.
+		list testList2{
+			key key;
+			leaf key{
+				type string;
+			}
+			choice device-connection {
+	            default call-home-with-duid;
+	            
+	            case call-home-with-duid {        
+	                leaf duid {
+	                    type string;
+	                    default "";
+	                    anvext:is-sensitive;	                    
+	                    description
+	                        "The value of the DUID (DHCP Unique Identifier)
+	                        as defined in RFC 3315 that uniquely identifies
+	                        the device.";
+	                }
+	            }
+	 
+	            case non-call-home {
+	                uses configured-device-properties-group;
+	                container deviceTypeContainer{
+	                	leaf deviceType {
+	                		type string;
+	                	}
+	                }
+	            }
+	        }  // choice device-connection
+		}
+		
+		// Same case above with nested choices.
+		list testList3{
+			key key;
+			leaf key{
+				type string;
+			}
+			choice device-connection {
+	            default call-home-with-duid;
+	            
+	            case call-home-with-duid {        
+	                leaf duid {
+	                    type string;
+	                    default "";
+	                    anvext:is-sensitive;	                    
+	                    description
+	                        "The value of the DUID (DHCP Unique Identifier)
+	                        as defined in RFC 3315 that uniquely identifies
+	                        the device.";
+	                }
+	            }
+	 
+	            case non-call-home {
+	                uses configured-device-properties-group;
+	                choice deviceType{
+	                	default fx;
+	                	case fx {
+	                		leaf fxLeaf {
+	                			default "fxType";
+	                			type string;
+	                		}
+	                	}
+	                	case cs {
+	                		leaf cxLeaf {
+	                			type string;
+	                		}
+	                	}
+	                }
+	            }
+	        }  // choice device-connection
+		}
+		
+		// Two containers in non-default case.
+		list testList4{
+			key key;
+			leaf key{
+				type string;
+			}
+			choice device-connection {
+	            default call-home-with-duid;
+	            
+	            case call-home-with-duid {        
+	                leaf duid {
+	                    type string;
+	                    default "";
+	                    anvext:is-sensitive;	                    
+	                    description
+	                        "The value of the DUID (DHCP Unique Identifier)
+	                        as defined in RFC 3315 that uniquely identifies
+	                        the device.";
+	                }
+	            }
+	 
+	            case non-call-home {
+	                container deviceTypeContainer{
+	                	leaf deviceType {
+	                		type string;
+	                	}
+	                }
+	                container pollingDetails{
+	                	leaf pollingTime{
+	                		type uint8;
+	                	}
+	                }
+	                
+	            }
+	        }  // choice device-connection
+		}
+		
+		// Two Lists in non-default case.
+		list testList5{
+			key key;
+			leaf key{
+				type string;
+			}
+			choice device-connection {
+	            default call-home-with-duid;
+	            
+	            case call-home-with-duid {        
+	                leaf duid {
+	                    type string;
+	                    default "";
+	                    anvext:is-sensitive;	                    
+	                    description
+	                        "The value of the DUID (DHCP Unique Identifier)
+	                        as defined in RFC 3315 that uniquely identifies
+	                        the device.";
+	                }
+	            }
+	 
+	            case non-call-home {
+	                list nonDefList1{
+	                	key index;
+	                	leaf index {
+	                		type string;
+	                	}
+	                }
+	                list nonDefList2{
+	                	key id;
+	                	leaf id {
+	                		type string;
+	                	}
+	                }
+	                
+	            }
+	        }  // choice device-connection
+		}
+		list testMandatory{
+			key key;
+			leaf key{
+				type string;
+			}
+			container dummyContainer {
+				leaf dummyLeaf{
+					type string;
+				}
+			}
+			choice device-connection {
+	            mandatory true;
+	            
+	            case udp {        
+	                container udp {
+	                	leaf port {
+	                		type string;
+	                	}
+	                }
+	                
+	                container polling {
+	                	leaf period {
+	                		type uint8;
+	                	}
+	                }
+	            }
+	        }  // choice device-connection
+		}
+		
+		list topList1 {
+			key key;
+			leaf key{
+				type string;
+			}
+			choice choiceWithDefault {
+				default firstCase;
+				case firstCase {
+					leaf defLeaf {
+						default 'imDefault';
+						type string;
+					}
+				}
+				case secondCase {
+					list tag {
+						must "count(/choice-container/topList2)>0";
+						key "index";
+			          	min-elements 1;
+			          	max-elements 2;
+			          	
+			          	leaf index{
+			          		type uint8;
+			          	}
+					}
+				}
+			}
+		}
+		
+		list topList2 {
+			key key;
+			leaf key{
+				type string;
+			}
+		}
+		
+		list testMandatoryWithListAlone {
+			key key;
+			leaf key{
+				type string;
+			}
+			choice mandatoryChoice {
+	            mandatory true;
+	            
+	            case onlyCase {        
+	                leaf testLeaf{
+	                	type string;
+	                }
+	                list testList {
+						key key;
+						leaf key{
+							type string;
+						}
+					}
+	            }
+	        }
+		}
+		
+		list testMandatoryChoiceUnderPresenceContainer {
+			key key;
+			leaf key{
+				type string;
+			}
+			container presenceContainer {
+				presence "yes";
+				leaf outsideLeaf{
+                	type string;
+                }
+				choice mandatoryChoice {
+		            mandatory true;
+		            case onlyCase {        
+		                leaf testLeaf{
+		                	type string;
+		                }
+		            }
+		        }
+			}
+		}
+		
+		list testMandatoryWithPresenceContainerWithMandatoryLeaf {
+			key key;
+			leaf key{
+				type string;
+			}
+			choice andatoryWithPresenceContainerWithMandatoryLeaf {
+	            mandatory true;
+	            
+	            case firstCase {        
+	                container presenceContainer {
+						presence "yes";
+						leaf onlyLeaf{
+							type string;
+						}
+					}
+					container presenceWithMandatory {
+						presence "yes";
+						leaf testingLeaf {
+							type string;
+						}
+						leaf mandatoryLeaf {
+							type string;
+							mandatory true;
+						}
+					}
+	            }
+	            case secondCase {        
+	                container secondCasePresenceContainer {
+						presence "yes";
+						leaf anotherLeaf{
+							type string;
+						}
+					}
+	            }
+	        }
+		}
+		
+		list testMandatoryWithPresenceContainerAlone {
+			key key;
+			leaf key{
+				type string;
+			}
+			container outerPresence {
+				presence "yes";
+				leaf testingLeaf {
+					type string;
+					mandatory true;
+				}
+			}
+			choice mandatoryChoiceWithPresenceContainer {
+	            mandatory true;
+	            
+	            case onlyCase {        
+	                container presenceContainer {
+						presence "yes";
+						leaf onlyLeaf{
+							type string;
+						}
+					}
+	            }
+	        }
+		}
+		
+		
+		list testList{
+			key key;
+			leaf key{
+				type string;
+			}
+			
+			leaf ip-address-type {
+			   type string;
+			}
+			choice choiceWithDefault{
+				default case1;
+				case case1{
+					leaf choiceWithDefaultLeaf{
+						default 'imDefault';
+						type string;
+					}
+					container choiceWithDefaultContainer{
+						leaf case1LeafUnderContainer{
+							default 'imDef-leafWithDefValue';
+							type string;
+						}
+					}
+				}
+				case case2{
+					leaf whenWithDefaultLeaf2{
+						type string;
+					}
+				}
+			}
+			choice whenWithMandatoryChoice{
+				when "key = 'whenNman'";
+				mandatory true;
+				case case1{
+					leaf whenWithMandatoryLeaf1{
+						type string;
+					}
+				}
+				case case2{
+					leaf whenWithMandatoryLeaf2{
+						type string;
+					}
+				}
+			}
+			choice whenWithDefaultChoice{
+				when "key = 'whenNdef'";
+				default case1;
+				case case1{
+					leaf whenWithDefaultLeaf1{
+						default 'imDefault';
+						type string;
+					}
+					container choiceWithWhenAndDefaultContainer{
+						leaf leafWithDefValue{
+							default 'imDef-leafWithDefValue';
+							type string;
+						}
+					}
+				}
+				case case2{
+					leaf nonDefaultCaseLeaf1{
+						type string;
+					}
+					leaf nonDefaultCaseLeaf2{
+						default 'yahooo';
+						type string;
+					}
+				}
+			}
+			
+			choice ip-address-choice-with-single-case{
+				when "key = 'whenNdef1'";
+				
+				case ip-address-case{
+				    container ip-address{
+					 leaf ipv4{
+					    when "../../ip-address-type = 'ipv4'";
+						default '0.0.0.0';
+						type string;
+					 }
+					
+					 leaf ipv6{
+						when "../../ip-address-type = 'ipv6'";
+						default '::';
+						type string;
+					 }
+					
+					 leaf localhost{
+						default 'localhost';
+						type string;
+					 }
+					}
+					
+					leaf multicast-address{
+						default '225.0.0.1';
+						type string;
+					}
+				}				
+			}
+			
+			choice ip-address-choice-with-multicase{
+				when "key = 'whenNdef2'";
+				
+				case ip-address-multicase1{
+				    container ip-address-multicase{
+					 leaf ipv4{
+					    when "../../ip-address-type = 'ipv4'";
+						default '0.0.0.0';
+						type string;
+					 }
+					
+					 leaf localhost{
+						default 'localhost';
+						type string;
+					 }
+					}
+				 }
+				 case ip-address-multicase2{ 
+					leaf multicast-address1{
+						when "../ip-address-type = 'ipv4'";
+						default '225.0.0.1';
+						type string;
+					}
+				 }				
+			}
+			
+		   choice ip-address-choice-with-default-multicase{
+				default ip-address-multicase2;
+				
+				case ip-address-multicase1{
+				    container ip-address-with-default-multicase{
+					 leaf ipv4{
+					    when "../../ip-address-type = 'ipv4'";
+						default '0.0.0.0';
+						type string;
+					 }
+					
+					 leaf localhost{
+						default 'localhost';
+						type string;
+					 }
+					}
+				 }
+				 case ip-address-multicase2{ 
+					leaf multicast-address3{
+						when "../ip-address-type = 'ipv4'";
+						default '225.0.0.1';
+						type string;
+					}
+				 }				
+			}
+			
+		}
+		
+		list multiUses{
+			key key;
+			leaf key{
+				type uint8;
+			}
+			choice choiceWithMultipleUsesInCases{
+				default case1;
+				case case1{
+					leaf directLeaf1{
+						default 'def-directLeaf1';
+						type string;
+					}
+					uses group1;
+				}
+				case case2{
+					leaf directLeaf2{
+						type string;
+					}
+					uses group2;
+					uses group3;
+				}
+			}
+		}
+
+		list nestedChoicesForMandatoryCheck1{
+			key key;
+			leaf key{
+				type uint8;
+			}
+			choice l1{
+				mandatory true;
+				case l1case1{
+					choice checkingWhen{						
+						mandatory true;
+						case l2Case1 {
+							leaf mandatoryChoiceLeaf1{
+								type string;
+							}
+						}
+						case l2Case2 {
+							leaf mandatoryChoiceLeaf2{
+								type string;
+							}
+						}
+					}
+				}
+				case l1case2{
+					leaf dummyLeaf{
+						type string;
+					}
+				}
+			}
+		}
+		
+		list nestedChoicesForMandatoryCheck{
+			key key;
+			leaf key{
+				type uint8;
+			}
+			choice l1{
+				mandatory true;
+				case l1case1{
+					leaf mandatoryChoiceLeaf1{
+						type string;
+					}
+					choice nestedChoice{
+						mandatory true;
+						case l2Case1 {
+							leaf mandatoryChoiceLeaf3{
+								type string;
+							}
+						}
+						case l2Case2 {
+							leaf mandatoryChoiceLeaf4{
+								type string;
+							}
+						}
+					}
+				}
+				case l1case2{
+					leaf mandatoryChoiceLeaf2{
+						type string;
+					}
+				}
+			}
+		}
+		
+		container nestedChoices2{
+			leaf leaf1{
+				type string;
+			}
+			choice topChoice{
+				default l1case1;
+				case l1case1{
+					choice secondChoice{
+						default l2case2;
+						case l2case1 {
+							leaf leaf2{
+								default 'leaf2Present';
+								type string;
+							}
+						}
+						case l2case2 {
+							leaf leaf3{
+								default 'leaf3Present';
+								type string;
+							}
+						}
+					}
+				}
+				case l1case2{
+					leaf leaf4{
+						type string;
+					}
+				}
+			}
+		}
+		
+		container nestedChoices3{ // With When
+			leaf topLeaf1{
+				type string;
+			}
+			leaf topLeaf2{
+				type string;
+			}
+			choice topChoice{
+				default l1case1;
+				when "topLeaf1 = 'l1Present'";
+				case l1case1{
+					choice secondChoice{
+						when "topLeaf2 = 'l2Present'";
+						default l2case2;
+						case l2case1 {
+							leaf leaf2{
+								default 'leaf2Present';
+								type string;
+							}
+						}
+						case l2case2 {
+							leaf leaf3{
+								default 'leaf3Present';
+								type string;
+							}
+						}
+					}
+				}
+				case l1case2{
+					leaf leaf4{
+						type string;
+					}
+				}
+			}
+		}
+		
+		container nestedChoices4{ // With When and when condition just check the default leaf's default value
+			leaf topLeaf1{
+				type string;
+			}
+			leaf topLeaf2{
+				type string;
+			}
+			choice topChoice{
+				default l1case1;
+				when "topLeaf1 = 'l1Present'";
+				case l1case1{
+					leaf c1Leaf1{
+						default 'c1Leaf1Present';
+						type string;
+					}
+					choice secondChoice{
+						when "c1Leaf1 = 'c1Leaf1Present'";
+						default l2case2;
+						case l2case1 {
+							leaf leaf2{
+								default 'leaf2Present';
+								type string;
+							}
+						}
+						case l2case2 {
+							leaf leaf3{
+								default 'leaf3Present';
+								type string;
+							}
+						}
+					}
+				}
+				case l1case2{
+					leaf leaf4{
+						type string;
+					}
+				}
+			}
+		}
+		
+		container outerContainer {
+			leaf outerLeaf{
+				type string;
+			}
+			choice whenWithDefaults {
+				default case1;
+				case case1 {
+					leaf leaf11{
+						default 'leaf11Default';
+						type string;
+					}
+					choice innerChoice1{
+						default innerCase1;
+						case innerCase1{
+							leaf leaf12{
+								default 'leaf12Default';
+								type string;
+							}		
+						}
+						case innerCase2{
+							leaf leaf13{
+								default 'leaf13Default';
+								type string;
+							}
+							leaf innerLeaf14{
+								type string;
+							}
+						}
+					}
+				}
+				case case2 {
+					leaf leaf21{
+						when "../outerLeaf = 'in'";
+						type string;
+					}
+				}
+				case case3 {
+					container case3Container {
+						when "../outerLeaf = 'in'";
+						leaf leaf31{
+							type string;
+						}
+					}
+				}
+				case case4 {
+					choice innerChoice2{
+						case innerCase21{
+							leaf leaf41{
+								when "../outerLeaf = 'in'";
+								type string;
+							}
+						}
+						case innerCase22{
+							container case4Container {
+								when "../outerLeaf = 'in'";
+								leaf leaf42{
+									type string;
+								}
+							}
+							leaf leaf43{
+								type string;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		container outerContainer2 {
+			leaf outerLeaf {
+				type string;
+			}
+			choice choiceWithWhen{
+				when "outerLeaf = 'in'";
+				default 'case1';
+				case case1{
+					leaf leaf11{
+						default "deaf11Default";
+						type string;
+					}
+				}
+				case case2{
+					leaf leaf22{
+						type string;
+					}
+				}
+			}
+		}
+		
+		container outerContainer3 {
+			leaf outerLeaf {
+				type string;
+			}
+			choice choiceCaseWithWhen{
+				default 'case1';
+				case case1{
+					leaf leaf11{
+						default "deaf11Default";
+						type string;
+					}
+				}
+				case case2{
+					when "outerLeaf = 'in'";
+					leaf leaf22{
+						type string;
+					}
+				}
+			}
+		}
+		container outerContainer4 {
+			leaf outerLeaf {
+				type string;
+			}
+			choice choiceWithAugmentedWhen{
+				default 'case1';
+				case case1{
+					leaf leaf11{
+						default "leaf11Default";
+						type string;
+					}
+				}
+				case case3{
+				}
+			}
+		}
+		container outerContainer5 {
+			leaf outerLeaf {
+				type string;
+			}
+			choice choiceWithGroupingWhen{
+				default 'case1';
+				case case1{
+					uses leafGroupingWithWhen;
+					leaf leaf11{
+						default "leaf11Default";
+						type string;
+					}
+				}
+				case case3{
+					uses innerChoiceGroupingWithWhen;
+				}
+			}
+		}
+		container outerContainer6 {
+			leaf outerLeaf {
+				type string;
+			}
+			choice choiceWithGroupingWhen{
+				case case1{
+					leaf leaf11{
+						default "leaf11Default";
+						type string;
+					}
+					leaf leaf12{
+						type string;
+					}
+				}
+				
+			}
+		}
+
+	    container outerContainer7 {
+	        leaf outerLeaf {
+	            type string;
+	        }
+	        leaf outerMustLeaf {
+	            type string;
+	        }
+	        choice choiceWithMandatoryAndWhenLeaf {
+	            case case1 {
+	                leaf leaf1 {
+	                    type string;
+	                }
+	                container containerWithMandatoryAndWhenLeaf {
+	                    leaf whenLeaf{
+	                        when "../../outerLeaf='whenMan'";
+	                        type string;
+	                        mandatory true;
+	                    }
+
+	                    leaf mustLeaf{
+                            must "../../outerMustLeaf='mustMan'";
+                            type string;
+                            mandatory true;
+                        }
+	                }
+	            }
+	        }
+	    }
+
+	    container outerContainer8 {
+            leaf outerLeaf {
+                type string;
+            }
+            leaf outerMustLeaf {
+                type string;
+            }
+            choice choiceWithMandatoryAndWhenList {
+                case case1 {
+                    leaf leaf1 {
+                        type string;
+                    }
+                    container containerWithMandatoryAndWhenList {
+                        list list1{
+                            when "../../outerLeaf='whenMan'";
+                            min-elements 2;
+                            key name;
+                            leaf name {
+                                type string;
+                            }
+                        }
+                        list mustList{
+                            must "../../outerMustLeaf='mustMan'";
+                            min-elements 2;
+                            key name;
+                            leaf name {
+                                type string;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        container outerContainer9 {
+            leaf outerLeaf {
+                type string;
+            }
+            choice choiceWithMandatoryAndWhenList {
+                case case1 {
+                    leaf leaf1 {
+                        type string;
+                    }
+                    container containerWithMandatoryAndWhenChoice {
+                        choice innerChoice{
+                            when "../outerLeaf='whenMan'";
+                            mandatory true;
+                            case case1 {
+                                leaf case1Leaf {
+                                    type string;
+                                }
+                            }
+                            case case2 {
+                                leaf case2Leaf {
+                                    type string;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        container outerContainer10 {
+            leaf triggerLeaf {
+                type string;
+            }
+            leaf triggerMustLeaf {
+                type string;
+            }
+            choice choiceWithMandatoryAndWhenList {
+                case case1 {
+                    leaf leaf1 {
+                        type string;
+                    }
+                    container containerWithMandatoryAndWhenLeafList {
+                        leaf-list whenLeafList{
+                            when "../../triggerLeaf='whenMan'";
+                            type string;
+                            min-elements 2;
+                        }
+
+                        leaf-list mustLeafList{
+                            must "../../triggerMustLeaf='mustMan'";
+                            type string;
+                            min-elements 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    grouping leafGroupingWithWhen {
+    	leaf leaf12{
+    		when "../outerLeaf = 'in'";
+    		default "leaf12Default";
+    		type string;
+    	}
+    }
+      
+    grouping innerChoiceGroupingWithWhen {
+    	choice innerChoice {
+    	when "outerLeaf = 'selectInnerChoice'";
+			case case1{
+				leaf leaf31{
+					type string;
+				}
+				leaf leaf32{
+					default "leaf32Default";
+					type string;
+				}
+			}
+    	}
+    }
+    
+    augment '/choice-case-test:choice-container/choice-case-test:outerContainer4/choice-case-test:choiceWithAugmentedWhen/choice-case-test:case1'{
+    	when "outerLeaf = 'in'";
+    	leaf leaf12{
+    		default "leaf12Default";
+    		type string;
+    	}
+    }
+    
+    augment '/choice-case-test:choice-container/choice-case-test:outerContainer4/choice-case-test:choiceWithAugmentedWhen'{
+    	when "outerLeaf = 'selectCase2'";
+    	case case2{
+			leaf leaf21{
+				type string;
+			}
+			leaf leaf22{
+				default "leaf22Default";
+				type string;
+			}
+		}
+    }
+    
+    augment '/choice-case-test:choice-container/choice-case-test:outerContainer4/choice-case-test:choiceWithAugmentedWhen'{
+    	when "outerLeaf = 'selectInnerChoice'";
+    	choice innerChoice {
+			case case1{
+				leaf leaf31{
+					type string;
+				}
+				leaf leaf32{
+					default "leaf32Default";
+					type string;
+				}
+			}
+    	}
+    }
+    
+    augment '/choice-case-test:choice-container'{
+    	container mandatory-container{
+    	       choice profile-config {
+    	            default no-profiles-attached;
+
+    	            case no-profiles-attached {
+    	                leaf no-profiles-attached-leaf {
+    	                    type string;
+    	                    default "leaf";
+    	                }
+    	            }
+
+    	            case direct-attachment-mode {
+
+    	                leaf direct-attachment-mode-leaf {
+    	                    type string;
+    	                    mandatory true;
+    	                }
+    	                leaf direct-attachment-mode-leaf1 {
+    	                    type string;
+    	                    mandatory true;
+    	                }
+    	                
+    	            	container channel {
+    	                	leaf direct-attachment-mode-leaf2 {
+    	                        type string;
+    	                        mandatory true;
+    	                    }
+    	                }
+    	            }
+    	            case indirect-attachment-mode {
+    	                leaf indirect-attachment-mode-leaf {
+    	                    type string;
+    	                    mandatory true;
+    	                }
+    	                leaf indirect-attachment-mode-leaf1 {
+    	                    type string;
+    	                    mandatory true;
+    	                }
+    	            }
+    	            
+    	            case profile-attachment-mode {
+    	            	leaf profile-attachment-mode-leaf {
+    	            		type string;
+    	            		mandatory true;
+    	            	}
+    	            	
+    	            	container profiles {
+    	            		list profile {
+    	            			key 'name';
+    	            			leaf name {
+    	            				type string;
+    	            			}
+    	            			min-elements 1;
+    	            		}
+    	            	}
+    	            }
+    	            
+    	            case case5 {
+    	            	
+    	            	leaf case5-leaf {
+    	            		type string;
+    	            	}
+    	            	
+    	            	list case5-mandatory-list {
+    	            		key 'name';
+    	            		leaf name {
+    	            			type string;
+    	            		}
+    	            		min-elements 1;
+    	            	}
+    	            	
+    	            	container case5-mandatory-inner-container {
+    	            		leaf-list city {
+    	            			type string;
+    	            			min-elements 1;
+    	            		}
+    	            	}
+    	            	
+    	            }
+    	            
+    	            case case6 {
+    	            	leaf case6-default-leaf{
+    	            		type string;
+    	            		default 'test1';
+    	            	}
+    	            	container case6-container {
+	    	            	choice nested-mandatory-choice {
+	    	            		mandatory true;
+	    	            		case nested-choice-case1 {
+	    	            			leaf nested-choice-case1-leaf {
+	    	            				type string;
+	    	            			}
+	    	            		}
+	    	            		case nested-choice-case2{
+	    	            			leaf nested-choice-case2-leaf{
+	    	            				type string;
+	    	            			}
+	    	            			
+	    	            			container nested-choice-case2-container {
+	    	            				leaf nested-choice-case2-container-leaf {
+	    	            					type string;
+	    	            					mandatory true;
+	    	            				}
+	    	            			}
+	    	            		}
+	    	            	}
+	    	            	
+	    	            	container case6-nested-container{
+	    	            		list case6-nested-container-list {
+	    	            			key 'name';
+	    	            			min-elements 2;
+	    	            			leaf name {
+	    	            				type string;
+	    	            			}
+	    	            		}
+	    	            	}
+	    	            	
+	    	            	leaf case6-container-leaf {
+	    	            		type string;
+	    	            	}
+    	            	}
+    	            }
+    	            
+    	        }
+    	}
+    }    
+
+    augment '/choice-case-test:choice-container/choice-case-test:interface' {
+        uses choice-case-test:tm-root;
+    }
+
+    grouping tm-root {
+
+        container tm-root {
+            choice children-type {
+                case queues {
+                    uses queues;
+                }
+            }
+        }
+    }
+    
+    grouping group1 {
+        container groupContainer1 {
+            leaf groupContainerLeaf1 {
+           		default 'def-groupContainer1';
+           		type string;               	                  
+            }
+        }
+		leaf group1Leaf{
+			default 'def-group1Leaf';
+			type string;   
+		}        
+    }
+    
+    grouping group2 {
+		leaf group2Leaf{
+			type string;   
+		}        
+    }
+    
+    grouping group3 {
+		leaf group3Leaf{
+			type string;   
+		}        
+    }
+
+    grouping queues {
+        list queue {
+            key "local-queue-id";
+
+            leaf local-queue-id {
+                type int8;
+            }
+            choice queue-scheduling-cfg-type {
+                case inline {
+                	leaf priority {
+                        type int8;
+                    }
+                }
+            }
+
+            leaf pre-emption {
+                if-feature "pre-emption";
+                type boolean;
+            }
+        }
+    }
+
+    augment '/choice-case-test:choice-container/choice-case-test:interface/choice-case-test:tm-root/choice-case-test:children-type' {
+
+        case scheduler-node {
+        	
+            list scheduler-node {
+                key "name";
+                leaf name {
+                    type string;
+                }
+                leaf scheduling-level {
+                    type uint8;
+                    mandatory true;
+                }
+
+                choice children-type {
+                    case scheduler-node {
+                        list child-scheduler-nodes {
+                            key "name";
+                            leaf name {
+                                type leafref {
+                                    path '../../../scheduler-node/name';
+                                }
+
+                                must "../../../scheduler-node [name=current()]/scheduling-level > current()/../../scheduling-level" {
+                                    error-message "The scheduler-level should be bigger than the value of parent node.";
+                                }
+                            }
+                        }
+                    }
+                    case queue {
+                        leaf contains-queues {
+                            type boolean;
+                            default "true";
+                        }
+                        uses queues;
+                    }
+                }
+            }
+            list child-scheduler-nodes {
+                key "name";
+                leaf name {
+                    type leafref {
+                        path '../../scheduler-node/name';
+                    }
+                }
+            }
+        }
+    }
+}

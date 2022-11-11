@@ -1,0 +1,63 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Greatest hits</name>
+                <password is-password="true">$-0$p8WVYmLwbCEnPyXol5C3gpKvhh95G959gx3jqDZ7rYViBjWBA3Uj7MuXn6H3MgsT</password>
+                <genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:jazz</genre>
+                <year>2000</year>
+                <admin>
+                    <label>Sony</label>
+                </admin>
+                <song>
+                    <name>Are you gonne go my way</name>
+                    <location>desktop/mymusic</location>
+                    <format>mp3</format>
+                </song>
+                <song>
+                    <name>Fly Away</name>
+                    <location>desktop/mymusic</location>
+                    <format>flac</format>
+                    <singer>Angelina</singer>
+                    <singer>Micheal</singer>
+                </song>
+            </album>
+            <album>
+                <name>Circus</name>
+                <genre xmlns:jbox="http://example.com/ns/example-jukebox">jbox:rock</genre>
+                <year>1995</year>
+                <admin>
+                    <label>Sony</label>
+                </admin>
+                <song>
+                    <name>Rock and roll is dead</name>
+                    <location>desktop/mymusic</location>
+                    <format>amr</format>
+                </song>
+                <song>
+                    <name>Circus</name>
+                    <location>desktop/mymusic</location>
+                    <format>wma</format>
+                </song>
+                <song>
+                    <name>Beyond the 7th Sky</name>
+                    <location>desktop/mymusic</location>
+                    <format>mp3</format>
+                </song>
+            </album>
+            <album>
+                <name>AlbumWithoutGenre</name>
+                <year>1995</year>
+                <admin>
+                    <label>Sony</label>
+                </admin>
+                <song>
+                    <name>SomeSong</name>
+                    <location>desktop/mymusic</location>
+                    <format>amr</format>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

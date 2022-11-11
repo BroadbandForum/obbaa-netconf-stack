@@ -16,6 +16,13 @@
 
 package org.broadband_forum.obbaa.netconf.api.util;
 
+import java.security.cert.CertificateException;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientDispatcherException;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfiguration;
@@ -25,24 +32,21 @@ import org.broadband_forum.obbaa.netconf.api.transport.security.X509KeyManagerFa
 import org.broadband_forum.obbaa.netconf.api.transport.security.X509KeyManagerFactorySpi;
 import org.broadband_forum.obbaa.netconf.api.transport.security.X509TrustManagerFactory;
 import org.broadband_forum.obbaa.netconf.api.transport.security.X509TrustManagerFactorySpi;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import io.netty.handler.ssl.SupportedCipherSuiteFilter;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import org.apache.log4j.Logger;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManagerFactory;
-import java.security.cert.CertificateException;
 
 /**
  * Created by kbhatk on 7/27/16.
  */
 public class SSLContextUtil {
-    private static final Logger LOGGER = Logger.getLogger(SSLContextUtil.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SSLContextUtil.class, LogAppNames.NETCONF_LIB);
 
     public static SslContext getServerSSLContext(NetconfServerConfiguration config) throws NetconfServerDispatcherException {
         AbstractTLSNetconfTransport transport = (AbstractTLSNetconfTransport) config.getNetconfTransport();
@@ -113,7 +117,6 @@ public class SSLContextUtil {
             }
             builder.sslProvider(transport.getSslProvider())
                     .ciphers(null, SupportedCipherSuiteFilter.INSTANCE);
-
             return builder.build();
         } catch (SSLException e) {
             LOGGER.error("Exception while starting server ", e);

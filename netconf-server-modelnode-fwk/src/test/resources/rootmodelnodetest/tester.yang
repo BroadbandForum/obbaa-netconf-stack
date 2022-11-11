@@ -1,5 +1,7 @@
 module tester {
 
+    yang-version 1.1;
+
     namespace "http://netconfcentral.org/ns/tester";
 
     prefix "testPrefix";
@@ -44,6 +46,11 @@ module tester {
          	type string;
         }  
       }
+    }
+
+    container action-root {
+          action dummy-action {
+          }
     }
 
 }

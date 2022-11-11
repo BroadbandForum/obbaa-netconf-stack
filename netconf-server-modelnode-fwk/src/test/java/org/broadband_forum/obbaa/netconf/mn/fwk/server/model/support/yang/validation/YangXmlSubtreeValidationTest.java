@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.ValidationConstants.CROSS_TEST_NS;
@@ -7,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -14,27 +31,37 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.RpcName;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContainerHelper;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootEntityContainerModelNodeHelper;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
-
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.EntityRegistryBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildContainerHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeFactoryException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootEntityContainerModelNodeHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.payloadparsing.DummyRpcHandler;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.TimingLogger;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.CrossTest;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 @SuppressWarnings("deprecation")
+@RunWith(RequestScopeJunitRunner.class)
 public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{    
 
     static QName createQName(String localName){
@@ -56,8 +83,15 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         YangUtils.loadXmlDataIntoServer(m_server,
                 getClass().getResource("/datastorevalidatortest/yangs/datastore-validator-cross-test.xml").getPath());
     }
+    
+    @BeforeClass
+    public static void initializeOnce() throws SchemaBuildException {
+        List<YangTextSchemaSource> yangFiles = TestUtil.getByteSources(getYang());
+        m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        m_schemaRegistry.setName(SchemaRegistry.GLOBAL_SCHEMA_REGISTRY);
+    }
 
-    protected List<String> getYangFiles() {
+    protected static List<String> getYang() {
         List<String> fileNames = new LinkedList<String>();
         fileNames.add("/datastorevalidatortest/yangs/dummy-extension.yang");
         fileNames.add("/datastorevalidatortest/yangs/ietf-yang-schema-mount@2017-10-09.yang");
@@ -88,14 +122,14 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Before
     public void setup() throws SchemaBuildException, AnnotationAnalysisException, ModelNodeFactoryException{
         super.setup();
-        m_rpcConstraintParser = new RpcRequestConstraintParser(m_schemaRegistry, m_aggregatedDSM, m_expValidator);
-        m_dummyRpcHandler = new DummyRpcHandler(new RpcName("urn:org:bbf:pma:validation","leafRefTest"));
+        m_rpcConstraintParser = new RpcRequestConstraintParser(m_schemaRegistry, m_aggregatedDSM, m_expValidator, null);
+        m_dummyRpcHandler = new DummyRpcHandler(new RpcName("urn:org:bbf2:pma:validation","leafRefTest"));
     }
 
     @Test
     public void crossReferencedTest() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 "   <someList>"+
                 "    <someKey>key1</someKey>" +
                 "    <someInnerList>" +
@@ -115,7 +149,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        String response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
                + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:someList>"
                + "    <validation:someInnerList>"
                + "     <validation:childContainer>"
@@ -135,7 +169,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        verifyGet(m_server, m_clientInfo, response);
        
        requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -155,7 +189,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
       response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + " <data>"
               + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-              + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+              + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
               + "   <validation:someList>"
               + "    <validation:someInnerList>"
               + "     <validation:someKey>skey1</validation:someKey>"
@@ -174,7 +208,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     public void testDeleteList() throws Exception {
         // create two inner lists of same type, another list(xmlList2) referencing one of the two other lists
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 "   <someList>"+
                 "    <someKey>key1</someKey>" +
                 "    <someInnerList>" +
@@ -202,7 +236,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        String response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
                + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:someList>"
                + "    <validation:someInnerList>"
                + "     <validation:childContainer>"
@@ -231,7 +265,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        
        //add another xmlList2 with leafLists 
        requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -254,7 +288,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
       response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + " <data>"
               + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-              + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+              + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
               + "   <validation:someList>"
               + "    <validation:someInnerList>"
               + "     <validation:childContainer>"
@@ -290,7 +324,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
 
       //add another xmlList2 with leafLists 
       requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-              "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+              "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
               "   <someList>"+
               "    <someKey>key1</someKey>" +
               "    <someInnerList>" +
@@ -314,7 +348,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        
      //delete three leafRefs results in error
      requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-             "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
+             "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
              "   <someList>"+
              "    <someKey>key1</someKey>" +
              "    <someInnerList>" +
@@ -339,7 +373,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
 
     // delete one leaflist
     requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-            "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
+            "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
             "   <someList>"+
             "    <someKey>key1</someKey>" +
             "    <someInnerList>" +
@@ -360,7 +394,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
             + " <data>"
             + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-            + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+            + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
             + "   <validation:someList>"
             + "    <validation:someInnerList>"
             + "     <validation:childContainer>"
@@ -395,7 +429,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     
     // delete all leaflist
     requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-            "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
+            "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"  +
             "   <someList>"+
             "    <someKey>key1</someKey>" +
             "    <someInnerList>" +
@@ -418,7 +452,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
             + " <data>"
             + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-            + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+            + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
             + "   <validation:someList>"
             + "    <validation:someInnerList>"
             + "     <validation:childContainer>"
@@ -447,7 +481,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
 
     // delete the leaf tpye=20 and the xmlList2 referring it and the xmlList[11]
        requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -475,7 +509,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
       response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                       + " <data>"
                       + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-                      + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                      + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                       + "   <validation:someList>"
                       + "    <validation:someInnerList>"
                       + "     <validation:childContainer>"
@@ -495,7 +529,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
       
       //delete someInnerList[skey1]
       requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-              "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+              "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
               "   <someList>"+
               "    <someKey>key1</someKey>" +
               "    <someInnerList xc:operation=\"delete\">" +
@@ -514,7 +548,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
      response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                      + " <data>"
                      + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-                     + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                     + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                      + "   <validation:someList>"
                      + "    <validation:someKey>key1</validation:someKey>"
                      + "   </validation:someList>"
@@ -528,7 +562,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testInnerList() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <multiContainer> " +
@@ -550,7 +584,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        editConfig(requestXml1);
 
        String requestXml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
                "  <xml-subtree>" +
                "  <plugType>PLUG-1.0</plugType>" +
                "   <multiContainer> " +
@@ -575,7 +609,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testLeafRefAlongWithCreate() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "   <someList>"+
                 "    <someKey>key1</someKey>" +
                 "    <someInnerList>" +
@@ -594,7 +628,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        editConfig(requestXml1); 
 
        String requestXml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -623,7 +657,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         // create two 'someInnerList' with key as 'skey1' and 'skey1'.
         // create xml subtree for the path someList[key1]/someInnerList[skey1]
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "   <someList>"+
                 "    <someKey>key2</someKey>"+
                 "    <someInnerList>" +
@@ -661,7 +695,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
 
        // add 1 leaf list for someList[key1]/someInnerList[skey1]
        String requestXml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -691,7 +725,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
               "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + "<data> "
               + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-              + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\"> "
+              + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\"> "
               + "  <validation:someList>"
               + "  <validation:someKey>key1</validation:someKey>"
               + "   <validation:someInnerList>"
@@ -732,7 +766,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
 
        // change the value of leaf condition to 9 for someList[key1]/someInnerList[skey1]. leaf list must be removed now
        String requestXml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -762,7 +796,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
               "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + "<data> "
               + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-              + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\"> "
+              + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\"> "
               + "  <validation:someList>"
               + "  <validation:someKey>key1</validation:someKey>"
               + "   <validation:someInnerList>"
@@ -802,7 +836,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testMultiLevelEntityXmlTreeOnLeafRef() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "   <someList>"+
                 "    <someKey>key1</someKey>" +
                 "  </someList>" +
@@ -821,7 +855,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testRpcDSLeafRef() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "   <someList>"+
                 "    <someKey>key1</someKey>" +
                 "  </someList>" +
@@ -833,7 +867,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        editConfig(requestXml1);
         
         String xmlPath = "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
-                        " <validation:leafRefTest xmlns:validation=\"urn:org:bbf:pma:validation\">" +
+                        " <validation:leafRefTest xmlns:validation=\"urn:org:bbf2:pma:validation\">" +
                         " <validation:leaf1>key1</validation:leaf1> " +
                         " </validation:leafRefTest>"+
                         "</rpc>"
@@ -842,13 +876,13 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         NetconfRpcRequest request = new NetconfRpcRequest();
         request.setRpcInput(DocumentUtils.getInstance().getFirstElementChildNode(element));
         request.setMessageId("1");
-        m_dummyRpcHandler.validate(m_rpcConstraintParser, request);
+        TimingLogger.withStartAndFinish(() -> m_dummyRpcHandler.validate(m_rpcConstraintParser, request));
     }
     
     @Test
     public void testMultiLevelEntityXmlTree() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "   <someList>"+
                 "    <someKey>key1</someKey>" +
                 "    <someInnerList>" +
@@ -879,7 +913,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        editConfig(requestXml1); 
        
        String requestXml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -908,7 +942,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
               "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + "<data> "
               + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-              + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\"> "
+              + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\"> "
               + "  <validation:someList>"
               + "  <validation:someKey>key1</validation:someKey>"
               + "   <validation:someInnerList>"
@@ -942,7 +976,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        verifyGet(m_server, m_clientInfo, verifyXml);
 
        String requestXml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                "   <someList>"+
                "    <someKey>key1</someKey>" +
                "    <someInnerList>" +
@@ -972,7 +1006,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
               "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + "<data> "
               + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-              + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\"> "
+              + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\"> "
               + "  <validation:someList>"
               + "  <validation:someKey>key1</validation:someKey>"
               + "   <validation:someInnerList>"
@@ -1009,7 +1043,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         AddDefaultDataInterceptor addDefaultDataInterceptor = new AddDefaultDataInterceptor(m_modelNodeHelperRegistry, getSchemaRegistry(), m_expValidator);
         addDefaultDataInterceptor.init();
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" +
                 "    <leaf1>HELLO</leaf1>" +
                 "  </xml-subtree>" +
@@ -1020,7 +1054,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
                "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
                + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-               + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "  <validation:xml-subtree>"
                + "   <validation:container1/>"
                + "   <validation:container2>"
@@ -1044,7 +1078,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testMultiLeafList() throws SAXException, IOException {
       String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "    <leaf1>hello</leaf1>" +
@@ -1061,7 +1095,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
                "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
                + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-               + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "  <validation:xml-subtree>"
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "   <validation:leaf1>hello</validation:leaf1>"
@@ -1077,7 +1111,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        verifyGet(m_server, getClientInfo(), response);
        
        String requestXml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                "  <xml-subtree>" +
                "  <plugType>PLUG-1.0</plugType>" +
                "    <leaf1>hello1</leaf1>" +
@@ -1086,7 +1120,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
       editConfig(requestXml2);
 
       String requestXml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                "  <xml-subtree>" +
                "  <plugType>PLUG-1.0</plugType>" +
                "    <leaf1>hello1</leaf1>" +
@@ -1100,7 +1134,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
       editConfig(requestXml3);
 
       String requestXml4 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-              "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+              "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
               "  <xml-subtree>" +
               "  <plugType>PLUG-1.0</plugType>" +
               "    <container1>" +
@@ -1119,7 +1153,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
               "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\"> "
              + "<data>"
              + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-             + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+             + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
              + "    <validation:xml-subtree>"
              + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
              + "      <validation:leaf1>hello1</validation:leaf1>"
@@ -1142,7 +1176,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testMultiChildFilters() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 "   <someList>"+
                 "    <someKey>key1</someKey>" +
                 "    <someInnerList>" +
@@ -1160,7 +1194,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        
        //filter request with state alone
        String filterGet = 
-               " <validation xmlns=\"urn:org:bbf:pma:validation\">"
+               " <validation xmlns=\"urn:org:bbf2:pma:validation\">"
                + " <someList>"
                + "  <someKey>key1</someKey>"
                + "  <someInnerList>"
@@ -1174,16 +1208,26 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
                + " </someList>"
                + "</validation>";
 
-       String response = 
-               "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
-               + " <data/>"
-               + " </rpc-reply>"
-               ;
+       String response =
+                " <rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                        "<data>\n" +
+                        "<validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">\n" +
+                        "<validation:someList>\n" +
+                        "<validation:someInnerList>\n" +
+                        "<validation:someKey>skey1</validation:someKey>\n" +
+                        "</validation:someInnerList>\n" +
+                        "<validation:someKey>key1</validation:someKey>\n" +
+                        "</validation:someList>\n" +
+                        "</validation:validation>\n" +
+                        "</data>\n" +
+                        "</rpc-reply>"
+                ;
+
        verifyGet(m_server, m_clientInfo, filterGet, response);
 
        //filter request with both state and config subtree
        filterGet = 
-               " <validation xmlns=\"urn:org:bbf:pma:validation\">"
+               " <validation xmlns=\"urn:org:bbf2:pma:validation\">"
                + " <someList>"
                + "  <someKey>key1</someKey>"
                + "  <someInnerList>"
@@ -1203,7 +1247,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
        //verify response has the changes
        response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:someList>"
                + "    <validation:someInnerList>"
                + "     <validation:childContainer>"
@@ -1224,7 +1268,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         
        //filter request with config alone
        filterGet = 
-               " <validation xmlns=\"urn:org:bbf:pma:validation\">"
+               " <validation xmlns=\"urn:org:bbf2:pma:validation\">"
                + " <someList>"
                + "  <someKey>key1</someKey>"
                + "  <someInnerList>"
@@ -1245,7 +1289,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testCrossRefTree() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "    <leaf1>hello</leaf1>" +
@@ -1276,7 +1320,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     public void testPerformance() throws Exception {
         String requestXml1 = 
                 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                 "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                 "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                  "   <someList>"+
                  "    <someKey>key1</someKey>" +
                  "    <someInnerList>" +
@@ -1317,7 +1361,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testListKeyName() throws Exception{
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <leaf1>hello</leaf1>" +
@@ -1344,7 +1388,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testOrderByUser() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
                 + " <xml-subtree>"
                 + "  <plugType>PLUG-1.0</plugType>" 
                 + "  <orderByUserLeaf yang:insert=\"first\">a</orderByUserLeaf>"
@@ -1358,7 +1402,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         String response =  "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + " <data>"
                 + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-                + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "   <validation:xml-subtree>"
                 + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                 + "    <validation:orderByUserLeaf>a</validation:orderByUserLeaf>"
@@ -1371,7 +1415,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         verifyGet(m_server, m_clientInfo, response);
         
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
                 + " <xml-subtree>"
                 + "  <plugType>PLUG-1.0</plugType>" 
                 + "  <orderByUserLeaf yang:insert=\"last\">z</orderByUserLeaf>"
@@ -1385,7 +1429,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         response =  "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + " <data>"
                 + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-                + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "   <validation:xml-subtree>"
                 + "    <validation:orderByUserLeaf>a</validation:orderByUserLeaf>"
                 + "    <validation:orderByUserLeaf>b</validation:orderByUserLeaf>"
@@ -1403,7 +1447,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     public void testOrderByUserListOnAnnotatedEntityInnerList() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
                 "<validation xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" "
-                + "xmlns=\"urn:org:bbf:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" xc:operation='replace'>"
+                + "xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" xc:operation='replace'>"
                 + "  <someList>"
                 + "   <someKey>key1</someKey>"
                 + "   <someInnerList>"
@@ -1436,7 +1480,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
                 "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + "  <data>"
                 + "   <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-                + "   <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + "   <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "    <validation:someList>"
                 + "     <validation:someInnerList>"
                 + "      <validation:orderByUserList>"
@@ -1471,7 +1515,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     public void testOrderByUserListOnAnnotatedEntity() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
                 "<validation xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" "
-                + "xmlns=\"urn:org:bbf:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" xc:operation='replace'>"
+                + "xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" xc:operation='replace'>"
                 + "  <orderByUserList yang:insert=\"first\">"
                 + "   <someKey>a</someKey>"
                 + "  </orderByUserList>"
@@ -1499,7 +1543,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
                 "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + " <data>"
                 + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-                + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "    <validation:orderByUserList>"
                 + "     <validation:someKey>a</validation:someKey>"
                 + "    </validation:orderByUserList>"
@@ -1530,7 +1574,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testString() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
                 + " <xml-subtree>"
                 + "  <plugType>PLUG-1.0</plugType>" 
                 + "  <someString>1.1.1</someString>"
@@ -1546,7 +1590,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testCurrentChild() throws Exception{
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <currentChildTest> " +
@@ -1562,7 +1606,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testYangListRemoveChildTest() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <testRefLeafRemove>" +
@@ -1600,7 +1644,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         editConfig(m_server, m_clientInfo, requestXml1, true);
 
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <testRefLeafRemove>" +
@@ -1619,7 +1663,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         editConfig(m_server, m_clientInfo, requestXml1, false);
         
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <testRefLeafRemove>" +
@@ -1634,7 +1678,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         editConfig(m_server, m_clientInfo, requestXml1, false);
         
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
                 "  <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <testRefLeafRemove>" +
@@ -1660,7 +1704,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testMissingCurrentPath() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" + 
                 "  <plugType>PLUG-1.0</plugType>" +
                 "   <testCurrentOnNonExistant>" +
@@ -1681,7 +1725,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
     @Test
     public void testInternallyGeneratedRequest() throws Exception {
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">" +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">" +
                 "  <xml-subtree>" + 
                 "  <plugType>PLUG-1.0</plugType>" +
                 "    <test-internal-request>" + 
@@ -1710,7 +1754,7 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
         String response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + " <data>"
                 + "  <ctr:CrossTest xmlns:ctr=\"urn:org:bbf:yang:test:cross:tree:reference\"/>"
-                + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "   <validation:xml-subtree>"
                 + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                 + "    <validation:test-internal-request>"
@@ -1736,5 +1780,137 @@ public class YangXmlSubtreeValidationTest extends AbstractRootModelTest{
                 + "</rpc-reply>"
                 ;        
         verifyGet(m_server, m_clientInfo, response);
+    }
+ 
+    @Test
+    public void testOrderByUserBadAttribute() throws Exception {
+        String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
+                + " <xml-subtree>"
+                + "  <plugType>PLUG-1.0</plugType>" 
+                + "  <orderByUserLeaf yang:inser=\"first\">a</orderByUserLeaf>"
+                + "  <orderByUserLeaf yang:insert=\"after\" yang:value=\"a\">c</orderByUserLeaf>"
+                + " </xml-subtree>"
+                + "</validation>"
+                ; 
+        
+        NetConfResponse response = editConfig(m_server, m_clientInfo, requestXml1, false);                
+        assertEquals(1, response.getErrors().size());
+        assertEquals("/validation:validation/validation:xml-subtree[validation:plugType='PLUG-1.0']/validation:orderByUserLeaf",
+                response.getErrors().get(0).getErrorPath());
+        assertEquals("Bad attribute: namespace 'urn:ietf:params:xml:ns:yang:1', attribute name 'inser'",
+                response.getErrors().get(0).getErrorMessage());
+        
+        requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:param:xml:ns:yang:1\">"
+                + " <xml-subtree>"
+                + "  <plugType>PLUG-1.0</plugType>" 
+                + "  <orderByUserLeaf yang:insert=\"first\">a</orderByUserLeaf>"
+                + "  <orderByUserLeaf yang:insert=\"after\" yang:value=\"a\">c</orderByUserLeaf>"
+                + " </xml-subtree>"
+                + "</validation>"
+                ; 
+        
+        response = editConfig(m_server, m_clientInfo, requestXml1, false);                
+        assertEquals(1, response.getErrors().size());
+        assertEquals("/validation:validation/validation:xml-subtree[validation:plugType='PLUG-1.0']/validation:orderByUserLeaf",
+                response.getErrors().get(0).getErrorPath());
+        assertEquals("Bad attribute: namespace 'urn:ietf:param:xml:ns:yang:1', attribute name 'insert'",
+                response.getErrors().get(0).getErrorMessage());
+        
+        requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
+                + " <xml-subtree>"
+                + "  <plugType>PLUG-1.0</plugType>" 
+                + "  <orderByUserLeaf yang:insert=\"first\">a</orderByUserLeaf>"
+                + "  <orderByUserLeaf yang:insert=\"after\" yang:valu=\"a\">c</orderByUserLeaf>"
+                + " </xml-subtree>"
+                + "</validation>"
+                ; 
+        
+        response = editConfig(m_server, m_clientInfo, requestXml1, false);                
+        assertEquals(1, response.getErrors().size());
+        assertEquals("/validation:validation/validation:xml-subtree[validation:plugType='PLUG-1.0']/validation:orderByUserLeaf",
+                response.getErrors().get(0).getErrorPath());
+        assertEquals("Bad attribute: namespace 'urn:ietf:params:xml:ns:yang:1', attribute name 'valu'",
+                response.getErrors().get(0).getErrorMessage());
+        
+        requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
+                + " <xml-subtree>"
+                + "  <plugType>PLUG-1.0</plugType>" 
+                + "  <orderByUserLeaf insert=\"first\">a</orderByUserLeaf>"
+                + "  <orderByUserLeaf yang:insert=\"after\" yang:value=\"a\">c</orderByUserLeaf>"
+                + " </xml-subtree>"
+                + "</validation>"
+                ; 
+        
+        response = editConfig(m_server, m_clientInfo, requestXml1, false);                
+        assertEquals(1, response.getErrors().size());
+        assertEquals("/validation:validation/validation:xml-subtree[validation:plugType='PLUG-1.0']/validation:orderByUserLeaf",
+                response.getErrors().get(0).getErrorPath());
+        assertEquals("Bad attribute: namespace '', attribute name 'insert'",
+                response.getErrors().get(0).getErrorMessage());
+        
+        requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\">"
+                + " <xml-subtree>"
+                + "  <plugType>PLUG-1.0</plugType>" 
+                + "  <orderByUserLeaf yang:insert=\"first\">a</orderByUserLeaf>"
+                + "  <orderByUserLeaf yang:insert=\"after\" value=\"a\">c</orderByUserLeaf>"
+                + " </xml-subtree>"
+                + "</validation>"
+                ; 
+        
+        response = editConfig(m_server, m_clientInfo, requestXml1, false);                
+        assertEquals(1, response.getErrors().size());
+        assertEquals("/validation:validation/validation:xml-subtree[validation:plugType='PLUG-1.0']/validation:orderByUserLeaf",
+                response.getErrors().get(0).getErrorPath());
+        assertEquals("Bad attribute: namespace '', attribute name 'value'",
+                response.getErrors().get(0).getErrorMessage());
+        
+        requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
+                "<validation xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" "
+                + "xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" xc:operation='replace'>"
+                + "  <someList>"
+                + "   <someKey>key1</someKey>"
+                + "   <someInnerList>"
+                + "    <someKey>key1</someKey>"
+                + "     <orderByUserList yang:insert=\"after\" yang:keys=\"[someKey='a']\">"
+                + "      <someKey>b</someKey>"
+                + "     </orderByUserList>"
+                + "    </someInnerList>"
+                + "   </someList>"
+                + "</validation>"
+                ; 
+        
+        response = editConfig(m_server, m_clientInfo, requestXml1, false);                
+        assertEquals(1, response.getErrors().size());
+        assertEquals("/validation:validation/validation:someList[validation:someKey='key1']/validation:someInnerList[validation:someKey='key1']/validation:orderByUserList",
+                response.getErrors().get(0).getErrorPath());
+        assertEquals("Bad attribute: namespace 'urn:ietf:params:xml:ns:yang:1', attribute name 'keys'",
+                response.getErrors().get(0).getErrorMessage());
+        
+        requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
+                "<validation xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" "
+                + "xmlns=\"urn:org:bbf2:pma:validation\" xmlns:yang=\"urn:ietf:params:xml:ns:yang:1\" xc:operation='replace'>"
+                + "  <someList>"
+                + "   <someKey>key1</someKey>"
+                + "   <someInnerList>"
+                + "    <someKey>key1</someKey>"
+                + "     <orderByUserList yang:insert=\"after\" key=\"[someKey='a']\">"
+                + "      <someKey>b</someKey>"
+                + "     </orderByUserList>"
+                + "    </someInnerList>"
+                + "   </someList>"
+                + "</validation>"
+                ; 
+        
+        response = editConfig(m_server, m_clientInfo, requestXml1, false);                
+        assertEquals(1, response.getErrors().size());
+        assertEquals("/validation:validation/validation:someList[validation:someKey='key1']/validation:someInnerList[validation:someKey='key1']/validation:orderByUserList",
+                response.getErrors().get(0).getErrorPath());
+        assertEquals("Bad attribute: namespace '', attribute name 'key'",
+                response.getErrors().get(0).getErrorMessage());
     }
 }

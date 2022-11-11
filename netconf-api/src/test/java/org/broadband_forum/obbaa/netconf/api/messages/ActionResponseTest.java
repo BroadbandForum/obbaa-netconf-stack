@@ -23,15 +23,14 @@ import static org.mockito.Mockito.mock;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
 public class ActionResponseTest {
 	private ActionResponse m_response;
@@ -62,8 +61,8 @@ public class ActionResponseTest {
 	}
 	
 	private String getResponse(){
-		return "<rpc-reply message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n"
-				+ "<result xmlns=\"urn:example:rock\">SUCCESS</result>\n"
+		return "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n"
+				+ "   <result xmlns=\"urn:example:rock\">SUCCESS</result>\n"
 				+ "</rpc-reply>\n";
 	}
 

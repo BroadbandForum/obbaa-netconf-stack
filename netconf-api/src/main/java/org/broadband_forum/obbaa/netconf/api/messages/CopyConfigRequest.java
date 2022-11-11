@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.COPY_CONFIG;
+
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -23,7 +25,7 @@ import org.w3c.dom.Element;
 /**
  * Netconf request to perform {@code <copy-config> } operation.
  * 
- *
+ * 
  * 
  */
 public class CopyConfigRequest extends AbstractNetconfRequest {
@@ -33,10 +35,11 @@ public class CopyConfigRequest extends AbstractNetconfRequest {
     private String m_target;
     private boolean m_targetIsUrl = false;
     private Element m_sourceConfigElement;
+    private boolean m_withTransactionId = false;
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        PojoToDocumentTransformer builder = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addCopyConfigElement(
+        PojoToDocumentTransformer builder = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addCopyConfigElement(m_withTransactionId,
                 m_source, m_sourceIsUrl, m_target, m_targetIsUrl, m_sourceConfigElement);
         return builder.build();
     }
@@ -89,4 +92,16 @@ public class CopyConfigRequest extends AbstractNetconfRequest {
 
     }
 
+    public void setTransactionId(boolean withTransactionId) {
+        m_withTransactionId = withTransactionId;
+    }
+
+    public boolean getTransactionId(){
+        return m_withTransactionId;
+    }
+
+    @Override
+    public String getRpcType() {
+        return COPY_CONFIG;
+    }
 }

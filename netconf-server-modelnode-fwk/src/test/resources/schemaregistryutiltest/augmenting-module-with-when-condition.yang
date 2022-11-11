@@ -1,0 +1,20 @@
+module augmenting-module-with-when-condition {
+  namespace "urn:augmenting-module-with-when-condition";
+  prefix amwwc;
+
+  import module-with-node-hints {
+    prefix nodehints;
+  }
+  revision 2019-11-15 {
+    description
+      "Initial version.";
+  }
+  augment "/nodehints:hintContainer" {
+    when "/nodehints:hintContainer/nodehints:type = 'augmentable'";
+    container augmented-container {
+      leaf aumgneted-leaf {
+        type string;
+      }
+    }
+  }
+}

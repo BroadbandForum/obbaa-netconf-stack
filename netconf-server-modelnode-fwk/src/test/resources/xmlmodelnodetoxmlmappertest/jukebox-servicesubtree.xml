@@ -1,0 +1,5 @@
+<jbox:platform xmlns:jbox="http://example.com/ns/example-jukebox">
+    <jbox-ag:service xmlns:jbox-ag="http://example.com/ns/example-jukebox-augment">
+        <jbox-ag:type>type1</jbox-ag:type>
+    </jbox-ag:service>
+</jbox:platform>

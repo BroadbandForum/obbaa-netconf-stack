@@ -16,7 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh;
 
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import java.io.IOException;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.sshd.client.ClientFactoryManager;
 import org.apache.sshd.common.Service;
 import org.apache.sshd.common.SshConstants;
@@ -28,9 +31,7 @@ import org.apache.sshd.server.session.AbstractServerSession;
 import org.apache.sshd.server.session.ServerConnectionService;
 import org.apache.sshd.server.session.ServerConnectionServiceFactory;
 import org.apache.sshd.server.session.ServerSession;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
 public class NetconfSshServerConnectionService extends ServerConnectionService {
     protected NetconfSshServerConnectionService(AbstractServerSession s) throws SshException {
@@ -55,17 +56,19 @@ public class NetconfSshServerConnectionService extends ServerConnectionService {
         public Service create(Session session) throws IOException {
             ValidateUtils.checkTrue(session instanceof AbstractServerSession, "Not a server session: %s", session);
             NetconfSshServerConnectionService service = new NetconfSshServerConnectionService((AbstractServerSession) session);
-            service.addPortForwardingEventListener(getPortForwardingEventListenerProxy());
+            
+            // dummy get to avoid classloading issue
+            getPortForwardingEventListenerProxy();
             return service;
         }
     }
 
-    protected void startHeartBeat() {
+    protected synchronized ScheduledFuture<?> startHeartBeat() {
         String intervalStr = (String) getSession().getFactoryManager().getProperties().get(NetconfResources.HEARTBEAT_INTERVAL);
         try {
             int interval = intervalStr != null ? Integer.parseInt(intervalStr) : 0;
             if (interval > 0) {
-                getSession().getFactoryManager().getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
+                return getSession().getFactoryManager().getScheduledExecutorService().scheduleAtFixedRate(new Runnable() {
                     public void run() {
                         sendHeartBeat();
                     }
@@ -74,9 +77,10 @@ public class NetconfSshServerConnectionService extends ServerConnectionService {
         } catch (NumberFormatException e) {
             log.warn("Ignoring bad heartbeat interval: {}", intervalStr);
         }
+        return null;
     }
 
-    protected void sendHeartBeat() {
+    protected boolean sendHeartBeat() {
         try {
             Buffer buf = getSession().createBuffer(SshConstants.SSH_MSG_GLOBAL_REQUEST);
             String request = (String) getSession().getFactoryManager().getProperties().get(ClientFactoryManager.HEARTBEAT_REQUEST);
@@ -86,9 +90,11 @@ public class NetconfSshServerConnectionService extends ServerConnectionService {
             buf.putString(request);
             buf.putBoolean(false);
             getSession().writePacket(buf);
+            return true;
         } catch (IOException e) {
-            log.info("Error sending keepalive message", e);
+            log.error("Error sending keepalive message", e);
         }
+        return false;
     }
 
 }

@@ -1,0 +1,106 @@
+module identityref-test{
+
+    yang-version 1.1;
+    
+    namespace "urn:org:bbf2:pma:identityref-test";
+    
+    prefix "idref";
+    
+    revision "2015-12-14" {
+          description "Initial version.";
+    }
+    
+    identity some-identity {
+    }
+    
+    identity some-other-identity{
+    }
+    
+    identity identity1 {
+        base some-identity;
+    }
+    
+    identity identity2 {
+        base identity1;
+    }
+    
+    identity identity3 {
+        base some-other-identity;
+    }
+    
+    identity identity4 {
+        base identity2 ;
+    }
+    
+    identity identity5 {
+        base identity4 ;
+    }
+    
+    identity identity6 {
+        base identity3 ;
+    }
+    
+    container identityrefContainer{
+        leaf default-leaf{
+                type identityref{
+                base identity2;
+                }
+                default identity4;
+            }
+        
+        choice identity{
+            case case1{
+                leaf case1Leaf{
+                    type identityref{
+                        base identity2;
+                    }
+                }
+            }
+            
+            case case2{
+                leaf case2Leaf{
+                    type identityref{
+                        base identity3;
+                    }
+                }
+            }
+        }
+        
+        list identityList{
+            key key-leaf;
+        
+            leaf key-leaf{
+                type identityref{
+                base identity2;
+                }                
+            }
+        
+            leaf whenLeaf{
+                when '../../default-leaf=../key-leaf';
+                type identityref{
+                    base identity3;
+                }
+                default identity6;
+            }                  
+            
+            leaf mustLeaf{
+                must "../mustLeaf2='identity5'";
+                type identityref{
+                    base identity3;
+                }
+                
+            }
+            
+            leaf mustLeaf2{
+                must '../../default-leaf=../key-leaf';
+                type identityref{
+                    base identity2;
+                }
+                default identity6;
+                
+            }
+        }       
+        
+    }
+    
+}

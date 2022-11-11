@@ -21,7 +21,7 @@ package org.broadband_forum.obbaa.netconf.api.authentication;
  * 
  * This enum indicates where the authentication failed.
  * 
- *
+ * 
  * 
  */
 public enum PointOfFailure {

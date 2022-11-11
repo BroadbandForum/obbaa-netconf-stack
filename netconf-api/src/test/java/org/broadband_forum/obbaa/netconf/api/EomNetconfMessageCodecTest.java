@@ -18,20 +18,21 @@ package org.broadband_forum.obbaa.netconf.api;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.RPC_EOM_DELIMITER;
 import static org.junit.Assert.assertNull;
 
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.utils.FileUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.custommonkey.xmlunit.Diff;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.utils.FileUtil;
-
 public class EomNetconfMessageCodecTest {
-    private static final Logger LOGGER = Logger.getLogger(EomNetconfMessageCodecTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(EomNetconfMessageCodecTest.class, LogAppNames.NETCONF_LIB);
 
     private EomNetconfMessageCodec m_eomNetconfMessageCodec;
 
@@ -65,11 +66,9 @@ public class EomNetconfMessageCodecTest {
     public void testEncodeEom() throws NetconfMessageBuilderException {
         Document sampleResponse = DocumentUtils.stringToDocument(FileUtil
                 .loadAsString("/sampleResponseEOM.xml"));
-
-        Long expectedLength = new Long(DocumentUtils.documentToString(sampleResponse).getBytes().length + "\n#3358\n".getBytes().length);
-
+        // 1 is added because the we are doing INDENT as "yes" in DocumentToPojoTransformer.getBytesFromDocument
+        Long expectedLength = new Long(DocumentUtils.documentToString(sampleResponse).getBytes().length + 1 + RPC_EOM_DELIMITER.length());
         assertEquals(expectedLength, new Long(m_eomNetconfMessageCodec.encode(sampleResponse).length));
-
     }
 
     @Test

@@ -35,7 +35,7 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException
  * NotificationService represents Central Notification Processor
  * 
  * <pre>
- * NotificationService is responsible for 
+ * NotificationService is responsible for
  *  1. Validating the create-subscription request  such as start, stop time and active Subscription already exists
  *  2. Delegate valid subscription request to a NotificationStream
  *  3. Forwarding the notification to the specified NotificationStream and also to the default NETCONF Stream
@@ -86,15 +86,15 @@ public interface NotificationService {
 
     public boolean isReplaySupported(NetconfClientSession clientSession) throws NetconfMessageBuilderException, InterruptedException,
             ExecutionException;
-    
+
     public int getThresholdForPersistTimeLastSentEvent();
-    
+
     public boolean isSynchronizingId(Object synchronizedId);
-    
+
     public boolean isReplayPossible(NetconfClientSession clientSession, String startTime);
 
-	public List<NotificationCallBackInfo> getNotificationCallBacks();
+    public List<NotificationCallBackInfo> getNotificationCallBacks();
 
-	public void unregisterCallBackInfo(NotificationCallBackInfo notificationCallBackInfo);
+    public void unregisterCallBackInfo(NotificationCallBackInfo notificationCallBackInfo);
 
 }

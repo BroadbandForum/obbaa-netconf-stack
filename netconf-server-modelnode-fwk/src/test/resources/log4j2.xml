@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Configuration status="INFO">
+<Appenders>
+	<Console name="console" target="SYSTEM_OUT">
+		<PatternLayout pattern="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+	</Console>
+</Appenders>
+<Loggers>
+	<Logger name="org.hibernate.type" level="debug">
+	</Logger>
+	<Root level="error">
+		<AppenderRef ref="console"/>
+	</Root>
+	<Logger name="org.broadband_forum.obbaa.netconf.mn.fwk.validation.BigEditTest" level="debug"/>
+	<Logger name="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreValidatorImpl" level="info"/>
+	<Logger name="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore" level="warn"/>
+	<Logger name="org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service.ImpactHintsAnalyserTest" level="info"/>
+</Loggers>
+
+</Configuration>

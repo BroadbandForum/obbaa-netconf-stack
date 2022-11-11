@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.junit.Assert.assertEquals;
@@ -8,15 +24,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreValidator;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TxService;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
@@ -32,13 +39,22 @@ import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreValidator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.utils.TxService;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
-
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Created by keshava on 11/25/15.
  */
+@RunWith(RequestScopeJunitRunner.class)
 public class NetconfServerWithSchemaValidationTest {
     NetConfServerImpl m_server;
     private RpcRequestConstraintParser m_mockEditcofigValidator;
@@ -93,6 +109,8 @@ public class NetconfServerWithSchemaValidationTest {
     public void testRpcRequestIsValidated() throws ValidationException {
         RootModelNodeAggregator aggregator = mock(RootModelNodeAggregator.class);
         SubSystemRegistry subSysRegistry = mock(SubSystemRegistry.class);
+        when(aggregator.getSubsystemRegistry()).thenReturn(subSysRegistry);
+        when(subSysRegistry.getCompositeSubSystem()).thenReturn(mock(CompositeSubSystem.class));
         DataStoreValidator validator = mock(DataStoreValidator.class);
         DataStore datastore = new DataStore("test", aggregator, subSysRegistry, validator, new TxService(), null);
         m_server.setRunningDataStore(datastore);

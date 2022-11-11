@@ -1,0 +1,101 @@
+module ordered-by-user-for-idref-and-union {
+     yang-version 1.1;
+     namespace "http://example.com/ns/ordered-by-user";
+     prefix test;
+
+     import idref-typedef {
+         prefix idref;
+     }
+
+     revision 2020-05-27 {
+         description
+             "Initial Revision";
+         reference
+         "example.com";
+     }
+
+     identity test-identity;
+
+     identity idref1 {
+         base test-identity;
+     }
+
+     identity idref2 {
+         base test-identity;
+     }
+
+     typedef test-enum {
+       type enumeration {
+         enum "key2-enum1";
+         enum "key2-enum2";
+       }
+     }
+
+     container test-container {
+
+      list order-by-user-mulitple-keys {
+         key "key1 key2";
+         ordered-by user;
+
+         leaf key1 {
+           type union {
+             type identityref {
+                base test-identity;
+             }
+             type enumeration {
+               enum key1-enum;
+           }
+         }
+         }
+
+       leaf key2 {
+          type union {
+            type test-enum;
+            type enumeration {
+                enum all;
+            }
+          }
+       }
+
+       leaf sample-leaf {
+         type string;
+      }
+   } //list order-by-user-mulitple-keys
+
+         list order-by-user-single-key {
+            key "single-key";
+            ordered-by user;
+
+              leaf single-key {
+                 type union {
+                   type identityref {
+                      base test-identity;
+                   }
+                   type enumeration {
+                     enum key1-enum;
+                 }
+               }
+
+            }
+
+          leaf sample-leaf2 {
+            type string;
+         }
+      }//list single order-by-user
+
+      list order-by-user-single-key-idref {
+                  key "single-key-idref";
+                  ordered-by user;
+
+                    leaf single-key-idref {
+                         type identityref {
+                            base idref:idref-yang-identity;
+                         }
+                     }
+
+                leaf sample-leaf3 {
+                  type string;
+               }
+            }//list single order-by-user
+}//container test-container
+}

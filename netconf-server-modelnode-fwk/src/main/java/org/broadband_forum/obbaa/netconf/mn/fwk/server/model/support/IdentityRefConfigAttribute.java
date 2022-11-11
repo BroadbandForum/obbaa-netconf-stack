@@ -1,14 +1,34 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import static org.broadband_forum.obbaa.netconf.api.messages.PojoToDocumentTransformer.XMLNS;
 import static org.broadband_forum.obbaa.netconf.api.messages.PojoToDocumentTransformer.XMLNS_NAMESPACE;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.IdentityRefUtil.COLON;
 
+import org.broadband_forum.obbaa.netconf.api.logger.NetconfExtensions;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 
 public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparable<IdentityRefConfigAttribute> {
 
+    private final String m_attributePrefix;
     private Element m_domValue;
     private final String m_attributeLocalName;
     private final String m_attributeValue;
@@ -16,27 +36,38 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
     private final String m_identityRefNS;
     private final String m_identityRefPrefix;
     private Integer m_insertIndex = -1;
+    private boolean m_isPassword = false;
 
     public IdentityRefConfigAttribute(String identityRefNs, String identityRefPrefix, String attributeLocalName, String attributeValue,
                                       String attributeNamespace) {
-        m_domValue = constructIdentityRefElement(identityRefNs, identityRefPrefix, attributeLocalName, attributeValue, attributeNamespace);
-
+        this(ConfigAttributeFactory.getDocument(), identityRefNs, identityRefPrefix, attributeLocalName, attributeValue,
+                attributeNamespace, null);
+    }
+    public IdentityRefConfigAttribute(Document doc, String identityRefNs, String identityRefPrefix, String attributeLocalName,
+                                      String attributeValue,
+                                      String attributeNamespace, String attributePrefix) {
+        m_domValue = constructIdentityRefElement(doc, identityRefNs, identityRefPrefix, attributeLocalName,
+                attributeValue, attributeNamespace, attributePrefix);
         m_attributeLocalName = attributeLocalName;
         m_attributeValue = attributeValue;
         m_attributeNS = attributeNamespace;
         m_identityRefNS = identityRefNs;
         m_identityRefPrefix = identityRefPrefix;
+        m_attributePrefix = attributePrefix;
     }
 
     public IdentityRefConfigAttribute(String identityRefNs, String identityRefPrefix, Element element) {
         this(identityRefNs, identityRefPrefix, element.getLocalName(), element.getTextContent(), element.getNamespaceURI());
     }
 
-    private Element constructIdentityRefElement(String identityRefNs, String identityRefPrefix, String attributeLocalName, String
-            attributeValue, String attributeNamespace) {
-        Document document = ConfigAttributeFactory.getDocument();
+    private Element constructIdentityRefElement(Document document, String identityRefNs, String identityRefPrefix,
+            String attributeLocalName, String attributeValue, String attributeNamespace, String attrPrefix) {
         if (attributeNamespace != null) {
-            m_domValue = document.createElementNS(attributeNamespace, attributeLocalName);
+            if(attrPrefix != null && !attrPrefix.isEmpty()){
+                m_domValue = document.createElementNS(attributeNamespace, attrPrefix+":"+attributeLocalName);
+            } else {
+                m_domValue = document.createElementNS(attributeNamespace, attributeLocalName);
+            }
         } else {
             m_domValue = document.createElement(attributeLocalName);
         }
@@ -74,8 +105,9 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
         return m_identityRefNS;
     }
 
-    public String getNamespacePrefix() {
-        return m_identityRefPrefix;
+    @Override
+    public String xPathString(SchemaRegistry schemaRegistry, String parentNodeXPath) {
+        return GenericConfigAttribute.xPathString(schemaRegistry, m_attributeNS, parentNodeXPath, m_attributeLocalName);
     }
 
     @Override
@@ -89,6 +121,20 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
     }
 
     @Override
+    public void setIsPassword(boolean isPassword) {
+        m_isPassword = isPassword;
+    }
+
+    @Override
+    public Boolean isPassword() {
+        return m_isPassword;
+    }
+
+    public String getNamespacePrefix() {
+        return m_identityRefPrefix;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
@@ -99,12 +145,22 @@ public class IdentityRefConfigAttribute implements ConfigLeafAttribute, Comparab
 
         if (!m_attributeLocalName.equals(that.m_attributeLocalName))
             return false;
-        if (!m_attributeValue.equals(that.m_attributeValue))
+        String attrVal = removeColon(m_attributeValue);
+        String thatAttrVal = removeColon(that.m_attributeValue);
+        if (!attrVal.equals(thatAttrVal))
             return false;
         if (m_attributeNS != null ? !m_attributeNS.equals(that.m_attributeNS) : that.m_attributeNS != null)
             return false;
         return m_identityRefNS.equals(that.m_identityRefNS);
 
+    }
+
+    private String removeColon(String str) {
+        if (str.contains(COLON)) {
+            String[] split = str.split(COLON);
+            str = split[1].trim();
+        }
+        return str;
     }
 
     @Override

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import java.util.Collections;
@@ -36,9 +52,7 @@ public class ModelNodeHelperRegistryImpl implements ModelNodeHelperRegistry {
 
 	private Set<SchemaPath> m_registeredNodes = Collections.synchronizedSet(new HashSet<SchemaPath>());
 
-    private DefaultConcurrentHashMap<String, ModelNodeFactory> m_modelNodeFactories = new DefaultConcurrentHashMap<>(null);
-
-    private DefaultCapabilityCommandInterceptor m_defaultCapabilityCommandInterceptor;
+	private DefaultCapabilityCommandInterceptor m_defaultCapabilityCommandInterceptor;
 
 	private DefaultConcurrentHashMap<String, HashSet<SchemaPath>> m_componentSchemaPaths = new DefaultConcurrentHashMap<>(new HashSet<SchemaPath>(), true);
 
@@ -171,21 +185,6 @@ public class ModelNodeHelperRegistryImpl implements ModelNodeHelperRegistry {
 		return null;
 	}
 
-    public void registerModelNodeFactory(String factoryName, ModelNodeFactory modelNodeFactory) throws ModelNodeFactoryException {
-         if(m_modelNodeFactories.get(factoryName) != null){
-             LOGGER.debug("Factory with name :{} already exists.. ignoring this..",factoryName);
-         }
-         if(modelNodeFactory == null){
-             throw new ModelNodeFactoryException("modelNodeFactory cannot be null");
-         }
-         m_modelNodeFactories.put(factoryName, modelNodeFactory);
-    }
-
-    public ModelNodeFactory getCreateFactory(String factoryName) {
-        return m_modelNodeFactories.get(factoryName);
-
-    }
-
     public ChildLeafListHelper getConfigLeafListHelper(SchemaPath modelNodeSchemaPath, QName helperName) {
 		Map<QName, ChildLeafListHelper> helpersForURI = m_childLeafListHelpers.get(modelNodeSchemaPath);
 		if(helpersForURI != null){
@@ -232,6 +231,17 @@ public class ModelNodeHelperRegistryImpl implements ModelNodeHelperRegistry {
 	@Override
 	public void resetDefaultCapabilityCommandInterceptor() {
 		m_defaultCapabilityCommandInterceptor = new DoNothingInterceptor();
+	}
+
+	@Override
+	public void clear() {
+		m_componentSchemaPaths.clear();
+		m_registeredNodes.clear();
+		m_configAttributeHelpers.clear();
+		m_naturalKeyHelpers.clear();
+		m_childContainerHelpers.clear();
+		m_childLeafListHelpers.clear();
+		m_childListHelpers.clear();
 	}
 
 	private void undeployHelpersFromComponentSubtree(Set<SchemaPath> schemaPaths) {
@@ -289,6 +299,11 @@ public class ModelNodeHelperRegistryImpl implements ModelNodeHelperRegistry {
     	return removablePaths;
     }
 
+	@Override
+	public ModelNodeHelperRegistry unwrap() {
+		return this;
+	}
+
 	private static class DoNothingInterceptor implements DefaultCapabilityCommandInterceptor {
 		@Override
         public EditContainmentNode processMissingData(EditContainmentNode oldEditData, ModelNode childModelNode) {
@@ -296,8 +311,8 @@ public class ModelNodeHelperRegistryImpl implements ModelNodeHelperRegistry {
         }
 
 		@Override
-        public void populateChoiceCase(EditContainmentNode newData, CaseSchemaNode caseNode, ModelNode childModelNode, boolean isDefaultCase) {
-
+        public boolean populateChoiceCase(EditContainmentNode newData, CaseSchemaNode caseNode, ModelNode childModelNode, boolean checkExistenceBeforeCreate) {
+            return false;
         }
 	}
 }

@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.client.tls;
 
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -133,10 +134,14 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
                 failureInfo.setPointOfFailure(PointOfFailure.server);
                 X509Certificate peerCertificate = CertificateUtil.getPeerX509Certifcate(m_sSLEngine.getHandshakeSession());
                 failureInfo.setPeerCertificate(peerCertificate);
+                if (isChannelClosedException(future.cause())) {
+                    LOGGER.error("SSL Handshake could not complete for the connection [ip: " + LOGGER.sensitiveData(ip) + ", port: " + LOGGER.sensitiveData(port) + "] since channel got closed");
+                    failureInfo.setChannelClosed(true);
+                }
             }
             m_authenticationListener.authenticationFailed(failureInfo);
         }
-        LOGGER.debug("Authentication failed ", future.cause());
+        LOGGER.error("Authentication failed ", future.cause());
     }
 
     private X509Certificate getPeerCertificateFromException(PeerCertificateException certificateException) {
@@ -176,5 +181,9 @@ public final class SslFutureChannelListener implements GenericFutureListener<Fut
             return "handshake timed out".equalsIgnoreCase(throwable.getMessage());
         }
         return false;
+    }
+
+    private boolean isChannelClosedException(Throwable throwable) {
+        return throwable != null && throwable instanceof ClosedChannelException;
     }
 }

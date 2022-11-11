@@ -5,7 +5,7 @@
     </target>
     <test-option>set</test-option>
     <config>
-      <pma:pma xmlns:pma="urn:org:bbf:pma" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+      <pma:pma xmlns:pma="urn:org:bbf2:pma" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
         <pma:device-holder yang:insert="last">
           <pma:name>OLT-1</pma:name>
         </pma:device-holder>

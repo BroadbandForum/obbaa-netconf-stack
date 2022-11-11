@@ -20,16 +20,17 @@ import java.net.UnknownHostException;
 import java.security.Security;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerDispatcherException;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportOrder;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class BcTlsCallhomeServer extends TlsCallhomeServer {
-    private static final Logger LOGGER = Logger.getLogger(BcTlsCallhomeServer.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(BcTlsCallhomeServer.class, LogAppNames.NETCONF_LIB);
 
     static {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {

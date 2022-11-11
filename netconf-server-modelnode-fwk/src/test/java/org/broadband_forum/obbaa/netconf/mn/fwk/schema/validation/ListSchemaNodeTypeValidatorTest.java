@@ -1,25 +1,37 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.validation;
 
-import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.getAnvYangFiles;
-import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.getGfastYangFiles;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.fail;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.getAnvYangFileNames;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.getAnvYangFiles;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.getGfastYangFileNames;
+import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.getGfastYangFiles;
 import static org.mockito.Mockito.mock;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.w3c.dom.NodeList;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
@@ -30,20 +42,34 @@ import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeFactoryException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
-import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.w3c.dom.NodeList;
 
 /*
  * Indirectly test ListSchemaNodeValidator through EditConfigValidator
  */
+@RunWith(RequestScopeJunitRunner.class)
 public class ListSchemaNodeTypeValidatorTest {
 	private RpcRequestConstraintParser m_editConfigValidator;
     private SchemaRegistryImpl m_schemaRegistry;
     private ModelNodeDataStoreManager m_modelNodeDsm;
-    private static final Logger LOGGER = Logger.getLogger(ListSchemaNodeTypeValidatorTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(ListSchemaNodeTypeValidatorTest.class);
 
     @Before
     public void setUp() throws SchemaBuildException {
@@ -51,7 +77,24 @@ public class ListSchemaNodeTypeValidatorTest {
         m_schemaRegistry.buildSchemaContext(getAnvYangFiles(), Collections.emptySet(), Collections.emptyMap());
         m_schemaRegistry.loadSchemaContext("G.fast-plug", getGfastYangFiles(), Collections.emptySet(), Collections.emptyMap());
         m_modelNodeDsm = Mockito.mock(ModelNodeDataStoreManager.class);
-        m_editConfigValidator = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, mock(DSExpressionValidator.class));
+        m_editConfigValidator = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, mock(DSExpressionValidator.class), null);
+        getModelNode();
+    }
+    
+    private void getModelNode() throws SchemaBuildException {
+    	SubSystem subSystem = mock(SubSystem.class);
+    	SubSystemRegistry subSystemRegistry = mock(SubSystemRegistry.class);
+    	ModelNodeHelperRegistry modelNodeHelperRegistry = mock(ModelNodeHelperRegistry.class);
+    	try {
+    		YangUtils.deployInMemoryHelpers(getYang(), subSystem, modelNodeHelperRegistry, subSystemRegistry, m_schemaRegistry, m_modelNodeDsm, null, null);
+    	} catch (ModelNodeFactoryException e) {}
+    }
+
+    private List<String> getYang() {
+    	ArrayList<String> yangNames = new ArrayList<>();
+    	yangNames.addAll(getAnvYangFileNames());
+    	yangNames.addAll(getGfastYangFileNames());
+    	return yangNames;
     }
     
     @Test
@@ -140,16 +183,52 @@ public class ListSchemaNodeTypeValidatorTest {
 				.loadXmlDocument(ListSchemaNodeTypeValidatorTest.class
 						.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/editconfigs/valid-editconfig-request6.xml")));
     	try {
-			
+
 			m_editConfigValidator.validate(validEditConfigRequest, RequestType.EDIT_CONFIG);
-			
+
 		} catch (ValidationException e) {
 			LOGGER.error(e);
 			fail("Shouldn't throw the exception : " + validEditConfigRequest.toString());
-			
+
 		}
-    	
+
     	EditConfigRequest invalidEditConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils
+				.loadXmlDocument(ListSchemaNodeTypeValidatorTest.class
+						.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/editconfigs/invalid-editconfig-request28.xml")));
+    	try {
+			m_editConfigValidator.validate(invalidEditConfigRequest, RequestType.EDIT_CONFIG);
+			fail("validation should have thrown an exception for request: " + invalidEditConfigRequest.requestToString());
+		} catch (ValidationException e) {
+			NetconfRpcError rpcError = e.getRpcError();
+			assertEquals(NetconfRpcErrorTag.BAD_ELEMENT, rpcError.getErrorTag());
+			assertEquals("Duplicate elements in node (urn:org:bbf2:pma?revision=2015-07-14)pma", rpcError.getErrorMessage());
+		}
+
+		invalidEditConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils
+				.loadXmlDocument(ListSchemaNodeTypeValidatorTest.class
+						.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/editconfigs/invalid-editconfig-request29.xml")));
+		try {
+			m_editConfigValidator.validate(invalidEditConfigRequest, RequestType.EDIT_CONFIG);
+			fail("validation should have thrown an exception for request: " + invalidEditConfigRequest.requestToString());
+		} catch (ValidationException e) {
+			NetconfRpcError rpcError = e.getRpcError();
+			assertEquals(NetconfRpcErrorTag.BAD_ELEMENT, rpcError.getErrorTag());
+			assertEquals("Duplicate elements in node (urn:org:bbf2:pma?revision=2015-07-14)inner-container", rpcError.getErrorMessage());
+		}
+
+		invalidEditConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils
+				.loadXmlDocument(ListSchemaNodeTypeValidatorTest.class
+						.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/editconfigs/invalid-editconfig-request30.xml")));
+		try {
+			m_editConfigValidator.validate(invalidEditConfigRequest, RequestType.EDIT_CONFIG);
+			fail("validation should have thrown an exception for request: " + invalidEditConfigRequest.requestToString());
+		} catch (ValidationException e) {
+			NetconfRpcError rpcError = e.getRpcError();
+			assertEquals(NetconfRpcErrorTag.BAD_ELEMENT, rpcError.getErrorTag());
+			assertEquals("Duplicate elements in node (urn:org:bbf2:pma?revision=2015-07-14)name", rpcError.getErrorMessage());
+		}
+
+    	invalidEditConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils
 				.loadXmlDocument(ListSchemaNodeTypeValidatorTest.class
 						.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/editconfigs/invalid-editconfig-request15.xml")));
     	try {
@@ -162,7 +241,7 @@ public class ListSchemaNodeTypeValidatorTest {
 			assertEquals("Key attribute can't be null or empty", rpcError.getErrorMessage());
 			assertEquals(NetconfRpcErrorTag.BAD_ATTRIBUTE, rpcError.getErrorTag());
 		}
-    	
+
     	invalidEditConfigRequest = DocumentToPojoTransformer.getEditConfig(DocumentUtils
 				.loadXmlDocument(ListSchemaNodeTypeValidatorTest.class
 						.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/editconfigs/invalid-editconfig-request16.xml")));

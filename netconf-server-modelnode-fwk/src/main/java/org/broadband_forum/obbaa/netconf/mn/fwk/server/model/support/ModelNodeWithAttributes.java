@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 
@@ -37,12 +53,14 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
 	public static final String LEAF_LISTS = "leafLists";
 	public static final String PARENT = "parent_bean";
 	public static final String NAMESPACE = "ns";
-	public static final String MODEL_NODE = "modelNode";	
+	public static final String MODEL_NODE = "modelNode";
 	public static final String ADD_MODEL_NODE = "addModelNode";
 	public static final String LEAF_VALUE = "leafValue";
 	public static final String LEAF_COUNT = "leafCount";
 	public static final String LEAF_LIST_COUNT = "leafListCount";
 	public static final String PARENT_MODELNODE = "parent_modelNode";
+	public static final String ATTRIBUTES_WITH_SAME_LOCAL_NAME = "attributesWithSameLocalName";
+    public static final String MODULE_NAME_LOCAL_NAME_SEPARATOR = "_moduleName_localName_separator_";
 
     protected final SchemaPath m_schemaPath;
     private final DataSchemaNode m_dataSchemaNode;
@@ -57,7 +75,7 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
         m_qName = schemaPath.getLastComponent();
         m_schemaPath = schemaPath;
 		m_modelNodeDSM = modelNodeDSM;
-		m_dataSchemaNode = schemaRegistry.getDataSchemaNode(schemaPath);
+		m_dataSchemaNode = schemaRegistry.unwrap().getDataSchemaNode(schemaPath);
     }
 	
 	@Override
@@ -70,6 +88,7 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
         return m_schemaPath;
     }
 
+    @Override
     public Map<QName, ConfigLeafAttribute> getAttributes(){
         return m_attributes;
     }
@@ -87,17 +106,19 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
      * @param configAttributes
      */
     public void updateConfigAttributes(Map<QName, ConfigLeafAttribute> configAttributes){
-        Iterator<Map.Entry<QName, ConfigLeafAttribute>> iterator = configAttributes.entrySet().iterator();
-        Map<QName, ConfigLeafAttribute> attributes = getAttributes();
-        while(iterator.hasNext()){
-            Map.Entry<QName, ConfigLeafAttribute> attribute = iterator.next();
-            if(attribute.getValue()==null) {
-                attributes.remove(attribute.getKey());
-            }else {
-                attributes.put(attribute.getKey(), attribute.getValue());
+        if (configAttributes != null) {
+            Iterator<Map.Entry<QName, ConfigLeafAttribute>> iterator = configAttributes.entrySet().iterator();
+            Map<QName, ConfigLeafAttribute> attributes = getAttributes();
+            while(iterator.hasNext()){
+                Map.Entry<QName, ConfigLeafAttribute> attribute = iterator.next();
+                if(attribute.getValue()==null) {
+                    attributes.remove(attribute.getKey());
+                }else {
+                    attributes.put(attribute.getKey(), attribute.getValue());
+                }
             }
+            setAttributes(attributes);
         }
-        setAttributes(attributes);
     }
 
     protected void setAttributesWithOrder(Map<QName, ConfigLeafAttribute> attrValues) {
@@ -113,6 +134,7 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
         m_attributes = orderedAttributes;
     }
 
+    @Override
     public ConfigLeafAttribute getAttribute(QName qname) {
         return getAttributes().get(qname);
     }
@@ -130,7 +152,6 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
     public Map<QName, LinkedHashSet<ConfigLeafAttribute>> getLeafLists() {
         return m_leafLists;
     }
-
 
     public void updateLeafListAttributes(Map<QName, LinkedHashSet<ConfigLeafAttribute>> leafListAttributes){
         if (leafListAttributes != null) {
@@ -185,7 +206,7 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
 		ModelNodeId parentNodeId = getParentNodeId();
 		ModelNodeId grandParentId = EMNKeyUtil.getParentId(getSchemaRegistryForParent(), parentSchemaPath, parentNodeId);
 		ModelNodeKey modelNodeKey = MNKeyUtil.getModelNodeKey(parentNodeId, parentSchemaPath, getSchemaRegistryForParent());
-        return m_modelNodeDSM.findNode(parentSchemaPath, modelNodeKey, grandParentId);
+        return m_modelNodeDSM.findNode(parentSchemaPath, modelNodeKey, grandParentId, getSchemaRegistryForParent());
 	}
 
 	@Override
@@ -283,5 +304,9 @@ public class ModelNodeWithAttributes extends HelperDrivenModelNode implements Co
     
     public void setParentMountPath(SchemaPath schemaPath) {
         m_parentMountPath = schemaPath;
+    }
+    
+    public ModelNode getChildContainerModelNode(QName nodeName) throws ModelNodeGetException {
+        return getChildModelNode(nodeName);
     }
 }

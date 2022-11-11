@@ -16,13 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3;
 
-import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangAttribute;
-import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangChild;
-import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangList;
-import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangListKey;
-import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangOrderByUser;
-import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentId;
-import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -32,8 +27,14 @@ import javax.persistence.IdClass;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangAttribute;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangChild;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangList;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangListKey;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangOrderByUser;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangParentId;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangSchemaPath;
+import org.broadband_forum.obbaa.netconf.stack.api.annotations.YangVisibilityController;
 
 @Entity(name = "album")
 @Table(name = "album")
@@ -71,6 +72,10 @@ public class Album {
 	@YangSchemaPath
 	@Column(length = 1000)
 	String schemaPath;
+
+	@YangVisibilityController
+	@Column(name = "visibility")
+	private boolean visibility = true;
 
 	public String getSchemaPath() {
 		return schemaPath;
@@ -132,5 +137,13 @@ public class Album {
 	
 	public void setInsertOrder(Integer insertOrder) {
 		this.insertOrder = insertOrder;
+	}
+
+	public boolean getVisibility() {
+		return visibility;
+	}
+
+	public void setVisibility(boolean visibility) {
+		this.visibility = visibility;
 	}
 }

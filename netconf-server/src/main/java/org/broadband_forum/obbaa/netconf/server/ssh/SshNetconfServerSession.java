@@ -16,13 +16,14 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh;
 
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerSession;
 import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
 import org.broadband_forum.obbaa.netconf.server.ssh.auth.NetconfPasswordAuthenticator;
 import org.broadband_forum.obbaa.netconf.server.ssh.auth.NetconfPublicKeyAuthenticator;
-
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.apache.sshd.server.SshServer;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ import java.io.IOException;
 public class SshNetconfServerSession implements NetconfServerSession {
 
     private SshServer m_sshd;
-    private static final Logger LOGGER = Logger.getLogger(SshNetconfServerSession.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SshNetconfServerSession.class, LogAppNames.NETCONF_LIB);
 
     public SshNetconfServerSession(SshServer sshd) {
         this.m_sshd = sshd;

@@ -24,8 +24,10 @@ import static org.mockito.Mockito.when;
 import java.io.Serializable;
 import java.util.Collections;
 
+import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -124,10 +126,22 @@ public class AbstractDaoTest {
         m_dao.findWithPaging(input);
         verify(m_edsm).findWithPaging(AbstractDaoTest.class, input);
     }
+
     @Test
     public void testFindWithPagingAndOrderByColumn(){
         PagingInput input = mock(PagingInput.class);
         m_dao.findWithPagingAndOrderByColumn(input, Collections.emptyMap(), "column", true);
         verify(m_edsm).findWithPagingAndOrderByColumn(AbstractDaoTest.class, input, Collections.emptyMap(), "column", true);
+    }
+
+    @Test
+    public void testGetEntityManager() {
+        EntityManager entityManager = mock(EntityManager.class);
+        when(m_edsm.getEntityManager()).thenReturn(entityManager);
+
+        EntityManager actual = m_dao.getEntityManager();
+        verify(m_util).getEntityDataStoreManager();
+        verify(m_edsm).getEntityManager();
+        Assert.assertNotNull(actual);
     }
 }

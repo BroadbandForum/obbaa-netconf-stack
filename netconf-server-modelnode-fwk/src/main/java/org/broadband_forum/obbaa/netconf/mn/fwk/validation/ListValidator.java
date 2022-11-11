@@ -1,24 +1,22 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.validation;
 
-import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.MandatoryTypeConstraintParser.checkMandatoryElementExists;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
-import org.broadband_forum.obbaa.netconf.api.messages.InsertOperation;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorInfo;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
+import org.broadband_forum.obbaa.netconf.api.messages.*;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
@@ -32,11 +30,13 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildListHe
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeGetException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreConstraintValidator;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.ValidationTimingLogger;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.ValidationTimingLogger.ConstraintType;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.TimingLogger;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.TimingLogger.ConstraintType;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.UniqueConstraintValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
 import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
@@ -47,10 +47,13 @@ import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ElementCountConstraint;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.UniqueConstraint;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.*;
+
+import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.MandatoryTypeConstraintParser.checkMandatoryElementExists;
 
 /**
  * Single validation class, which performs validation of a List
@@ -211,27 +214,24 @@ public class ListValidator extends AbstractSchemaNodeConstraintParser implements
 						String.format("'%s' is not a key predicate format.", "[" + strKey + "]")));
 			}
 			
-			String key = "";
-			String value = "";
-			if (strKey.indexOf(":") >= 0) {// contains prefix
-				String prefix = strKey.substring(0,strKey.indexOf(":"));
-				String prefixNamespcace = getNamespaceFromPrefix(dataNode, prefix);
-				key = strKey.substring(strKey.indexOf(":") + 1, strKey.indexOf("=")).trim();
+			String key = strKey.substring(0, strKey.indexOf("="));
+			String value = strKey.substring(strKey.indexOf("=") + 1, strKey.length()).trim();
+			value = value.substring(value.indexOf("'") + 1,value.lastIndexOf("'"));
+			if (key.indexOf(":") >= 0) {// contains prefix
+				String prefix = key.substring(0,key.indexOf(":"));
+				String prefixNamespace = getNamespaceFromPrefix(dataNode, prefix);
+				key = key.substring(key.indexOf(":") + 1, key.length()).trim();
 				// validate the namespace
-				if (prefixNamespcace == null) {
+				if (prefixNamespace == null) {
 
 					throw new ValidationException(getBadInsertAttributesError(NetconfResources.KEY,
 							String.format("There is an unknown prefix '%s' in key '%s' attribute", prefix, keyAttribute)));
-				} else if (!prefixNamespcace.equals(listNamespace)) {
+				} else if (!prefixNamespace.equals(listNamespace)) {
 					throw new ValidationException(getBadInsertAttributesError(NetconfResources.KEY,
 							String.format("There is an unknown key '%s' in key '%s' attribute", prefix + ":" + key, keyAttribute)));
 				}
 
-			} else {
-				key = strKey.substring(0, strKey.indexOf("="));
 			}
-			value = strKey.substring(strKey.indexOf("=") + 1, strKey.length()).trim();
-			value = value.substring(value.indexOf("'") + 1,value.lastIndexOf("'"));
 			//validate the key 
 			QName qNameKey = validateKeyName(keys, addedKeys, key, keyAttribute);
 			keyPairs.put(qNameKey, value);
@@ -275,8 +275,8 @@ public class ListValidator extends AbstractSchemaNodeConstraintParser implements
 	
 	private void validateTypeKeyAttributes(Element dataNode, Map<QName, String> keyPairs) throws ValidationException {
 		for (QName key : keyPairs.keySet()) {
-			DataSchemaNode dataSchemaNode = m_listSchemaNode.getDataChildByName(key);
-			if (dataSchemaNode instanceof LeafSchemaNode) {
+			DataSchemaNode dataSchemaNode = m_listSchemaNode.findDataChildByName(key).orElse(null);
+			if (dataSchemaNode != null && dataSchemaNode instanceof LeafSchemaNode) {
 				TypeValidator validator = TypeValidatorFactory.getInstance().getValidator(((LeafSchemaNode) dataSchemaNode).getType(), m_schemaRegistry);
 				try {
 					validator.validate(dataNode, true, keyPairs.get(key));
@@ -286,7 +286,7 @@ public class ListValidator extends AbstractSchemaNodeConstraintParser implements
 					//String errorPath = (parentSchemaNode == null) ? "/" : SchemaRegistryUtil.getErrorPath(dataNode.getParentNode(), parentSchemaNode,
 						//	m_schemaRegistry, dataNode.getLocalName());
 
-					Pair<String, Map<String, String>> errorPathPair = (parentSchemaNode == null) ? new Pair<String, Map<String, String>>("/", Collections.EMPTY_MAP) : SchemaRegistryUtil.getErrorPath(dataNode.getParentNode(), parentSchemaNode,
+					Pair<String, Map<String, String>> errorPathPair = (parentSchemaNode == null) ? new Pair<String, Map<String, String>>("/", Collections.emptyMap()) : SchemaRegistryUtil.getErrorPath(dataNode.getParentNode(), parentSchemaNode,
 							m_schemaRegistry, dataNode);
 					rpcError = NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.BAD_ATTRIBUTE,e.getRpcError().getErrorMessage());
 					rpcError.setErrorPath(errorPathPair.getFirst(), errorPathPair.getSecond());
@@ -348,31 +348,20 @@ public class ListValidator extends AbstractSchemaNodeConstraintParser implements
 	    Optional<ElementCountConstraint> optElementCountConstraint = m_listSchemaNode.getElementCountConstraint();
 	    if (optElementCountConstraint.isPresent()) {
 	        QName qName = m_listSchemaNode.getQName();
-	        ValidationTimingLogger.startConstraint(ConstraintType.SIZE, qName.toString());
+	        TimingLogger.startConstraint(ConstraintType.SIZE, qName.toString());
 	        try {
 	            Collection<ModelNode> childModelNodes = getChildListModelNodeFromParentNode(modelNode);
 	            validateSizeRange(optElementCountConstraint.get(), modelNode, childModelNodes.size(),
 	                    qName.getLocalName(),
 	                    qName.getNamespace().toString());
 	        } finally {
-	            ValidationTimingLogger.endConstraint(ConstraintType.SIZE, qName.toString());
+	            TimingLogger.endConstraint(ConstraintType.SIZE, qName.toString());
 	        }
 	    }
 	}
 
-	private void validateUniqueConstraint(ModelNode modelNode) throws ValidationException {
-	    Collection<UniqueConstraint> uniqueConstraints = m_listSchemaNode.getUniqueConstraints();
-	    if (uniqueConstraints!= null && !uniqueConstraints.isEmpty()) {
-	        QName qName = m_listSchemaNode.getQName();
-	        ValidationTimingLogger.startConstraint(ConstraintType.UNIQUE, qName.toString());
-	        try {
-	            Collection<ModelNode> childModelNodes = getChildListModelNodeFromParentNode(modelNode);
-	            validateUniqueConstraint(m_listSchemaNode.getUniqueConstraints(), modelNode, childModelNodes,
-	                    qName.getLocalName(), qName.getNamespace().toString());
-	        } finally {
-	            ValidationTimingLogger.endConstraint(ConstraintType.UNIQUE, qName.toString());
-	        }
-	    }
+	private void validateUniqueConstraint(ModelNode modelNode, DSValidationContext validationContext) throws ValidationException {
+		UniqueConstraintValidator.validateUniqueConstraint(modelNode, m_listSchemaNode, validationContext);
 	}
 	
 	private Collection<ModelNode> getChildListModelNodeFromParentNode(ModelNode parentNode) {
@@ -409,7 +398,8 @@ public class ListValidator extends AbstractSchemaNodeConstraintParser implements
     	validateInsertAttributes(dataNode); 
         validateKeys(dataNode);
         validateChoiceMultiCaseElements(dataNode);
-        if (DataStoreValidationUtil.needsFurtherValidation(dataNode, requestType)){
+        if (DataStoreValidationUtil.needsFurtherValidation(dataNode, requestType) && 
+                !DataStoreValidationUtil.skipMandatoryConstaintValidation(m_listSchemaNode.getPath(), m_schemaRegistry, requestType)){
             validateMandatoryElement(dataNode);
         }
 	}
@@ -418,11 +408,17 @@ public class ListValidator extends AbstractSchemaNodeConstraintParser implements
 	 * @see DataStoreConstraintValidator#validate(org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode)
 	 */
 	@Override
-	public void validate(ModelNode modelNode) throws ValidationException {
-		validateChoiceCase(modelNode, m_listSchemaNode);
+	public void validate(ModelNode modelNode, DSValidationContext validationContext) throws ValidationException {
+		validateChoiceCase(modelNode, m_listSchemaNode, validationContext);
 		validateSizeRange(modelNode);
-		validateUniqueConstraint(modelNode);
+		validateUniqueConstraint(modelNode, validationContext);
 	}
+
+	@Override
+	public void validateLeafRef(ModelNode modelNode, DSValidationContext validationContext) throws ValidationException {
+		// Nothing to do here.
+	}
+
 
 	@Override
     protected AdvancedLogger getLogger() {

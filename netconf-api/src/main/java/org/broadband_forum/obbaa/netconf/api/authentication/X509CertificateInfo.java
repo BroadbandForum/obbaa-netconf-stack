@@ -21,7 +21,7 @@ import java.io.File;
 /**
  * This class holds information that is typically needed for TLS peer authentication.
  * 
- *
+ * 
  * 
  */
 public class X509CertificateInfo {

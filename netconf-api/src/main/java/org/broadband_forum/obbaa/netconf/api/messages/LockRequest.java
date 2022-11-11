@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,10 +17,9 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package org.broadband_forum.obbaa.netconf.api.messages;
+
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.LOCK;
 
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
@@ -27,7 +29,7 @@ import org.w3c.dom.Document;
  * Netconf <lock> request.
  * }
  * 
- *
+ * 
  * 
  */
 public class LockRequest extends AbstractNetconfRequest {
@@ -68,6 +70,11 @@ public class LockRequest extends AbstractNetconfRequest {
     @Override
     public String toString() {
         return "LockRequest [target=" + m_target + "]";
+    }
+
+    @Override
+    public String getRpcType() {
+        return LOCK;
     }
 
 }

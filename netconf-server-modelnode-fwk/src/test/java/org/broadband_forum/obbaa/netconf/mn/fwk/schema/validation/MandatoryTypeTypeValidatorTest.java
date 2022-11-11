@@ -1,18 +1,29 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.validation;
 
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
@@ -27,12 +38,24 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeFactoryException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
-import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class MandatoryTypeTypeValidatorTest {
 
     public static final String MANDATORY_LEAF_ABSENT_IN_CONTAINER_XML = "/yangSchemaValidationTest/mandatorytypevalidationtest/mandatoryLeafAbsentInContainer.xml";
@@ -65,12 +88,23 @@ public class MandatoryTypeTypeValidatorTest {
         YangTextSchemaSource jukeboxYangFile = YangParserUtil.getYangSource(SchemaRegistryImplTest.class.getResource("/yangSchemaValidationTest/mandatorytypevalidationtest/example-jukebox@2014-07-03.yang"));
 
         m_schemaRegistry.buildSchemaContext((List<YangTextSchemaSource>) Arrays.asList(jukeboxYangFile), Collections.emptySet(), Collections.emptyMap());
-        m_modelNodeDsm = Mockito.mock(ModelNodeDataStoreManager.class);
-        m_expValidator = Mockito.mock(DSExpressionValidator.class);
-        m_editConfigValidator = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, m_expValidator);
+        m_modelNodeDsm = mock(ModelNodeDataStoreManager.class);
+        m_expValidator = mock(DSExpressionValidator.class);
+        m_editConfigValidator = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, m_expValidator, null);
+        getModelNode();
     }
 
-    @Test
+    protected void getModelNode() throws SchemaBuildException {
+    	try {
+    		YangUtils.deployInMemoryHelpers(getYang(), mock(SubSystem.class), mock(ModelNodeHelperRegistry.class), mock(SubSystemRegistry.class), m_schemaRegistry, m_modelNodeDsm, null, null);
+    	} catch (ModelNodeFactoryException e) {}
+    }
+
+    private List<String> getYang() {
+    	return Arrays.asList("/yangSchemaValidationTest/mandatorytypevalidationtest/example-jukebox@2014-07-03.yang");
+    }
+    
+	@Test
     public void testMandatoryLeafValidationInContainer() throws NetconfMessageBuilderException {
 
         // Invalid case

@@ -1,0 +1,347 @@
+module datastore-integer-type-default-notation-validator-test {
+    yang-version 1.1;
+
+    namespace "urn:org:bbf:pma:validation:defaultvalue";
+
+    prefix "default-value-for-integer-type-validation";
+
+    revision 2019-02-27 {
+        description "Initial revision";
+    }
+
+    container default-value-for-integer-type-validation {
+
+        container decimal-notation-for-default-validation {
+
+            list decimal-list {
+
+                key id;
+                leaf id {
+                    type string;
+                }
+
+                leaf int8-validation {
+                    type boolean;
+                }
+
+                leaf int8-type {
+                    when "../int8-validation = 'true'";
+                    default "11";
+                    type int8 {
+                        range "10..100"; // min=-128 and max=127
+                    }
+                }
+
+                leaf int16-validation {
+                    type boolean;
+                }
+
+                leaf int16-type {
+                    when "../int16-validation = 'true'";
+                    default "12";
+                    type int16 {
+                        range "10..1000"; // min=-32768 and max=32767
+                    }
+                }
+
+
+                leaf int32-validation {
+                    type boolean;
+                }
+
+                leaf int32-type {
+                    when "../int32-validation = 'true'";
+                    default "-13";
+                    type int32 {
+                        range "-210..1000"; // min=-2147483648 and max=2147483647
+                    }
+                }
+
+                leaf int64-validation {
+                    type boolean;
+                }
+
+                leaf int64-type {
+                    when "../int64-validation = 'true'";
+                    default "14";
+                    type int64 {
+                        range "10..1000"; // min=-9223372036854775808 and max = 9223372036854775807
+                    }
+                }
+
+                leaf uint8-validation {
+                    type boolean;
+                }
+
+                leaf uint8-type {
+                    when "../uint8-validation = 'true'";
+                    default "+15";
+                    type uint8 {
+                        range "10..100"; // min=0 and max=255
+                    }
+                }
+
+                leaf uint16-validation {
+                    type boolean;
+                }
+
+                leaf uint16-type {
+                    when "../uint16-validation = 'true'";
+                    default "16";
+                    type uint16 {
+                        range "10..1000"; // min=0 and max=65535
+                    }
+                }
+
+
+                leaf uint32-validation {
+                    type boolean;
+                }
+
+                leaf uint32-type {
+                    when "../uint32-validation = 'true'";
+                    default "17";
+                    type uint32 {
+                        range "10..1000";  // min=0 and max=4294967295
+                    }
+                }
+
+                leaf uint64-validation {
+                    type boolean;
+                }
+
+                leaf uint64-type {
+                    when "../uint64-validation = 'true'";
+                    default "18";
+                    type uint64 {
+                        range "10..1000"; // min=0 and max=18446744073709551615
+                    }
+                }
+
+
+            }
+        }
+
+        container octal-notation-for-default-validation {
+
+            list octal-list {
+
+                key id;
+                leaf id {
+                    type string;
+                }
+
+                leaf int8-validation {
+                    type boolean;
+                }
+
+                leaf int8-type {
+                    when "../int8-validation = 'true'";
+                    default "013";
+                    type int8 {
+                        range "10..100"; // min=-128 and max=127
+                    }
+                }
+
+                leaf int16-validation {
+                    type boolean;
+                }
+
+                leaf int16-type {
+                    when "../int16-validation = 'true'";
+                    default "+014";
+                    type int16 {
+                        range "10..1000"; // min=-32768 and max=32767
+                    }
+                }
+
+
+                leaf int32-validation {
+                    type boolean;
+                }
+
+                leaf int32-type {
+                    when "../int32-validation = 'true'";
+                    default "-015";
+                    type int32 {
+                        range "-210..1000"; // min=-2147483648 and max=2147483647
+                    }
+                }
+
+                leaf int64-validation {
+                    type boolean;
+                }
+
+                leaf int64-type {
+                    when "../int64-validation = 'true'";
+                    default "016";
+                    type int64 {
+                        range "10..1000"; // min=-9223372036854775808 and max = 9223372036854775807
+                    }
+                }
+
+                leaf uint8-validation {
+                    type boolean;
+                }
+
+                leaf uint8-type {
+                    when "../uint8-validation = 'true'";
+                    default "017";
+                    type uint8 {
+                        range "10..100"; // min=0 and max=255
+                    }
+                }
+
+                leaf uint16-validation {
+                    type boolean;
+                }
+
+                leaf uint16-type {
+                    when "../uint16-validation = 'true'";
+                    default "020";
+                    type uint16 {
+                        range "10..1000"; // min=0 and max=65535
+                    }
+                }
+
+
+                leaf uint32-validation {
+                    type boolean;
+                }
+
+                leaf uint32-type {
+                    when "../uint32-validation = 'true'";
+                    default "021";
+                    type uint32 {
+                        range "10..1000";  // min=0 and max=4294967295
+                    }
+                }
+
+                leaf uint64-validation {
+                    type boolean;
+                }
+
+                leaf uint64-type {
+                    when "../uint64-validation = 'true'";
+                    default "022";
+                    type uint64 {
+                        range "10..1000"; // min=0 and max=18446744073709551615
+                    }
+                }
+
+
+            }
+        }
+
+        container hexa-decimal-notation-for-default-validation {
+
+            list hexa-decimal-list {
+
+                key id;
+                leaf id {
+                    type string;
+                }
+
+                leaf int8-validation {
+                    type boolean;
+                }
+
+                leaf int8-type {
+                    when "../int8-validation = 'true'";
+                    default "0xB";
+                    type int8 {
+                        range "10..100"; // min=-128 and max=127
+                    }
+                }
+
+                leaf int16-validation {
+                    type boolean;
+                }
+
+                leaf int16-type {
+                    when "../int16-validation = 'true'";
+                    default "0xC";
+                    type int16 {
+                        range "10..1000"; // min=-32768 and max=32767
+                    }
+                }
+
+
+                leaf int32-validation {
+                    type boolean;
+                }
+
+                leaf int32-type {
+                    when "../int32-validation = 'true'";
+                    default "-0xD";
+                    type int32 {
+                        range "-210..1000"; // min=-2147483648 and max=2147483647
+                    }
+                }
+
+                leaf int64-validation {
+                    type boolean;
+                }
+
+                leaf int64-type {
+                    when "../int64-validation = 'true'";
+                    default "0xE";
+                    type int64 {
+                        range "10..1000"; // min=-9223372036854775808 and max = 9223372036854775807
+                    }
+                }
+
+                leaf uint8-validation {
+                    type boolean;
+                }
+
+                leaf uint8-type {
+                    when "../uint8-validation = 'true'";
+                    default "0xF";
+                    type uint8 {
+                        range "10..100"; // min=0 and max=255
+                    }
+                }
+
+                leaf uint16-validation {
+                    type boolean;
+                }
+
+                leaf uint16-type {
+                    when "../uint16-validation = 'true'";
+                    default "0x10";
+                    type uint16 {
+                        range "10..1000"; // min=0 and max=65535
+                    }
+                }
+
+
+                leaf uint32-validation {
+                    type boolean;
+                }
+
+                leaf uint32-type {
+                    when "../uint32-validation = 'true'";
+                    default "0X11";
+                    type uint32 {
+                        range "10..1000";  // min=0 and max=4294967295
+                    }
+                }
+
+                leaf uint64-validation {
+                    type boolean;
+                }
+
+                leaf uint64-type {
+                    when "../uint64-validation = 'true'";
+                    default "+0x12";
+                    type uint64 {
+                        range "10..1000"; // min=0 and max=18446744073709551615
+                    }
+                }
+
+
+            }
+        }
+    }
+}

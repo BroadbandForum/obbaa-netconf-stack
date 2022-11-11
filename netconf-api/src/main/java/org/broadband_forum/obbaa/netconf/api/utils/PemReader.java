@@ -16,7 +16,9 @@
 
 package org.broadband_forum.obbaa.netconf.api.utils;
 
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,6 +38,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+
 /**
  * This class provides the method to read the public and private keys written in PEM format.
  * 
@@ -44,13 +48,14 @@ import java.util.regex.Pattern;
  */
 public class PemReader {
 
-    private static final Logger LOGGER = Logger.getLogger(PemReader.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil
+            .getGlobalDebugLogger(PemReader.class, LogAppNames.NETCONF_LIB);
 
     private static final Pattern PUB_KEY_PATTERN = Pattern.compile(
             "-+BEGIN\\s+.*PUBLIC\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+([a-z0-9+/=\\r\\n]+)-+END\\s+.*PUBLIC\\s+KEY[^-]*-+", 2);
 
     private static final Pattern PRIV_KEY_PATTERN = Pattern.compile(
-            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s|\\r|\\n)+([a-z0-9+/=\\r\\n]+)-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", 2);
+            "-+BEGIN\\s+.*PRIVATE\\s+KEY[^-]*-+(?:\\s)*([a-z0-9+/=\\s]+)(?:\\s)*-+END\\s+.*PRIVATE\\s+KEY[^-]*-+", 2);
     public static final Charset US_ASCII_CHARSET = Charset.forName("US-ASCII");
 
     public static List<PublicKey> readPublicKey(InputStream inStream) throws CertificateException, NoSuchAlgorithmException,
@@ -150,7 +155,7 @@ public class PemReader {
 
     public static String stripPKDelimiters(String pkStringWitDelimiters) {
         Matcher matcher = PRIV_KEY_PATTERN.matcher(pkStringWitDelimiters);
-        if(matcher.find()){
+        if (matcher.find()) {
             return matcher.group(1).trim();
         }
         return pkStringWitDelimiters.trim();

@@ -5,7 +5,7 @@
     </target>
     <test-option>set</test-option>
     <config>
-      <pma:pma xmlns:pma="urn:org:bbf:pma">
+      <pma:pma xmlns:pma="urn:org:bbf2:pma">
         <pma:device-holder>
           <pma:name>OLT-1</pma:name>
           <pma:invalid-key>blah</pma:invalid-key>

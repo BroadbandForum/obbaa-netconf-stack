@@ -1,16 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2018 Broadband Forum
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>netconf-server-modelnode-fwk</artifactId>
     <packaging>bundle</packaging>
     <name>netconf-fwk/netconf-server-modelnode-fwk</name>
+
     <dependencies>
         <!-- Internal -->
         <dependency>
@@ -34,6 +51,12 @@
             <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
+            <artifactId>netconf-api</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+        </dependency>
 
         <!-- External -->
         <dependency>
@@ -52,6 +75,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.broadband-forum.obbaa.netconf</groupId>
+            <artifactId>netconf-server</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
         </dependency>
@@ -64,6 +94,10 @@
             <artifactId>xmlunit</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.servicemix.bundles</groupId>
+            <artifactId>org.apache.servicemix.bundles.saxon</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
         </dependency>
@@ -73,7 +107,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.sshd</groupId>
-            <artifactId>sshd-core</artifactId>
+            <artifactId>sshd-osgi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -84,12 +118,12 @@
             <artifactId>antlr4-runtime</artifactId>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -110,10 +144,6 @@
         <dependency>
             <groupId>commons-jxpath</groupId>
             <artifactId>commons-jxpath</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -138,6 +168,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>log4j-over-slf4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -149,6 +185,15 @@
             <artifactId>mockito-all</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+         <groupId>commons-net</groupId>
+         <artifactId>commons-net</artifactId>
+         <version>${commons-net.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -158,7 +203,7 @@
                 <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <excludes>
-                        <exclude>**/log4j.xml</exclude>
+                        <exclude>**/log4j2.xml</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -168,6 +213,23 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>${bundle.plugin.version}</version>
+                <configuration>
+                    <instructions combine.children="append">
+                        <Dynamic-Import-Package>*, javassist.util.proxy</Dynamic-Import-Package>
+                        <Import-Package>org.broadband_forum.obbaa.netconf.server.ssh.auth,
+                            org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util,
+                            org.broadband_forum.obbaa.netconf.api,
+                            javassist.util.proxy,
+                            *
+                        </Import-Package>
+                        <_removeheaders>Import-Service,Export-Service,Provide-Capability,Require-Capability</_removeheaders>
+                    </instructions>
+                </configuration>
             </plugin>
         </plugins>
     </build>

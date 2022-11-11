@@ -23,4 +23,8 @@ public interface EditConfigOperations {
     public static final String DELETE = "delete";
     public static final String REMOVE = "remove";
     public static final String NONE = "none";
+    
+    public static boolean isOperationDeleteOrRemove(String operation) {
+        return REMOVE.equals(operation) || DELETE.equals(operation);
+    }
 }

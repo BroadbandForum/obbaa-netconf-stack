@@ -1,25 +1,52 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation;
 
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.RpcName;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.payloadparsing.DummyRpcHandler;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class YangDerivedFromTest extends AbstractRootModelTest {
 
     static QName createQName(String localName){
@@ -55,7 +82,14 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     static SchemaPath CONTAINER_NON_PREFIX_GROUP = buildSchemaPath(AUGMENT_TEST_SCHEMAPATH, NON_PREFIX_GROUP_CONTAINER);
     static SchemaPath CONTAINER1_NON_PREFIX_GROUP = buildSchemaPath(CONTAINER_NON_PREFIX_GROUP, CONTAINER1_NON_PREFIX);
     
-    protected List<String> getYangFiles() {
+    @BeforeClass
+    public static void initializeOnce() throws SchemaBuildException {
+        List<YangTextSchemaSource> yangFiles = TestUtil.getByteSources(getYang());
+        m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        m_schemaRegistry.setName(SchemaRegistry.GLOBAL_SCHEMA_REGISTRY);
+    }
+
+    protected static List<String> getYang() {
         List<String> fileNames = new LinkedList<String>();
         fileNames.add("/datastorevalidatortest/yangs/dummy-extension.yang");
         fileNames.add("/datastorevalidatortest/yangs/ietf-yang-schema-mount@2017-10-09.yang");
@@ -63,30 +97,39 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
         fileNames.add("/datastorevalidatortest/yangs/datastore-derived-from.yang");
         return fileNames;
     }
-    
+
     @Test
     public void testWhenFailureOnNonExistantNodeAugment() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " </xml-subtree>" +
                 "</validation>                                                 " ;
        editConfig(requestXml);
+
+        String response =
+                " <rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
+                + " <data>"
+                + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
+                + "   <validation:xml-subtree>"
+                + "     <validation:plugType>PLUG-1.0</validation:plugType>"
+                + "   </validation:xml-subtree>"
+                + "  </validation:validation>"
+                + " </data>"
+                + "</rpc-reply>";
+
+        verifyGet(m_server, m_clientInfo, response);
        
        requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                " <validation>nothing</validation>" +
-               " <xml-subtree>" +
-               "  <plugType>PLUG-1.0</plugType>" +
-               " </xml-subtree>" +
                "</validation>                                                 " ;
       editConfig(requestXml);
-      
-      String response = 
+      response =
               " <rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + " <data>"
-              + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+              + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
               + "   <validation:validation>nothing</validation:validation>"
               + "   <validation:xml-subtree>"
               + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
@@ -106,7 +149,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testAugmentValidationOnSameNameChildParent() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
@@ -123,7 +166,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        String response = 
                "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree>"
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -143,10 +186,10 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testDerivedFromOrSelfInWhen() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
-                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
+                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" + 
                 "  <list1>" +
                 "   <leaf1>hello</leaf1>" +
                 "   <leaf3 xmlns=\"urn:org:bbf:yang:test:derived:from\">identity1</leaf3>" +
@@ -160,7 +203,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        String response = 
                "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree>"
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -181,10 +224,10 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testFailForDerivedFromInWhen() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
-                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
+                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" + 
                 "  <list1>" +
                 "   <leaf1>hello</leaf1>" +
                 "   <leaf3 xmlns=\"urn:org:bbf:yang:test:derived:from\">some-identity</leaf3>" +
@@ -203,10 +246,10 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testForDerivedOrSelfOnAContainer() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
-                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
+                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" + 
                 "  <list1>" +
                 "   <leaf1>hello</leaf1>" +
                 "   <leaf3 xmlns=\"urn:org:bbf:yang:test:derived:from\">identity1</leaf3>" +
@@ -222,7 +265,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        String response = 
                "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree>"
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -246,10 +289,10 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testForDerivedOrSelfWithAbsPath() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
-                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
+                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" + 
                 "  <list1>" +
                 "   <leaf1>hello</leaf1>" +
                 "   <leaf3 xmlns=\"urn:org:bbf:yang:test:derived:from\">identity1</leaf3>" +
@@ -263,7 +306,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        String response = 
                "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree>"
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -284,7 +327,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testDerivedFromOrSelf() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
@@ -297,7 +340,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        
        String response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree> "
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -316,7 +359,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testFailDerivedFromOrSelf() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
@@ -334,7 +377,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testDerviedFrom() throws SAXException, IOException{
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
@@ -347,7 +390,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        
        String response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree> "
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -365,7 +408,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testDerviedFromDifferentModule() throws SAXException, IOException{
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
@@ -378,7 +421,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        
        String response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree> "
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -396,11 +439,11 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testDerivedFromOnMust() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
-                "  <baseTypeFromDifferentModule xmlns=\"urn:org:bbf:yang:test:derived:from\">identity4</baseTypeFromDifferentModule>" +
+                "  <baseTypeFromDifferentModule xmlns=\"urn:org:bbf:yang:test:derived:from\">identity4</baseTypeFromDifferentModule>" + 
                 "  <list1>" +
                 "   <leaf1>anything</leaf1>" +
                 "   <leafUnwanted>unwanted</leafUnwanted>" +
@@ -414,11 +457,11 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        assertEquals("Violate must constraints: derived-from-or-self(../../list1[current()]/leaf3, \"some-identity\")", response.getErrors().get(0).getErrorMessage());
         
        requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                " <xml-subtree>" +
                "  <plugType>PLUG-1.0</plugType>" +
                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
-               "  <baseTypeFromDifferentModule xmlns=\"urn:org:bbf:yang:test:derived:from\">identity4</baseTypeFromDifferentModule>" +
+               "  <baseTypeFromDifferentModule xmlns=\"urn:org:bbf:yang:test:derived:from\">identity4</baseTypeFromDifferentModule>" + 
                "  <list1>" +
                "   <leaf1>unwanted</leaf1>" +
                "   <leafUnwanted>unwanted</leafUnwanted>" +
@@ -434,12 +477,12 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testIdRefWithWhen() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
                 "  <idRefDeleteTest>" +
-                "   <key1 xmlns:validation=\"urn:org:bbf:pma:validation\">validation:identity1</key1>" +
+                "   <key1 xmlns:validation=\"urn:org:bbf2:pma:validation\">validation:identity1</key1>" +
                 "   <someLeaf>hello</someLeaf>" +
                 "  </idRefDeleteTest>" +
                 " </augmentTest>"+
@@ -451,7 +494,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        String xmlResponse = 
                "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                + " <data>"
-               + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+               + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                + "   <validation:xml-subtree>"
                + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
                + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -469,12 +512,12 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
        verifyGet(m_server, m_clientInfo, xmlResponse);
 
        requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-               "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+               "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                " <xml-subtree>" +
                "  <plugType>PLUG-1.0</plugType>" +
                " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
                "  <idRefDeleteTest xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +
-               "   <key1 xmlns:validation=\"urn:org:bbf:pma:validation\">validation:identity1</key1>" +
+               "   <key1 xmlns:validation=\"urn:org:bbf2:pma:validation\">validation:identity1</key1>" +
                "   <someLeaf xc:operation=\"delete\">hello</someLeaf>" +
                "  </idRefDeleteTest>" +
                " </augmentTest>"+
@@ -486,7 +529,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
       xmlResponse = 
               "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
               + " <data>"
-              + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+              + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
               + "   <validation:xml-subtree>"
               + "     <validation:plugType>PLUG-1.0</validation:plugType>" 
               + "    <ddf:augmentTest xmlns:ddf=\"urn:org:bbf:yang:test:derived:from\">"
@@ -505,7 +548,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testAugmentConstraintsDuringImpactValidation() throws Exception {
        String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 " <augmentTest xmlns=\"urn:org:bbf:yang:test:derived:from\">" +
@@ -525,7 +568,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     @Test
     public void testNonPrefixedGroupPath() throws Exception {
         String requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "  <leaf1>GroupPrefixes</leaf1>" +
@@ -542,7 +585,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
         editConfig(requestXml);
 
         requestXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>                    " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"  +
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"  +
                 " <xml-subtree>" +
                 "  <plugType>PLUG-1.0</plugType>" +
                 "  <leaf1>GroupPrefixe</leaf1>" +
@@ -559,7 +602,7 @@ public class YangDerivedFromTest extends AbstractRootModelTest {
     
     @Test
     public void testRpcWithImportGroup() throws Exception {
-    	RpcPayloadConstraintParser m_rpcConstraintParser = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, m_expValidator);
+    	RpcPayloadConstraintParser m_rpcConstraintParser = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, m_expValidator, null);
     	DummyRpcHandler m_dummyRpcHandler3 = new DummyRpcHandler(new RpcName("urn:org:bbf:yang:test:derived:from","ImportGroupingTest"));
     	
 		String xmlPath = "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">" +

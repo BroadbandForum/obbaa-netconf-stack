@@ -57,7 +57,7 @@ import io.netty.channel.EventLoopGroup;
  * }
  * </pre>
  * 
- *
+ * 
  * 
  */
 public class NetconfServerConfigurationBuilder {
@@ -100,7 +100,7 @@ public class NetconfServerConfigurationBuilder {
 
     public static NetconfServerConfigurationBuilder createDefaultNcServerBuilder(int portId)
             throws UnknownHostException, NetconfConfigurationBuilderException {
-        InetSocketAddress defaultServerSocketAddress = new InetSocketAddress("0.0.0.0", portId);
+        InetSocketAddress defaultServerSocketAddress = new InetSocketAddress(InetAddress.getLocalHost(), portId);
         NetconfTransportOrder transportOrder = new NetconfTransportOrder();
         transportOrder.setTransportType(NetconfTransportProtocol.SSH.name());
         transportOrder.setServerSocketAddress(defaultServerSocketAddress);

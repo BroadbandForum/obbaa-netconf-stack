@@ -16,26 +16,33 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
-import java.io.ByteArrayOutputStream;
+import static org.broadband_forum.obbaa.netconf.api.util.ByteBufUtils.releaseByteBuf;
+import static org.broadband_forum.obbaa.netconf.api.util.ByteBufUtils.unpooledHeapByteBuf;
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.documentToPrettyString;
+
 import java.io.IOException;
 
 import org.apache.sshd.client.channel.ChannelSubsystem;
+import org.apache.sshd.common.channel.Channel;
+import org.apache.sshd.common.channel.ChannelListener;
 import org.apache.sshd.common.future.SshFutureListener;
 import org.apache.sshd.common.io.IoReadFuture;
 import org.apache.sshd.common.util.buffer.Buffer;
-import org.w3c.dom.Document;
-
 import org.broadband_forum.obbaa.netconf.api.LogAppNames;
-import org.broadband_forum.obbaa.netconf.api.MessageToolargeException;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfHelloMessage;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.w3c.dom.Document;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import io.netty.buffer.ByteBuf;
 
 public class SshHelloMessageListener implements SshFutureListener<IoReadFuture> {
-    ByteArrayOutputStream m_baosOut = new ByteArrayOutputStream();
+    private ByteBuf m_byteBuf;
     private ChannelSubsystem m_clientChannel;
     private SshNetconfClientSession m_clientSession;
 
@@ -47,71 +54,93 @@ public class SshHelloMessageListener implements SshFutureListener<IoReadFuture> 
     public SshHelloMessageListener(ChannelSubsystem clientChannel, SshNetconfClientSession netconfSession) {
         this.m_clientChannel = clientChannel;
         this.m_clientSession = netconfSession;
+        m_clientChannel.addChannelListener(new ChannelListener() {
+            @Override
+            public void channelClosed(Channel channel, Throwable reason) {
+                synchronized (m_lockObject) {
+                    m_lockObject.notifyAll();
+                    releaseByteBuf(m_byteBuf);
+                }
+            }
+        });
+        m_byteBuf = unpooledHeapByteBuf();
     }
 
     @Override
     public void operationComplete(IoReadFuture future) {
-        try {
-            future.verify();
-            Buffer buffer = future.getBuffer();
-            m_baosOut.write(buffer.array(), buffer.rpos(), buffer.available());
-            if (m_baosOut.toString().endsWith(NetconfResources.RPC_EOM_DELIMITER)) {
-                String rpcReply = m_baosOut.toString();
-                Document replyDoc = m_clientSession.getCodec().decode(rpcReply);
-                if (!NetconfResources.HELLO.equals(replyDoc.getFirstChild().getNodeName())) {
-                    LOGGER.info("Invalid hello from server closing the channel : {}", LOGGER.sensitiveData(rpcReply));
-                    // If you get a message which is not hello, close the session.
-                    m_clientChannel.close(true).await();
+        if (m_clientChannel.isOpen()) {
+            try {
+                future.verify();
+                Buffer buffer = future.getBuffer();
+                m_byteBuf.writeBytes(buffer.array(), buffer.rpos(), buffer.available());
+                DocumentInfo documentInfo = m_clientSession.getCodec().decode(m_byteBuf);
+                if (documentInfo != null && documentInfo.getDocument() != null) {
+                    Document replyDoc = documentInfo.getDocument();
+                    if (!NetconfResources.HELLO.equals(replyDoc.getFirstChild().getNodeName())) {
+                        LOGGER.info("Invalid hello from server closing the channel : {}", LOGGER.sensitiveData(documentToPrettyString(replyDoc)));
+                        // If you get a message which is not hello, close the session.
+                        closeChannel();
+                        releaseByteBuf(m_byteBuf);
+                    } else {
+                        // Let the client session take necessary actions for hello message
+                        m_clientSession.responseRecieved(documentInfo);
+                        buffer.rpos(buffer.rpos() + buffer.available());
+                        buffer.compact();
+                        NetconfHelloMessage hello = DocumentToPojoTransformer.getHelloMessage(replyDoc);
+                        if (hello.getCapabilities().contains(NetconfResources.NETCONF_BASE_CAP_1_1)
+                                && m_clientSession.getClientCapability(NetconfResources.NETCONF_BASE_CAP_1_1)) {
+                            m_clientSession.useChunkedFraming();
+                        }
+                        m_clientChannel.getAsyncOut().read(buffer)
+                                .addListener(new SshNetconfClientSessionListener(m_clientChannel, m_clientSession, m_byteBuf));
+
+                        /* Now hello-message exchange is done and codec is switched accordingly.
+                         * its time to notify the nc client dispatcher to send the requests ,who were waiting for
+                         * m_lockObject to be released (indicating the completion of hello-exchange)
+                         */
+                        m_isHelloMessageReceived = true;
+                        synchronized (m_lockObject) {
+                            m_lockObject.notifyAll();
+                        }
+                    }
                 } else {
-                    // Let the client session take necessary actions for hello message
-                    m_clientSession.responseRecieved(replyDoc);
-                    m_baosOut = new ByteArrayOutputStream();
                     buffer.rpos(buffer.rpos() + buffer.available());
                     buffer.compact();
-                    NetconfHelloMessage hello = DocumentToPojoTransformer.getHelloMessage(replyDoc);
-                    m_isHelloMessageReceived = true;
-                    synchronized (m_lockObject) {
-                        m_lockObject.notify();
-                    }
-                    if (hello.getCapabilities().contains(NetconfResources.NETCONF_BASE_CAP_1_1)
-                            && m_clientSession.getClientCapability(NetconfResources.NETCONF_BASE_CAP_1_1)) {
-                        m_clientSession.useChunkedFraming();
-                    }
-                    m_clientChannel.getAsyncOut().read(buffer)
-                            .addListener(new SshNetconfClientSessionListener(m_clientChannel, m_clientSession));
-
+                    m_clientChannel.getAsyncOut().read(buffer).addListener(this);
                 }
-
-            } else {
-                buffer.rpos(buffer.rpos() + buffer.available());
-                buffer.compact();
-                m_clientChannel.getAsyncOut().read(buffer).addListener(this);
+            } catch (Exception e) {
+                LOGGER.error("Error while processing message, closing the session", e);
+                try {
+                    closeChannel();
+                    releaseByteBuf(m_byteBuf);
+                } catch (IOException ex) {
+                    LOGGER.error("Error while waiting for the asynchronous operation to complete", ex);
+                }
             }
-
-        } catch (IOException | NetconfMessageBuilderException e) {
-            LOGGER.error("Error while processing message ", e);
-        } catch (MessageToolargeException e) {
-            LOGGER.warn("Too long hello from server closing the channel", e);
-            try {
-                m_clientChannel.close(true).await();
-            } catch (IOException e1) {
-                LOGGER.error("Error while processing message ", e1);
-            }
+        } else {
+            LOGGER.trace("Ignoring a ReadFuture because the channel is closed / is closing");
         }
+    }
 
+    private void closeChannel() throws IOException {
+        if (m_clientChannel.isOpen()) {
+            m_clientChannel.close(true).await();
+        }
     }
 
     /**
      * await for hello message received
      *
      * @throws InterruptedException
+     * @param configuredTimeout
      */
-    public void await() throws InterruptedException {
+    public boolean await(long configuredTimeout) throws InterruptedException {
         if (!m_isHelloMessageReceived) {
             synchronized (m_lockObject) {
-                m_lockObject.wait();
+                m_lockObject.wait(configuredTimeout);
             }
         }
+        return m_isHelloMessageReceived;
     }
 
     /**
@@ -122,4 +151,10 @@ public class SshHelloMessageListener implements SshFutureListener<IoReadFuture> 
     public void setHelloMessageRecieved(boolean helloMessageRecieved) {
         m_isHelloMessageReceived = helloMessageRecieved;
     }
+
+    @VisibleForTesting
+    public ByteBuf getByteBuf() {
+        return m_byteBuf;
+    }
+
 }

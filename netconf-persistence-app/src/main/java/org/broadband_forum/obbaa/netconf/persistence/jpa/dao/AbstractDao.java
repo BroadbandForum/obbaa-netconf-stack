@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
@@ -43,6 +44,10 @@ public abstract class AbstractDao<E, PK extends Serializable> implements EntityD
     
     protected EntityDataStoreManager getPersistenceManager() {
         return m_persistenceManagerUtil.getEntityDataStoreManager();
+    }
+
+    protected EntityManager getEntityManager() {
+        return getPersistenceManager().getEntityManager();
     }
 
     @Override

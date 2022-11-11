@@ -130,6 +130,22 @@ module example-jukebox-list-multikeys {
               }
             }  // container admin
 
+            container studio {
+              description
+                "Information of studio where the album was recorded.";
+              leaf name {
+                type string;
+                description
+                  "Name of the studio.";
+              }
+
+              leaf location {
+                type string;
+                description
+                  "Location of the studio.";
+              }
+            }
+
             list song {
               key "name format";
               description
@@ -171,6 +187,29 @@ module example-jukebox-list-multikeys {
               } // leaf-list singer
             }  // list song
           }  // list album
+
+          list album-ordered-by-user {
+              key "name";
+              ordered-by user;
+              description
+                "Represents one song resource within one
+                album resource, within the jukebox library.";
+              leaf name {
+                type string {
+                  length "1 .. max";
+                }
+                description
+                  "The name of the song";
+              }
+              leaf year {
+                type uint16 {
+                  range "1900 .. max";
+                }
+                description
+                  "The year the album was released";
+              }
+            } // list album-ordered-by-user
+
           list awards{
             key "name";
                 description

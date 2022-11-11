@@ -2,7 +2,7 @@ module extension-test {
 
     yang-version 1;
 
-    namespace "urn:org:bbf:pma:extension:test";
+    namespace "urn:org:bbf2:pma:extension:test";
 
     prefix "extTest";
 

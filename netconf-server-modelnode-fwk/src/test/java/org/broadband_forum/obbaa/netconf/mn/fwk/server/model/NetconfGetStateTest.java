@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils.createInMemoryModelNode;
@@ -5,11 +21,6 @@ import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.util.Collections;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.xml.sax.SAXException;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
@@ -28,9 +39,16 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNo
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class NetconfGetStateTest {
 	
 	private NetConfServerImpl m_server;
@@ -44,6 +62,7 @@ public class NetconfGetStateTest {
     public void initServer() throws SchemaBuildException, ModelNodeInitException {
         m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         m_server = new NetConfServerImpl(m_schemaRegistry);
+		m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
 		RootModelNodeAggregator rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
 				mock(ModelNodeDataStoreManager.class), m_subSystemRegistry);
 		String yangFilePath = TestUtil.class.getResource("/yangs/example-jukebox.yang").getPath();

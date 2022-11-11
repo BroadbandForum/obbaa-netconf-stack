@@ -1,0 +1,16 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+  <library>
+    <artist>
+      <name>Lenny</name>
+      <album>
+        <name/>
+        <admin>
+          <label/>
+        </admin>
+        <song>
+          <format>aac</format>
+        </song>
+      </album>
+    </artist>
+  </library>
+</jukebox>

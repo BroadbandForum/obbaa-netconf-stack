@@ -1,0 +1,18 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-without-admin">
+  <library>
+    <artist>
+      <name>Lenny</name>
+      <album>
+        <name>Greatest hits</name>
+        <adminns1:admin xmlns:adminns1="http://example.com/ns/example-jukebox-with-admin-ns1">
+          <adminns1:catalogue-number/>
+          <adminns1:label/>
+        </adminns1:admin>
+        <adminns2:admin xmlns:adminns2="http://example.com/ns/example-jukebox-with-admin-ns2">
+          <adminns2:catalogue-number/>
+          <adminns2:label/>
+        </adminns2:admin>
+      </album>
+    </artist>
+  </library>
+</jukebox>

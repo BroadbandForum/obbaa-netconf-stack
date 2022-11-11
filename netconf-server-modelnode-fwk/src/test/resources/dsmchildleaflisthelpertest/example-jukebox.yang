@@ -97,6 +97,12 @@ module example-jukebox {
                 description "A list of singers";
             } // leaf-list singer
 
+            leaf-list singer-ordered-by-user {
+                type string;
+                ordered-by user;
+                description "A list of singers";
+            } // leaf-list singer-ordered-by-user
+
             leaf genre {
               type identityref {
                 base ejt:genre;

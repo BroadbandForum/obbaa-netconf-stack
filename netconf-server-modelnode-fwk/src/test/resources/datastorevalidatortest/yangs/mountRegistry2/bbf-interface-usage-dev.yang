@@ -1,0 +1,29 @@
+module bbf-interface-usage-dev {
+    
+    yang-version 1.1;
+    
+    namespace "bbf-interface-usage-dev";
+    
+    prefix "inus-dev";
+    
+    import test-interfaces {
+        prefix if;
+    }
+    
+    import bbf-sub-interfaces {
+        prefix bbf-subif;
+    }
+    
+    import bbf-interface-usage {
+        prefix intf-usage;
+    }
+    
+	deviation "/if:interfaces/if:interface/intf-usage:interface-usage/intf-usage:interface-usage" {
+		deviate add{
+			must "current()/../../if:type != 'if:vlan-sub-interface' or 
+			boolean(/if:interfaces/if:interface[if:name = current()/../../bbf-subif:subif-lower-layer/bbf-subif:interface]) "{
+			   error-message "Need configure lower interface for the vlan-sub-interface";
+			}
+		}
+	}
+}

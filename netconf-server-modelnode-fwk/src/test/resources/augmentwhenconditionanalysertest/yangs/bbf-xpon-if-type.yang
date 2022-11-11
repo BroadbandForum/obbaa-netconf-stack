@@ -1,0 +1,138 @@
+module bbf-xpon-if-type {
+  yang-version 1.1;
+  namespace "urn:bbf:yang:bbf-xpon-if-type";
+  prefix bbf-xponift;
+
+  import ietf-interfaces {
+    prefix if;
+  }
+
+  organization
+    "Broadband Forum <https://www.broadband-forum.org>
+     PON Management Project Stream";
+
+  contact
+    "Comments or questions about this Broadband Forum YANG module
+     should be directed to <mailto:help@broadband-forum.org>.
+
+     Editor:      Joey Boyd, ADTRAN
+                  <mailto:joey.boyd@adtran.com>
+
+     Editor:      Samuel Chen, Broadcom
+                  <mailto:samuel.chen@broadcom.com>
+
+     Editor:      Robert Peschi, Nokia
+                  <mailto:robert.peschi@nokia.com>
+
+     WA Director: Greg Bathrick, Calix
+                  <mailto:gregory.bathrick@calix.com>
+
+     WA Director: Lin Wei, Huawei
+                  <mailto:wei.linwei@huawei.com>";
+
+  description
+    "A YANG module which defines xPON interface types that are needed
+     for BBF applications but are not defined in iana-if-type. Some
+     day this module could be merged with 'urn:bbf:yang:bbf-if-type'
+     module.
+
+     Copyright (c) 2017, Broadband Forum
+
+     Redistribution and use in source and binary forms, with or
+     without modification, are permitted provided that the following
+     conditions are met:
+
+     1. Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+     2. Redistributions in binary form must reproduce the above
+        copyright notice, this list of conditions and the following
+        disclaimer in the documentation and/or other materials
+        provided with the distribution.
+
+     3. Neither the name of the copyright holder nor the names of its
+        contributors may be used to endorse or promote products
+        derived from this software without specific prior written
+        permission.
+
+     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+     CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+     INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+     MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+     CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+     SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+     NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+     CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+     STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+     ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+     The above license is used as a license under copyright only.
+     Please reference the Forum IPR Policy for patent licensing terms
+     <https://www.broadband-forum.org/ipr-policy>.
+
+     Any moral rights which are necessary to exercise under the above
+     license grant are also deemed granted under this license.
+
+     This version of this YANG module is part of TR-385; see
+     the TR itself for full legal notices.";
+
+  revision 2016-01-20 {
+    description
+      "Initial revision.";
+    reference
+      "TBD";
+  }
+
+  identity bbf-xpon-interface-type {
+    base if:interface-type;
+    description
+      "This identity is used as a base for all xPON interface types
+       defined by the BBF that are not in the 'ifType definitions'
+       registry maintained by IANA.";
+  }
+
+  identity channel-group {
+    base bbf-xpon-interface-type;
+    description
+      "A set of channel-pairs carried over a common fiber.";
+  }
+
+  identity channel-partition {
+    base bbf-xpon-interface-type;
+    description
+      "Any of the operator-specified non-overlapping subsets of TWDM 
+       or PtP WDM channels in an NG-PON2 system.";
+  }
+
+  identity channel-pair {
+    base bbf-xpon-interface-type;
+    description
+      "A set of one downstream wavelength channel and one upstream 
+       wavelength channel that provides connectivity between an OLT 
+       and one or more ONUs.";
+  }
+
+  identity channel-termination {
+    base bbf-xpon-interface-type;
+    description
+      "A logical function that resides at the OLT network element and 
+       terminates a single PtP WDM channel in a PtP WDM system or a 
+       single TWDM channel in a TWDM system.";
+  }
+
+  identity ani {
+    base bbf-xpon-interface-type;
+    description
+      "The Access Network Interface located on the ONU.";
+  }
+
+  identity v-ani {
+    base bbf-xpon-interface-type;
+    description
+      "A virtual representation of the 'ani' on the OLT.";
+  }
+ 
+}

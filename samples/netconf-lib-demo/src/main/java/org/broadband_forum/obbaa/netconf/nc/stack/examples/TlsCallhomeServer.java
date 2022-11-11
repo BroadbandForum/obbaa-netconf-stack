@@ -23,8 +23,7 @@ import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfiguration;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfigurationBuilder;
@@ -39,6 +38,8 @@ import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.server.QueuingMessageHandler;
 import org.broadband_forum.obbaa.netconf.server.dispatcher.NetconfServerDispatcherImpl;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import io.netty.handler.ssl.SslProvider;
 
@@ -46,13 +47,13 @@ import io.netty.handler.ssl.SslProvider;
  * Example TLS callhome server.
  */
 public class TlsCallhomeServer {
-    private static final Logger LOGGER = Logger.getLogger(TlsCallhomeServer.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(TlsCallhomeServer.class, LogAppNames.NETCONF_LIB);
     protected final String m_certChain;
     protected final String m_privateKey;
     protected final String m_trustChain;
     private NetconfServerMessageListener m_listener = new LoggingServerMessageListener();
     public TlsCallhomeServer() {
-        this("tlscertificates/client/netconfPeerCert.crt", "tlscertificates/client/netconfPeerPK.pem","tlscertificates/rootCA.pem");
+        this("/tlscertificates/client/netconfPeerCert.crt", "/tlscertificates/client/netconfPeerPK.pem","/tlscertificates/rootCA.pem");
     }
 
     public TlsCallhomeServer(String certChain, String privateKey, String trustChain) {

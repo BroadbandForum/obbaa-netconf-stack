@@ -1,0 +1,42 @@
+module interface-ref {
+    
+    yang-version 1.1;
+    
+    namespace "https://interface-ref";
+    
+    prefix "if-ref";
+    
+    import test-interfaces {
+        prefix if;
+    }
+    
+    typedef interface-type-ref {
+        type leafref {
+          path "/if:interfaces/if:interface/if:type";
+        }
+        
+    }
+    
+    revision "2019-05-22" {
+	      description "Initial version.";
+	}
+    
+ 	container tconts-config {
+        uses tconts-config-data;
+    }
+    
+    grouping tconts-config-data{
+    	list tcont{
+    		key name;
+    		
+    		leaf name{
+    			type string;
+    		}
+    		
+    		leaf interface-ref{
+    			type interface-type-ref;
+    		}
+    	}
+    }
+    
+}

@@ -24,13 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-import org.junit.Before;
-import org.junit.Test;
-
 import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
 import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.persistence.PagingInput;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Created by Keshava on 8/11/15.
@@ -42,7 +40,6 @@ public class JPAEntityDataStoreManagerTest {
     public void setUp(){
     	EMFactory emf = new JPAEntityManagerFactory("pma_test");
         m_jpaPersistenceManager = new JPAEntityDataStoreManager(emf);
-        System.out.println("Setup");
     }
     
     @Test
@@ -311,12 +308,15 @@ public class JPAEntityDataStoreManagerTest {
         listName.add("John");
         nameCondition.put("firstName", listName);
         
-        phoneCondition = new HashMap();
-        phoneCondition.put("phoneNumber", "23");
-        
         conditions.add(nameCondition);
-        conditions.add(phoneCondition);
-        
+
+        Map<String, Object> filter = new HashMap();
+        Map<String, String> contentSearch = new HashMap();
+        contentSearch.put("favoriteColor", "Organ");
+        contentSearch.put("phoneNumber", "12345");
+        filter.put("favoriteColor", contentSearch);
+        conditions.add(filter);
+
         person = manager.findByMatchMultiConditions(Person.class, conditions, paging);
         manager.commitTransaction();
         assertEquals(1, person.size());
@@ -358,7 +358,50 @@ public class JPAEntityDataStoreManagerTest {
         manager.close();
     }
 
-    
+    @Test
+    public void testCountByMatchMultiConditions(){
+        EntityDataStoreManager manager = m_jpaPersistenceManager;
+        manager.beginTransaction();
+
+        List<Person> people = prepareDatas();
+        Person person6 = new Person();
+        person6.setFirstName("Alice2");
+        people.add(person6);
+        for (Person person : people) {
+            m_jpaPersistenceManager.create(person);
+        }
+        manager.commitTransaction();
+
+        // ( firstName like '%li%' ) and ( phoneNumber like '%23%' )
+        List<Map<String, Object>> likeValues = new ArrayList<>();
+        Map<String,Object> nameCondition = new HashMap();
+        nameCondition.put("firstName", "li");
+
+        Map<String,Object> phoneCondition = new HashMap();
+        phoneCondition.put("phoneNumber", "23");
+        likeValues.add(nameCondition);
+        likeValues.add(phoneCondition);
+
+        manager.beginTransaction();
+        Long actualCount = manager.countByMatchMultiConditions(Person.class, likeValues);
+        manager.commitTransaction();
+        assertEquals(1l, actualCount.longValue());
+
+        //firstName like '%Alic%'
+        manager.beginTransaction();
+
+        likeValues = new ArrayList<>();
+        nameCondition = new HashMap();
+        nameCondition.put("firstName", "Alic");
+        likeValues.add(nameCondition);
+
+        actualCount = manager.countByMatchMultiConditions(Person.class, likeValues);
+        manager.commitTransaction();
+        assertEquals(2, actualCount.longValue());
+
+        manager.close();
+    }
+
     private Person buildPersonWhoLikesPurple() {
         return new Person()
                 .setFirstName("Charles")

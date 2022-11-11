@@ -16,7 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.ACTION;
+
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -27,7 +30,8 @@ public class ActionRequest extends AbstractNetconfRequest {
     private Element m_actionTreeElement;
     private SchemaPath m_actionTargetpath;
     private QName m_actionQName;
-    
+    private ActionDefinition m_actionDef;
+
 	public QName getActionQName() {
 		return m_actionQName;
 	}
@@ -51,11 +55,25 @@ public class ActionRequest extends AbstractNetconfRequest {
 	public void setActionTargetpath(SchemaPath actionTargetpath) {
 		this.m_actionTargetpath = actionTargetpath;
 	}
+
+	public void setActionDefinition(ActionDefinition actionDef) {
+		this.m_actionDef = actionDef;
+	}
+
+	public ActionDefinition getActionDefinition() {
+		return this.m_actionDef;
+	}
 	
 	@Override
 	public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
-        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId).addActionElement(m_actionTreeElement).build();
+        Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId)
+				.addUserContextAttributes(m_userContext, m_contextSessionId)
+				.addActionElement(m_actionTreeElement).build();
         return doc;
 	}
 
+	@Override
+	public String getRpcType() {
+		return ACTION;
+	}
 }

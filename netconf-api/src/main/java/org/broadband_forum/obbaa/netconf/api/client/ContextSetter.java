@@ -16,7 +16,10 @@
 
 package org.broadband_forum.obbaa.netconf.api.client;
 
+import java.io.Serializable;
+
 public interface ContextSetter {
+    Serializable getSessionId();
     void setContext();
     void resetContext();
 }

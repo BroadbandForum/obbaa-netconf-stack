@@ -16,6 +16,27 @@
 
 package org.broadband_forum.obbaa.netconf.client.callhome.tls;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.UnknownHostException;
+import java.security.cert.X509Certificate;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.client.CallHomeListener;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
@@ -39,41 +60,22 @@ import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.client.dispatcher.NetconfClientDispatcherImpl;
+import org.broadband_forum.obbaa.netconf.client.tests.server.DummyLoggingServerMessageListener;
 import org.broadband_forum.obbaa.netconf.server.QueuingMessageHandler;
 import org.broadband_forum.obbaa.netconf.server.dispatcher.NetconfServerDispatcherImpl;
-import org.broadband_forum.obbaa.netconf.client.tests.server.DummyLoggingServerMessageListener;
-import io.netty.channel.nio.NioEventLoopGroup;
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.UnknownHostException;
-import java.security.cert.X509Certificate;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import io.netty.channel.nio.NioEventLoopGroup;
 
 public class ReverseTlsTest {
 
     private static final Integer NUMBER_OF_REMOTE_DEVICES = 10;
-    private static final Logger LOGGER = Logger.getLogger(ReverseTlsTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(ReverseTlsTest.class, LogAppNames.NETCONF_LIB);
     private static Integer c_testCallHomePort = 12345;
     static HashSet<String> m_caps = new HashSet<String>();
     static Set<String> m_severCaps = new HashSet<String>();
@@ -87,9 +89,9 @@ public class ReverseTlsTest {
         m_severCaps.add(NetconfResources.NETCONF_WRITABLE_RUNNNG);
     }
 
-    private static final Logger m_logger = Logger.getLogger(ReverseTlsTest.class);
     private TcpServerSession m_session;
     private ExecutorService m_callhomeExecutorSpy;
+    private ExecutorService m_sbiSshSessionExecutor;
     private ExecutorService m_executorService;
 
     @BeforeClass
@@ -106,23 +108,23 @@ public class ReverseTlsTest {
             // close the socket
             s.close();
         }
-        m_logger.info("Using call-home port :" + c_testCallHomePort);
+        LOGGER.info("Using call-home port :" + c_testCallHomePort);
     }
 
     @Before
     public void setUp() throws IOException{
+        m_sbiSshSessionExecutor = mock(ExecutorService.class);
         m_callhomeExecutorSpy = spy(Executors.newCachedThreadPool());
         m_executorService = Executors.newCachedThreadPool();
-        BufferedReader input = new BufferedReader(new InputStreamReader(Runtime.getRuntime().exec("hostname -i").getInputStream()));
-        m_ipAddress = input.readLine();
-        m_logger.info(m_ipAddress+"m_ipAddress");
+        m_ipAddress = InetAddress.getLocalHost().getHostAddress();
+        LOGGER.info("Host ip address is " + m_ipAddress);
     }
     @Test
     public void testNetconfClientGetsNotifiedWhenServerCallsHome() throws NetconfClientDispatcherException,
             NetconfConfigurationBuilderException, InterruptedException, ExecutionException, NetconfServerDispatcherException,
             UnknownHostException, NetconfMessageBuilderException {
 
-        NetconfClientDispatcher dispatcher = new NetconfClientDispatcherImpl(m_executorService, m_callhomeExecutorSpy);
+        NetconfClientDispatcher dispatcher = new NetconfClientDispatcherImpl(m_executorService, m_callhomeExecutorSpy, m_sbiSshSessionExecutor);
 
         NetconfClientConfigurationBuilder clientConfigBuilder = new NetconfClientConfigurationBuilder();
         NetconfTransportOrder transportOrder = new NetconfTransportOrder();
@@ -152,7 +154,7 @@ public class ReverseTlsTest {
             NetconfConfigurationBuilderException, InterruptedException, ExecutionException, NetconfServerDispatcherException,
             UnknownHostException, NetconfMessageBuilderException {
 
-        NetconfClientDispatcher dispatcher = new NetconfClientDispatcherImpl(m_executorService, m_callhomeExecutorSpy);
+        NetconfClientDispatcher dispatcher = new NetconfClientDispatcherImpl(m_executorService, m_callhomeExecutorSpy, m_sbiSshSessionExecutor);
 
         NetconfClientConfigurationBuilder clientConfigBuilder = new NetconfClientConfigurationBuilder();
         NetconfTransportOrder transportOrder = new NetconfTransportOrder();

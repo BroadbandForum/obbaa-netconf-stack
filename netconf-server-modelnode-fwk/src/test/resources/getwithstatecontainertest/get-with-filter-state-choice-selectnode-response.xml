@@ -1,0 +1,12 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+    <data>
+        <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+            <jbox:library>
+                <jbox:artist>
+                    <jbox:name>Lenny</jbox:name>
+                </jbox:artist>
+                <case2-leaf xmlns="http://example.com/ns/example-jukebox">case2-leaf-value</case2-leaf>
+            </jbox:library>
+        </jbox:jukebox>
+    </data>
+</rpc-reply>

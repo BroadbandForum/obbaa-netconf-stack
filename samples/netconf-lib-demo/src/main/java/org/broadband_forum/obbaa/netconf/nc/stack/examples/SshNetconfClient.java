@@ -50,7 +50,7 @@ public class SshNetconfClient {
         new SshNetconfClient().run();
     }
 
-    private Set<String> getSampleClientCaps() {
+    public static Set<String> getSampleClientCaps() {
         Set<String> clientCaps = new HashSet<>();
         clientCaps.add(NetconfResources.NETCONF_BASE_CAP_1_0);
         clientCaps.add(NetconfResources.NETCONF_BASE_CAP_1_1);

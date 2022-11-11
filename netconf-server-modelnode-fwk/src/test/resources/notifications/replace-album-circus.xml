@@ -1,0 +1,36 @@
+<netconf-config-change xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-notifications">
+    <changed-by>
+        <session-id>1</session-id>
+        <source-host/>
+        <username>unit-test</username>
+    </changed-by>
+    <datastore>running</datastore>
+    <edit>
+        <operation>delete</operation>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Rock and roll is dead']</target>
+    </edit>
+    <edit>
+        <operation>delete</operation>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Circus']</target>
+    </edit>
+    <edit>
+        <operation>delete</operation>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Beyond the 7th Sky']</target>
+    </edit>
+    <edit>
+        <operation>create</operation>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Magdalene']</target>
+    </edit>
+    <edit>
+        <operation>create</operation>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:song[jbox:name='Thin Ice']</target>
+    </edit>
+    <edit>
+        <operation>delete</operation>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:genre</target>
+    </edit>
+    <edit>
+        <operation>delete</operation>
+        <target xmlns:jbox="http://example.com/ns/example-jukebox">/jbox:jukebox/jbox:library/jbox:artist[jbox:name='Lenny']/jbox:album[jbox:name='Circus']/jbox:admin</target>
+    </edit>
+</netconf-config-change>

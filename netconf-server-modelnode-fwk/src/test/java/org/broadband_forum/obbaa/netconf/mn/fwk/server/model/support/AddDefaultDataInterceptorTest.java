@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import static junit.framework.TestCase.assertTrue;
@@ -5,7 +21,10 @@ import static org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorSeve
 import static org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag.DATA_MISSING;
 import static org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType.Application;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -23,6 +43,18 @@ import java.util.TreeMap;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditChangeNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.TestEditContainmentNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationContext;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationContextTest;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.After;
@@ -33,7 +65,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
@@ -52,23 +85,14 @@ import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.Int64TypeDefinition;
 import org.opendaylight.yangtools.yang.model.util.type.BaseTypes;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditChangeNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditConfigException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
-
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(RequestScopeJunitRunner.class)
 public class AddDefaultDataInterceptorTest {
 
     private static final String BBF_FAST_NAMESPACE = "urn:broadband-forum-org:yang:bbf-fast";
     private static final String DEVICE_HOLDER_NAMESPACE = "http://www.test-company.com/solutions/anv-device-holders";
     private static final String DEVICE_SPECIFIC_DATA = "device-specific-data";
     private static final String DOWN_STREAM_PROFILE = "down-stream-profile";
+    private static final String ROOT_UNDER_DSD = "root-under-dsd";
     private static final String NAME = "name";
     private static final String DATA_RATE = "data-rate";
     private static final String CHOICE_NODE = "choice-node";
@@ -89,6 +113,7 @@ public class AddDefaultDataInterceptorTest {
     private static final QName IPV4_MULTICAST_QNAME = QName.create(BBF_SUB_INTERFACE_TAGGING, "ipv4");
 
     @Mock private SchemaRegistry m_schemaRegistry;
+    @Mock private SchemaRegistry m_mountRegistry;
     @Mock private SchemaContext m_schemaContext;
     @Mock private ModelNodeHelperRegistry m_modelNodeHelperRegistry;
     @Mock private ModelNode m_modelNode;
@@ -97,12 +122,15 @@ public class AddDefaultDataInterceptorTest {
     @Mock private ChoiceSchemaNode m_choiceSchemaNode;
     @Mock private CaseSchemaNode m_choiceCaseNode;
     @Mock private LeafSchemaNode m_leafWithEmptyType;
+
     @Mock private ContainerSchemaNode m_dsProfileSchemaNode;
     @Mock private ContainerSchemaNode m_deviceSpecificDataSchemaNode;
+    @Mock private ContainerSchemaNode m_rootUnderDSD;
     @Mock private DSExpressionValidator m_expValidator;
     @Mock private UnknownSchemaNode m_unKnownSchemaNode; 
     @Mock private ExtensionDefinition m_extensionDef;
     @InjectMocks private AddDefaultDataInterceptor m_addDefaultDataInterceptor;
+    private DSValidationContext m_dsValidationContex;
     
     @Rule
     public ExpectedException m_expectedException = ExpectedException.none();
@@ -113,6 +141,8 @@ public class AddDefaultDataInterceptorTest {
 
     @Before
     public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        m_dsValidationContex = new DSValidationContext();
         m_addDefaultDataInterceptor = new AddDefaultDataInterceptor(m_modelNodeHelperRegistry , m_schemaRegistry , m_expValidator);
         m_addDefaultDataInterceptor.init();
         when(m_schemaRegistry.getSchemaContext()).thenReturn(m_schemaContext);
@@ -128,15 +158,20 @@ public class AddDefaultDataInterceptorTest {
         
         SchemaPath path = m_dsProfileSchemaNode.getPath();
         when(m_modelNode.getModelNodeSchemaPath()).thenReturn(path);
-        when(m_expValidator.validateWhenConditionOnModule(m_modelNode, m_leafWithEmptyType)).thenReturn(true);
+        when(m_expValidator.validateWhenConditionOnModule(m_modelNode, m_leafWithEmptyType,m_dsValidationContex)).thenReturn(true);
+        when(m_expValidator.validateWhenConditionOnModule(m_modelNode, m_choiceSchemaNode, m_dsValidationContex)).thenReturn(true);
         AnvExtensions ignoreDefaultExt = AnvExtensions.IGNORE_DEFAULT;
         QName ignoreDefault = QName.create(URI.create(ignoreDefaultExt.getExtensionNamespace()), ignoreDefaultExt.getRevision(), ignoreDefaultExt.getName());
         when(m_extensionDef.getQName()).thenReturn(ignoreDefault );
         when(m_unKnownSchemaNode.getExtensionDefinition()).thenReturn(m_extensionDef);
         
     }
-    
+
     private void initNode(DataSchemaNode node, DataSchemaNode parent, String localName, TypeDefinition type, boolean isConfiguration) {
+        initNode(node, parent, localName, type, isConfiguration, m_schemaRegistry);
+    }
+    
+    private void initNode(DataSchemaNode node, DataSchemaNode parent, String localName, TypeDefinition type, boolean isConfiguration, SchemaRegistry schemaRegistry) {
         when(node.getQName()).thenReturn(qname(localName));
         when(node.isConfiguration()).thenReturn(isConfiguration);
         SchemaPath path = null;
@@ -156,7 +191,7 @@ public class AddDefaultDataInterceptorTest {
             }
         }
         when(node.getPath()).thenReturn(path);
-        when(m_schemaRegistry.getDataSchemaNode(path)).thenReturn(node);
+        when(schemaRegistry.getDataSchemaNode(path)).thenReturn(node);
         
         if (node instanceof DataNodeContainer) {
             when(((DataNodeContainer)node).getChildNodes()).thenReturn(new ArrayList<DataSchemaNode>());            
@@ -176,24 +211,25 @@ public class AddDefaultDataInterceptorTest {
      */
     @Test
     public void testProcessMissingDataWhenCreate() {
-        EditContainmentNode editContainmentNode = new EditContainmentNode(qname(DOWN_STREAM_PROFILE), EditConfigOperations.CREATE);
+        EditContainmentNode editContainmentNode = new TestEditContainmentNode(qname(DOWN_STREAM_PROFILE), EditConfigOperations.CREATE, m_schemaRegistry);
         editContainmentNode.addMatchNode(qname(NAME),new GenericConfigAttribute(NAME, BBF_FAST_NAMESPACE, "ds_profile1"));
         //set default value in schema
         TypeDefinition type = mock(Int64TypeDefinition.class);
+        QName dummyQname = QName.create("urn:ietf:params:xml:ns:yang:1", "dummyLocalName");
+        when(type.getQName()).thenReturn(dummyQname);
         when(type.getBaseType()).thenReturn(BaseTypes.int64Type());
         when(type.getDefaultValue()).thenReturn(Optional.of("0xFFFFFFFF"));
         when(m_dataRateLeafNode.getType()).thenReturn(type);
         
         EditContainmentNode interceptedContainmentNode = m_addDefaultDataInterceptor.processMissingData(editContainmentNode, m_modelNode);
         
-        assertEquals(2, interceptedContainmentNode.getChangeNodes().size());
+        assertEquals(1, interceptedContainmentNode.getChangeNodes().size());
         assertEquals("4294967295", interceptedContainmentNode.getChangeNode(qname(DATA_RATE)).getValue());
-        assertEquals("", interceptedContainmentNode.getChangeNode(qname(LEAF_WITH_EMPTY_TYPE)).getValue());
     }
     
     @Test
     public void testProcessMissingData_DisabledNodes() {
-        EditContainmentNode editContainmentNode = new EditContainmentNode(qname(DOWN_STREAM_PROFILE), EditConfigOperations.CREATE);
+        EditContainmentNode editContainmentNode = new TestEditContainmentNode(qname(DOWN_STREAM_PROFILE), EditConfigOperations.CREATE, m_schemaRegistry);
         editContainmentNode.addMatchNode(qname(NAME),new GenericConfigAttribute(NAME, BBF_FAST_NAMESPACE, "ds_profile1"));
         editContainmentNode.addDisabledDefaultCreationNode(qname(DATA_RATE));
         //set default value in schema
@@ -203,16 +239,13 @@ public class AddDefaultDataInterceptorTest {
         when(m_dataRateLeafNode.getType()).thenReturn(type);
         
         EditContainmentNode interceptedContainmentNode = m_addDefaultDataInterceptor.processMissingData(editContainmentNode, m_modelNode);
-        
-        assertEquals(1, interceptedContainmentNode.getChangeNodes().size());
         assertNull(interceptedContainmentNode.getChangeNode(qname(DATA_RATE)));
-        assertEquals("", interceptedContainmentNode.getChangeNode(qname(LEAF_WITH_EMPTY_TYPE)).getValue());
     }
     
     @SuppressWarnings("unchecked")
 	@Test
     public void testProcessMissingDataWhenTypeDefIsIdentityRef() {
-        EditContainmentNode editContainmentNode = new EditContainmentNode(qname(DOWN_STREAM_PROFILE), EditConfigOperations.CREATE);
+        EditContainmentNode editContainmentNode = new TestEditContainmentNode(qname(DOWN_STREAM_PROFILE), EditConfigOperations.CREATE, m_schemaRegistry);
         editContainmentNode.addMatchNode(qname(NAME), new GenericConfigAttribute(NAME, BBF_FAST_NAMESPACE, "ds_profile1"));
         //set default value in schema
         TypeDefinition identityrefTypeDefinition1 = mock(IdentityrefTypeDefinition.class);
@@ -227,23 +260,21 @@ public class AddDefaultDataInterceptorTest {
         when(identityrefTypeDefinition1.getDefaultValue()).thenReturn(Optional.of("pf:dValue"));
         EditContainmentNode interceptedContainmentNode = m_addDefaultDataInterceptor.processMissingData(editContainmentNode, m_modelNode);
         
-        assertEquals(2, interceptedContainmentNode.getChangeNodes().size());
+        assertEquals(1, interceptedContainmentNode.getChangeNodes().size());
         assertEquals("pf:dValue", interceptedContainmentNode.getChangeNode(qname(DATA_RATE)).getValue());
         assertEquals(BBF_FAST_NAMESPACE, interceptedContainmentNode.getChangeNode(qname(DATA_RATE)).getNamespace());
-        assertEquals("", interceptedContainmentNode.getChangeNode(qname(LEAF_WITH_EMPTY_TYPE)).getValue());
         
         //default value without prefix
         when(identityrefTypeDefinition1.getDefaultValue()).thenReturn(Optional.of("dValue"));
         when(m_schemaRegistry.getPrefix(BBF_FAST_NAMESPACE)).thenReturn("pf");
         interceptedContainmentNode = m_addDefaultDataInterceptor.processMissingData(editContainmentNode, m_modelNode);
         
-        assertEquals(2, interceptedContainmentNode.getChangeNodes().size());
+        assertEquals(1, interceptedContainmentNode.getChangeNodes().size());
         assertEquals("pf:dValue", interceptedContainmentNode.getChangeNode(qname(DATA_RATE)).getValue());
         ConfigLeafAttribute configLeafAttribute = interceptedContainmentNode.getChangeNode(qname(DATA_RATE)).getConfigLeafAttribute();
         assertTrue(configLeafAttribute instanceof IdentityRefConfigAttribute);
         assertEquals(BBF_FAST_NAMESPACE, configLeafAttribute.getDOMValue().lookupNamespaceURI("pf"));
         assertEquals(BBF_FAST_NAMESPACE, interceptedContainmentNode.getChangeNode(qname(DATA_RATE)).getNamespace());
-        assertEquals("", interceptedContainmentNode.getChangeNode(qname(LEAF_WITH_EMPTY_TYPE)).getValue());
         
         //Default ignored
         when(m_dataRateLeafNode.getUnknownSchemaNodes()).thenReturn(Arrays.asList(m_unKnownSchemaNode));
@@ -259,7 +290,7 @@ public class AddDefaultDataInterceptorTest {
      */
     @Test
     public void testProcessMissingDataNestedChoiceCaseNodes(){
-        EditContainmentNode oldEditData = new EditContainmentNode(MATCH_CRITERIA_QNAME, EditConfigOperations.MERGE);
+        EditContainmentNode oldEditData = new TestEditContainmentNode(MATCH_CRITERIA_QNAME, EditConfigOperations.MERGE, m_schemaRegistry);
         EditChangeNode ipv4EditData = new EditChangeNode(IP4V_MULTICAST_ADDR_QNAME, new GenericConfigAttribute(IPV4_MULTICAST_ADDRESS, BBF_SUB_INTERFACE_TAGGING,""));
         oldEditData.addChangeNode(ipv4EditData);
 
@@ -272,15 +303,13 @@ public class AddDefaultDataInterceptorTest {
         assertEquals(BBF_SUB_INTERFACE_TAGGING, interceptedContainmentNode.getChangeNode(IP4V_MULTICAST_ADDR_QNAME).getNamespace());
 
         // Case 2: No cases under frame-filter. Default case needs to be created
-        oldEditData = new EditContainmentNode(MATCH_CRITERIA_QNAME, EditConfigOperations.MERGE);
+        oldEditData = new TestEditContainmentNode(MATCH_CRITERIA_QNAME, EditConfigOperations.MERGE, m_schemaRegistry);
 
         mockChoiceCaseNodes();
 
         interceptedContainmentNode = m_addDefaultDataInterceptor.processMissingData(oldEditData, m_modelNode);
 
-        assertEquals(1, interceptedContainmentNode.getChangeNodes().size());
-        assertEquals("", interceptedContainmentNode.getChangeNode(ANY_FRAME_QNAME).getValue());
-        assertEquals(BBF_SUB_INTERFACE_TAGGING, interceptedContainmentNode.getChangeNode(ANY_FRAME_QNAME).getNamespace());
+        assertEquals(0, interceptedContainmentNode.getChangeNodes().size());
     }
 
     private void mockChoiceCaseNodes() {
@@ -292,6 +321,7 @@ public class AddDefaultDataInterceptorTest {
 
         // Frame-filter
         ChoiceSchemaNode frameFilterChoiceCaseNode = mock(ChoiceSchemaNode.class);
+        when(m_expValidator.validateWhenConditionOnModule(m_modelNode, frameFilterChoiceCaseNode, m_dsValidationContex)).thenReturn(true);
         when(frameFilterChoiceCaseNode.isConfiguration()).thenReturn(true);
         when(matchCriteriaSchemaNode.getChildNodes()).thenReturn(Collections.singleton(frameFilterChoiceCaseNode));
 
@@ -316,6 +346,7 @@ public class AddDefaultDataInterceptorTest {
 
         // dest-mac-address has ipv4-multicast-address + other cases
         ChoiceSchemaNode macAddrChoiceSchemaNode = mock(ChoiceSchemaNode.class);
+        when(m_expValidator.validateWhenConditionOnModule(m_modelNode, macAddrChoiceSchemaNode, m_dsValidationContex)).thenReturn(true);
         when(destMacAddCaseNode.getChildNodes()).thenReturn(Collections.singleton(macAddrChoiceSchemaNode));
 
         CaseSchemaNode anyMulticastMacCaseNode = mock(CaseSchemaNode.class);
@@ -331,27 +362,26 @@ public class AddDefaultDataInterceptorTest {
         macAddrCases.put(IPV4_MULTICAST_QNAME, ipv4MulticastMacCaseNode);
         when(macAddrChoiceSchemaNode.getCases()).thenReturn(macAddrCases);
 
-        when(m_expValidator.validateWhenConditionOnModule(m_modelNode, anyFilterLeafNode)).thenReturn(true);
+        when(m_expValidator.validateWhenConditionOnModule(m_modelNode, anyFilterLeafNode, m_dsValidationContex)).thenReturn(true);
         when(anyFilterLeafNode.getQName()).thenReturn(ANY_FRAME_QNAME);
     }
     
     @Test
     public void testProcessMissingDataWhenThrowEditConfigException() {
-        System.setProperty(SchemaRegistryUtil.ENABLE_MOUNT_POINT, "true");
-        EditContainmentNode editContainmentNode = new EditContainmentNode(QName.create(DEVICE_HOLDER_NAMESPACE,DEVICE_SPECIFIC_DATA), 
-                EditConfigOperations.CREATE);
+        EditContainmentNode editContainmentNode = new TestEditContainmentNode(QName.create(DEVICE_HOLDER_NAMESPACE,DEVICE_SPECIFIC_DATA), 
+                EditConfigOperations.CREATE, m_schemaRegistry);
         
         SchemaPath path = SchemaPath.create(true, QName.create(DEVICE_HOLDER_NAMESPACE, DEVICE_SPECIFIC_DATA));
         
         when(m_schemaRegistry.getDataSchemaNode(path)).thenReturn(m_deviceSpecificDataSchemaNode);
         when(m_modelNode.getModelNodeSchemaPath()).thenReturn(path);
         when(m_modelNode.hasSchemaMount()).thenReturn(true);
-        NetconfRpcError error = new NetconfRpcError(DATA_MISSING, Application, Error, "Mandatory leaf hardware-type is missing");
+        NetconfRpcError error = new NetconfRpcError(DATA_MISSING, Application, Error, "Mandatory leaf 'hardware-type' is missing");
         GetException getException = new GetException(error);
         when(m_modelNode.getMountRegistry()).thenThrow(getException);
         
         
-        NetconfRpcError rpcError = new NetconfRpcError(DATA_MISSING, Application, Error, "Mandatory leaf hardware-type is missing");
+        NetconfRpcError rpcError = new NetconfRpcError(DATA_MISSING, Application, Error, "Mandatory leaf 'hardware-type' is missing");
         EditConfigException editConfigException = new EditConfigException(rpcError);
         m_expectedException.expect(new BaseMatcher<EditConfigException>(){
             
@@ -367,12 +397,34 @@ public class AddDefaultDataInterceptorTest {
         
         m_addDefaultDataInterceptor.processMissingData(editContainmentNode, m_modelNode);
     }
-    
+
+    @Test
+    public void testProcessMissingDataWithWrongSchemaMount() {
+        EditContainmentNode editContainmentNode = new TestEditContainmentNode(QName.create(DEVICE_HOLDER_NAMESPACE,DEVICE_SPECIFIC_DATA),
+                EditConfigOperations.CREATE, m_schemaRegistry);
+        SchemaPath path = SchemaPath.create(true, QName.create(DEVICE_HOLDER_NAMESPACE, DEVICE_SPECIFIC_DATA));
+        when(m_schemaRegistry.getDataSchemaNode(path)).thenReturn(m_deviceSpecificDataSchemaNode);
+        when(m_modelNode.getModelNodeSchemaPath()).thenReturn(path);
+        when(m_modelNode.hasSchemaMount()).thenReturn(true);
+        when(m_modelNode.getMountRegistry()).thenReturn(m_schemaRegistry);
+        EditContainmentNode newData = m_addDefaultDataInterceptor.processMissingData(editContainmentNode, m_modelNode);
+        assertTrue(newData.getChildren().isEmpty());
+
+        when(m_modelNode.getMountRegistry()).thenReturn(m_mountRegistry);
+        when(m_mountRegistry.getParentRegistry()).thenReturn(m_schemaRegistry);
+        List<DataSchemaNode> rdsns = new ArrayList<>();
+        initNode(m_rootUnderDSD, null, ROOT_UNDER_DSD, null, true, m_mountRegistry);
+        rdsns.add(m_rootUnderDSD);
+        when(m_mountRegistry.getRootDataSchemaNodes()).thenReturn(rdsns);
+        when(m_expValidator.validateWhenConditionOnModule(anyObject(), anyObject(), anyObject())).thenReturn(true);
+        when(m_modelNode.getSchemaRegistry()).thenReturn(m_mountRegistry);
+        newData = m_addDefaultDataInterceptor.processMissingData(editContainmentNode, m_modelNode);
+        assertNotNull(newData.getChildNode(QName.create(BBF_FAST_NAMESPACE, ROOT_UNDER_DSD)));
+    }
     
 
     @After
     public void tearDown() {
         m_addDefaultDataInterceptor.destroy();
-        System.setProperty(SchemaRegistryUtil.ENABLE_MOUNT_POINT, "false");
     }
 }

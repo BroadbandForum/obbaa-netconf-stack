@@ -1,7 +1,31 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service;
 
 import java.util.Map;
 
+import org.broadband_forum.obbaa.netconf.api.util.StringUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryVisitor;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AnvExtensions;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.opendaylight.yangtools.yang.model.api.AnyDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.AnyXmlSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
@@ -12,12 +36,8 @@ import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryVisitor;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
+import org.opendaylight.yangtools.yang.model.api.UnknownSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.ModelStatement;
 
 /**
  * Created by keshava on 12/9/15.
@@ -37,14 +57,15 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
 
     private void registerSubsystem(DataSchemaNode dataSchemaNode,String componentId) {
         SubSystem subSystem = getSubsystem(dataSchemaNode.getPath());
-		if (subSystem == null && SchemaRegistryUtil.isMountPointEnabled()) {
+		if (subSystem == null) {
 			SchemaPath parentPath = (SchemaPath) RequestScope.getCurrentScope()
 					.getFromCache(SchemaRegistryUtil.MOUNT_PATH);
 			if (parentPath != null) {
 				subSystem = m_subSystems.get(parentPath);
 			}
 		}
-        if(subSystem != null){
+        if(subSystem != null) {
+            registerPermissionPerSubSystem(componentId, dataSchemaNode, subSystem);
             m_subsystemRegistry.register(componentId, dataSchemaNode.getPath(), subSystem);
         }
     }
@@ -58,6 +79,16 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
                 return null;
             }
             return getSubsystem(dataSchemaPath.getParent());
+        }
+    }
+
+    private void registerPermissionPerSubSystem(String componentId, DataSchemaNode dataSchemaNode, SubSystem subSystem){
+        UnknownSchemaNode schemaNode = AnvExtensions.REQUIRES_PERMISSION.getExtensionDefinition(dataSchemaNode);
+        if (schemaNode != null && schemaNode instanceof ModelStatement){
+            String permission = ((ModelStatement)schemaNode).argument().toString();
+            if (!StringUtil.isEmpty(permission)) {
+                subSystem.setScope(permission);
+            }
         }
     }
 
@@ -96,6 +127,11 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
     }
 
     @Override
+    public void visitAnyDataNode(String componentId, SchemaPath parentPath, AnyDataSchemaNode anyDataSchemaNode) {
+        registerSubsystem(anyDataSchemaNode,componentId);
+    }
+    
+    @Override
     public void visitListNode(String componentId, SchemaPath parentPath, ListSchemaNode listSchemaNode) {
         registerSubsystem(listSchemaNode, componentId);
     }
@@ -119,4 +155,9 @@ public class SubsystemDeployer implements SchemaRegistryVisitor {
     public void visitLeave(String componentId, SchemaPath parentPath, SchemaPath schemaPath) {
 
     }
+
+	@Override
+	public String getErrors() {
+		return null;
+	}
 }

@@ -154,6 +154,13 @@ module example-jukebox {
                     description
                                         "Dummy state leaf 2";
                 }
+
+                leaf-list album-state-leaf-list {
+                    config false;
+                    type string;
+                    description
+                                        "Dummy state leaf-list";
+                }
             } // container album-state-container
 
             list song {

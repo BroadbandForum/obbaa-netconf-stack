@@ -1,6 +1,21 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
-import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.createJukeBoxModelWithYear;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
@@ -8,11 +23,8 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.util.Collections;
 
-import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
-import org.xml.sax.SAXException;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigElement;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigErrorOptions;
@@ -30,13 +42,15 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHe
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.junit.Before;
+import org.xml.sax.SAXException;
 
+//@RunWith(RequestScopeJunitRunner.class)
 public class ContinueOnErrorTest {
-    private final static Logger LOGGER = Logger.getLogger(ContinueOnErrorTest.class);
+    private final static Logger LOGGER = LogManager.getLogger(ContinueOnErrorTest.class);
 
     private NetConfServerImpl m_server;
     private NetconfClientInfo m_clientInfo = new NetconfClientInfo("unit-test", 1);
@@ -56,7 +70,7 @@ public class ContinueOnErrorTest {
         createNonEmptyServer();
     }
 
-    @Test
+    //@Test
     public void testRollbackForAttributeChanges() throws IOException, SAXException {
         EditConfigRequest request = new EditConfigRequest()
                 .setTargetRunning()
@@ -73,6 +87,7 @@ public class ContinueOnErrorTest {
         // do a get-config to be sure
         verifyGetConfig(null, "/continue-on-error-expected-year-changed.xml");
     }
+
     private void verifyGetConfig(String filterInput, String expectedOutput) throws IOException, SAXException {
         NetconfClientInfo client = new NetconfClientInfo("test", 1);
 
@@ -96,9 +111,9 @@ public class ContinueOnErrorTest {
 
     private void createNonEmptyServer() {
         m_server = new NetConfServerImpl(m_schemaRegistry, mock(RpcPayloadConstraintParser.class));
-        m_model = createJukeBoxModelWithYear(m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry);
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
                 mock(ModelNodeDataStoreManager.class), m_subSystemRegistry).addModelServiceRoot(m_componentId, m_model);
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_server.setRunningDataStore(new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry));
     }
 }

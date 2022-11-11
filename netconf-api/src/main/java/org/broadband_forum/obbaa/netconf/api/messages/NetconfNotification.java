@@ -16,11 +16,16 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.DATE_TIME_WITH_TZ_DOT_WITHOUT_MS_PATTERN;
 import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS_PATTERN;
 import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.DATE_TIME_WITH_TZ_WITH_MS_PATTERN;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.CompletableFuture;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -31,9 +36,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import com.google.common.annotations.VisibleForTesting;
+
 
 /**
  * An abstract class providing implementation for netconf notification. RFC5277
@@ -49,10 +53,12 @@ public class NetconfNotification implements Notification {
     
     private String m_eventTime;
     private Element m_notificationElement;
+    private String m_notificationString;
+    private WeakReference<Element> m_notificationElementWR;
     private QName m_type;
     
     public NetconfNotification() {
-        this.m_eventTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.print(new DateTime(System.currentTimeMillis()));
+        this.m_eventTime = NetconfResources.DATE_TIME_WITH_TZ.print(new DateTime(System.currentTimeMillis()));
     }
     
     /*
@@ -84,6 +90,33 @@ public class NetconfNotification implements Notification {
         }
     }
 
+    public NetconfNotification(Document notifElement, String notificationString) throws NetconfMessageBuilderException {
+        Element element = notifElement.getDocumentElement();
+        if (element != null) {
+            NodeList childNodes = element.getChildNodes();
+            if (childNodes != null) {
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node child = childNodes.item(i);
+                    if (child instanceof Element) {
+                        if (NetconfResources.EVENT_TIME.equals(child.getNodeName())) {
+                            String eventTime ="";
+                            try {
+                                eventTime = child.getTextContent();
+                                setEventTime(eventTime);
+                            } catch (DOMException | NetconfMessageBuilderException e) {
+                                throw new NetconfMessageBuilderException("Invalid event time format: "+ eventTime);
+                            }
+                        } else {
+                            m_type = QName.create(child.getNamespaceURI(), child.getLocalName());
+                            m_notificationElementWR = new WeakReference<>((Element) child);
+                            m_notificationString = notificationString;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public Document getNotificationDocument() throws NetconfMessageBuilderException {
         synchronized (this){
             Document doc = new PojoToDocumentTransformer().newNetconfNotificationDocument(getEventTime(), getNotificationElement()).build();
@@ -93,16 +126,17 @@ public class NetconfNotification implements Notification {
 
     public String getEventTime() {
         if (m_eventTime == null) {
-            m_eventTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.print((new DateTime(System.currentTimeMillis())));
+            m_eventTime = NetconfResources.DATE_TIME_WITH_TZ.print((new DateTime(System.currentTimeMillis())));
         }
         return m_eventTime;
     }
 
     public void setEventTime(long eventTime) {
-        this.m_eventTime = NetconfResources.DATE_TIME_WITH_TZ_WITHOUT_MS.print(new DateTime(eventTime));
+        this.m_eventTime = NetconfResources.DATE_TIME_WITH_TZ.print(new DateTime(eventTime));
     }
 
     public void setEventTime(String eventTime) throws NetconfMessageBuilderException{
+        eventTime = processEventTime(eventTime);
         if(DATE_TIME_WITH_TZ_WITHOUT_MS_PATTERN.matcher(eventTime).matches()
                 || DATE_TIME_WITH_TZ_WITH_MS_PATTERN.matcher(eventTime).matches()) {
             setEventTime(NetconfResources.parseDateTime(eventTime).getMillis());
@@ -111,8 +145,51 @@ public class NetconfNotification implements Notification {
         }
     }
 
+    private String processEventTime(String eventTime) {
+        // if eventTime is invalid with trailing dot and without ms, then just ignore the trailing dot
+        boolean match = DATE_TIME_WITH_TZ_DOT_WITHOUT_MS_PATTERN.matcher(eventTime).matches();
+        if (match) {
+            return eventTime.replace(".", "");
+        }
+        return eventTime;
+    }
+
     public Element getNotificationElement() {
-        return this.m_notificationElement;
+        if (m_notificationElement != null) {
+            return this.m_notificationElement;
+        } else {
+            if (m_notificationElementWR != null && m_notificationElementWR.get() != null) {
+                return m_notificationElementWR.get();
+            } else {
+                try {
+                    if (m_notificationString != null) {
+                        return getChildNode(m_notificationString);
+                    }
+                } catch (NetconfMessageBuilderException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
+    }
+
+    private Element getChildNode(String notificationString) throws NetconfMessageBuilderException {
+        Element childNode = null;
+        Element element = DocumentUtils.stringToDocumentElement(notificationString);
+        if (element != null) {
+            NodeList childNodes = element.getChildNodes();
+            if (childNodes != null) {
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node child = childNodes.item(i);
+                    if (child instanceof Element) {
+                        if (!NetconfResources.EVENT_TIME.equals(child.getNodeName())) {
+                            childNode = (Element) child;
+                        }
+                    }
+                }
+            }
+        }
+        return childNode;
     }
 
     public void setNotificationElement(Element notificationElement) {
@@ -120,10 +197,14 @@ public class NetconfNotification implements Notification {
     }
 
     public String notificationToString() {
-        try {
-            return DocumentUtils.documentToString(getNotificationDocument());
-        } catch (NetconfMessageBuilderException e) {
-            throw new RuntimeException(e);
+        if(m_notificationString != null) {
+            return m_notificationString;
+        } else {
+            try {
+                return DocumentUtils.documentToString(getNotificationDocument());
+            } catch (NetconfMessageBuilderException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -136,6 +217,21 @@ public class NetconfNotification implements Notification {
         }
     }
 
+    @VisibleForTesting
+    public String getNotificationString() {
+        return m_notificationString;
+    }
+
+    @VisibleForTesting
+    public WeakReference<Element> getNotificationElementWR() {
+        return m_notificationElementWR;
+    }
+
+    @VisibleForTesting
+    public void setNotificationElementWR(WeakReference<Element> notificationElementWR) {
+        m_notificationElementWR = notificationElementWR;
+    }
+
     @Override
     public QName getType() {
         return m_type;
@@ -146,4 +242,9 @@ public class NetconfNotification implements Notification {
         return m_messageSentFuture;
     }
 
+    @Override
+    public String toString() {
+        return notificationToPrettyString();
+    }
+    
 }

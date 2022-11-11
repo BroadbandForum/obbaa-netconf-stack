@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.JB_NS;
@@ -8,18 +24,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.jxpath.ri.compiler.Expression;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScope;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
-import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 
 /**
  *  Runs each test 'n' number of times defined by times() method. Currently n = 100 
@@ -29,7 +47,7 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 @RunWith(Parameterized.class)
 public class SchemaRegistryMultiThreadTest {
 
-    private static final Logger LOGGER = Logger.getLogger(SchemaRegistryMultiThreadTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(SchemaRegistryMultiThreadTest.class);
 
     private final SchemaPath constraintSchemaPath1 = new SchemaPathBuilder().withNamespace(JB_NS).appendLocalName("jukebox1").build();
 
@@ -90,10 +108,12 @@ public class SchemaRegistryMultiThreadTest {
             for (Exception exception : m_exceptionList) {
                 LOGGER.error(exception);
             }
+            ReferringNodes map = m_schemaRegistry.getReferringNodesForSchemaPath(nodeSchemaPath1);
+            LOGGER.error(m_count + "th run - ReferencedNodes size : " + map.size() + ", keyset :" + map.keySet());
             assertTrue(m_exceptionList.isEmpty());
-            assertTrue(m_schemaRegistry.getReferencedNodesForSchemaPaths(nodeSchemaPath1).size() == 2);
-            assertTrue(m_schemaRegistry.getReferencedNodesForSchemaPaths(nodeSchemaPath1).keySet().contains(constraintSchemaPath1));
-            assertTrue(m_schemaRegistry.getReferencedNodesForSchemaPaths(nodeSchemaPath1).keySet().contains(constraintSchemaPath2));
+            assertTrue(m_schemaRegistry.getReferringNodesForSchemaPath(nodeSchemaPath1).size() == 2);
+            assertTrue(m_schemaRegistry.getReferringNodesForSchemaPath(nodeSchemaPath1).keySet().contains(constraintSchemaPath1));
+            assertTrue(m_schemaRegistry.getReferringNodesForSchemaPath(nodeSchemaPath1).keySet().contains(constraintSchemaPath2));
 
         } catch (Exception e) {
             LOGGER.error("TC failed during " + m_count + "th run", e);
@@ -104,32 +124,44 @@ public class SchemaRegistryMultiThreadTest {
     private class TestClass1 extends Thread {
         @Override
         public void run() {
-            try {
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath2, nodeSchemaPath4, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath2, nodeSchemaPath5, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath2, nodeSchemaPath6, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath1, nodeSchemaPath1, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath1, nodeSchemaPath2, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath1, nodeSchemaPath3, null);
-            } catch (Exception e) {
-                m_exceptionList.add(e);
-            }
+            RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
+                @Override
+                public Void execute() {
+                    try {
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath4, constraintSchemaPath2, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath5, constraintSchemaPath2, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath6, constraintSchemaPath2, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath1, constraintSchemaPath1, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath2, constraintSchemaPath1, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath3, constraintSchemaPath1, null));
+                    } catch (Exception e) {
+                        m_exceptionList.add(e);
+                    }
+                    return null;
+                }
+            });
         }
     }
 
     private class TestClass2 extends Thread {
         @Override
         public void run() {
-            try {
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath2, nodeSchemaPath1, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath2, nodeSchemaPath2, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath2, nodeSchemaPath3, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath1, nodeSchemaPath4, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath1, nodeSchemaPath5, null);
-                m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath1, nodeSchemaPath6, null);
-            } catch (Exception e) {
-                m_exceptionList.add(e);
-            }
+            RequestScope.withScope(new RequestScope.RsTemplate<Void>() {
+                @Override
+                public Void execute() {
+                    try {
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath1, constraintSchemaPath2, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath2, constraintSchemaPath2, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath3, constraintSchemaPath2, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath4, constraintSchemaPath1, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath5, constraintSchemaPath1, null));
+                        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath6, constraintSchemaPath1, null));
+                    } catch (Exception e) {
+                        m_exceptionList.add(e);
+                    }
+                    return null;
+                }
+            });
         }
     }
 }

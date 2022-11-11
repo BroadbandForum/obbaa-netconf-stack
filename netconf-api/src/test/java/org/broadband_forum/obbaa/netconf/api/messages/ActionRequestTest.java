@@ -17,11 +17,14 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -31,15 +34,21 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+public class ActionRequestTest extends RpcTypeTest{
 
-public class ActionRequestTest {
-
+	public static final ActionRequest c_sample = new ActionRequest();
 	private ActionRequest m_actionRequest = new ActionRequest();
 	private Element m_inputElement;
 	private QName m_qName;
 	private SchemaPath m_schemaPath;
+	static {
+		Element actionElement = DocumentUtils.createDocument().createElementNS("test", "test");
+		c_sample.setActionTreeElement(actionElement);
+	}
+
+	public ActionRequestTest() {
+		super(c_sample);
+	}
 
 	@Before
 	public void testUp() {
@@ -70,10 +79,14 @@ public class ActionRequestTest {
 	public void testGetActionRequestDocument() throws NetconfMessageBuilderException {
 		Element actionElement = DocumentUtils.createDocument().createElementNS("test", "test");
 		m_actionRequest.setActionTreeElement(actionElement);
+		m_actionRequest.setUserContext("admin");
+		m_actionRequest.setContextSessionId("12345");
 		Document document = m_actionRequest.getRequestDocument();
 		Node rpcNode = document.getFirstChild();
 		if (rpcNode instanceof Element) {
 			assertTrue(((Element) rpcNode).getLocalName().equals("rpc"));
+			assertEquals("admin",((Element) rpcNode).getAttribute(NetconfResources.CTX_USER_CONTEXT));
+			assertEquals("12345",((Element) rpcNode).getAttribute(NetconfResources.CTX_SESSION_ID));
 			Node actionNode = rpcNode.getFirstChild();
 			if (actionNode instanceof Element) {
 				assertTrue(((Element) actionNode).getLocalName().equals("action"));

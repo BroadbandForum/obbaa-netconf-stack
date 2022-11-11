@@ -1,5 +1,24 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang;
 
+import static junit.framework.TestCase.fail;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +27,8 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.ChangeTreeNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.AbstractSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ChangeNotification;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContext;
@@ -49,13 +70,51 @@ public class DsmJukeboxSubsystem extends AbstractSubSystem{
 
     private ModelNodeDataStoreManager m_modelNodeDsm;
     private ModelNodeId m_refLibrary;
+    private SchemaRegistry m_schemaRegistry;
+    private Map<SchemaPath, List<ChangeTreeNode>> m_changesMap = new HashMap<>();;
 
-    public DsmJukeboxSubsystem(ModelNodeDataStoreManager dsm, String jukeBoxNamespace){
+    public DsmJukeboxSubsystem(ModelNodeDataStoreManager dsm, String jukeBoxNamespace, SchemaRegistry schemaRegistry){
         m_modelNodeDsm = dsm;
         m_refLibrary = new ModelNodeId("/container=jukebox/container=library", jukeBoxNamespace);
+        m_schemaRegistry = schemaRegistry;
         updateQname(jukeBoxNamespace);
         updateSchemaPath(jukeBoxNamespace);
     }
+
+    @Override
+    protected boolean byPassAuthorization() {
+        return true;
+    }
+
+    @Override
+    public void postCommit(Map<SchemaPath, List<ChangeTreeNode>> changesMap) {
+        clearChanges();
+        m_changesMap.putAll(changesMap);
+    }
+
+    private void clearChanges() {
+        m_changesMap.clear();
+    }
+
+    public void assertChangeTreeNodeForGivenSchemaPath(SchemaPath schemaPath, List<String> changeTreeNodes) {
+        boolean changeFound;
+        List<ChangeTreeNode> changeTreeNodeList = m_changesMap.get(schemaPath);
+        for(String ctn : changeTreeNodes) {
+            changeFound = false;
+            List<String> changeTreeNodePrints = new ArrayList<>();
+            for(ChangeTreeNode changeTreeNode : changeTreeNodeList) {
+                changeTreeNodePrints.add(changeTreeNode.print());
+                if(changeTreeNode.print().equals(ctn)) {
+                    changeFound = true;
+                    break;
+                }
+            }
+            if(!changeFound) {
+                fail("Specified ChangeTreeNodes Not found.\n\nExpected ChangeTreeNodes:\n\n" + changeTreeNodes.toString() + "\n\nActual ChangeTreeNodes:\n\n" + changeTreeNodePrints.toString());
+            }
+        }
+    }
+
     @Override
     public void notifyChanged(List<ChangeNotification> changeNotificationList) {
 
@@ -66,7 +125,7 @@ public class DsmJukeboxSubsystem extends AbstractSubSystem{
         Map<ModelNodeId, List<Element>> stateInfo = new HashMap<>();
         List<ModelNode> modelNodeList = null;
         try {
-            modelNodeList = m_modelNodeDsm.listNodes(m_librarySchemaPath);
+            modelNodeList = m_modelNodeDsm.listNodes(m_librarySchemaPath, m_schemaRegistry);
         } catch (DataStoreException e) {
             LOGGER.error("Error while listing library nodes..",e);
             return stateInfo;
@@ -79,15 +138,15 @@ public class DsmJukeboxSubsystem extends AbstractSubSystem{
             if (library.beginsWithTemplate(m_refLibrary)) {
                 Map<QName, Object> stateAttributes = new HashMap<QName, Object>();
                 try {
-                    List<ModelNode> artistList = m_modelNodeDsm.listChildNodes(m_artistSchemaPath, library);
+                    List<ModelNode> artistList = m_modelNodeDsm.listChildNodes(m_artistSchemaPath, library, m_schemaRegistry);
                     int artistCount = artistList.size();
                     int albumCount = 0;
                     int songCount = 0;
                     for (ModelNode artist : artistList) {
-                        List<ModelNode> albumLists = m_modelNodeDsm.listChildNodes(m_albumShcemaPath, artist.getModelNodeId());
+                        List<ModelNode> albumLists = m_modelNodeDsm.listChildNodes(m_albumShcemaPath, artist.getModelNodeId(), m_schemaRegistry);
                         albumCount += albumLists.size();
                         for (ModelNode album : albumLists) {
-                            List<ModelNode> songList = m_modelNodeDsm.listChildNodes(m_songSchemaPath, album.getModelNodeId());
+                            List<ModelNode> songList = m_modelNodeDsm.listChildNodes(m_songSchemaPath, album.getModelNodeId(), m_schemaRegistry);
                             songCount += songList.size();
                         }
                     }

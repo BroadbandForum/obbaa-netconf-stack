@@ -1,21 +1,5 @@
-<!--
-  ~ Copyright 2018 Broadband Forum
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  -->
-
 <notification xmlns="urn:ietf:params:xml:ns:netconf:notification:1.0">
-    <eventTime>2016-02-02T13:33:35+07:00</eventTime>
+    <eventTime>2016-02-02T13:33:35.357+07:00</eventTime>
     <state-change-notification xmlns="urn:ietf:params:xml:ns:yang:ietf-netconf-notifications">
         <target>song-count</target>
         <value>8</value>

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -127,6 +143,20 @@ public class EntityRegistryTest {
         assertEquals("getParentId",m_entityRegistry.getOrderByUserSetter(m_klass).getName());
         m_entityRegistry.undeploy(m_componentId1);
         assertNull(m_entityRegistry.getOrderByUserSetter(m_klass));
+
+        // Adding dummy method
+        m_entityRegistry.addComponentClass(m_componentId1, m_klass);
+        m_entityRegistry.addYangVisibilityControllerGetter(m_klass,m_klass.getDeclaredMethod("getParentId"));
+        assertEquals("getParentId",m_entityRegistry.getYangVisibilityControllerGetter(m_klass).getName());
+        m_entityRegistry.undeploy(m_componentId1);
+        assertNull(m_entityRegistry.getYangVisibilityControllerGetter(m_klass));
+
+        // Adding dummy method
+        m_entityRegistry.addComponentClass(m_componentId1, m_klass);
+        m_entityRegistry.addYangVisibilityControllerSetter(m_klass,m_klass.getDeclaredMethod("getParentId"));
+        assertEquals("getParentId",m_entityRegistry.getYangVisibilityControllerSetter(m_klass).getName());
+        m_entityRegistry.undeploy(m_componentId1);
+        assertNull(m_entityRegistry.getYangVisibilityControllerSetter(m_klass));
     }
 
     @Test
@@ -156,7 +186,10 @@ public class EntityRegistryTest {
         assertEquals("getInsertOrder",m_entityRegistry.getOrderByUserGetter(albumClass).getName());
         assertEquals("setInsertOrder",m_entityRegistry.getOrderByUserSetter(albumClass).getName());
         assertEquals("insertOrder",m_entityRegistry.getOrderByFieldName(albumClass));
-        
+
+        assertEquals("getVisibility",m_entityRegistry.getYangVisibilityControllerGetter(albumClass).getName());
+        assertEquals("setVisibility",m_entityRegistry.getYangVisibilityControllerSetter(albumClass).getName());
+
         assertEquals("getInsertOrder",m_entityRegistry.getOrderByUserGetter(songClass).getName());
         assertEquals("setInsertOrder",m_entityRegistry.getOrderByUserSetter(songClass).getName());
         assertEquals("insertOrder",m_entityRegistry.getOrderByFieldName(songClass));
@@ -189,5 +222,18 @@ public class EntityRegistryTest {
         assertNull(m_entityRegistry.getYangLeafListGetters(songClass));
         assertNull(m_entityRegistry.getYangLeafListSetters(songClass));
 
+    }
+
+    @Test
+    public void testAddClassWithYangParentSchemaPathAnnotation(){
+        Class mockClass1 = Jukebox.class;
+        Class mockClass2 = Library.class;
+        Class mockClass3 = Artist.class;
+        m_entityRegistry.addClassWithYangParentSchemaPathAnnotation("component1", mockClass1);
+        m_entityRegistry.addClassWithYangParentSchemaPathAnnotation("component1", mockClass2);
+
+        assertTrue(m_entityRegistry.classHasYangParentSchemaPathAnnotation(mockClass1));
+        assertTrue(m_entityRegistry.classHasYangParentSchemaPathAnnotation(mockClass2));
+        assertFalse(m_entityRegistry.classHasYangParentSchemaPathAnnotation(mockClass3));
     }
 }

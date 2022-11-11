@@ -1,0 +1,13 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Greatest hits</name>
+                <song>
+                    <name>Fly Away</name>
+                </song>
+            </album>
+        </artist>
+    </library>
+</jukebox>

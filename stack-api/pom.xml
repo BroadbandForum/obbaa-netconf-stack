@@ -20,21 +20,21 @@
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>stack-api</artifactId>
     <packaging>bundle</packaging>
     <name>netconf-fwk/stack-api</name>
-    
+
+
     <dependencies>
         <dependency>
             <groupId>org.broadband-forum.obbaa.netconf</groupId>
             <artifactId>auth-spi</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <!-- External -->
         <dependency>
             <groupId>junit</groupId>

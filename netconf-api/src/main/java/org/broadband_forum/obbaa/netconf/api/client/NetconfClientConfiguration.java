@@ -16,20 +16,23 @@
 
 package org.broadband_forum.obbaa.netconf.api.client;
 
+import java.nio.channels.AsynchronousChannelGroup;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.sshd.client.auth.UserAuthFactory;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.client.util.NetconfClientConfigurationBuilder;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportFactory;
 import org.broadband_forum.obbaa.netconf.api.transport.NetconfTransportOrder;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
-import io.netty.channel.EventLoopGroup;
 
-import java.nio.channels.AsynchronousChannelGroup;
-import java.util.Set;
+import io.netty.channel.EventLoopGroup;
 
 /**
  * Netconf client configuration. Use {@link NetconfClientConfigurationBuilder} to build a configuration object.
  * 
- *
+ * 
  * 
  */
 public class NetconfClientConfiguration {
@@ -43,10 +46,18 @@ public class NetconfClientConfiguration {
     private final EventLoopGroup m_eventLoopGroup;
     private AsynchronousChannelGroup m_asynChannelGroup;
     private AuthenticationListener m_authenticationListener;
+    private Long m_readTimeoutMillis;
+    private List<UserAuthFactory> m_userAuthFactories;
 
     public NetconfClientConfiguration(Long connectionTimeoutMillis, NetconfLoginProvider loginProvider, Set<String> caps,
+            NetconfTransport transport, EventLoopGroup eventLoopGroup,
+            AsynchronousChannelGroup asynChannelGroup, AuthenticationListener authenticationListener) {
+    	this(connectionTimeoutMillis, loginProvider, caps, transport, eventLoopGroup, asynChannelGroup, authenticationListener, null);
+    }
+    
+    public NetconfClientConfiguration(Long connectionTimeoutMillis, NetconfLoginProvider loginProvider, Set<String> caps,
                                       NetconfTransport transport, EventLoopGroup eventLoopGroup,
-                                      AsynchronousChannelGroup asynChannelGroup, AuthenticationListener authenticationListener) {
+                                      AsynchronousChannelGroup asynChannelGroup, AuthenticationListener authenticationListener, Long readTimeoutMillis) {
         this.m_connectionTimeoutMillis = connectionTimeoutMillis;
         this.m_loginProvider = loginProvider;
         this.m_caps = caps;
@@ -54,6 +65,7 @@ public class NetconfClientConfiguration {
         this.m_eventLoopGroup = eventLoopGroup;
         this.m_asynChannelGroup = asynChannelGroup;
         this.m_authenticationListener = authenticationListener;
+        this.m_readTimeoutMillis = readTimeoutMillis;
     }
 
     public Long getConnectTimeoutMillis() {
@@ -130,4 +142,16 @@ public class NetconfClientConfiguration {
         this.m_asynChannelGroup = asynChannelGroup;
     }
 
+	public Long getReadTimeout() {
+		return m_readTimeoutMillis;
+		
+	}
+
+    public List<UserAuthFactory> getUserAuthFactories() {
+        return m_userAuthFactories;
+    }
+
+    public void setUserAuthFactories(List<UserAuthFactory> userAuthFactories) {
+        m_userAuthFactories = userAuthFactories;
+    }
 }

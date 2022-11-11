@@ -1,0 +1,74 @@
+module bbf-hardware-types {
+  yang-version 1.1;
+
+  namespace "urn:bbf:yang:bbf-hardware-types";
+
+  prefix bbf-hwt;
+
+  import iana-hardware {
+    prefix ianahw;
+  }
+  revision 2017-06-09 {
+    description "Initial revision";
+  }
+
+  identity slot {
+    base ianahw:container;
+    description
+      "A slot is a special type of container that can contain a
+       pluggable board.";
+  }
+
+  identity cage {
+    base ianahw:container;
+    description
+      "A cage is a special type of container that can contain a
+       pluggable transceiver.";
+  }
+
+
+  identity board {
+    base ianahw:module;
+    description
+      "A board is a special type of module that represents a physical
+       item, commonly known as a board or a card.";
+  }
+
+  identity transceiver {
+    base ianahw:module;
+    description
+      "A transceiver is a special type of module that represents a
+       physical item like a pluggable SFP, an SFP+, or an XFP; or a
+       soldered SFF.";
+  }
+
+
+  identity transceiver-link {
+    base ianahw:port;
+    description
+      "A transceiver-link is a special type of port that terminates an
+       optical fiber.";
+  }
+
+  identity rj45 {
+    base ianahw:port;
+    description
+      "A RJ45 is a special type of port that terminates an electrical
+       Ethernet link.";
+  }
+
+  identity fastdsl-tp {
+    base ianahw:port;
+    description
+      "A fastdsl-tp is a special type of port that terminates a copper
+       twisted pair supporting a FAST or one of the DSL types of
+       link.";
+  }
+
+  identity fastdsl-coax {
+    base ianahw:port;
+    description
+      "A fastdsl-coax is a special type of port that terminates a coax
+       supporting a FAST or one of the DSL types of link.";
+  }
+}

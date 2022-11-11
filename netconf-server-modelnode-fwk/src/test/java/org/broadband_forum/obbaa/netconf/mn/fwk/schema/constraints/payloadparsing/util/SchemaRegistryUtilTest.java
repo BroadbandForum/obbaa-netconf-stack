@@ -1,13 +1,30 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util;
 
+import static org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder.fromString;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest.getAnvYangFiles;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
-import static org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder.fromString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +32,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,30 +48,39 @@ import org.broadband_forum.obbaa.netconf.api.parser.YangParserUtil;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.Pair;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilderException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaMountRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.ValidationHint;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.support.SchemaMountRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.MountProviderInfo;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.HelperDrivenModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationPathBuilder;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath.JXPathUtils;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
+import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
+import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaMountRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.support.SchemaMountRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.MountProviderInfo;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath.JXPathUtils;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
-
+@RunWith(RequestScopeJunitRunner.class)
 public class SchemaRegistryUtilTest {
 
     public static final String NESTED_CHOICE_NS_REVISION = "urn:nested-choice-case-test?revision=2020-01-20";
@@ -61,15 +88,22 @@ public class SchemaRegistryUtilTest {
     public static final String NESTED_CHOICE_REVISION = "2020-01-20";
     private static SchemaRegistry c_anvSchemaRegistry;
 
+    @AfterClass
+    public static void tearDown(){
+    }
+
     @BeforeClass
     public static void setup() throws SchemaBuildException {
-
         c_anvSchemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
         List<YangTextSchemaSource> yangSources = new ArrayList<YangTextSchemaSource>();
+        addYangSource(yangSources, "/schemaregistryutiltest/nc-stack-extensions.yang");
         addYangSource(yangSources, "/yangSchemaValidationTest/referenceyangs/ietf-yang-types.yang");
         addYangSource(yangSources, "/yangSchemaValidationTest/referenceyangs/anv-alarms.yang");
         addYangSource(yangSources, "/schemaregistryutiltest/test-module@2018-08-23.yang");
-        addYangSource(yangSources, "/schemaregistryutiltest/nested-choice-with-leaf-list-and-list@2020-01-20.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-hint.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-node-hints.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/augmenting-module-with-when-condition.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/nested-choice-with-leaf-list-and-list.yang");
         c_anvSchemaRegistry.buildSchemaContext(yangSources, Collections.emptySet(), Collections.emptyMap());
     }
 
@@ -82,20 +116,19 @@ public class SchemaRegistryUtilTest {
 
     @Test
     public void testGetAllIdentities() {
-
-        String[] expectedIdentityNames = {"alarm-identity", "interface-type"};
-        String[] actualIdentityNames = new String[2];
+        List<String> expectedIdentityNames = Arrays.asList("alarm-identity", "interface-type", "identity1", "identity2", "identity3");
         Set<IdentitySchemaNode> identities = SchemaRegistryUtil.getAllIdentities(c_anvSchemaRegistry);
-        assertEquals(2, identities.size());
-        int i = 0;
+        assertEquals(5, identities.size());
         for (IdentitySchemaNode node : identities) {
-
+            String identityName = node.getQName().getLocalName();
+            assertTrue(expectedIdentityNames.contains(identityName));
             Set<IdentitySchemaNode> identitySchemaNodes = node.getBaseIdentities();
-            assertTrue(identitySchemaNodes.isEmpty());
-            actualIdentityNames[i++] = node.getQName().getLocalName();
+            if(identityName.equals("identity2") || identityName.equals("identity3")){
+                assertFalse(identitySchemaNodes.isEmpty());
+            } else {
+                assertTrue(identitySchemaNodes.isEmpty());
+            }
         }
-        assertEquals(expectedIdentityNames[0], actualIdentityNames[0]);
-        assertEquals(expectedIdentityNames[1], actualIdentityNames[1]);
     }
 
     @Test
@@ -114,41 +147,41 @@ public class SchemaRegistryUtilTest {
                 "2015-07-14");
 
         assertEquals(1, subtreeRoots.size());
-        SchemaPath swmgmtSubtreeRoot = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device",
-                "(urn:org:bbf:pma:alu-dpu-swmgmt?revision=2015-07-14)swmgmt");
+        SchemaPath swmgmtSubtreeRoot = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device",
+                "(urn:org:bbf2:pma:alu-dpu-swmgmt?revision=2015-07-14)swmgmt");
         assertEquals(swmgmtSubtreeRoot, subtreeRoots.get(0));
 
         subtreeRoots = SchemaRegistryUtil.getModuleSubtreeRoots(c_anvSchemaRegistry, "alu-pma", "2015-07-14");
         assertEquals(1, subtreeRoots.size());
-        SchemaPath pmaSubtreeRoot = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma");
+        SchemaPath pmaSubtreeRoot = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma");
         assertEquals(pmaSubtreeRoot, subtreeRoots.get(0));
     }
 
     @Test
     public void testGetDataParentSchemaPath() {
 
-        SchemaPath expectedSP = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device");
-        SchemaPath cdpSP = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params," +
+        SchemaPath expectedSP = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device");
+        SchemaPath cdpSP = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params," +
                 "pma,configured-device-properties");
         assertEquals(expectedSP, SchemaRegistryUtil.getDataParentSchemaPath(c_anvSchemaRegistry, cdpSP));
 
-        expectedSP = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder");
-        SchemaPath deviceSP = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device");
+        expectedSP = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder");
+        SchemaPath deviceSP = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device");
         assertEquals(expectedSP, SchemaRegistryUtil.getDataParentSchemaPath(c_anvSchemaRegistry, deviceSP));
     }
 
     @Test
     public void testGetDataParent() throws NullPointerException {
 
-        SchemaPath sp = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params," +
+        SchemaPath sp = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params," +
                 "pma,configured-device-properties");
         assertEquals("device", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getLocalName());
-        assertEquals("urn:org:bbf:pma", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getNamespace().toString());
+        assertEquals("urn:org:bbf2:pma", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getNamespace().toString());
         assertEquals("2015-07-14", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getRevision().get().toString());
 
-        sp = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device");
+        sp = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device");
         assertEquals("device-holder", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getLocalName());
-        assertEquals("urn:org:bbf:pma", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getNamespace().toString());
+        assertEquals("urn:org:bbf2:pma", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getNamespace().toString());
         assertEquals("2015-07-14", SchemaRegistryUtil.getDataParent(c_anvSchemaRegistry, sp).getQName().getRevision().get().toString());
     }
 
@@ -188,34 +221,84 @@ public class SchemaRegistryUtilTest {
     @Test
     public void testGetChoiceParentSchemaNode() throws SchemaPathBuilderException {
 
-        SchemaPath configuredDevicePropSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma," +
+        SchemaPath configuredDevicePropSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma," +
                 "device-holder,device,connection-initiator-params,pma,configured-device-properties");
-        SchemaPath connectionInitiatorParamsSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)" +
+        SchemaPath connectionInitiatorParamsSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)" +
                 "pma,device-holder,device,connection-initiator-params");
         assertEquals(c_anvSchemaRegistry.getDataSchemaNode(connectionInitiatorParamsSchemaPath),
-                SchemaRegistryUtil.getChoiceParentSchemaNode(configuredDevicePropSchemaPath, c_anvSchemaRegistry));
+                ChoiceCaseNodeUtil.getChoiceParentSchemaNode(configuredDevicePropSchemaPath, c_anvSchemaRegistry));
 
-        SchemaPath deviceSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma," +
+        SchemaPath deviceSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma," +
                 "device-holder,device");
 
-        assertNull(SchemaRegistryUtil.getChoiceParentSchemaNode(deviceSchemaPath, c_anvSchemaRegistry));
+        assertNull(ChoiceCaseNodeUtil.getChoiceParentSchemaNode(deviceSchemaPath, c_anvSchemaRegistry));
     }
 
     @Test
     public void testGetChildSchemaNode() {
 
         Document document = DocumentUtils.createDocument();
-        Element rootElement = document.createElementNS("urn:org:bbf:pma", "pma");
-        DataSchemaNode rootNode = SchemaRegistryUtil.getChildSchemaNode(rootElement, SchemaPath.ROOT, c_anvSchemaRegistry);
-        assertEquals(c_anvSchemaRegistry.getDataSchemaNode(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma")), rootNode);
+        Element rootElement = document.createElementNS("urn:org:bbf2:pma", "pma");
+        SchemaNode rootNode = SchemaRegistryUtil.getChildSchemaNode(rootElement, SchemaPath.ROOT, c_anvSchemaRegistry);
+        assertEquals(c_anvSchemaRegistry.getDataSchemaNode(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma")), rootNode);
 
-        Element nonRootElement = document.createElementNS("urn:org:bbf:pma", "pma-list");
-        DataSchemaNode nonRootNode = SchemaRegistryUtil.getChildSchemaNode(nonRootElement, fromString("(urn:org:bbf:pma?revision=2015-07-14)pma"), c_anvSchemaRegistry);
-        assertEquals(c_anvSchemaRegistry.getDataSchemaNode(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,pma-list")), nonRootNode);
+        Element nonRootElement = document.createElementNS("urn:org:bbf2:pma", "pma-list");
+        SchemaNode nonRootNode = SchemaRegistryUtil.getChildSchemaNode(nonRootElement, fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma"), c_anvSchemaRegistry);
+        assertEquals(c_anvSchemaRegistry.getDataSchemaNode(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,pma-list")), nonRootNode);
 
-        assertNull(SchemaRegistryUtil.getChildSchemaNode(document.createElementNS("urn:org:bbf:pma", "blah-blah"), fromString("(urn:org:bbf:pma?revision=2015-07-14)pma"), c_anvSchemaRegistry));
-        DataSchemaNode actualNode = SchemaRegistryUtil.getChildSchemaNode("urn:test-module", "innerContainer", fromString("(urn:test-module?revision=2018-08-23)testContainer"), c_anvSchemaRegistry);
+        assertNull(SchemaRegistryUtil.getChildSchemaNode(document.createElementNS("urn:org:bbf2:pma", "blah-blah"), fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma"), c_anvSchemaRegistry));
+        SchemaNode actualNode = SchemaRegistryUtil.getChildSchemaNode("urn:test-module", "innerContainer", fromString("(urn:test-module?revision=2018-08-23)testContainer"), c_anvSchemaRegistry);
         assertEquals("innerContainer", actualNode.getQName().getLocalName());
+    }
+
+    @Test
+    public void testGetChildNotificationDefinition() {
+
+        String SW_DOWNLOADED = "software-downloaded";
+        String ONE_DOT_ONE_NS = "urn:bbf:yang:bbf-software-image-management-one-dot-one";
+        String REVISION = "2020-11-05";
+        String SW_SN_AND_REVISION = "(" + ONE_DOT_ONE_NS + "?revision=" + REVISION + ")";
+
+        SchemaPath SW_DOWNLOADED_SCHEMA_PATH = fromString("(urn:ietf:params:xml:ns:yang:ietf-hardware?revision=2017-03-07)hardware-state," +
+                "(urn:ietf:params:xml:ns:yang:ietf-hardware?revision=2017-03-07)component," +
+                SW_SN_AND_REVISION + "software," +
+                SW_SN_AND_REVISION + "software," +
+                SW_SN_AND_REVISION + "download," +
+                SW_SN_AND_REVISION + "software-downloaded");
+
+        Document document = DocumentUtils.createDocument();
+        Element element = document.createElementNS(ONE_DOT_ONE_NS, SW_DOWNLOADED);
+        QName qName = QName.create(ONE_DOT_ONE_NS, REVISION, SW_DOWNLOADED);
+        SchemaRegistry schemaRegistry = mock(SchemaRegistry.class);
+
+        NotificationDefinition notification = mock(NotificationDefinition.class);
+        when(notification.getQName()).thenReturn(qName);
+        when(notification.getPath()).thenReturn(SW_DOWNLOADED_SCHEMA_PATH);
+
+        Set<NotificationDefinition> notifications = new HashSet<NotificationDefinition>() {{
+            add(notification);
+        }};
+        when(notification.getQName()).thenReturn(qName);
+        when(notification.getPath()).thenReturn(SW_DOWNLOADED_SCHEMA_PATH);
+
+        // Math with element
+        when(schemaRegistry.retrieveAllNotificationDefinitions()).thenReturn(notifications);
+        NotificationDefinition schemaNode = SchemaRegistryUtil.getChildNotificationDefinition(element.getNamespaceURI(), element.getLocalName(), SW_DOWNLOADED_SCHEMA_PATH.getParent(), schemaRegistry);
+        assertEquals(SW_DOWNLOADED, schemaNode.getQName().getLocalName());
+        assertEquals(ONE_DOT_ONE_NS, schemaNode.getQName().getNamespace().toString());
+
+        // Not match with element
+        assertNull(SchemaRegistryUtil.getChildNotificationDefinition("dummy", element.getLocalName(), SW_DOWNLOADED_SCHEMA_PATH.getParent(), schemaRegistry));
+        assertNull(SchemaRegistryUtil.getChildNotificationDefinition(element.getNamespaceURI(), "dummy", SW_DOWNLOADED_SCHEMA_PATH.getParent(), schemaRegistry));
+        assertNull(SchemaRegistryUtil.getChildNotificationDefinition(element.getNamespaceURI(), element.getLocalName(), mock(SchemaPath.class), schemaRegistry));
+    }
+
+    @Test
+    public void testGetChildNotificationDefinition_Null() {
+        SchemaRegistry schemaRegistry = mock(SchemaRegistry.class);
+        when(schemaRegistry.retrieveAllNotificationDefinitions()).thenReturn(new HashSet<>());
+        NotificationDefinition schemaNode = SchemaRegistryUtil.getChildNotificationDefinition(null, null, null, schemaRegistry);
+        assertNull(schemaNode);
     }
 
     @Test
@@ -251,19 +334,19 @@ public class SchemaRegistryUtilTest {
     public void testGetSchemaPathsForNodes() {
 
         Document document = DocumentUtils.createDocument();
-        Element rootElement = document.createElementNS("urn:org:bbf:pma", "pma");
+        Element rootElement = document.createElementNS("urn:org:bbf2:pma", "pma");
         DataSchemaNode rootNode = SchemaRegistryUtil.getChildSchemaNode(rootElement, SchemaPath.ROOT, c_anvSchemaRegistry);
-        Element nonRootElement = document.createElementNS("urn:org:bbf:pma", "pma-list");
+        Element nonRootElement = document.createElementNS("urn:org:bbf2:pma", "pma-list");
         DataSchemaNode nonRootNode = SchemaRegistryUtil.getChildSchemaNode(nonRootElement,
-                fromString("(urn:org:bbf:pma?revision=2015-07-14)pma"), c_anvSchemaRegistry);
+                fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma"), c_anvSchemaRegistry);
 
         List<DataSchemaNode> dataSchemaNodeList = new ArrayList<>();
         dataSchemaNodeList.add(rootNode);
         dataSchemaNodeList.add(nonRootNode);
 
         List<SchemaPath> expectedSchemaPaths = new ArrayList<>();
-        SchemaPath rootNodeSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma");
-        SchemaPath nonRootNodeSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,pma-list");
+        SchemaPath rootNodeSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma");
+        SchemaPath nonRootNodeSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,pma-list");
         expectedSchemaPaths.add(rootNodeSchemaPath);
         expectedSchemaPaths.add(nonRootNodeSchemaPath);
 
@@ -274,21 +357,21 @@ public class SchemaRegistryUtilTest {
     @Test
     public void testGetEffectiveParentNode() {
 
-        SchemaPath caseSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,pma");
+        SchemaPath caseSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,pma");
         DataSchemaNode dataSchemaNodePma = c_anvSchemaRegistry.getDataSchemaNode(caseSchemaPath);
-        SchemaPath parentSchemaPathOfPma = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device");
+        SchemaPath parentSchemaPathOfPma = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device");
         DataSchemaNode expectedDataSchemaNodeOfPma = c_anvSchemaRegistry.getDataSchemaNode(parentSchemaPathOfPma);
         DataSchemaNode actualDataSchemaNodeOfPma = SchemaRegistryUtil.getEffectiveParentNode(dataSchemaNodePma, c_anvSchemaRegistry);
         assertEquals(expectedDataSchemaNodeOfPma, actualDataSchemaNodeOfPma);
 
-        SchemaPath nonCaseSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder");
+        SchemaPath nonCaseSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder");
         DataSchemaNode dataSchemaNodeDeviceHolder = c_anvSchemaRegistry.getDataSchemaNode(nonCaseSchemaPath);
-        SchemaPath parentSchemaPathOfDeviceHolder = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma");
+        SchemaPath parentSchemaPathOfDeviceHolder = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma");
         DataSchemaNode expectedDataSchemaNodeOfDeviceHolder = c_anvSchemaRegistry.getDataSchemaNode(parentSchemaPathOfDeviceHolder);
         DataSchemaNode actualDataSchemaNodeOfDeviceHolder = SchemaRegistryUtil.getEffectiveParentNode(dataSchemaNodeDeviceHolder, c_anvSchemaRegistry);
         assertEquals(expectedDataSchemaNodeOfDeviceHolder, actualDataSchemaNodeOfDeviceHolder);
 
-        SchemaPath schemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma");
+        SchemaPath schemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma");
         DataSchemaNode dataSchemaNode = c_anvSchemaRegistry.getDataSchemaNode(schemaPath);
         actualDataSchemaNodeOfPma = SchemaRegistryUtil.getEffectiveParentNode(dataSchemaNode, c_anvSchemaRegistry);
         assertNull(actualDataSchemaNodeOfPma);
@@ -311,12 +394,12 @@ public class SchemaRegistryUtilTest {
     @Test
     public void testContainsWhen() {
 
-        SchemaPath schemaPathOfPma = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,pma");
+        SchemaPath schemaPathOfPma = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,pma");
         DataSchemaNode dataSchemaNodeOfPma = c_anvSchemaRegistry.getDataSchemaNode(schemaPathOfPma);
         boolean resultOfPma = SchemaRegistryUtil.containsWhen(dataSchemaNodeOfPma);
         assertTrue(resultOfPma);
 
-        SchemaPath schemaPathOfDeviceId = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,device-id");
+        SchemaPath schemaPathOfDeviceId = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,device-id");
         DataSchemaNode dataSchemaNodeOfDeviceId = c_anvSchemaRegistry.getDataSchemaNode(schemaPathOfDeviceId);
         boolean resultOfDeviceId = SchemaRegistryUtil.containsWhen(dataSchemaNodeOfDeviceId);
         assertFalse(resultOfDeviceId);
@@ -345,22 +428,22 @@ public class SchemaRegistryUtilTest {
     public void testGetSchemaPathForElement() {
 
         Document document = DocumentUtils.createDocument();
-        Element pmaElement = document.createElementNS("urn:org:bbf:pma", "pma");
+        Element pmaElement = document.createElementNS("urn:org:bbf2:pma", "pma");
 
         List<SchemaPath> schemaPaths = new ArrayList<>();
-        schemaPaths.add(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder"));
-        schemaPaths.add(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma"));
-        schemaPaths.add(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,device-id"));
+        schemaPaths.add(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder"));
+        schemaPaths.add(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma"));
+        schemaPaths.add(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,device-id"));
 
-        SchemaPath expectedSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma");
+        SchemaPath expectedSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma");
         SchemaPath actualSchemaPath = SchemaRegistryUtil.getSchemaPathForElement(pmaElement, schemaPaths);
         assertEquals(expectedSchemaPath, actualSchemaPath);
 
-        Element pmaListElement = document.createElementNS("urn:org:bbf:pma", "pma-list");
+        Element pmaListElement = document.createElementNS("urn:org:bbf2:pma", "pma-list");
         actualSchemaPath = SchemaRegistryUtil.getSchemaPathForElement(pmaListElement, schemaPaths);
         assertNull(actualSchemaPath);
 
-        Element dummyElement = document.createElementNS("urn:org:bbf:pma", "dummy");
+        Element dummyElement = document.createElementNS("urn:org:bbf2:pma", "dummy");
         actualSchemaPath = SchemaRegistryUtil.getSchemaPathForElement(dummyElement, schemaPaths);
         assertNull(actualSchemaPath);
     }
@@ -369,16 +452,16 @@ public class SchemaRegistryUtilTest {
     public void testGetSchemaPathFromCases() {
 
         List<SchemaPath> schemaPaths = new ArrayList<>();
-        schemaPaths.add(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params"));
-        schemaPaths.add(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma"));
+        schemaPaths.add(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params"));
+        schemaPaths.add(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma"));
 
         List<DataSchemaNode> dataSchemaNodes = new ArrayList<>();
         dataSchemaNodes.add(c_anvSchemaRegistry.getDataSchemaNode(schemaPaths.get(0)));
         dataSchemaNodes.add(c_anvSchemaRegistry.getDataSchemaNode(schemaPaths.get(1)));
 
         List<SchemaPath> expectedSchemaPaths = new ArrayList<>();
-        expectedSchemaPaths.add(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,device,discovered-device-properties"));
-        expectedSchemaPaths.add(fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,pma,configured-device-properties"));
+        expectedSchemaPaths.add(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,device,discovered-device-properties"));
+        expectedSchemaPaths.add(fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,pma,configured-device-properties"));
 
         List<SchemaPath> actualSchemaPaths = SchemaRegistryUtil.getSchemaPathFromCases(dataSchemaNodes);
         assertEquals(expectedSchemaPaths, actualSchemaPaths);
@@ -391,10 +474,10 @@ public class SchemaRegistryUtilTest {
     @Test
     public void testGetStateChildCases() {
 
-        SchemaPath choiceSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params");
+        SchemaPath choiceSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params");
         ChoiceSchemaNode choiceSchemaNode = (ChoiceSchemaNode) c_anvSchemaRegistry.getDataSchemaNode(choiceSchemaPath);
 
-        SchemaPath caseSchemaPath = fromString("(urn:org:bbf:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,device,discovered-device-properties");
+        SchemaPath caseSchemaPath = fromString("(urn:org:bbf2:pma?revision=2015-07-14)pma,device-holder,device,connection-initiator-params,device,discovered-device-properties");
         DataSchemaNode caseSchemaNode = c_anvSchemaRegistry.getDataSchemaNode(caseSchemaPath);
 
         List<QName> expectedQNames = new ArrayList<>();
@@ -450,8 +533,10 @@ public class SchemaRegistryUtilTest {
 
         List<QName> expectedQNames = new ArrayList<>();
         expectedQNames.add(stateListSchemaNode.getQName());
+        HelperDrivenModelNode modelNode = mock(HelperDrivenModelNode.class);
+        when(modelNode.getSchemaRegistryForParent()).thenReturn(c_anvSchemaRegistry);
 
-        List<QName> actualQNames = SchemaRegistryUtil.getStateChildLists(c_anvSchemaRegistry, nodeSchemaPath);
+        List<QName> actualQNames = SchemaRegistryUtil.getStateChildLists(modelNode, nodeSchemaPath);
         assertEquals(expectedQNames, actualQNames);
     }
 
@@ -471,8 +556,9 @@ public class SchemaRegistryUtilTest {
         List<QName> expectedQNames = new ArrayList<>();
         expectedQNames.add(stateContainerSchemaNodes.get(0).getQName());
         expectedQNames.add(stateContainerSchemaNodes.get(1).getQName());
-
-        List<QName> actualQNames = SchemaRegistryUtil.getStateChildContainers(c_anvSchemaRegistry, nodeSchemaPath);
+        HelperDrivenModelNode modelNode = mock(HelperDrivenModelNode.class);
+        when(modelNode.getSchemaRegistryForParent()).thenReturn(c_anvSchemaRegistry);
+        List<QName> actualQNames = SchemaRegistryUtil.getStateChildContainers(modelNode, nodeSchemaPath);
         assertEquals(expectedQNames, actualQNames);
     }
 
@@ -553,7 +639,7 @@ public class SchemaRegistryUtilTest {
                 .getPath()).getParent().toString());
         actualSchemaRegistry = SchemaRegistryUtil.createSchemaRegistry(resourceDir, Collections.emptySet(), Collections.emptyMap(),
                 true, new NoLockService());
-        assertEquals(30, actualSchemaRegistry.getAllModules().size());
+        assertEquals(40, actualSchemaRegistry.getAllModules().size());
         assertEquals(Optional.empty(), actualSchemaRegistry.getModule("dummy"));
     }
 
@@ -590,12 +676,6 @@ public class SchemaRegistryUtilTest {
         schemaPath = fromString("(urn:test-module?revision=2018-08-23)testContainer,nodeWithDefault");
         actualErrorPath = SchemaRegistryUtil.getErrorPath("/test:testContainer", element, c_anvSchemaRegistry.getDataSchemaNode(schemaPath), c_anvSchemaRegistry);
         assertEquals(expectedErrorPath, actualErrorPath);
-    }
-
-    @Test
-    public void testIsMountPointEnabled() {
-
-        assertTrue(SchemaRegistryUtil.isMountPointEnabled());
     }
 
     @Test
@@ -657,6 +737,166 @@ public class SchemaRegistryUtilTest {
     }
 
     @Test
+    public void testGetHintDetails(){
+    	Module module = c_anvSchemaRegistry.getModuleByNamespace("urn:module-with-hint");
+    	DataStoreValidationPathBuilder pathBuilder = new DataStoreValidationPathBuilder(c_anvSchemaRegistry, null);
+    	Map<SchemaPath, HintDetails> hintDetails = SchemaRegistryUtil.getHintDetails(module, c_anvSchemaRegistry, pathBuilder);
+    	assertEquals(4, hintDetails.size());
+    	QName hintContainer = QName.create("urn:module-with-node-hints", "2018-06-28", "hintContainer");
+    	QName nodeWithHint1 = QName.create("urn:module-with-node-hints", "2018-06-28", "nodeWithHint1");
+    	QName nodeWithHint2 = QName.create("urn:module-with-node-hints", "2018-06-28", "nodeWithHint2");
+    	QName nodeWithHint3 = QName.create("urn:module-with-node-hints", "2018-06-28", "nodeWithHint3");
+    	QName nodeWithHint4 = QName.create("urn:module-with-node-hints", "2018-06-28", "nodeWithHint4");
+    	QName nodeWithHint5 = QName.create("urn:module-with-node-hints", "2018-06-28", "nodeWithHint5");
+    	QName nodeWithHint8 = QName.create("urn:module-with-node-hints", "2018-06-28", "nodeWithHint8");
+    	QName nodeLeafListWithHint = QName.create("urn:module-with-node-hints", "2018-06-28", "nodeLeafList");
+
+    	SchemaPath nodeWithHint1SP = SchemaPath.create(true, hintContainer, nodeWithHint1);
+    	SchemaPath nodeWithHint2SP = SchemaPath.create(true, hintContainer, nodeWithHint2);
+    	SchemaPath nodeWithHint3SP = SchemaPath.create(true, hintContainer, nodeWithHint3);
+    	SchemaPath nodeWithHint4SP = SchemaPath.create(true, hintContainer, nodeWithHint4);
+    	SchemaPath nodeWithHint5SP = SchemaPath.create(true, hintContainer, nodeWithHint5);
+    	SchemaPath nodeWithHint8SP = SchemaPath.create(true, hintContainer, nodeWithHint8);
+    	SchemaPath nodeLeafListWithHintSP = SchemaPath.create(true, hintContainer, nodeLeafListWithHint);
+    	assertTrue(hintDetails.containsKey(nodeWithHint1SP));
+    	assertTrue(hintDetails.containsKey(nodeWithHint3SP));
+    	assertTrue(hintDetails.containsKey(nodeWithHint8SP));
+    	HintDetails hintDetail = hintDetails.get(nodeWithHint1SP);
+    	Map<SchemaPath, ValidationHint> hints = hintDetail.getReferredSPToHints();
+    	assertEquals(1, hints.size());
+    	assertTrue(hints.containsKey(nodeWithHint2SP));
+    	assertEquals(ValidationHint.SKIP_IMPACT_ON_CREATE, hints.get(nodeWithHint2SP));
+
+    	hintDetail = hintDetails.get(nodeWithHint3SP);
+    	hints = hintDetail.getReferredSPToHints();
+    	assertEquals(2, hints.size());
+    	assertTrue(hints.containsKey(nodeWithHint4SP));
+    	assertEquals(ValidationHint.SKIP_IMPACT_ON_CREATE, hints.get(nodeWithHint4SP));
+    	assertTrue(hints.containsKey(nodeWithHint5SP));
+    	assertEquals(ValidationHint.SKIP_IMPACT_VALIDATION, hints.get(nodeWithHint5SP));
+
+    	hintDetail = hintDetails.get(nodeWithHint8SP);
+    	hints = hintDetail.getReferredSPToHints();
+    	assertEquals(1, hints.size());
+    	assertTrue(hints.containsKey(nodeLeafListWithHintSP));
+    	assertEquals(ValidationHint.SKIP_VALIDATION, hints.get(nodeLeafListWithHintSP));
+    	assertTrue(hintDetail.isSkipValidation());
+
+        hintDetail = hintDetails.get(fromString("(urn:module-with-node-hints?revision=2018-06-28)hintContainer", "(urn:augmenting-module" +
+                "-with-when-condition?revision=2019-11-15)augmented-container"));
+        hints = hintDetail.getReferredSPToHints();
+        assertEquals(1, hints.size());
+        SchemaPath hintContainerTypeSP = fromString("(urn:module-with-node-hints?revision=2018-06-28)hintContainer,type");
+        assertTrue(hints.containsKey(hintContainerTypeSP));
+        assertEquals(ValidationHint.SKIP_IMPACT_ON_CREATE, hints.get(hintContainerTypeSP));
+        assertFalse(hintDetail.isSkipValidation());
+    }
+
+    @Test
+    public void testHintsDeployFailureCaseWithFailureCases() throws Exception{
+        SchemaRegistry schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        List<YangTextSchemaSource> yangSources = new ArrayList<YangTextSchemaSource>();
+        addYangSource(yangSources, "/schemaregistryutiltest/nc-stack-extensions.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-invalid-hint1.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-invalid-hint2.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-invalid-hint3.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-invalid-hint4.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-invalid-hint5.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-invalid-hint6.yang");
+        addYangSource(yangSources, "/schemaregistryutiltest/module-with-node-hints.yang");
+        schemaRegistry.buildSchemaContext(yangSources, Collections.emptySet(), Collections.emptyMap());
+
+        DataStoreValidationPathBuilder pathBuilder = new DataStoreValidationPathBuilder(schemaRegistry, null);
+        Module module = schemaRegistry.getModuleByNamespace("urn:module-with-invalid-hint1");
+        try {
+            SchemaRegistryUtil.getHintDetails(module, schemaRegistry, pathBuilder);
+            fail("should have fail with exception");
+        } catch(RuntimeException e){
+            assertEquals("Invalid targetNode '/nodehints:hintContainer/nodehints:nodeWithHintNotExists' in the validationHint Extension", e.getMessage());
+        }
+
+        module = schemaRegistry.getModuleByNamespace("urn:module-with-invalid-hint2");
+        try {
+            SchemaRegistryUtil.getHintDetails(module, schemaRegistry, pathBuilder);
+            fail("should have fail with exception");
+        } catch(RuntimeException e){
+            assertEquals("Expression derived-from-or-self(../nodehints:nodeWithHint2, 'identity4') not present in the target schemapath /nodehints:hintContainer/nodehints:nodeWithHint1 ", e.getMessage());
+        }
+
+        module = schemaRegistry.getModuleByNamespace("urn:module-with-invalid-hint3");
+        try {
+            SchemaRegistryUtil.getHintDetails(module, schemaRegistry, pathBuilder);
+            fail("should have fail with exception");
+        } catch(RuntimeException e){
+            assertEquals("ReferredSP does not exists for hint: /nodehints:hintContainer/nodehints:nodeWithHintNotExists", e.getMessage());
+        }
+
+        module = schemaRegistry.getModuleByNamespace("urn:module-with-invalid-hint4");
+        try {
+            SchemaRegistryUtil.getHintDetails(module, schemaRegistry, pathBuilder);
+            fail("should have fail with exception");
+        } catch(IllegalArgumentException e){
+            assertEquals("Hints should not be empty", e.getMessage());
+        }
+
+        module = schemaRegistry.getModuleByNamespace("urn:module-with-invalid-hint5");
+        try {
+            SchemaRegistryUtil.getHintDetails(module, schemaRegistry, pathBuilder);
+            fail("should have fail with exception");
+        } catch(RuntimeException e){
+            assertEquals("ReferredSP does not exists for hint: failme/nodehints:hintContainer/nodehints:nodeWithHint4", e.getMessage());
+        }
+
+        module = schemaRegistry.getModuleByNamespace("urn:module-with-invalid-hint6");
+        try {
+            SchemaRegistryUtil.getHintDetails(module, schemaRegistry, pathBuilder);
+            fail("should have fail with exception");
+        } catch(IllegalArgumentException e){
+            assertEquals("Cannot parse part of hint : /nodehints:hintContainer/nodehints:nodeWithHint4->SKIP_IMPACT_ON_CREATE->test  /nodehints:hintContainer/nodehints:nodeWithHint5->SKIP_IMPACT_VALIDATION", e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testSchemaPathFromSchemaNodeId () throws SchemaBuildException {
+        SchemaRegistry schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        List<YangTextSchemaSource> yangSources = new ArrayList<YangTextSchemaSource>();
+        addYangSource(yangSources, "/augmentwhenconditionanalysertest/yangs/ietf-interfaces.yang");
+        addYangSource(yangSources, "/augmentwhenconditionanalysertest/yangs/ietf-yang-types.yang");
+        schemaRegistry.buildSchemaContext(yangSources, Collections.emptySet(), Collections.emptyMap());
+        SchemaPath expectedSchemaPath = fromString("(urn:ietf:params:xml:ns:yang:ietf-interfaces?revision=2014-05-08)interfaces,interface");
+        Map<String, String> prefixToNsMap = new HashMap<>();
+        prefixToNsMap.put("if", "urn:ietf:params:xml:ns:yang:ietf-interfaces");
+        String pathStr = "if:interfaces/if:interface";
+        SchemaPath actualSchemaPath =SchemaRegistryUtil.getSchemaPathFromSchemaNodeId(schemaRegistry, prefixToNsMap, pathStr);
+        assertEquals(expectedSchemaPath, actualSchemaPath);
+    }
+
+    @Test
+    public void testIsListOrderedByUser(){
+        SchemaPath container1ListSP = fromString("(" + NESTED_CHOICE_NS_REVISION + ")" +
+                "root-container");
+
+        assertFalse(SchemaRegistryUtil.isListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-list1"),
+                container1ListSP, c_anvSchemaRegistry));
+
+        assertTrue(SchemaRegistryUtil.isListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-list2"),
+                container1ListSP, c_anvSchemaRegistry));
+
+        assertFalse(SchemaRegistryUtil.isListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-case1-list1"),
+                container1ListSP, c_anvSchemaRegistry));
+
+        assertTrue(SchemaRegistryUtil.isListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-case1-list2"),
+                container1ListSP, c_anvSchemaRegistry));
+
+        assertFalse(SchemaRegistryUtil.isListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level2-case1-list1"),
+                container1ListSP, c_anvSchemaRegistry));
+
+        assertTrue(SchemaRegistryUtil.isListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level2-case1-list2"),
+                container1ListSP, c_anvSchemaRegistry));
+    }
+
+    @Test
     public void testIsLeafListOrderedByUser(){
         SchemaPath container1ListSP = fromString("(" + NESTED_CHOICE_NS_REVISION + ")" +
                 "root-container");
@@ -667,5 +907,19 @@ public class SchemaRegistryUtilTest {
         assertTrue(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-leaf-list2"),
                 container1ListSP,c_anvSchemaRegistry));
 
+        assertFalse(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-case1-leaf-list1"),
+                container1ListSP,c_anvSchemaRegistry));
+
+        assertTrue(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-case1-leaf-list2"),
+                container1ListSP,c_anvSchemaRegistry));
+
+        assertFalse(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level1-case2-leaf-list"),
+                container1ListSP,c_anvSchemaRegistry));
+
+        assertFalse(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level2-case2-leaf-list"),
+                container1ListSP,c_anvSchemaRegistry));
+
+        assertTrue(SchemaRegistryUtil.isLeafListOrderedByUser(QName.create(NESTED_CHOICE_NS, NESTED_CHOICE_REVISION,"level2-case2-enum-leaf-list"),
+                container1ListSP, c_anvSchemaRegistry));
     }
 }

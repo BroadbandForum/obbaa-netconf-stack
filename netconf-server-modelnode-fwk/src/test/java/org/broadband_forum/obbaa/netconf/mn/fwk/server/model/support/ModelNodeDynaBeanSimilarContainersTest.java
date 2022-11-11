@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn.CONTAINER;
@@ -12,23 +28,12 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.beanutils.DynaBean;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.XmlContainerModelNodeHelper;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeRdn;
@@ -37,12 +42,23 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetConfServerImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn.XmlContainerModelNodeHelper;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang.YangCopyConfigTest;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class ModelNodeDynaBeanSimilarContainersTest {
 
 	private static final String ROOT_CONTAINER = "root-container";
@@ -69,10 +85,10 @@ public class ModelNodeDynaBeanSimilarContainersTest {
 	@SuppressWarnings("deprecation")
 	@Before
 	public void initServer() throws SchemaBuildException, ModelNodeInitException {
-		RequestScope.setEnableThreadLocalInUT(true);
 
 		m_schemaRegistry = new SchemaRegistryImpl(Collections.<YangTextSchemaSource> emptyList(), Collections.emptySet(), Collections.emptyMap(), new NoLockService());
 		m_subSystemRegistry = new SubSystemRegistryImpl();
+		m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
 		m_server = new NetConfServerImpl(m_schemaRegistry);
 
 		// build Schema Registry
@@ -160,11 +176,6 @@ public class ModelNodeDynaBeanSimilarContainersTest {
 		keys.put(QName.create(namespace, COMMON_ROOT_YANG_REVISION, TEST),
 				new GenericConfigAttribute(TEST, namespace, leafValue));
 		m_dataStoreManager.createNode(testNode, subrootId);
-	}
-
-	@After
-	public void cleanup() {
-		RequestScope.setEnableThreadLocalInUT(false);
 	}
 
 	@SuppressWarnings("unchecked")

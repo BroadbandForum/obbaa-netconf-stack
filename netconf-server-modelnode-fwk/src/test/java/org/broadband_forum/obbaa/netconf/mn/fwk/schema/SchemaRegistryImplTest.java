@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema;
 
 import static org.junit.Assert.assertEquals;
@@ -27,28 +43,32 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.commons.jxpath.ri.compiler.Expression;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.broadband_forum.obbaa.netconf.api.parser.YangParserUtil;
+import org.broadband_forum.obbaa.netconf.api.util.DataPath;
 import org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.SchemaNodeConstraintParser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.TypeValidator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.DataPathUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.notification.YangLibraryChangeNotification;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.notification.listener.YangLibraryChangeNotificationListener;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.jxpath.JXPathUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.LockServiceException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.ReadWriteLockServiceImpl;
 import org.broadband_forum.obbaa.netconf.server.RequestScope;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
@@ -71,6 +91,7 @@ import com.google.common.collect.BiMap;
 /**
  * Created by keshava on 11/18/15.
  */
+@RunWith(RequestScopeJunitRunner.class)
 public class SchemaRegistryImplTest {
     public static final String TOASTER_COMPONENT = "toaster-component";
     SchemaRegistryImpl m_schemaRegistry;
@@ -91,6 +112,7 @@ public class SchemaRegistryImplTest {
     public static final String JB_NS = "http://example.com/ns/example-jukebox";
     private static final String IETF_INET_TYPES_NS = "urn:ietf:params:xml:ns:yang:ietf-inet-types";
     public static final String JB_REVISION = "2014-07-03";
+    public static final String JB_COMPONENT_ID = "example-jukebox?revision=2014-07-03";
     private static final String YANG11_NS = "http://example.com/ns/example-test-11";
     private static final String YANG11_REVISION = "2017-02-14";
     public static final SchemaPath JUKEBOX_PATH = SchemaPath.create(true, QName.create(JB_NS, JB_REVISION, "jukebox"));
@@ -102,7 +124,7 @@ public class SchemaRegistryImplTest {
     private static final String MODULE_SET_ID = "e586743e50c089f05a4ef846ee4584f84db994a3f7c77365b039d37702ec31ab";
     private static final String EXAMPLE_YANG11_FILE_CAPS = "http://example.com/ns/example-test-11?module=example-test-11&revision=2017-02-14";
     private static final String YANG_LIBRARY_CAP_WITH_MODULESETID = "urn:ietf:params:netconf:capability:yang-library:1.0?revision=2016-04-09&module-set-id=61d583da395eff1b46f5ea2dfd0c3de73638030db7ba4a7204512d90e68a7787";
-    private static Logger LOGGER = Logger.getLogger(SchemaRegistry.class);
+    private static Logger LOGGER = LogManager.getLogger(SchemaRegistry.class);
     private YangLibraryChangeNotificationListener m_listener = mock(YangLibraryChangeNotificationListener.class);
     private static final String COMPONENT_ID1 = "component-id1";
     private static final String AUGMENTED_PATH = "/schemapath1";
@@ -110,12 +132,6 @@ public class SchemaRegistryImplTest {
     @Before
     public void setUp() throws SchemaBuildException {
         m_schemaRegistry = Mockito.spy(new SchemaRegistryImpl(Collections.<YangTextSchemaSource>emptyList(), Collections.emptySet(), Collections.emptyMap(), false, new ReadWriteLockServiceImpl()));
-        RequestScope.setEnableThreadLocalInUT(true);
-    }
-
-    @After
-    public void teardown() {
-        RequestScope.setEnableThreadLocalInUT(false);
     }
 
     @Test
@@ -220,10 +236,37 @@ public class SchemaRegistryImplTest {
     }
 
     @Test
+    public void testGetAllModulesWhenYangLibraryIgnored() throws SchemaBuildException {
+        List<YangTextSchemaSource> schemaSources = new ArrayList<>();
+        schemaSources.add(c_testYangFile);
+        schemaSources.add(c_testSubmoduleYangFile);
+        schemaSources.add(c_ietfInetTypesFile);
+        m_schemaRegistry.setYangLibraryIgnored(true);
+        m_schemaRegistry.buildSchemaContext(schemaSources, null, null);
+        Set<Module> modules = m_schemaRegistry.getAllModules();
+        //Not including submodules
+        assertEquals(2, modules.size());
+    }
+
+    @Test
     public void testBuildSchemaContext() throws SchemaBuildException {
         assertEquals(0, m_schemaRegistry.getRootDataSchemaNodes().size());
 
         m_schemaRegistry.buildSchemaContext(getYangFiles(), Collections.emptySet(), Collections.emptyMap());
+        assertEquals(2, m_schemaRegistry.getRootDataSchemaNodes().size());
+        Set<QName> qnames = new HashSet<>();
+        for (DataSchemaNode dataSchemaNode : m_schemaRegistry.getRootDataSchemaNodes()) {
+            qnames.add(dataSchemaNode.getQName());
+        }
+        assertTrue(qnames.contains(JUKEBOX_PATH.getLastComponent()));
+        assertTrue(qnames.contains(PLAYER_PATH.getLastComponent()));
+    }
+
+    @Test
+    public void testBuildSchemaContextWithYangLibraryIgnored() throws SchemaBuildException {
+        assertEquals(0, m_schemaRegistry.getRootDataSchemaNodes().size());
+        m_schemaRegistry.setYangLibraryIgnored(true);
+        m_schemaRegistry.buildSchemaContext(getYangFiles(), null, null);
         assertEquals(2, m_schemaRegistry.getRootDataSchemaNodes().size());
         Set<QName> qnames = new HashSet<>();
         for (DataSchemaNode dataSchemaNode : m_schemaRegistry.getRootDataSchemaNodes()) {
@@ -276,17 +319,47 @@ public class SchemaRegistryImplTest {
     }
 
     @Test
+    public void testGetDataSchemaNode() throws SchemaBuildException {
+        m_schemaRegistry.buildSchemaContext(getYangFiles(), Collections.emptySet(), Collections.emptyMap());
+        List<QName> qnameList = new ArrayList<>();
+        qnameList.add(QName.create(YANG11_NS, YANG11_REVISION, "player"));
+        qnameList.add(QName.create(YANG11_NS, YANG11_REVISION, "containerInNestedChoice"));
+        DataSchemaNode dsn = m_schemaRegistry.getDataSchemaNode(qnameList);
+        assertNotNull(dsn);
+    }
+
+    @SuppressWarnings({ "deprecation"})
+    @Test
     public void testGetActions() throws SchemaBuildException {
         m_schemaRegistry.buildSchemaContext(getYangFiles(), Collections.emptySet(), Collections.emptyMap());
 
         Set<ActionDefinition> actions = m_schemaRegistry.retrieveAllActionDefinitions();
-        assertEquals(1, actions.size());
-        assertEquals("container-action", actions.iterator().next().getQName().getLocalName());
+        assertEquals(2, actions.size());
+        Iterator<ActionDefinition> it = actions.iterator();
+        List<String> actionNames = new ArrayList<>();
+        while(it.hasNext()){
+            actionNames.add(it.next().getQName().getLocalName());
+        }
+
+        assertTrue(actionNames.contains("container-action"));
+        assertTrue(actionNames.contains("actionInChoice"));
+
         makeSureActionExists();
+
+        List<QName> qNameList = new ArrayList<>(PLAYER_PATH.getPath());
+        QName actionContainerQName = QName.create(YANG11_NS, YANG11_REVISION, "actionContainer"); // skipped the choicePath
+        QName actionInChoiceQName = QName.create(YANG11_NS, YANG11_REVISION, "actionInChoice");
+        qNameList.add(actionContainerQName);
+        qNameList.add(actionInChoiceQName);
+        DataPath actionDataPath = DataPathUtil.convertToDataPath(qNameList);
+        ActionDefinition actDef = m_schemaRegistry.getActionDefinitionNode(actionDataPath);
+        assertNotNull(actDef);
     }
 
     private void makeSureActionExists() {
-        ActionDefinition containerAction = m_schemaRegistry.getActionDefinitionNode(CONTAINER_ACTION_PATH.getPath());
+        @SuppressWarnings("deprecation")
+        DataPath actionDataPath = DataPathUtil.convertToDataPath(CONTAINER_ACTION_PATH.getPath());
+        ActionDefinition containerAction = m_schemaRegistry.getActionDefinitionNode(actionDataPath);
         assertEquals(CONTAINER_ACTION_PATH.getLastComponent(), containerAction.getQName());
         assertEquals("input", containerAction.getInput().getQName().getLocalName());
         assertEquals(1, containerAction.getInput().getChildNodes().size());
@@ -347,6 +420,22 @@ public class SchemaRegistryImplTest {
         //make sure no augmentation before
         assertEquals(1, ((DataNodeContainer) m_schemaRegistry.getDataSchemaNode(playerPath)).getChildNodes().size());
         m_schemaRegistry.loadSchemaContext("jukebox-plug", Arrays.asList(c_jukeboxPlugYangTypesFile), Collections.emptySet(), Collections.emptyMap());
+        assertEquals(2, m_schemaRegistry.getRootDataSchemaNodes().size());
+        //make sure it is augmented
+        assertEquals(2, ((DataNodeContainer) m_schemaRegistry.getDataSchemaNode(playerPath)).getChildNodes().size());
+
+    }
+
+    @Test
+    public void testLoadSchemaContextWithAugmentationWithYangLibraryIgnored() throws SchemaBuildException {
+        m_schemaRegistry.setYangLibraryIgnored(true);
+        m_schemaRegistry.buildSchemaContext(getYangFiles(), null, null);
+        SchemaPath playerPath = SchemaPath.create(true, QName.create(JB_NS, JB_REVISION, "jukebox"),
+                QName.create(JB_NS, JB_REVISION, "player"));
+
+        //make sure no augmentation before
+        assertEquals(1, ((DataNodeContainer) m_schemaRegistry.getDataSchemaNode(playerPath)).getChildNodes().size());
+        m_schemaRegistry.loadSchemaContext("jukebox-plug", Arrays.asList(c_jukeboxPlugYangTypesFile), null, null, true, true);
         assertEquals(2, m_schemaRegistry.getRootDataSchemaNodes().size());
         //make sure it is augmented
         assertEquals(2, ((DataNodeContainer) m_schemaRegistry.getDataSchemaNode(playerPath)).getChildNodes().size());
@@ -420,7 +509,7 @@ public class SchemaRegistryImplTest {
 
         QName featureQName = QName.create(new URI("feature-testNS"), (Revision) null, "test-feature-1");
         m_schemaRegistry.loadSchemaContext("jukebox-plug", Arrays.asList(c_jukeboxPlugYangTypesFile), Collections.singleton(featureQName),
-                supportedDeviations);
+                supportedDeviations, true);
         LeafListSchemaNode leafListSchemaNode = ((LeafListSchemaNode) (m_schemaRegistry
                 .getDataSchemaNode(supportedNodePath)));
 
@@ -428,6 +517,25 @@ public class SchemaRegistryImplTest {
         assertEquals((Integer) 2, leafListSchemaNode.getElementCountConstraint().get().getMaxElements());
 
         // should be here, because feature supported
+        QName testContainerA = QName.create(new URI("feature-testNS"), (Revision) null, "test-container-a");
+        SchemaPath testContainerAPath = SchemaPath.create(true, testContainerA);
+        ContainerSchemaNode testContainerANode = (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(testContainerAPath);
+        assertNotNull(testContainerANode);
+    }
+
+    @Test
+    public void testLoadSchemaContextWithDeviationsAndFeaturesWithYangLibraryIgnored() throws Exception {
+
+        List<YangTextSchemaSource> schemaSources = new ArrayList<>();
+        YangTextSchemaSource featuretest_yang = YangParserUtil.getYangSource(SchemaRegistryImplTest.class.getResource("/yangSchemaValidationTest/referenceyangs/feature-test.yang"));
+        schemaSources.addAll(getYangFiles());
+        schemaSources.add(featuretest_yang);
+        schemaSources.addAll(getDeviationYangFiles());
+        m_schemaRegistry.setYangLibraryIgnored(true);
+        m_schemaRegistry.buildSchemaContext(schemaSources, null, null);
+        m_schemaRegistry.loadSchemaContext("jukebox-plug", Arrays.asList(c_jukeboxPlugYangTypesFile), null,
+                null, true, true);
+
         QName testContainerA = QName.create(new URI("feature-testNS"), (Revision) null, "test-container-a");
         SchemaPath testContainerAPath = SchemaPath.create(true, testContainerA);
         ContainerSchemaNode testContainerANode = (ContainerSchemaNode) m_schemaRegistry.getDataSchemaNode(testContainerAPath);
@@ -490,7 +598,7 @@ public class SchemaRegistryImplTest {
         QName qname = QName.create("test", "test2");
         m_schemaRegistry.buildSchemaContext(getAnvYangFiles(), Collections.emptySet(), Collections.emptyMap());
         m_schemaRegistry.loadSchemaContext("G.fast-plug", getGfastYangFiles(), Collections.emptySet(), Collections.emptyMap());
-        SchemaPath deviceSchemaPath = new SchemaPathBuilder().withNamespace("urn:org:bbf:pma").withRevision("2015-07-14")
+        SchemaPath deviceSchemaPath = new SchemaPathBuilder().withNamespace("urn:org:bbf2:pma").withRevision("2015-07-14")
                 .appendLocalName("pma").appendLocalName("device-holder").appendLocalName("device").build();
         assertNotNull(m_schemaRegistry.getDataSchemaNode(deviceSchemaPath));
         DataSchemaNode dataSchemaNode = mock(DataSchemaNode.class, withSettings().extraInterfaces(DataNodeContainer.class));
@@ -516,9 +624,11 @@ public class SchemaRegistryImplTest {
         SchemaPath listNameSchemaPath = new SchemaPathBuilder().withNamespace(childImpactNS).appendLocalName("listName").withParent(innerList1SchemaPath).withRevision("2018-10-29").build();
         SchemaPath typeSchemaPath = new SchemaPathBuilder().withNamespace(childImpactNS).appendLocalName("type").withParent(innerList1SchemaPath).withRevision("2018-10-29").build();
         String expression = "../parent-list[current()]/inner-list1[current()]/type = 'test'";
-        m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", whenLeafSchemaPath, typeSchemaPath, expression);
-        Map<SchemaPath, Expression> childImpactMap = m_schemaRegistry.addChildImpactPaths(parentListSchemaPath);
-        assertEquals(childImpactMap.get(whenLeafSchemaPath), JXPathUtils.getExpression(expression));
+        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(typeSchemaPath, whenLeafSchemaPath, expression));
+        ReferringNodes childImpactMap = m_schemaRegistry.addChildImpactPaths(parentListSchemaPath, Collections.EMPTY_SET);
+        assertEquals(1, childImpactMap.get(whenLeafSchemaPath).stream().filter(referringNode -> (
+            referringNode.getReferringNodeAP().equals(JXPathUtils.getExpression(expression)) ? true : false
+            )).count());
 
     }
 
@@ -565,9 +675,22 @@ public class SchemaRegistryImplTest {
     }
 
     @Test
+    public void testUnloadSchemaContextWithAugmentationWitYangLibraryIgnored() throws SchemaBuildException {
+        m_schemaRegistry.setYangLibraryIgnored(true);
+        m_schemaRegistry.buildSchemaContext(getYangFiles(), null,null);
+        SchemaPath playerPath = SchemaPath.create(true, QName.create(JB_NS, JB_REVISION, "jukebox"),
+                QName.create(JB_NS, JB_REVISION, "player"));
+        //make sure no augmentation before
+        assertEquals(1, ((DataNodeContainer) m_schemaRegistry.getDataSchemaNode(playerPath)).getChildNodes().size());
+        m_schemaRegistry.loadSchemaContext("jukebox-plug", Arrays.asList(c_jukeboxPlugYangTypesFile), null, null, true, true);
+        m_schemaRegistry.unloadSchemaContext("jukebox-plug", null, null, true, true);
+        assertEquals(1, ((DataNodeContainer) m_schemaRegistry.getDataSchemaNode(playerPath)).getChildNodes().size());
+    }
+
+    @Test
     public void testMoreYangs() throws SchemaBuildException {
         SchemaPath deviceSchemaPath = new SchemaPathBuilder()
-                .withNamespace("urn:org:bbf:pma")
+                .withNamespace("urn:org:bbf2:pma")
                 .withRevision("2015-07-14")
                 .appendLocalName("pma")
                 .appendLocalName("device-holder")
@@ -602,15 +725,15 @@ public class SchemaRegistryImplTest {
         m_schemaRegistry.buildSchemaContext(getAnvYangFiles(), Collections.emptySet(), Collections.emptyMap());
         m_schemaRegistry.loadSchemaContext("G.fast-plug", getGfastYangFiles(), Collections.emptySet(), Collections.emptyMap());
         SchemaPath pmaSchemaPath = new SchemaPathBuilder()
-                .withNamespace("urn:org:bbf:pma")
+                .withNamespace("urn:org:bbf2:pma")
                 .withRevision("2015-07-14")
                 .appendLocalName("pma")
                 .build();
-        assertEquals(8, m_schemaRegistry.getChildren(pmaSchemaPath).size());
+        assertEquals(9, m_schemaRegistry.getChildren(pmaSchemaPath).size());
         verify(readWriteLockService, atLeastOnce()).executeWithReadLock(Mockito.any());
 
         SchemaPath usersCountSchemaPath = new SchemaPathBuilder()
-                .withNamespace("urn:org:bbf:pma")
+                .withNamespace("urn:org:bbf2:pma")
                 .withRevision("2015-07-14")
                 .appendLocalName("pma")
                 .appendLocalName("users")
@@ -619,7 +742,7 @@ public class SchemaRegistryImplTest {
         assertEquals(0, m_schemaRegistry.getChildren(usersCountSchemaPath).size());
 
         usersCountSchemaPath = new SchemaPathBuilder()
-                .withNamespace("urn:org:bbf:pma")
+                .withNamespace("urn:org:bbf2:pma")
                 .withRevision("2015-07-14")
                 .appendLocalName("pma")
                 .appendLocalName("users")
@@ -635,7 +758,7 @@ public class SchemaRegistryImplTest {
         //prepare schema registry
         m_schemaRegistry.buildSchemaContext(getAnvYangFiles(), Collections.emptySet(), Collections.emptyMap());
         SchemaPath deviceSchemaPath = new SchemaPathBuilder()
-                .withNamespace("urn:org:bbf:pma")
+                .withNamespace("urn:org:bbf2:pma")
                 .withRevision("2015-07-14")
                 .appendLocalName("pma")
                 .appendLocalName("device-holder")
@@ -663,7 +786,7 @@ public class SchemaRegistryImplTest {
         }
 
         SchemaPath discoveredPropertiesSchemaPath = new SchemaPathBuilder()
-                .withNamespace("urn:org:bbf:pma")
+                .withNamespace("urn:org:bbf2:pma")
                 .withRevision("2015-07-14")
                 .appendLocalName("pma")
                 .appendLocalName("device-holder")
@@ -676,7 +799,7 @@ public class SchemaRegistryImplTest {
         expectedDeviceChildren.add(discoveredSchemaNode);
 
         SchemaPath configuredPropertiesSchemaPath = new SchemaPathBuilder()
-                .withNamespace("urn:org:bbf:pma")
+                .withNamespace("urn:org:bbf2:pma")
                 .withRevision("2015-07-14")
                 .appendLocalName("pma")
                 .appendLocalName("device-holder")
@@ -846,7 +969,7 @@ public class SchemaRegistryImplTest {
         assertEquals(MODULE_SET_ID, moduleSetId);
 
         assertEquals(JB_NS, m_schemaRegistry.getNamespaceURI("jbox"));
-        verify(readWriteLockService, times(1)).executeWithReadLock(Mockito.any());
+        verify(readWriteLockService, times(3)).executeWithReadLock(Mockito.any());
     }
 
     @Test
@@ -970,6 +1093,19 @@ public class SchemaRegistryImplTest {
         return Arrays.asList(bbfFastYangFile, ianaTypeYangFile, yumaAppCommonYangFile, yumaArpYangFile, yumaInterfacesYangFile,
                 ietfNetconfYangFile, yumaNacmYangFile, yumaProcYangFile, yumaSystemYangFile, yumaTypesYangFile);
     }
+    
+    public static List<String> getGfastYangFileNames() {
+    	return Arrays.asList("/yangSchemaValidationTest/referenceyangs/anvyangs/bbf-fast@2015-02-27.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/iana-if-type@2014-05-08.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/ietf-netconf@2011-03-08.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/yuma-app-common@2012-08-16.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/yuma-arp@2012-01-13.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/yuma-interfaces@2012-01-13.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/yuma-nacm@2012-10-05.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/yuma-proc@2012-10-10.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/yuma-system@2012-10-05.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/yuma-types@2012-06-01.yang");
+    }
 
     public static List<YangTextSchemaSource> getAnvYangFiles() {
         YangTextSchemaSource aluDeviceYangFile = YangParserUtil.getYangSource(SchemaRegistryImplTest.class.getResource("/yangSchemaValidationTest/referenceyangs/anvyangs/alu-device-plugs@2015-07-14.yang"));
@@ -987,6 +1123,20 @@ public class SchemaRegistryImplTest {
         return Arrays.asList(aluDeviceYangFile, aluDpuSwmgmtYangFile, aluPmaYangFile,
                 aluCertificatesYangFile, aluStatsYangFile, aluPmaSwmgmtYangFile, aluPmaTypesYangFile, aluPmaUsersYangFile,
                 ietfYangTypesYangFile, ietfInetYangFile, ietfInterfacesYangFile);
+    }
+    
+    public static List<String> getAnvYangFileNames() {
+    	return Arrays.asList("/yangSchemaValidationTest/referenceyangs/anvyangs/alu-device-plugs@2015-07-14.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/alu-dpu-swmgmt@2015-07-14.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma@2015-07-14.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma-certificates@2015-07-14.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma-statistics@2015-07-14.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma-swmgmt@2015-07-14.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma-types@2015-08-13.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma-users@2015-07-14.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/ietf-yang-types@2010-09-24.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/ietf-inet-types@2010-09-24.yang",
+    			"/yangSchemaValidationTest/referenceyangs/anvyangs/ietf-interfaces@2014-05-08.yang");
     }
 
     private void makeSureMakeToastRpcExists() {
@@ -1038,7 +1188,7 @@ public class SchemaRegistryImplTest {
                 .appendLocalName("dvd")
                 .build();
 
-        m_schemaRegistry.registerNodesReferencedInConstraints("G.Fast-1.1", constraintSchemaPath, nodeSchemaPath, null);
+        m_schemaRegistry.registerNodesReferredInConstraints("G.Fast-1.1", new ReferringNode(nodeSchemaPath, constraintSchemaPath, null));
         assertTrue(m_schemaRegistry.getSchemaPathsForComponent("G.Fast-1.1").size() == 1);
         m_schemaRegistry.deRegisterNodesReferencedInConstraints("G.Fast-1.1");
         assertTrue(m_schemaRegistry.getSchemaPathsForComponent("G.Fast-1.1").isEmpty());
@@ -1230,6 +1380,38 @@ public class SchemaRegistryImplTest {
             fail("Exception expected");
         } catch (RuntimeException e) {
         }
+    }
+    
+    @Test
+    public void testRegisteringAndRetrievingOfWhenReferringNodes() throws Exception {
+
+    	SchemaPath constraintSchemaPath = new SchemaPathBuilder()
+    			.withNamespace(JB_NS)
+    			.withRevision(JB_REVISION)
+    			.appendLocalName("jukebox")
+    			.appendLocalName("platform")
+    			.appendLocalName("laptop")
+    			.build();
+
+    	SchemaPath nodeSchemaPath = new SchemaPathBuilder()
+    			.withNamespace(JB_NS)
+    			.withRevision(JB_REVISION)
+    			.appendLocalName("jukebox")
+    			.appendLocalName("platform")
+    			.appendLocalName("internet")
+    			.build();
+
+    	m_schemaRegistry.registerWhenReferringNodes(JB_COMPONENT_ID, constraintSchemaPath, nodeSchemaPath, null);
+    	assertEquals(1, m_schemaRegistry.getWhenReferringNodes(nodeSchemaPath).size());
+    	assertTrue(m_schemaRegistry.getWhenReferringNodes(nodeSchemaPath).containsKey(constraintSchemaPath));
+    	assertEquals(1, m_schemaRegistry.getWhenReferringNodes(JB_COMPONENT_ID,nodeSchemaPath).size());
+    	assertTrue(m_schemaRegistry.getWhenReferringNodes(JB_COMPONENT_ID, nodeSchemaPath).containsKey(constraintSchemaPath));
+
+    	// Verify component id
+    	List<YangTextSchemaSource> schemaSources = new ArrayList<>();
+    	schemaSources.add(c_jukeboxYangFile);
+    	m_schemaRegistry.buildSchemaContext(schemaSources, Collections.emptySet(), Collections.emptyMap());
+    	assertEquals(JB_COMPONENT_ID, m_schemaRegistry.getComponentIdByNamespace(JB_NS));
     }
 
     @Test

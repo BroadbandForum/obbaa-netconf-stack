@@ -19,19 +19,20 @@ package org.broadband_forum.obbaa.netconf.api.server.auth;
 import java.io.Serializable;
 import java.security.PublicKey;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerConfigurationBuilder;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
  * An interface to authenticate netconf client logins. A Netconf server should provide an implementation of this interface via
  * {@link NetconfServerConfigurationBuilder#setAuthenticationHandler(NetconfServerAuthenticationHandler)} to authenticate client logins.
  * 
- *
+ * 
  * 
  */
 public interface NetconfServerAuthenticationHandler {
-    Logger LOGGER = Logger.getLogger(NetconfServerAuthenticationHandler.class);
+    AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfServerAuthenticationHandler.class, LogAppNames.NETCONF_LIB);
 
     AuthenticationResult authenticate(ClientAuthenticationInfo clientAuthInfo);
 

@@ -1,31 +1,40 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.ValidationConstants.VALIDATION_NS;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.ValidationConstants.VALIDATION_REVISION;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.junit.Before;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang.AbstractValidationTestSetup;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaMountRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.support.SchemaMountRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NbiNotificationHelper;
@@ -69,12 +78,18 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.valida
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.SomeInnerList;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.SomeList;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.model.Validation;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang.AbstractValidationTestSetup;
 import org.broadband_forum.obbaa.netconf.persistence.EMFactory;
 import org.broadband_forum.obbaa.netconf.persistence.PersistenceManagerUtil;
 import org.broadband_forum.obbaa.netconf.persistence.jpa.JPAEntityManagerFactory;
 import org.broadband_forum.obbaa.netconf.persistence.jpa.ThreadLocalPersistenceManagerUtil;
+import org.junit.Before;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.xml.sax.SAXException;
 
 @SuppressWarnings("deprecation")
 public class AbstractRootModelTest extends AbstractValidationTestSetup{
@@ -205,17 +220,13 @@ public class AbstractRootModelTest extends AbstractValidationTestSetup{
     protected NetConfServerImpl m_server;
     protected DataStoreValidator m_datastoreValidator;
     protected DataStore m_dataStore;
-    protected SchemaRegistry m_schemaRegistry;
+    protected static SchemaRegistry m_schemaRegistry;
     protected NetconfClientInfo m_clientInfo;
     protected ModelNode m_rootModelNode;
     protected DataStoreIntegrityService m_integrityService;
-    protected SchemaMountRegistry m_schemaMountRegistry;
+    protected static SchemaMountRegistry m_schemaMountRegistry;
     
-    protected List<YangTextSchemaSource> getYangs(){
-        return TestUtil.getByteSources(getYangFiles());
-    }
-    
-    protected List<String> getYangFiles() {
+    protected static List<String> getYangFiles() {
         List<String> fileNames = new LinkedList<String>();
         fileNames.add("/datastorevalidatortest/yangs/dummy-extension.yang");
         fileNames.add("/datastorevalidatortest/yangs/ietf-yang-schema-mount@2017-10-09.yang");
@@ -227,13 +238,12 @@ public class AbstractRootModelTest extends AbstractValidationTestSetup{
     @Before
     public void setup() throws SchemaBuildException, AnnotationAnalysisException, ModelNodeFactoryException{
         Thread.currentThread().setContextClassLoader(AbstractRootModelTest.class.getClassLoader());
-        List<YangTextSchemaSource> yangFiles = getYangs();
         EMFactory managerFactory = new JPAEntityManagerFactory("hsql",Collections.EMPTY_MAP);
 
-        getSchemaRegistry(yangFiles);
         m_modelNodeDsm = new InMemoryDSM(m_schemaRegistry);
         m_entityRegistry = new EntityRegistryImpl();
         m_subSystemRegistry = new SubSystemRegistryImpl();
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_modelNodeHelperRegistry = new ModelNodeHelperRegistryImpl(m_schemaRegistry);
         m_expValidator = new DSExpressionValidator(m_schemaRegistry, m_modelNodeHelperRegistry, m_subSystemRegistry);
         m_modelNodeDSMRegistry = new ModelNodeDSMRegistryImpl();
@@ -244,8 +254,8 @@ public class AbstractRootModelTest extends AbstractValidationTestSetup{
         m_entityModelNodeHelperDeployer = new EntityModelNodeHelperDeployer(m_modelNodeHelperRegistry, m_schemaRegistry, m_aggregatedDSM,
                 m_entityRegistry, m_subSystemRegistry);
         m_xmlModelNodeToXmlMapper = new XmlModelNodeToXmlMapperImpl(m_dsmCache, m_schemaRegistry, m_modelNodeHelperRegistry, m_subSystemRegistry,
-                m_entityRegistry);
-        m_server = new NetConfServerImpl(m_schemaRegistry);
+                m_entityRegistry, null);
+        m_server = new NetConfServerImpl(m_schemaRegistry, new RpcRequestConstraintParser(m_schemaRegistry, m_xmlSubtreeDSM, m_expValidator, null));
         m_integrityService = spy(new DataStoreIntegrityServiceImpl(m_server));
         m_datastoreValidator = new DataStoreValidatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_aggregatedDSM, m_integrityService, m_expValidator);
         m_clientInfo = new NetconfClientInfo("unit-test", 1);
@@ -268,15 +278,10 @@ public class AbstractRootModelTest extends AbstractValidationTestSetup{
 		YangUtils.loadXmlDataIntoServer(m_server, getClass().getResource(DEFAULT_XML).getPath());
 	}
 
-	protected void getSchemaRegistry(List<YangTextSchemaSource> yangFiles) throws SchemaBuildException {
-        m_schemaMountRegistry = new SchemaMountRegistryImpl();
-		m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), false, new NoLockService());
-		((SchemaRegistryImpl)m_schemaRegistry).setSchemaMountRegistry(m_schemaMountRegistry);
-	}
 
-	protected void loadSubSystems() throws ModelNodeFactoryException {
+	protected void loadSubSystems() throws ModelNodeFactoryException, SchemaBuildException {
 		YangUtils.deployInMemoryHelpers(getYangFiles(), new LocalSubSystem(), m_modelNodeHelperRegistry,
-                m_subSystemRegistry, m_schemaRegistry, m_aggregatedDSM);
+                m_subSystemRegistry, m_schemaRegistry, m_aggregatedDSM, null, null);
 	}
 	
     @SuppressWarnings("rawtypes")
@@ -319,4 +324,9 @@ public class AbstractRootModelTest extends AbstractValidationTestSetup{
     protected NetConfResponse editConfigAsFalse(String requestXml){
         return editConfig(m_server, m_clientInfo, requestXml,false);
     }
+    
+    protected void verifyGet(String expectedOutput) throws SAXException, IOException {
+        super.verifyGet(m_server, m_clientInfo, expectedOutput);
+    }
+    
 }

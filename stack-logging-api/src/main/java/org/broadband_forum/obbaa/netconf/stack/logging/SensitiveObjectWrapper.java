@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.stack.logging;
 
+import java.util.Objects;
+
 public class SensitiveObjectWrapper {
     protected final Object m_inner;
 
@@ -25,6 +27,23 @@ public class SensitiveObjectWrapper {
 
     @Override
     public String toString() {
-        return m_inner.toString();
+        if (m_inner != null) {
+            return m_inner.toString();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SensitiveObjectWrapper that = (SensitiveObjectWrapper) o;
+        return Objects.equals(m_inner, that.m_inner);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(m_inner);
     }
 }

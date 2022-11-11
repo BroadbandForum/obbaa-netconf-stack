@@ -1,0 +1,6 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+           targetNamespace="http://tail-f.com/ns/netconf/with-transaction-id">
+    <xs:element name="with-transaction-id">
+        <xs:complexType/>
+    </xs:element>
+</xs:schema>

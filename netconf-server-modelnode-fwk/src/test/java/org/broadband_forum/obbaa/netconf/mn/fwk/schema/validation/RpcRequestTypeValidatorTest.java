@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.schema.validation;
 
 import static junit.framework.TestCase.fail;
@@ -9,17 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
-import org.junit.Before;
-import org.junit.Test;
-import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-
-import org.broadband_forum.obbaa.netconf.mn.fwk.tests.utils.XmlGenerator;
 import org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorInfo;
@@ -27,14 +32,29 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
-
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImplTest;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.RpcRequestConstraintParser;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.TimingLogger;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation.AbstractDataStoreValidatorTest;
+import org.broadband_forum.obbaa.netconf.mn.fwk.tests.utils.XmlGenerator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcValidationException;
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest {
 
 	RpcRequestConstraintParser m_rpcRequestValidator;
@@ -52,8 +72,14 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 		return "/datastore-defaultxml.xml";
 	}
 	
-	@Override
-	protected List<String> getYang() {
+	@BeforeClass
+    public static void initializeOnce() throws SchemaBuildException {
+        List<YangTextSchemaSource> yangFiles = TestUtil.getByteSources(getYang());
+        m_schemaRegistry = new SchemaRegistryImpl(yangFiles, Collections.emptySet(), Collections.emptyMap(), new NoLockService());
+        m_schemaRegistry.setName(SchemaRegistry.GLOBAL_SCHEMA_REGISTRY);
+    }
+	
+	protected static List<String> getYang() {
 		List<String> yangs = new ArrayList<>();
 		yangs.add("/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma-types@2015-08-13.yang");
 		yangs.add("/yangSchemaValidationTest/referenceyangs/anvyangs/alu-pma-swmgmt@2015-07-14.yang");
@@ -81,20 +107,21 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 	
 	@Override
 	protected SchemaPath getSchemaPath() {
-		QName qname = QName.create("urn:org:bbf:pma", "2015-07-14", "pma");
+		QName qname = QName.create("urn:org:bbf2:pma", "2015-07-14", "pma");
 	    return SchemaPath.create(true, qname);
 	}
 	
 	@Before
 	public void setup() throws SchemaBuildException {
-		m_rpcRequestValidator = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, m_expValidator);
+		m_rpcRequestValidator = new RpcRequestConstraintParser(m_schemaRegistry, m_modelNodeDsm, m_expValidator, null);
 	}
 
 	@Test
 	public void testValidateValidRpcRequest() throws ModelNodeInitException{
 		//Valid rpc request
 		try {
-			String createDevice = "#pma:pma[@xmlns:pma='urn:org:bbf:pma', parent='null']"
+			getModelNode();
+			String createDevice = "#pma:pma[@xmlns:pma='urn:org:bbf2:pma', parent='null']"
 					+ "#pma:device-holder[parent='pma:pma']"
 					+ "#pma:name[parent='pma:device-holder', value='OLT-1']"
 					+ "#pma:device[parent='pma:device-holder']]"
@@ -106,7 +133,8 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 			
 			NetconfRpcRequest rpcRequest = DocumentToPojoTransformer.getRpcRequest(DocumentUtils.loadXmlDocument(RpcRequestTypeValidatorTest.class
 					.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/rpcs/valid-rpc-request.xml")));
-			m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC);
+			TimingLogger.withStartAndFinish(() -> m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC));
+
 		} catch (NetconfMessageBuilderException e) {
 			fail("Failed in transform xml content to NetconfRpcRequest");
 		} catch (RpcValidationException e) {
@@ -115,12 +143,13 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 	}
 	
 	@Test
-	public void testValidateUnknownElement() {
+	public void testValidateUnknownElement() throws ModelNodeInitException {
 		//unknown element
 		try {
+			getModelNode();
 			NetconfRpcRequest rpcRequest = DocumentToPojoTransformer.getRpcRequest(DocumentUtils.loadXmlDocument(EditConfigTypeValidatorTest.class
 					.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/rpcs/invalid-rpc-request0.xml")));
-			m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC);
+			TimingLogger.withStartAndFinish(() -> m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC));
 			fail("validation should have thrown an exception for request: " + rpcRequest.requestToString());
 		} catch (NetconfMessageBuilderException e) {
 			fail("Failed in transform xml content to NetconfRpcRequest");
@@ -134,12 +163,13 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 	}
 
 	@Test
-	public void testValidateInvalidValue() {
+	public void testValidateInvalidValue() throws ModelNodeInitException {
 		//Invalid Value
 		try {
+			getModelNode();
 			NetconfRpcRequest rpcRequest = DocumentToPojoTransformer.getRpcRequest(DocumentUtils.loadXmlDocument(EditConfigTypeValidatorTest.class
 					.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/rpcs/invalid-rpc-request3.xml")));
-			m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC);
+			TimingLogger.withStartAndFinish(() -> m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC));
 			fail("validation should have thrown an exception for request: " + rpcRequest.requestToString());
 		} catch (NetconfMessageBuilderException e) {
 			fail("Failed in transform xml content to NetconfRpcRequest");
@@ -147,17 +177,18 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 			NetconfRpcError rpcError = e.getRpcError();
 			assertNotNull(rpcError);
             assertEquals(NetconfRpcErrorTag.UNKNOWN_ELEMENT, rpcError.getErrorTag());
-            assertEquals("An unexpected element pma-datastore is present", rpcError.getErrorMessage());
+            assertEquals("An unexpected element 'pma-datastore' is present", rpcError.getErrorMessage());
 		}
 		}
 
 	@Test
-	public void testValidateInvalidNameSpace() {
+	public void testValidateInvalidNameSpace() throws ModelNodeInitException {
 		//invalid namespace
 		try {
+			getModelNode();
 			NetconfRpcRequest rpcRequest = DocumentToPojoTransformer.getRpcRequest(DocumentUtils.loadXmlDocument(EditConfigTypeValidatorTest.class
 					.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/rpcs/invalid-rpc-request2.xml")));
-			m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC);
+			TimingLogger.withStartAndFinish(() -> m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC));
 			fail("validation should have thrown an exception for request: " + rpcRequest.requestToString());
 		} catch (NetconfMessageBuilderException e) {
 			fail("Failed in transform xml content to NetconfRpcRequest");
@@ -165,17 +196,18 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 			NetconfRpcError rpcError = e.getRpcError();
 			assertNotNull(rpcError);
             assertEquals(NetconfRpcErrorTag.UNKNOWN_NAMESPACE, rpcError.getErrorTag());
-            assertEquals("An unexpected namespace urn:org:bbf:unknown is present", rpcError.getErrorMessage());
+            assertEquals("An unexpected namespace 'urn:org:bbf2:unknown' is present", rpcError.getErrorMessage());
 		}
 	}
 
-//	@Test
-	public void testVlaidateMissingMandatoryInput() {
+	@Test
+	public void testValidateMissingMandatoryInput() throws ModelNodeInitException {
 		//missing mandatory input
 		try {
+			getModelNode();
 			NetconfRpcRequest rpcRequest = DocumentToPojoTransformer.getRpcRequest(DocumentUtils.loadXmlDocument(EditConfigTypeValidatorTest.class
 					.getResourceAsStream("/yangSchemaValidationTest/rpcpayloadvalidatortest/requests/rpcs/invalid-rpc-request1.xml")));
-			m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC);
+			TimingLogger.withStartAndFinish(() -> m_rpcRequestValidator.validate(rpcRequest, RequestType.RPC));
 			fail("validation should have thrown an exception for request: " + rpcRequest.requestToString());
 		} catch (NetconfMessageBuilderException e) {
 			fail("Failed in transform xml content to NetconfRpcRequest");
@@ -183,7 +215,7 @@ public class RpcRequestTypeValidatorTest extends AbstractDataStoreValidatorTest 
 			NetconfRpcError rpcError = e.getRpcError();
 			assertNotNull(rpcError);
             assertEquals(NetconfRpcErrorTag.DATA_MISSING, rpcError.getErrorTag());
-            assertEquals("Mandatory leaf device-id is missing", rpcError.getErrorMessage());
+            assertEquals("Mandatory leaf 'device-id' is missing", rpcError.getErrorMessage());
 		}
 	}
 

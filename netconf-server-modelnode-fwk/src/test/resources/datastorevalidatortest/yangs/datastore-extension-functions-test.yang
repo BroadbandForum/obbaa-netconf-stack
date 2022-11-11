@@ -1,0 +1,540 @@
+// Contents of "datastore-extension-functions-test"
+module datastore-extension-functions-test {
+	
+	yang-version "1.1";
+	
+    namespace "urn:opendaylight:datastore-extension-functions-test";
+    prefix "ds-ext-func";
+
+    revision 2019-02-07 {
+        description "Initial revision";
+    }
+    
+    identity base-identity {
+		
+	}
+	identity alpha {
+		base base-identity;
+	}
+	
+	identity beta {
+		base base-identity;
+	}
+	
+    identity base-identity2 {
+		
+	}
+	identity first {
+		base base-identity2;
+	}
+	
+	identity second {
+		base base-identity2;
+	}
+	
+	identity derivedAlpha {
+		base alpha;
+	}
+	
+	identity derivedFirst {
+		base first;
+	}
+	
+	identity single-identity {
+		
+	}
+	
+	identity double-identity {
+		base single-identity;
+	}
+	
+	identity triple-identity {
+		base double-identity;
+	}
+	
+	identity quadruple-identity {
+		base triple-identity;
+	}
+
+    container exfunctionCanister {
+    	leaf test{
+    		must "string-length() > 3";
+    		type string;
+    	}
+    	leaf baseLeaf{
+    	    type identityref {
+    	        base base-identity;
+    	    }
+    	}
+    	leaf baseLeaf2{
+    	    type identityref {
+    	        base base-identity2;
+    	    }
+    	}
+    	leaf baseLeaf3{
+    	    type identityref {
+    	        base alpha;
+    	    }
+    	}
+    	leaf baseLeaf4{
+    	    type identityref {
+    	        base first;
+    	    }
+    	}
+    	leaf baseLeaf5{
+    	    type identityref {
+    	        base double-identity;
+    	    }
+    	}
+    	
+    	leaf-list baseLeafList {
+    	    type identityref {
+    	        base base-identity;
+    	    }
+    	}
+    	
+    	leaf-list baseLeafList2 {
+    	    type identityref {
+    	        base base-identity2;
+    	    }
+    	}
+    	
+    	choice hobby {
+    		case cricket {
+    			leaf cricket {
+    				must 'derived-from(../baseLeafList,"base-identity")';
+    				type string;
+    			}
+    		}
+    		case football {
+    			leaf football {
+    				when 'derived-from-or-self(../baseLeafList2,"base-identity2")';
+    				type string;
+    			}
+    		}
+    	}
+    	
+    	leaf leafWithMustAndMultiDerivedFrom {
+    		must 'derived-from(../baseLeaf, "base-identity") and derived-from(../baseLeaf2, "base-identity2")';
+    		type string;
+    	}
+    	leaf leafWithWhenAndMultiDerivedFrom {
+    		when 'derived-from(../baseLeaf, "base-identity2") or derived-from(../baseLeaf2, "base-identity2")';
+    		type string;
+    	}
+    	
+    	leaf leafWithMustAndMultiDerivedFromOrSelf {
+    		must 'derived-from-or-self(../baseLeaf3, "alpha") and derived-from-or-self(../baseLeaf4, "first")';
+    		type string;
+    	}
+    	leaf leafWithWhenAndMultiDerivedFromOrSelf {
+    		when 'derived-from-or-self(../baseLeaf3, "derivedFirst") or derived-from-or-self(../baseLeaf4, "derivedFirst")';
+    		type string;
+    	}
+    	leaf leafWithBothDerivedFromAndDerivedFromOrSelf {
+    		must 'derived-from(../baseLeaf, "base-identity") and derived-from-or-self(../baseLeaf5, "single-identity")';
+    		type string;
+    	}
+    	
+    	leaf leafWithDerivedFromAndNot {
+    		must 'not(derived-from(../baseLeaf2, "base-identity"))';
+    		type string;
+    	}
+    		
+        leaf leafWithDerivedFromOrSelfAndNot {
+    		when 'not(derived-from-or-self(../baseLeaf4, "derivedFirst"))';
+    		type string;
+    	}
+    	
+    	list alarm-list {
+    		
+    		key key;
+    		leaf key {
+    			type string;
+    		}
+    		
+    		leaf severity {
+    	         type enumeration {
+    	           enum cleared {
+    	             value 1;
+    	           }
+    	           enum indeterminate {
+    	             value 2;
+    	           }
+    	           enum minor {
+    	             value 3;
+    	           }
+    	           enum warning {
+    	             value 4;
+    	           }
+    	           enum major {
+    	             value 5;
+    	           }
+    	           enum critical {
+    	             value 6;
+    	           }
+    	         }
+    	     }
+    		
+    		 leaf test-enum-value-with-parent-pattern {
+        		must "enum-value(../severity) >= 5";
+        		type string;
+		        default "hello";
+        	 }
+    		 
+    		 leaf test-enum-value-with-empty-node-set {
+          		must "enum-value() >= 5";
+          		type string;
+          	 }
+    	}
+
+        container configure {
+            container qos-servicerouter {
+                description "configure qos service router instance information.";
+
+                list service-ingress {
+                    key "service-ingress-policy-id";
+                    description "Configure Service-Ingress QoS policies.";
+
+                    leaf service-ingress-policy-id {
+                        type string;
+                        default "1";
+                        description "Configure QoS Ingress Policy Id.";
+                    }
+
+                    leaf scope {
+                        type string;
+                        description "Scope of the policy.";
+                    }
+
+                    leaf description {
+                        type string;
+                        description "The description of this service-ingress QoS policy.";
+                    }
+                } // list service-ingress
+            } // container qos-servicerouter
+        } // container configure
+
+    	container test-enum-value-container {
+    		
+    		container test-container-one {
+    			
+    			leaf leaf1 {
+    				type enumeration {
+    					enum one {
+    						value 1;
+    					} 
+    					enum two {
+    						value 2;
+    					}
+    				}
+    			}
+    			
+    			leaf-list leaflist1 {
+    				type enumeration {
+    					enum one {
+    						value 1;
+    					} 
+    					enum two {
+    						value 2;
+    					}
+    					enum three {
+    						value 3;
+    					}
+    					enum four {
+    						value 4;
+    					}
+    				}
+    			}
+    			
+    			list list1{
+    				
+    				key key;
+    				
+    				leaf key {
+    					type string;
+    				}
+    				
+    				leaf valueLeaf {
+    					type enumeration {
+    						
+    						enum one {
+    							value 1;
+    						} 
+    						enum two {
+    							value 2;
+    						}
+    					}
+    				}
+    			}
+    			
+    			leaf non-enum-leaf1 {
+    				type string;
+    			}
+    			
+				leaf-list non-enum-leaf-list1{
+					type string;
+				}
+				
+    			choice choice1{
+    				
+    				case case1 {
+    					leaf leaf11{
+    						type string;
+    					}
+    				}
+    				
+    				case case2 {
+    					leaf leaf22{
+    						type enumeration{
+    	    					enum one {
+    	    						value 1;
+    	    					} 
+    	    					enum two {
+    	    						value 2;
+    	    					}
+    						}
+    					}
+    				}
+    				
+    				case case3 {
+    					leaf leaf33{
+    						type string;
+    					}
+    				}
+    			}
+    		}
+    		
+    		container test-container-two {
+    			
+    			leaf test-enum-leaf {
+    				must "enum-value(../../test-container-one/leaf1) > 1";
+    				type string;
+    			}
+    			
+    			leaf test-enum-leaf-with-absolute-path {
+    				must "enum-value(/exfunctionCanister/test-enum-value-container/test-container-one/list1[key = current()]/valueLeaf) > 1";
+    				type string;
+    			}
+    			
+    			leaf test-enum-leaf-for-leaf-list {
+    				must "enum-value(../../test-container-one/leaflist1) > 2";
+    				type string;
+    			}
+    			
+    			leaf test-for-non-enum-leaf-list {
+    				must "enum-value(../../test-container-one/non-enum-leaf-list1) > 2";
+    				type string;
+    			}
+    			
+    			leaf test-for-non-enum-leaf {
+    				must "enum-value(/exfunctionCanister/test-enum-value-container/test-container-one/non-enum-leaf1) > 1";
+    				type string;
+    			}
+    			
+    			leaf test-enum-leaf-in-choice-case {
+    				must "enum-value(../../test-container-one/leaf22) > 1";
+    				type string;
+    			}
+    			
+    			container inner-container-two {
+    				
+    				leaf leaf1 {
+    					type enumeration{
+    	    				enum one {
+    	    					value 1;
+    	    				} 
+    	    				enum two {
+    	    					value 2;
+    	    				}
+    					}
+    				}
+    				
+        			leaf test-enum-leaf-with-when {
+        				when "enum-value(../leaf1) > 1";
+        				default "iAmDefault";
+        				type string;
+        			}
+        			
+        			leaf test-enum-leaf-with-must-not {
+        				must "not(enum-value(parent::node()/leaf1) > 1)";
+        				type string;
+        			}
+        			
+        			leaf test-enum-leaf-with-long-form {
+        				when "enum-value(self::node()/parent::node()/leaf1) > 1";
+        				type string;
+        			}
+        			
+        			leaf test-enum-leaf-with-long-form-self-node {
+        				must "enum-value(self::node()) > 1";
+        				type enumeration{
+    	    				enum one {
+    	    					value 1;
+    	    				} 
+    	    				enum two {
+    	    					value 2;
+    	    				}
+    					}
+        			}
+    			}
+
+    			
+    			leaf test-leaf {
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}
+    					enum three{
+    						value 3;
+    					}
+    				}
+    			}
+    			
+    			leaf test-enum-leaf-with-dot-operator {
+    				must "enum-value(.) > 1";
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}	
+    				}
+    			}
+    			
+    			leaf-list test-enum-leaf-list-with-dot-operator {
+    				must "enum-value(.) > 2";
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}
+    					enum three{
+    						value 3;
+    					}
+    				}
+    			}
+    			
+    			leaf test-enum-leaf-xpath-from-dot {
+    				must "enum-value(./../test-leaf) > enum-value(.)";
+    				type enumeration{
+    					enum one{
+    						value 1;
+    					}
+    					enum two{
+    						value 2;
+    					}
+    				}
+    				
+    			}
+    		}
+    	}
+    	
+        container test-re-match-container {
+            container test-container-one {
+                leaf leaf1 {
+                    type string;
+                }
+                leaf leaf2 {
+                    must ' re-match(.,"\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}") ' {
+                        error-message "input value does not match regex: \\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
+                    }
+                    type string;
+                }
+
+                leaf leaf3 {
+                    must 'not( (re-match(.,"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"))  and ((substring-before(.,".") >= 224) and (substring-before(.,".") <= 255)) )'{
+                        error-message "224.0.0.0~255.255.255.255 are not valid";
+                    }
+                    type string;
+                }
+
+                leaf leaf4 {
+                     must 'not((re-match(.,"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")) and (starts-with(.,"0.0.0.")))' {
+                        error-message "0.0.0.[0-255] is not valid address";
+                     }
+                     type string;
+                }
+                list test-interface {
+                    key name;
+                    leaf name {
+                        type string;
+                    }
+                    leaf interface-data {
+                        type string;
+                    }
+                }
+                leaf leaf5 {
+                    must 'count(/exfunctionCanister/test-re-match-container/test-container-one/test-interface[re-match(name, "eth0\.\d+")]) > 1';
+                    type string;
+                }
+                leaf leaf6 {
+                    must 're-match("\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")';
+                    type string;
+                }
+                leaf leaf7 {
+                    description "leaf with must having current() with CoreOperationEqual";
+                	must 're-match(./../test-interface[name = current()]/interface-data,"[0-9]{2}")';
+                	type string;
+                }
+                leaf leaf8 {
+                    description "leaf with must having current() without CoreOperationEqual";
+                	must 're-match(./../test-interface[current()]/interface-data,"[0-9]{2}")';
+                	type string;
+                }
+                leaf leaf9 {
+                	must 're-match(current(),"[0-9]{2}")';
+                	type string;
+                }
+
+            }
+            container test-container-two {
+                leaf leaf1 {
+                    type string;
+                }
+                choice test-choice {
+
+                    case alpha {
+                        container tango {
+                            leaf tango-leaf {
+                                must 're-match(./../../leaf1,"[a-z]+")';
+                                type string;
+                            }
+                        }
+                    }
+
+                    case beta {
+                        container charlie {
+                             leaf-list charlie-leaf {
+                                 type string;
+                             }
+                        }
+                    }
+
+                    case gamma {
+                         container delta {
+                              leaf-list delta-leaf {
+                                  type string;
+                              }
+                         }
+                    }
+                }
+                leaf leaf2 {
+                    must 're-match(/exfunctionCanister/test-re-match-container/test-container-two/charlie/charlie-leaf,"[0-9]{2}")';
+                    type string;
+                }
+                leaf leaf3 {
+                    must 're-match(/exfunctionCanister/test-re-match-container/test-container-two/delta/delta-leaf,"[0-9]{2}")';
+                    type string;
+                }
+            }
+
+        }
+    }
+}

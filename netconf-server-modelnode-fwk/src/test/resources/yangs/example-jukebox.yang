@@ -86,6 +86,7 @@ module example-jukebox {
 
           list album {
             key "name";
+            ordered-by user;
             description
               "Represents one album resource within one
               artist resource, within the jukebox library.";

@@ -5,10 +5,10 @@
 		</target>
 		<test-option>set</test-option>
 		<config>
-			<validation xmlns="urn:org:bbf:pma">
+			<validation xmlns="urn:org:bbf2:pma">
                 <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
                     <id>1</id>
-                    <string-type>5</string-type>
+                    <string-type>7</string-type>
                 </type-validation>
 			</validation>
 		</config>

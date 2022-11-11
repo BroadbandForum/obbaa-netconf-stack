@@ -1,0 +1,37 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:yang="urn:ietf:params:xml:ns:yang:1">
+	<library>
+		<artist>
+			<name>Lenny</name><!-- Matcher -->
+			<album xc:operation="replace" yang:insert="after" yang:key="[jbox:name='Circus']">
+				<admin>
+					<label>Sony</label>
+				</admin>
+				<genre>jazz</genre>
+				<name>Greatest hits</name>
+				<song>
+					<format>mp3</format>
+					<location>desktop/mymusic</location>
+					<name>Are you gonne go my way</name>
+				</song>
+				<song>
+					<format>flac</format>
+					<location>desktop/mymusic</location>
+					<name>Fly Away</name>
+				</song>
+				<year>2000</year>
+			</album>
+			<album xc:operation="replace" yang:insert="after" yang:key="[jbox:name='Circus']">
+				<admin>
+					<label>Sony</label>
+				</admin>
+				<name>AlbumWithoutGenre</name>
+				<song>
+					<format>amr</format>
+					<location>desktop/mymusic</location>
+					<name>SomeSong</name>
+				</song>
+				<year>1995</year>
+			</album>
+		</artist>
+	</library>
+</jukebox>

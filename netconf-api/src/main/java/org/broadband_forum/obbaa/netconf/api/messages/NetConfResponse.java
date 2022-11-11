@@ -16,28 +16,32 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
-import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import org.apache.log4j.Logger;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import javax.xml.parsers.ParserConfigurationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.opendaylight.yangtools.yang.common.QName;
+import org.w3c.dom.DOMException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 /**
  * Response of a Netconf request.
  * 
- *
+ * 
  * 
  */
 public class NetConfResponse implements CompletableMessage {
@@ -45,10 +49,15 @@ public class NetConfResponse implements CompletableMessage {
     private String m_messageId;
 
     private boolean m_ok = false;
-    
+
+    private String m_txId;
+    private boolean m_appendTxIdInResponse = true;
+
     private CompletableFuture<String> m_messageSentFuture = new CompletableFuture<String>();
 
     private List<NetconfRpcError> m_errors = new ArrayList<NetconfRpcError>();
+    
+    private Map<QName, List<Element>> m_ncExtensionResponses = new HashMap<QName, List<Element>>();
 
     private Element m_data;
 
@@ -56,7 +65,7 @@ public class NetConfResponse implements CompletableMessage {
 
     private Document m_doc;
 
-    private static final Logger LOGGER = Logger.getLogger(NetConfResponse.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetConfResponse.class, LogAppNames.NETCONF_LIB);
     
 	private boolean m_instanceReplaced = false;
 
@@ -106,6 +115,41 @@ public class NetConfResponse implements CompletableMessage {
     public NetConfResponse addErrors(List<NetconfRpcError> errors) {
         this.m_errors.addAll(errors);
         return this;
+    }
+    
+    public Map<QName, List<Element>> getNcExtensionResponses() {
+        return m_ncExtensionResponses;
+    }
+
+    public NetConfResponse addNcExtensionResponse(QName extensionQName, Element ncExtensionResponse) {
+    	if (m_ncExtensionResponses.get(extensionQName) == null) {
+    		List<Element> elementsList = new ArrayList<Element>();
+    		this.m_ncExtensionResponses.put(extensionQName, elementsList);
+    	}
+    	this.m_ncExtensionResponses.get(extensionQName).add(ncExtensionResponse);
+        return this;
+    }
+    
+    public NetConfResponse setNcExtensionResponses(QName extensionQName, List<Element> ncExtensionResponses) {
+        this.m_ncExtensionResponses.put(extensionQName, ncExtensionResponses);
+        return this;
+	}
+
+    public String getTxId() {
+        return m_txId;
+    }
+
+    public NetConfResponse setTxId(String txId) {
+        m_txId = txId;
+        return this;
+    }
+
+    public void setAppendTxIdInResponse(boolean appendTxIdInResponse) {
+        m_appendTxIdInResponse = appendTxIdInResponse;
+    }
+
+    public boolean isAppendTxIdInResponse() {
+        return m_appendTxIdInResponse;
     }
 
     public Element getData() {
@@ -261,8 +305,11 @@ public class NetConfResponse implements CompletableMessage {
     public Document getResponseDocument() throws NetconfMessageBuilderException {
         synchronized (this){
             PojoToDocumentTransformer responseBuilder = new PojoToDocumentTransformer()
-                    .newNetconfRpcReplyDocument(getMessageId(), m_otherRpcAttributes).addRpcErrors(getErrors()).addData(getData());
-            if (m_ok) {
+                    .newNetconfRpcReplyDocument(getMessageId(), m_otherRpcAttributes).addNcExtensionsResponses(getNcExtensionResponses())
+                    .addRpcErrors(getErrors()).addData(getData());
+            if (m_txId != null && m_appendTxIdInResponse) {
+                responseBuilder.addTxId(m_txId);
+            } else if (m_ok) {
                 responseBuilder.addOk();
             }
             return responseBuilder.build();

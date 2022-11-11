@@ -19,8 +19,9 @@ package org.broadband_forum.obbaa.netconf.api;
 import org.broadband_forum.obbaa.netconf.stack.logging.ApplicationName;
 
 public enum  LogAppNames implements ApplicationName {
-    NETCONF_LIB("netconf.lib"),
-    KAFKA("kafka");
+    NETCONF_LIB("netconf.stack"),
+    KAFKA("kafka"),
+    USER_MANAGER("user.management");
 
     private final String m_name;
 
@@ -28,6 +29,7 @@ public enum  LogAppNames implements ApplicationName {
         m_name = name;
     }
 
+    @Override
     public String getName(){
         return m_name;
     }

@@ -1,9 +1,28 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
+import java.util.List;
+
+import org.broadband_forum.obbaa.netconf.api.IndexedList;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 
 
-public class EditConfigChangeNotification implements ChangeNotification, Comparable<EditConfigChangeNotification> {
+public class EditConfigChangeNotification implements ChangeNotification, Comparable<EditConfigChangeNotification>, IndexedList.IndexableListEntry<ModelNodeId> {
 
     private ModelNode m_changedNode;
     private ModelNodeId m_modelNodeId;
@@ -13,7 +32,8 @@ public class EditConfigChangeNotification implements ChangeNotification, Compara
     private boolean m_isDisabledForListener = false;
     private boolean m_isImplied;
     private ModelNode m_childModelNode;
-    
+    private ModelNodeId m_changeElemId;
+
     public EditConfigChangeNotification(ModelNodeId nodeid, ModelNodeChange change, String dataStore, ModelNode changedNode, NetconfClientInfo clientInfo) {
 		this(nodeid, change, dataStore, changedNode, clientInfo, null);
     }
@@ -166,5 +186,29 @@ public class EditConfigChangeNotification implements ChangeNotification, Compara
                 return m_modelNodeId.compareTo(another.getModelNodeId());
             }
         }
+    }
+
+    @Override
+    public ModelNodeId getKey() {
+        return getChangeElementId(this);
+    }
+
+    private ModelNodeId getChangeElementId(EditConfigChangeNotification editChangeNotification) {
+        if(m_changeElemId == null){
+            ModelNodeChangeType changeType = editChangeNotification.getChange().getChangeType();
+            if (ModelNodeChangeType.merge.equals(changeType)) {
+                return editChangeNotification.getModelNodeId();
+            }
+            m_changeElemId = new ModelNodeId(editChangeNotification.getModelNodeId());
+            EditContainmentNode changeData = editChangeNotification.getChange().getChangeData();
+            String containerName = changeData.getName();
+            List<EditMatchNode> matchNodes = changeData.getMatchNodes();
+
+            m_changeElemId.addRdn(new ModelNodeRdn(ModelNodeRdn.CONTAINER, changeData.getNamespace(), containerName));
+            for (EditMatchNode matchNode : matchNodes) {
+                m_changeElemId.addRdn(new ModelNodeRdn(matchNode.getName(), matchNode.getNamespace(), matchNode.getValue()));
+            }
+        }
+        return m_changeElemId;
     }
 }

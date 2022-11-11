@@ -5,8 +5,8 @@
 		</target>
 		<test-option>set</test-option>
 		<config>
-			<validation xmlns="urn:org:bbf:pma">
-				// fraction 1
+			<validation xmlns="urn:org:bbf2:pma">
+				<!-- fraction 1 -->
                 <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
                     <id>1</id>
                     <decimal64-fraction1-type>-922337203685477580.8</decimal64-fraction1-type>
@@ -24,7 +24,7 @@
                     <decimal64-fraction1-type>20.1</decimal64-fraction1-type>
                 </type-validation>
                 
-                // fraction1 - no range
+                <!-- fraction1 - no range -->
                 <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
                     <id>5</id>
                     <decimal64-fraction1-without-range-type>-922337203685477580.8</decimal64-fraction1-without-range-type>
@@ -38,7 +38,18 @@
                     <decimal64-fraction1-without-range-type>3.15</decimal64-fraction1-without-range-type>
                 </type-validation>
                 
-			</validation>
-		</config>
-	</edit-config>
+                <!-- fraction1 - single range -->
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>8</id>
+                    <decimal64-fraction1-with-single-range-type>-922337203685477580.8</decimal64-fraction1-with-single-range-type>
+                </type-validation>
+
+                <!-- fraction1 - overridden range --> 
+                <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
+                    <id>9</id>
+                    <decimal64-fraction1-with-overridden-range-type>1.55</decimal64-fraction1-with-overridden-range-type>
+                </type-validation>
+            </validation>
+        </config>
+    </edit-config>
 </rpc>

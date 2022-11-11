@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.getByteSources;
@@ -16,11 +32,6 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
@@ -41,10 +52,15 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.In
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang.AbstractYangValidationTestSetup;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunnerForParameterized;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-@RunWith(Parameterized.class)
+@RunWith(RequestScopeJunitRunnerForParameterized.class)
 public class EditConfigMandatoryAttributeTest extends AbstractYangValidationTestSetup {
 
     private static final String REQUEST_FILE_PATH = "src/test/resources/editconfigmandatoryattributes/request_create-policy.xml";
@@ -81,14 +97,17 @@ public class EditConfigMandatoryAttributeTest extends AbstractYangValidationTest
         DSExpressionValidator expValidator = new DSExpressionValidator(m_schemaRegistry, mock(ModelNodeHelperRegistry.class), mock(SubSystemRegistry.class));
         DefaultCapabilityCommandInterceptor intersepter = new AddDefaultDataInterceptor(m_modelNodeHelperRegistry, m_schemaRegistry, expValidator);
         m_modelNodeHelperRegistry.setDefaultCapabilityCommandInterceptor(intersepter);
-        RpcRequestConstraintParser parser = new RpcRequestConstraintParser(m_schemaRegistry, modelNodeDsm, expValidator);
-        m_server = new NetConfServerImpl(m_schemaRegistry, /*mock(RpcPayloadConstraintParser.class)*/ parser);
+        
         m_modelNodeDsm = new InMemoryDSM(m_schemaRegistry);
         m_modelWithAttributes = YangUtils.createInMemoryModelNode(getClass().getResource(m_yangPath).getPath(), new LocalSubSystem(),
                 m_modelNodeHelperRegistry, m_subSystemRegistry, m_schemaRegistry, m_modelNodeDsm);
+        m_subSystemRegistry.setCompositeSubSystem( new CompositeSubSystemImpl());
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_modelNodeDsm, m_subSystemRegistry)
                 .addModelServiceRoot("policyEngine", m_modelWithAttributes);
+        RpcRequestConstraintParser parser = new RpcRequestConstraintParser(m_schemaRegistry, modelNodeDsm, expValidator, m_rootModelNodeAggregator);
+        m_server = new NetConfServerImpl(m_schemaRegistry, /*mock(RpcPayloadConstraintParser.class)*/ parser);
         m_integrityService = new DataStoreIntegrityServiceImpl(m_server);
+        m_expValidator = new DSExpressionValidator(m_schemaRegistry, m_modelNodeHelperRegistry, m_subSystemRegistry);
         m_datastoreValidator = new DataStoreValidatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_modelNodeDsm, m_integrityService, m_expValidator);
         DataStore dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry, m_datastoreValidator);
         NbiNotificationHelper nbiNotificationHelper = mock(NbiNotificationHelper.class);

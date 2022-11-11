@@ -16,16 +16,19 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
+import org.broadband_forum.obbaa.netconf.api.ClosureReason;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSessionListener;
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class LoggingClientSessionListner implements NetconfClientSessionListener {
-    private static final Logger LOGGER = Logger.getLogger(LoggingClientSessionListner.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(LoggingClientSessionListner.class, LogAppNames.NETCONF_LIB);
     public static int c_numberOfclosedEvents = 0;
 
     @Override
-    public void sessionClosed(int sessionId) {
-        LOGGER.info("Got session closed on " + sessionId);
+    public void sessionClosed(int sessionId, ClosureReason closureReason) {
+        LOGGER.info("Got session closed on " + sessionId +" reason :" + closureReason != null ? closureReason.getReason() : "");
     }
 
 }

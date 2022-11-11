@@ -16,27 +16,38 @@
 
 package org.broadband_forum.obbaa.netconf.server.ssh;
 
-import org.apache.log4j.Logger;
 import org.apache.sshd.common.io.IoOutputStream;
 import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.channel.ChannelSession;
-import org.w3c.dom.Document;
-
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodec;
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodecImpl;
 import org.broadband_forum.obbaa.netconf.api.MessageToolargeException;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.FrameAwareNetconfMessageCodecV2;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.NetconfMessageCodecV2;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener;
 import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.w3c.dom.Document;
+
+import io.netty.buffer.ByteBuf;
 
 public class NetconfMessageHandler extends AbstractSshNetconfServerMessageHandler {
-    private static final Logger LOGGER = Logger.getLogger(NetconfMessageHandler.class);
 
-    FrameAwareNetconfMessageCodec m_codec = new FrameAwareNetconfMessageCodecImpl();
+    private FrameAwareNetconfMessageCodecV2 m_codec;
 
     public NetconfMessageHandler(NetconfServerMessageListener axsNetconfServerMessageListener, IoOutputStream out,
-                                 ExitCallback exitCallBack, ServerMessageHandler serverMessageHandler, ChannelSession channel) {
+                                 ExitCallback exitCallBack, ServerMessageHandler serverMessageHandler, ChannelSession channel, FrameAwareNetconfMessageCodecV2 codec) {
         super(axsNetconfServerMessageListener, out, exitCallBack, serverMessageHandler, channel);
+        m_codec = codec;
+    }
+
+    @Override
+    public void useChunkedFraming() {
+        m_codec.useChunkedFraming();
+    }
+
+    @Override
+    public NetconfMessageCodecV2 currentCodec() {
+        return m_codec.currentCodec();
     }
 
     @Override
@@ -45,12 +56,7 @@ public class NetconfMessageHandler extends AbstractSshNetconfServerMessageHandle
     }
 
     @Override
-    public Document decode(String msg) throws NetconfMessageBuilderException, MessageToolargeException {
-        return m_codec.decode(msg);
-    }
-
-    @Override
-    public void useChunkedFraming(int max, int chunk) {
-        m_codec.useChunkedFraming(max, chunk);
+    public DocumentInfo decode(ByteBuf in) throws NetconfMessageBuilderException, MessageToolargeException {
+        return m_codec.decode(in);
     }
 }

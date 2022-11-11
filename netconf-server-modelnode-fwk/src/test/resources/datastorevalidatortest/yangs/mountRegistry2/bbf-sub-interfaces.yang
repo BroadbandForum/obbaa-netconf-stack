@@ -1,0 +1,50 @@
+module bbf-sub-interfaces {
+    
+    yang-version 1.1;
+    
+    namespace "bbf-sub-interfaces";
+    
+    prefix "bbf-subif";
+
+    import bbf-xpon-if-type {
+        prefix bbfxponift;
+    }
+
+    import test-interfaces {
+        prefix if;
+    }
+    
+    augment "/if:interfaces/if:interface" {
+    	container subif-lower-layer {
+	      presence "subif-lower-layer";	
+	      leaf interface {
+	        type if:interface-ref;
+	
+	        must
+	          "derived-from-or-self(
+	           /if:interfaces/if:interface[if:name = current()]
+	           /if:type,'if:vlan-sub-interface')";
+	
+	        mandatory true;
+	        must "(current()/../../if:type != 'if:vlan-sub-interface' or current()/../../intf-usage:interface-usage/intf-usage:interface-usage != 'user-port') or 
+			(/if:interfaces/if:interface[if:name = current()]/if:type = 'if:ptm') "{
+			   error-message "The user side vlan-sub-interface's lower interface must be PTM";
+			}
+	      }
+	    }    
+	}
+
+	augment "/if:interfaces/if:interface" {
+        when
+          "derived-from-or-self(if:type, 'bbfxponift:channel-pair')" {
+          description
+            "SSM Vlan, applicable on PON interface.";
+        }
+
+        leaf ssm-out-profile-ref {
+          type string;
+          description
+            "Reference to the ssm-out vlan-id profile.";
+        }
+    }
+}

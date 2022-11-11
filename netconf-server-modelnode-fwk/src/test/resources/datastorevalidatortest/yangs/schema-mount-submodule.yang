@@ -1,0 +1,36 @@
+submodule schema-mount-submodule {
+    yang-version 1;
+    belongs-to schema-mount-test {
+      prefix smt;
+    }
+  
+  	import test-interfaces {
+	    prefix if;
+	}
+	
+    grouping submodule-idref-grouping {
+          leaf identityref-type1 {
+              when "../../leaf1 = 'myleaf1'";
+              type identityref {
+                  base "if:languages";
+              }
+              default "if:french";
+          }
+          
+          leaf identityref-type2 {
+              type identityref {
+                  base "if:languages";
+              }
+              default "hindi";
+          }
+          
+          leaf identityref-type3 {
+              type identityref {
+                  base "vegetables";
+              }
+              default "carrot";
+          }
+
+    }
+  
+  }

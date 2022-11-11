@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import java.util.ArrayList;
@@ -15,45 +31,76 @@ import org.broadband_forum.obbaa.netconf.api.messages.ChangedByParams;
 import org.broadband_forum.obbaa.netconf.api.messages.ChangedLeafInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.EditInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfConfigChangeNotification;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcError;
+import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 import org.broadband_forum.obbaa.netconf.api.messages.SessionInfo;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.ChangeTreeNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 
 public class NbiNotificationHelperImpl implements NbiNotificationHelper {
+
+    private Map<SubSystem, NotificationSegregator> m_subSystemNotificationSegregators = new HashMap<>();
+    private DefaultNotificationSegregator m_defaultNotificationSegregator = new DefaultNotificationSegregator();
     
-    private Map<SubSystem, SubsystemNotificationClassifier> m_classifiedSubsystemNotifications = new HashMap<>();
-    
-    public void registerClassifier(SubSystem subsytem, SubsystemNotificationClassifier classifier){
-        m_classifiedSubsystemNotifications.put(subsytem, classifier);
+    public void registerClassifier(SubSystem subsytem, NotificationSegregator segregator){
+        m_subSystemNotificationSegregators.put(subsytem, segregator);
     }
 
-    public List<Notification> getNetconfConfigChangeNotifications(Map<SubSystem, List<ChangeNotification>> subSystemNotificationMap,
-            NetconfClientInfo clientInfo, NamespaceContext namespaceContext) {
+    public List<Notification> getNetconfConfigChangeNotifications(Map<SubSystem, IndexedNotifList> subSystemNotificationMap,
+            NetconfClientInfo clientInfo) {
         List<Notification> netconfConfigChangeNotifications = new ArrayList<>();
         ChangedByParams changedByParams = buildChangedByInfo(clientInfo);
         Map<Object, Set<ChangeNotification>> classifiedChangeNotifications = classifyNotifications(subSystemNotificationMap);
         for (Map.Entry<Object, Set<ChangeNotification>> entry : classifiedChangeNotifications.entrySet()) {
-            List<EditInfo> editInfos = new ArrayList<>();
-            List<EditInfo> impliedEditInfos = new ArrayList<>();
-            buildEditInfos(entry.getValue(), namespaceContext, editInfos, impliedEditInfos);
-            if (!editInfos.isEmpty()) {
-                netconfConfigChangeNotifications.add(buildNotification(changedByParams, editInfos));
-            }
-            if (!impliedEditInfos.isEmpty()) {
-                netconfConfigChangeNotifications.add(buildNotification(changedByParams, impliedEditInfos));
-            }
+            netconfConfigChangeNotifications.addAll(buildListNotification(entry.getValue(), changedByParams));
         }
         return netconfConfigChangeNotifications;
     }
-    
+
+    @Override
+    public List<Notification> getNetconfConfigChangeNotifications(List<ChangeNotification> changeNotifications, NetconfClientInfo clientInfo) {
+        return buildListNotification(changeNotifications, buildChangedByInfo(clientInfo));
+    }
+
+    public List<Notification> getNetconfConfigChangeNotificationsUsingAggregatorCTN(ChangeTreeNode aggregatorCTN, NetconfClientInfo clientInfo) {
+        List<Notification> netconfConfigChangeNotifications = new ArrayList<>();
+        ChangedByParams changedByParams = buildChangedByInfo(clientInfo);
+        Set<SchemaPath> segregatedSPs = new HashSet<>();
+        for(NotificationSegregator segregator: m_subSystemNotificationSegregators.values()) {
+            List<Notification> segregatedNotifs;
+            segregatedNotifs = segregator.segregateNotifications(aggregatorCTN, segregatedSPs, changedByParams);
+            netconfConfigChangeNotifications.addAll(segregatedNotifs);
+        }
+        //This should execute at last as it handles all the remaining SPs
+        netconfConfigChangeNotifications.addAll(m_defaultNotificationSegregator.segregateNotifications(aggregatorCTN, segregatedSPs, changedByParams));
+        return netconfConfigChangeNotifications;
+    }
+
+    private List<Notification> buildListNotification(Collection<ChangeNotification> changeNotifications, ChangedByParams changedByParams) {
+        List<Notification> netconfConfigChangeNotifications = new ArrayList<>();
+        List<EditInfo> editInfos = new ArrayList<>();
+        List<EditInfo> impliedEditInfos = new ArrayList<>();
+        buildEditInfos(changeNotifications, editInfos, impliedEditInfos);
+        if (!editInfos.isEmpty()) {
+            netconfConfigChangeNotifications.add(buildNotification(changedByParams, editInfos));
+        }
+        if (!impliedEditInfos.isEmpty()) {
+            netconfConfigChangeNotifications.add(buildNotification(changedByParams, impliedEditInfos));
+        }
+        return netconfConfigChangeNotifications;
+    }
+
     private void editNotification(EditContainmentNode changeDataNode, StringBuilder targetPath, List<EditInfo> editInfos,
-                                  NamespaceContext namespaceContext, Map<String, String> namespaceDeclareMap, boolean isImplied, ModelNode modelNode) {
+                                  NamespaceContext namespaceContext, Map<String, String> namespaceDeclareMap, boolean isImplied) {
         List<EditChangeNode> editChangeNodes = changeDataNode.getChangeNodes();
         Map<String, EditInfo> editInfoMap = new HashMap<>();
         for (EditChangeNode editChangeNode : editChangeNodes) {
             String changeNodeNamespace = editChangeNode.getNamespace();
-            String changeNodePrefix = getPrefix(namespaceContext, changeNodeNamespace, modelNode);
+            String changeNodePrefix = getPrefix(changeDataNode.getSchemaRegistry(), changeNodeNamespace);
             String operation = editChangeNode.getOperation();
             EditInfo editInfo = new EditInfo();
             editInfo.setNamespaceDeclareMap(namespaceDeclareMap);
@@ -83,10 +130,9 @@ public class NbiNotificationHelperImpl implements NbiNotificationHelper {
         for (EditContainmentNode childNode : children) {
             Map<String, String> namespaceDeclareMapForChild = new HashMap<>(namespaceDeclareMap);
             StringBuilder childTarget = new StringBuilder(targetPath);
-            updateTargetForMatchNode(childNode, namespaceDeclareMapForChild, namespaceContext, childTarget, modelNode);
+            updateTargetForMatchNode(childNode, namespaceDeclareMapForChild, childTarget);
             if (childNode.getEditOperation().equals(ModelNodeChangeType.merge.name())) {
-                childTarget.append("/");
-                editNotification(childNode, childTarget, editInfos, namespaceContext, namespaceDeclareMapForChild, isImplied, modelNode);
+                editNotification(childNode, childTarget, editInfos, namespaceContext, namespaceDeclareMapForChild, isImplied);
             } else {
                 String operation = childNode.getEditOperation();
                 EditInfo editInfo = new EditInfo();
@@ -98,10 +144,9 @@ public class NbiNotificationHelperImpl implements NbiNotificationHelper {
         }
     }
     
-    private void updateTargetForMatchNode(EditContainmentNode editContainmentNode, Map<String, String> namespaceDeclareMap,
-            NamespaceContext namespaceContext, StringBuilder targetPath, ModelNode modelNode) {
+    private void updateTargetForMatchNode(EditContainmentNode editContainmentNode, Map<String, String> namespaceDeclareMap, StringBuilder targetPath) {
         String nodeNamespace = editContainmentNode.getNamespace();
-        String nodePrefix = getPrefix(namespaceContext, nodeNamespace, modelNode);
+        String nodePrefix = getPrefix(editContainmentNode.getSchemaRegistry(), nodeNamespace);
         targetPath.append("/");
         if(!editContainmentNode.getChangeNodes().isEmpty() && ModelNodeChangeType.delete.name().equals(editContainmentNode.getChangeNodes().get(0).getOperation())){
             targetPath.append(nodePrefix).append(":").append(editContainmentNode.getChangeNodes().get(0).getName());
@@ -116,7 +161,7 @@ public class NbiNotificationHelperImpl implements NbiNotificationHelper {
 
         for (EditMatchNode matchedNode : editContainmentNode.getMatchNodes()) {
             String matchedNodeNamespace = matchedNode.getNamespace();
-            String matchedNodePrefix = getPrefix(namespaceContext, matchedNodeNamespace, modelNode);
+            String matchedNodePrefix = getPrefix(editContainmentNode.getSchemaRegistry(), matchedNodeNamespace);
 
             if (matchedNodePrefix != null) {
                 namespaceDeclareMap.put(matchedNodePrefix, matchedNodeNamespace);
@@ -130,28 +175,14 @@ public class NbiNotificationHelperImpl implements NbiNotificationHelper {
         }
     }
     
-    private String getPrefix(NamespaceContext namespaceContext, String namespace, ModelNode modelNode) {
-        String returnValue = "";
-        if (namespaceContext != null) {
-            returnValue = namespaceContext.getPrefix(namespace);
+    private String getPrefix(SchemaRegistry schemaRegistry, String namespace) {
+        String prefix = schemaRegistry.getPrefix(namespace);
+        if (prefix == null) {
+        	NetconfRpcError rpcError = NetconfRpcErrorUtil.getApplicationError(NetconfRpcErrorTag.UNKNOWN_NAMESPACE,
+    				"An unexpected namespace is present for schema registry: "+ schemaRegistry.getName());
+            throw new EditConfigException(rpcError);
         }
-        
-        if (returnValue == null) {
-            NamespaceContext mountContext = SchemaRegistryUtil.getMountRegistry();
-            if (mountContext != null) {
-            	returnValue =  mountContext.getPrefix(namespace);
-            	if ( returnValue != null){
-            		return returnValue;
-            	}
-            	if (modelNode != null) {
-            		mountContext = modelNode.getMountRegistry();
-            		return mountContext.getPrefix(namespace);
-            	}
-            }
-        } else {
-            return returnValue;
-        }
-        return "";
+        return prefix;
     }
 
     private ChangedByParams buildChangedByInfo(NetconfClientInfo clientInfo){
@@ -167,43 +198,42 @@ public class NbiNotificationHelperImpl implements NbiNotificationHelper {
         return null;
     }
 
-    private Map<Object, Set<ChangeNotification>> classifyNotifications(Map<SubSystem, List<ChangeNotification>> subSystemNotificationMap) {
+    private Map<Object, Set<ChangeNotification>> classifyNotifications(Map<SubSystem, IndexedNotifList> subSystemNotificationMap) {
         Map<Object, Set<ChangeNotification>> classifiedChangeNotifications = new HashMap<>();
-        for (Map.Entry<SubSystem, List<ChangeNotification>> entry : subSystemNotificationMap.entrySet()) {
+        for (Map.Entry<SubSystem, IndexedNotifList> entry : subSystemNotificationMap.entrySet()) {
             Set<ChangeNotification> unClassifiedChangeNotifications = classifiedChangeNotifications
                     .get(NetconfResources.UNCLASSIFIED_NOTIFICATIONS);
             if (unClassifiedChangeNotifications == null) {
-                unClassifiedChangeNotifications = new HashSet<>(entry.getValue());
+                unClassifiedChangeNotifications = new HashSet<>(entry.getValue().list());
                 classifiedChangeNotifications.put(NetconfResources.UNCLASSIFIED_NOTIFICATIONS, unClassifiedChangeNotifications);
             } else {
-                unClassifiedChangeNotifications.addAll(entry.getValue());
+                unClassifiedChangeNotifications.addAll(entry.getValue().list());
             }
             SubSystem subSystem = entry.getKey();
-            if (null != m_classifiedSubsystemNotifications.get(subSystem)) {
-                SubsystemNotificationClassifier classifier = m_classifiedSubsystemNotifications.get(subSystem);
-                List<ChangeNotification> changeNotifications = entry.getValue();
+            if (null != m_subSystemNotificationSegregators.get(subSystem)) {
+                NotificationSegregator classifier = m_subSystemNotificationSegregators.get(subSystem);
+                List<ChangeNotification> changeNotifications = entry.getValue().list();
                 classifier.classify(classifiedChangeNotifications, changeNotifications);
             }
         }
         return classifiedChangeNotifications;
     }
 
-    private void buildEditInfos(Collection<ChangeNotification> changeNotifications, NamespaceContext namespaceContext, List<EditInfo> editInfos, List<EditInfo> impliedEditInfos){
+    private void buildEditInfos(Collection<ChangeNotification> changeNotifications, List<EditInfo> editInfos, List<EditInfo> impliedEditInfos){
         for (ChangeNotification change : changeNotifications) {
             EditConfigChangeNotification changeNotification = (EditConfigChangeNotification) change;
             Map<String, String> namespaceDeclareMap = new HashMap<>();
             StringBuilder targetPath = new StringBuilder();
-            targetPath.append(changeNotification.getModelNodeId().xPathString(namespaceContext));
             ModelNodeChange nodeChange = changeNotification.getChange();
             ModelNodeChangeType changeOperation = nodeChange.getChangeType();
             EditContainmentNode changeDataNode = nodeChange.getChangeData();
-            if (namespaceContext != null) {
-                namespaceDeclareMap.putAll(changeNotification.getModelNodeId().xPathStringNsByPrefix(namespaceContext));
-            }
+            NamespaceContext schemaRegistry = changeDataNode.getSchemaRegistry();
+            targetPath.append(changeNotification.getModelNodeId().xPathString(schemaRegistry));
+            namespaceDeclareMap.putAll(changeNotification.getModelNodeId().xPathStringNsByPrefix(schemaRegistry));
             if (changeOperation.equals(ModelNodeChangeType.merge)) {
-                editNotification(changeDataNode, targetPath, editInfos, namespaceContext, namespaceDeclareMap, changeNotification.isImplied(), changeNotification.getChangedNode());
+                editNotification(changeDataNode, targetPath, editInfos, schemaRegistry, namespaceDeclareMap, changeNotification.isImplied());
             } else {
-                updateTargetForMatchNode(changeDataNode, namespaceDeclareMap, namespaceContext, targetPath, changeNotification.getChangedNode());
+                updateTargetForMatchNode(changeDataNode, namespaceDeclareMap, targetPath);
                 EditInfo editInfo = new EditInfo();
                 editInfo.setNamespaceDeclareMap(namespaceDeclareMap);
                 editInfo.setTarget(targetPath.toString());

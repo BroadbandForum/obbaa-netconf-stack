@@ -1,3 +1,6 @@
+/**
+ * Utility classes
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,7 +17,4 @@
  * limitations under the License.
  */
 
-/**
- * Utility classes
- */
 package org.broadband_forum.obbaa.netconf.api.util;

@@ -16,17 +16,18 @@
 
 package org.broadband_forum.obbaa.netconf.server.tls;
 
-import org.apache.log4j.Logger;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.CompletableMessage;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 
 class SecureChannelFutureListener implements ChannelFutureListener {
     
-    private static final Logger LOGGER = Logger.getLogger(SecureChannelFutureListener.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SecureChannelFutureListener.class, LogAppNames.NETCONF_LIB);
     
     private CompletableMessage m_message;
     private NetconfClientInfo m_clientInfo;

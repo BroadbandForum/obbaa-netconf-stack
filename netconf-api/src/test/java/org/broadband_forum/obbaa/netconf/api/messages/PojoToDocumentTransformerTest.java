@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
+import static org.broadband_forum.obbaa.netconf.api.util.TestXML.assertXMLEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -24,8 +25,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,22 +38,25 @@ import java.util.Set;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.Node;
 
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
+import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
+import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 
-import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-
 public class PojoToDocumentTransformerTest {
 
     private AbstractNetconfGetRequest m_abstractNetconfGetRequest = mock(AbstractNetconfGetRequest.class);
-    private static final Logger LOGGER = Logger.getLogger(PojoToDocumentTransformerTest.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(PojoToDocumentTransformerTest.class, LogAppNames.NETCONF_LIB);
     private String m_source = "running";
     private NetconfFilter m_axsFilter = new NetconfFilter();
     private WithDefaults m_withDefaults = WithDefaults.REPORT_ALL;
@@ -78,6 +84,11 @@ public class PojoToDocumentTransformerTest {
             + "</capabilities><session-id>1</session-id></hello>";
 
     private PojoToDocumentTransformer m_transformer = new PojoToDocumentTransformer();
+
+    @Before
+    public void setup() throws NetconfMessageBuilderException {
+        m_element = DocumentUtils.stringToDocumentElement("<parent xmlns:test=\"unit:test:pojo-to-doc-transformer\"><child1><child2>test</child2></child1></parent>");;
+    }
 
     private void initializeExecute() {
         
@@ -110,30 +121,31 @@ public class PojoToDocumentTransformerTest {
         ChangedByParams changedByParams = new ChangedByParams(sessionInfo);
 
         Element configChangeNotificationElement = m_transformer.getConfigChangeNotificationElement(dataStore, editList, changedByParams);
-        Element datastoreElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.DATA_STORE);
+        Element datastoreElement = DocumentUtils.getDirectChildElement(configChangeNotificationElement, NetconfResources.DATA_STORE);
         assertEquals("running", datastoreElement.getTextContent());
-        Element changeByElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.CHANGED_BY);
+        Element changeByElement = DocumentUtils.getDirectChildElement(configChangeNotificationElement, NetconfResources.CHANGED_BY);
         assertNotNull(changeByElement);
 
-        Element userNameElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.USER_NAME);
+        Element editElement = DocumentUtils.getDirectChildElement(configChangeNotificationElement, NetconfResources.EDIT);
+
+        Element userNameElement = DocumentUtils.getDirectChildElement(changeByElement, NetconfResources.USER_NAME);
         assertEquals("admin", userNameElement.getTextContent());
 
-        Element editElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.EDIT);
         assertNotNull(editElement);
-        Element impliedElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.IMPLIED);
+        Element impliedElement = DocumentUtils.getDirectChildElement(editElement, NetconfResources.IMPLIED);
         assertNotNull(impliedElement);
         assertEquals("urn:ietf:params:xml:ns:yang:ietf-netconf-notifications", impliedElement.getNamespaceURI());
-        Element targetElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.TARGET);
+        Element targetElement = DocumentUtils.getDirectChildElement(editElement, NetconfResources.TARGET);
         NamedNodeMap attributes = targetElement.getAttributes();
         assertEquals("http://www.test-company.com/solutions/namespace1", attributes.getNamedItem("xmlns:prefix1").getNodeValue());
         assertEquals("http://www.test-company.com/solutions/namespace2", attributes.getNamedItem("xmlns:prefix2").getNodeValue());
         assertEquals(2, attributes.getLength());
         assertEquals("/prefix1:container1/prefix2:container2[prefix2:name=OLT-1]", targetElement.getTextContent());
 
-        Element operationElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.OPERATION);
+        Element operationElement = DocumentUtils.getDirectChildElement(editElement, NetconfResources.OPERATION);
         assertEquals("merge", operationElement.getTextContent());
 
-        Element changedLeafElement = DocumentUtils.getElement(configChangeNotificationElement, NetconfResources.CHANGED_LEAF);
+        Element changedLeafElement = DocumentUtils.getDirectChildElement(editElement, NetconfResources.CHANGED_LEAF);
         assertNotNull(changedLeafElement);
 
         Element leaf1Element = DocumentUtils.getChildElement(changedLeafElement, "prefix3:leaf1");
@@ -165,17 +177,18 @@ public class PojoToDocumentTransformerTest {
 
         Element stateChangeNotificationElement = m_transformer.getStateChangeNotificationElement(changesList);
         
-        Element changesElement = DocumentUtils.getElement(stateChangeNotificationElement, NetconfResources.CHANGES);
+        Element changesElement = DocumentUtils.getDirectChildElement(stateChangeNotificationElement, NetconfResources.CHANGES);
         assertNotNull(changesElement);
 
-        Element targetElement = DocumentUtils.getElement(stateChangeNotificationElement, NetconfResources.TARGET);
+        Element changedElement = DocumentUtils.getDirectChildElement(stateChangeNotificationElement, NetconfResources.CHANGES);
+        Element targetElement = DocumentUtils.getDirectChildElement(changedElement, NetconfResources.TARGET);
         NamedNodeMap attributes = targetElement.getAttributes();
         assertEquals("http://www.test-company.com/solutions/namespace1", attributes.getNamedItem("xmlns:prefix1").getNodeValue());
         assertEquals("http://www.test-company.com/solutions/namespace2", attributes.getNamedItem("xmlns:prefix2").getNodeValue());
         assertEquals(2, attributes.getLength());
         assertEquals("/prefix1:container1/prefix2:container2[prefix2:name=name1]", targetElement.getTextContent());
 
-        Element changedLeafElement = DocumentUtils.getElement(stateChangeNotificationElement, NetconfResources.CHANGED_LEAF);
+        Element changedLeafElement = DocumentUtils.getDirectChildElement(changedElement, NetconfResources.CHANGED_LEAF);
         assertNotNull(changedLeafElement);
         
         
@@ -191,7 +204,7 @@ public class PojoToDocumentTransformerTest {
         assertEquals("http://www.test-company.com/solutions/namespace3", leaf1Element1.getNamespaceURI());
         assertEquals("prefix3", leaf1Element2.getPrefix());
         
-        String changesElementStringExpected = "<changes xmlns=\"urn:bbf:yang:obbaa:netconf-stack\"><target xmlns:prefix1=\"http://www.test-company.com/solutions/namespace1\" xmlns:prefix2=\"http://www.test-company.com/solutions/namespace2\">/prefix1:container1/prefix2:container2[prefix2:name=name1]</target><changed-leaf><key>1</key><prefix3:leaf1 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue1</prefix3:leaf1></changed-leaf><changed-leaf><key>2</key><prefix3:leaf2 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue2</prefix3:leaf2></changed-leaf></changes>";
+        String changesElementStringExpected = "<changes xmlns=\"http://www.test-company.com/solutions/anv-netconf-stack\"><target xmlns:prefix1=\"http://www.test-company.com/solutions/namespace1\" xmlns:prefix2=\"http://www.test-company.com/solutions/namespace2\">/prefix1:container1/prefix2:container2[prefix2:name=name1]</target><changed-leaf><item>1</item><value><prefix3:leaf1 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue1</prefix3:leaf1></value></changed-leaf><changed-leaf><item>2</item><value><prefix3:leaf2 xmlns:prefix3=\"http://www.test-company.com/solutions/namespace3\">newValue2</prefix3:leaf2></value></changed-leaf></changes>";
         assertEquals(changesElementStringExpected, DocumentUtils.documentToString(changesElement));
 
     }
@@ -240,7 +253,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddGetConfigElementWhenRpcIsNull() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddGetConfigElementWhenRpcIsNull() {
 
         initializeExecute();
         try {
@@ -252,7 +265,46 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCreateSubscriptionElementWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddGetElementWhenFilterIsXPath() throws Exception {
+        NetconfFilter netconfFilter = new NetconfFilter();
+        netconfFilter.setType(NetconfFilter.XPATH_TYPE);
+        netconfFilter.setSelectAttribute("/t:top/t:users/t:user[t:name='fred']", Collections.singletonMap("http://example.com/schema/1.2/config","t"));
+
+        Document getRequestDoc = m_transformer.newNetconfRpcDocument("1").
+                addGetConfigElement(m_source,netconfFilter,null, 0, NetconfQueryParams.UNBOUNDED, Collections.emptyMap()).build();
+
+        String expectedGetRequest = "<rpc message-id=\"1\"\n" +
+                                    "          xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+                                    " <get-config>\n" +
+                                    "  <source>\n" +
+                                    "   <running/>\n" +
+                                    "  </source>\n" +
+                                    "  <filter xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xmlns:t=\"http://example.com/schema/1.2/config\"\n" +
+                                    "                 type=\"xpath\"\n" +
+                                    "                 select=\"/t:top/t:users/t:user[t:name='fred']\"/>\n" +
+                                    " </get-config>\n" +
+                                    "</rpc>";
+        assertXMLEquals(DocumentUtils.getDocumentElement(expectedGetRequest), getRequestDoc.getDocumentElement());
+    }
+
+    @Test
+    public void testAddGetElementWithInputAsSliceOwnerLeaf() throws Exception {
+        NetconfFilter netconfFilter = new NetconfFilter();
+        netconfFilter.setType(NetconfFilter.SUBTREE_TYPE);
+        Document getRequestDoc = m_transformer.newNetconfRpcDocument("1").
+                addGetElement(netconfFilter,"slice-owner1", null, 0, NetconfQueryParams.UNBOUNDED, Collections.emptyMap()).build();
+        String expectedGetRequest = "<rpc message-id=\"1\"\n" +
+                "          xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
+                " <get>\n" +
+                "  <slice-owner>slice-owner1</slice-owner>" +
+                "  <filter type=\"subtree\"/>\n" +
+                " </get>\n" +
+                "</rpc>";
+        assertXMLEquals(DocumentUtils.getDocumentElement(expectedGetRequest), getRequestDoc.getDocumentElement());
+    }
+
+    @Test
+    public void testAddCreateSubscriptionElementWhenRpcIsNull() {
 
         initializeExecute();
         try {
@@ -264,11 +316,11 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddGetElementWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddGetElementWhenRpcIsNull() {
 
         initializeExecute();
         try {
-            m_transformer.addGetElement(m_axsFilter, m_withDefaults, m_withDelay, m_depth, null);
+            m_transformer.addGetElement(m_axsFilter, null, m_withDefaults, m_withDelay, m_depth, null);
             fail("Should throw NetconfMessageBuilderException");
         } catch (Exception e) {
             assertEquals("<rpc> Element is null, create the rpc element first", e.getMessage());
@@ -276,7 +328,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCloseSessionElementWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddCloseSessionElementWhenRpcIsNull() {
 
         initializeExecute();
         try {
@@ -288,7 +340,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddKillSessionElementWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddKillSessionElementWhenRpcIsNull() {
 
         initializeExecute();
         try {
@@ -300,7 +352,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddOkWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddOkWhenRpcIsNull() {
 
         initializeExecute();
         try {
@@ -312,7 +364,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddDataWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddDataWhenRpcIsNull() {
 
         initializeExecute();
         try {
@@ -324,30 +376,62 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testRequestToString() {
+    public void testAddTxIdWhenRpcIsNull() {
+
         initializeExecute();
-        assertEquals(string, PojoToDocumentTransformer.requestToString(m_document));
+        try {
+            m_transformer.addTxId("tx-id");
+            fail("Should throw NetconfMessageBuilderException");
+        } catch (Exception e) {
+            assertEquals("<rpc-reply> Element is null, create the rpc element first", e.getMessage());
+        }
     }
 
     @Test
-    public void testPrettyPrint() {
-        Element element1 = mock(Element.class);
+    public void testRequestToString() throws NetconfMessageBuilderException {
+        initializeExecute();
+        Document doc = DocumentUtils.stringToDocument("<parent xmlns:test=\"unit:test:pojo-to-doc-transformer\"><child1><child2>test</child2></child1></parent>");
+        String expectedDoc = "<parent xmlns:test=\"unit:test:pojo-to-doc-transformer\">\n" +
+                "   <child1>\n" +
+                "      <child2>test</child2>\n" +
+                "   </child1>\n" +
+                "</parent>\n";
+        assertEquals(expectedDoc, PojoToDocumentTransformer.requestToString(doc));
+    }
+
+    @Test
+    public void testPrettyPrint() throws NetconfMessageBuilderException {
+        Element element = DocumentUtils.stringToDocumentElement("<parent xmlns:test=\"unit:test:pojo-to-doc-transformer\"><child1><child2>test</child2></child1></parent>");
         Collection<Element> elements = new ArrayList<>();
-        elements.add(element1);
-        assertEquals(string, PojoToDocumentTransformer.prettyPrint(m_element));
-        assertEquals(string_line, PojoToDocumentTransformer.prettyPrint(elements));
-
+        elements.add(element);
+        String expected = "<parent xmlns:test=\"unit:test:pojo-to-doc-transformer\">\n" +
+                "   <child1>\n" +
+                "      <child2>test</child2>\n" +
+                "   </child1>\n" +
+                "</parent>\n";
+        assertEquals(expected, PojoToDocumentTransformer.prettyPrint(element));
+        assertEquals(expected + "\n", PojoToDocumentTransformer.prettyPrint(elements));
     }
 
     @Test
-    public void testNotificationToStringAndPrettyString() {
-        Notification notification = mock(Notification.class);
-        assertEquals(string, PojoToDocumentTransformer.notificationToPrettyString(notification));
-        assertEquals(emptyString, PojoToDocumentTransformer.notificationToString(notification));
+    public void testNotificationToStringAndPrettyString() throws NetconfMessageBuilderException {
+        String notificationStr = "<notification xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\"><test:parent xmlns:test=\"unit:test:pojo-to-doc-transformer\"><test:name>UT</test:name></test:parent></notification>";
+        Notification notification = new NetconfNotification(DocumentUtils.stringToDocument(notificationStr));
+        String expectedNotificationStr = "<notification xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\"><eventTime>" + notification.getEventTime() + "</eventTime><test:parent xmlns:test=\"unit:test:pojo-to-doc-transformer\"><test:name>UT</test:name></test:parent></notification>";;
+
+        assertEquals(expectedNotificationStr, PojoToDocumentTransformer.notificationToString(notification));
+
+        expectedNotificationStr = "<notification xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">\n" +
+                "   <eventTime>" + notification.getEventTime() + "</eventTime>\n" +
+                "   <test:parent xmlns:test=\"unit:test:pojo-to-doc-transformer\">\n" +
+                "      <test:name>UT</test:name>\n" +
+                "   </test:parent>\n" +
+                "</notification>\n";
+        assertEquals(expectedNotificationStr, PojoToDocumentTransformer.notificationToPrettyString(notification));
     }
 
     @Test
-    public void testAddRpcErrorWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddRpcErrorWhenRpcIsNull() {
         initializeExecute();
         try {
             m_transformer.addRpcError(null);
@@ -358,7 +442,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithEmptySource() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddCopyConfigElementWithEmptySource() {
 
         String source = "";
         String target = RUNNING;
@@ -366,7 +450,7 @@ public class PojoToDocumentTransformerTest {
         boolean srcIsUrl = false;
         Element config = null;
         try {
-            m_transformer.addCopyConfigElement(source, srcIsUrl, target, targetIsUrl, config);
+            m_transformer.addCopyConfigElement(false, source, srcIsUrl, target, targetIsUrl, config);
             fail("Should throw NetconfMessageBuilderException");
         } catch (Exception e) {
             assertEquals("<source> element not set for <copy-config>", e.getMessage());
@@ -375,7 +459,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithNullSource() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddCopyConfigElementWithNullSource() {
 
         String source = null;
         String target = RUNNING;
@@ -383,7 +467,7 @@ public class PojoToDocumentTransformerTest {
         boolean srcIsUrl = false;
         Element config = null;
         try {
-            m_transformer.addCopyConfigElement(source, srcIsUrl, target, targetIsUrl, config);
+            m_transformer.addCopyConfigElement(false, source, srcIsUrl, target, targetIsUrl, config);
             fail("Should throw NetconfMessageBuilderException");
         } catch (Exception e) {
             assertEquals("<source> element not set for <copy-config>", e.getMessage());
@@ -392,7 +476,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddCopyConfigElementWithEmptyTarget() throws ParserConfigurationException {
 
         String source = RUNNING;
         Document doc = getNewDocument();
@@ -401,7 +485,7 @@ public class PojoToDocumentTransformerTest {
         boolean targetIsUrl = true;
         boolean srcIsUrl = false;
         try {
-            m_transformer.addCopyConfigElement(source, srcIsUrl, target, targetIsUrl, config);
+            m_transformer.addCopyConfigElement(false, source, srcIsUrl, target, targetIsUrl, config);
             fail("Should throw NetconfMessageBuilderException");
         } catch (Exception e) {
             assertEquals("<target> element not set for <copy-config>", e.getMessage());
@@ -410,7 +494,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddCopyConfigElementWithNullTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddCopyConfigElementWithNullTarget() throws ParserConfigurationException {
 
         String source = RUNNING;
         Document doc = getNewDocument();
@@ -419,7 +503,7 @@ public class PojoToDocumentTransformerTest {
         boolean targetIsUrl = true;
         boolean srcIsUrl = false;
         try {
-            m_transformer.addCopyConfigElement(source, srcIsUrl, target, targetIsUrl, config);
+            m_transformer.addCopyConfigElement(false, source, srcIsUrl, target, targetIsUrl, config);
             fail("Should throw NetconfMessageBuilderException");
 
         } catch (Exception e) {
@@ -429,7 +513,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddDeleteConfigElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddDeleteConfigElementWithEmptyTarget() {
         String target = "";
         try {
             m_transformer.addDeleteConfigElement(target);
@@ -442,7 +526,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddDeleteConfigElementWithNullTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddDeleteConfigElementWithNullTarget() {
         String target = null;
         try {
             m_transformer.addDeleteConfigElement(target);
@@ -455,7 +539,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddLockElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddLockElementWithEmptyTarget() {
         String target = "";
         try {
             m_transformer.addLockElement(target);
@@ -468,7 +552,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddLockElementWithNullTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddLockElementWithNullTarget() {
         String target = null;
         try {
             m_transformer.addLockElement(target);
@@ -481,7 +565,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddUnLockElementWithEmptyTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddUnLockElementWithEmptyTarget() {
         String target = "";
         try {
             m_transformer.addUnLockElement(target);
@@ -494,7 +578,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddUnLockElementWithNullTarget() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddUnLockElementWithNullTarget() {
         String target = null;
         try {
             m_transformer.addUnLockElement(target);
@@ -506,7 +590,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddEditConfigElementWithNull() throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddEditConfigElementWithNull() {
         initializeExecute();
         EditConfigElement configElement = null;
         Element element2 = mock(Element.class);
@@ -515,7 +599,7 @@ public class PojoToDocumentTransformerTest {
         when(m_document.getFirstChild()).thenReturn(node);
 
         try {
-            m_transformer.addEditConfigElement(null, null, null, null, m_withDelay, configElement);
+            m_transformer.addEditConfigElement(false,null, null, null, null, m_withDelay, configElement, "", "");
             fail("Should throw NetconfMessageBuilderException");
 
         } catch (Exception e) {
@@ -525,7 +609,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddRpcElementWhenRpcIsNull() throws ParserConfigurationException {
+    public void testAddRpcElementWhenRpcIsNull() {
         initializeExecute();
         try {
             m_transformer.addRpcElement(m_element);
@@ -536,7 +620,15 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddRpcElementNotNull() throws ParserConfigurationException {
+    public void testAddUserContextAttributes() {
+        initializeExecute();
+        when(m_document.getFirstChild()).thenReturn(m_element);
+        m_transformer.addUserContextAttributes("test","123");
+        assertEquals("test", m_element.getAttribute(NetconfResources.CTX_USER_CONTEXT));
+        assertEquals("123", m_element.getAttribute(NetconfResources.CTX_SESSION_ID));
+    }
+    @Test
+    public void testAddRpcElementNotNull() {
         initializeExecute();
         when(m_document.getFirstChild()).thenReturn(node);
         try {
@@ -547,8 +639,7 @@ public class PojoToDocumentTransformerTest {
     }
 
     @Test
-    public void testAddEditConfigElementWithValidateConfigElementNotNull()
-            throws NetconfMessageBuilderException, ParserConfigurationException {
+    public void testAddEditConfigElementWithValidateConfigElementNotNull() {
 
         EditConfigElement configElement = mock(EditConfigElement.class);
         initializeExecute();
@@ -559,7 +650,7 @@ public class PojoToDocumentTransformerTest {
         when(configElement.getConfigElementContents()).thenReturn(null);
 
         try {
-            m_transformer.addEditConfigElement(null, null, null, null, m_withDelay, configElement);
+            m_transformer.addEditConfigElement(false,null, null, null, null, m_withDelay, configElement, "", "");
             fail("Should throw NetconfMessageBuilderException");
 
         } catch (Exception e) {

@@ -97,7 +97,7 @@ public class NotificationLoggerImpl implements NotificationLogger {
         Logger logger = getLogger(streamName);
 
         if (logger.isDebugEnabled()) {
-            LogUtil.logDebug(logger, NetconfResources.NOTIFICATION_LOG_STMT, streamName, notification.notificationToString());
+            LogUtil.logDebug((org.apache.logging.log4j.Logger) logger, NetconfResources.NOTIFICATION_LOG_STMT, streamName, notification.notificationToString());
         }
     }
 
@@ -123,7 +123,7 @@ public class NotificationLoggerImpl implements NotificationLogger {
     public void logSubScription(CreateSubscriptionRequest request) {
         Logger logger = getLogger(request.getStream());
         if (logger.isDebugEnabled()) {
-            LogUtil.logDebug(logger, NetconfResources.CREATESUBSCRIPTION_LOG_STMT, request.requestToString());
+            LogUtil.logDebug((org.apache.logging.log4j.Logger) logger, NetconfResources.CREATESUBSCRIPTION_LOG_STMT, request.requestToString());
         }
     }
 

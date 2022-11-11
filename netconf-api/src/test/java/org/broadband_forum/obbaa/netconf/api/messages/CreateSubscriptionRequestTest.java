@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 
-public class CreateSubscriptionRequestTest {
+public class CreateSubscriptionRequestTest extends RpcTypeTest{
 
     private CreateSubscriptionRequest m_createSubscriptionRequest = new CreateSubscriptionRequest();
     public static final String STREAM = "stream";
@@ -46,6 +46,10 @@ public class CreateSubscriptionRequestTest {
     private String m_startTime_null = null;
     private String m_stopTime_null = null;
     private String m_messageId = "1";
+
+    public CreateSubscriptionRequestTest() {
+        super(new CreateSubscriptionRequest());
+    }
 
     @Test
     public void testSetAndGetStream() {

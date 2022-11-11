@@ -86,5 +86,4 @@ public interface AdvancedLogger {
     public void setLogCallBuffer(List<LogCallEntry> buffer);
     
     public void removeLogCallBuffer();
-
 }

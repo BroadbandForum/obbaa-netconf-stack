@@ -35,6 +35,15 @@ module deleteattributecommandtest {
     	  type string;
     	  when "../name = 'father'";
       }
+
+      leaf shoes {
+          default "black";
+          type string;
+      }
+
+      uses goggles {
+        when "../dress='blue'";
+      }
     }
     container mother {
       leaf name {
@@ -52,6 +61,24 @@ module deleteattributecommandtest {
           base dact:gender;
         }
       }
+    }
+  }
+
+  augment '/dact:family/dact:father' {
+    when "name = 'father'";
+    leaf shirt-size {
+        type uint8 {
+          range "0..100";
+        }
+
+      default "40";
+    }
+  }
+
+  grouping goggles {
+    leaf goggles{
+        type string;
+        default "rayban";
     }
   }
 }

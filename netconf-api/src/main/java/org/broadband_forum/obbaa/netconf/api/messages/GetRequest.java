@@ -16,13 +16,15 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.GET;
+
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.w3c.dom.Document;
 
 /**
  * Netconf request to perform {@code <get>} operation.
  * 
- *
+ * 
  * 
  */
 public class GetRequest extends AbstractNetconfGetRequest {
@@ -31,9 +33,9 @@ public class GetRequest extends AbstractNetconfGetRequest {
 
     private NetconfFilter m_filter;
 
-    private WithDefaults m_withDefaults;
-
     private boolean m_includeConfig = true;
+
+    private String m_sliceOwner;
 
     public boolean isIncludeConfig() {
         return m_includeConfig;
@@ -48,23 +50,28 @@ public class GetRequest extends AbstractNetconfGetRequest {
         return this;
     }
 
+    public String getSliceOwner() {
+        return m_sliceOwner;
+    }
+
+    public void setSliceOwner(String sliceOwner) {
+        m_sliceOwner = sliceOwner;
+    }
+
     public NetconfFilter getFilter() {
         return m_filter;
-    }
-
-    public WithDefaults getWithDefault() {
-        return m_withDefaults;
-    }
-
-    public void setWithDefaults(WithDefaults withDefaults) {
-        this.m_withDefaults = withDefaults;
     }
 
     @Override
     public Document getRequestDocumentInternal() throws NetconfMessageBuilderException {
         Document doc = new PojoToDocumentTransformer().newNetconfRpcDocument(m_messageId)
-                .addGetElement(m_filter, m_withDefaults, m_withDelay, m_depth, m_fieldValues).build();
+                .addGetElement(m_filter,m_sliceOwner, getWithDefaults(), m_withDelay, m_depth, m_fieldValues).build();
         return doc;
+    }
+
+    @Override
+    public String getRpcType() {
+        return GET;
     }
 
 }

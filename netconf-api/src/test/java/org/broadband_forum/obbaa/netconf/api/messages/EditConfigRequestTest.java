@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.stringToDocument;
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.assertXMLEquals;
 import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import static org.junit.Assert.assertEquals;
@@ -23,12 +24,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
+
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.xml.sax.SAXException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-public class EditConfigRequestTest {
+public class EditConfigRequestTest extends RpcTypeTest {
 
     private EditConfigRequest m_editConfigRequest = new EditConfigRequest();
     private EditConfigRequest m_editConfigRequest_null;
@@ -47,9 +51,22 @@ public class EditConfigRequestTest {
     private String m_messageId = "101";
     private EditConfigRequest m_editConfigRequest_new = new EditConfigRequest();
 
+    public EditConfigRequestTest() throws NetconfMessageBuilderException {
+        super(DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "  </edit-config>\n" +
+                "</rpc>")));
+    }
+
     @Test
     public void testSetAndGetTarget() {
-
         assertEquals(m_editConfigRequest, m_editConfigRequest.setTarget(m_target));
         assertEquals(m_target, m_editConfigRequest.getTarget());
     }
@@ -58,6 +75,61 @@ public class EditConfigRequestTest {
     public void testSetTargetRunning() {
         EditConfigRequest editConfigRequest1 = m_editConfigRequest.setTargetRunning();
         assertEquals("running", editConfigRequest1.getTarget());
+    }
+    
+    @Test
+    public void test_Synchronize_NotSpecified_False() {
+    	assertEquals(false, m_editConfigRequest.isTriggerSyncUponSuccess());
+    }
+    
+    @Test(expected = NetconfMessageBuilderException.class)
+    public void test_Synchronize_Specified_Empty_NotAllowed() throws Exception {
+    	DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "    <trigger-sync-upon-success xmlns=\"http://www.test-company.com/solutions/netconf-extensions\"/>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+    }
+    
+    @Test
+    public void test_Synchronize_Specified_Valid_True() throws Exception {
+    	EditConfigRequest request = DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "    <trigger-sync-upon-success xmlns=\"http://www.test-company.com/solutions/netconf-extensions\">true</trigger-sync-upon-success>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+    	assertEquals(true, request.isTriggerSyncUponSuccess());
+    }
+    
+    @Test
+    public void test_Synchronize_Specified_Valid_False() throws Exception {
+    	EditConfigRequest request = DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "    <trigger-sync-upon-success xmlns=\"http://www.test-company.com/solutions/netconf-extensions\">false</trigger-sync-upon-success>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+    	assertEquals(false, request.isTriggerSyncUponSuccess());
     }
 
     @Test
@@ -91,9 +163,56 @@ public class EditConfigRequestTest {
         m_editConfigRequest.setWithDelay(m_withDelay);
         m_editConfigRequest.setConfigElement(m_configElement);
         m_editConfigRequest.setMessageId(m_messageId);
+        m_editConfigRequest.setTransactionId(false);
         assertNotNull(m_editConfigRequest.getRequestDocument());
         assertXMLEquals(loadAsXml("TestXMLResources/editConfigTest.xml"), m_editConfigRequest.getRequestDocument().getDocumentElement());
 
+    }
+
+    @Test
+    public void testGetRequestDocumentWithTxId() throws NetconfMessageBuilderException, SAXException, IOException {
+
+        m_editConfigRequest.setTarget(m_target);
+        m_editConfigRequest.setDefaultOperation(m_defaultOperation);
+        m_editConfigRequest.setTestOption(m_testOption);
+        m_editConfigRequest.setErrorOption(m_errorOption);
+        m_editConfigRequest.setTransactionId(true);
+        m_editConfigRequest.setConfigElement(m_configElement);
+        m_editConfigRequest.setMessageId(m_messageId);
+        assertNotNull(m_editConfigRequest.getRequestDocument());
+        assertXMLEquals(loadAsXml("editConfigWithTxId.xml"), m_editConfigRequest.getRequestDocument().getDocumentElement());
+
+    }
+
+    @Test
+    public void testGetRequestDocumentWithUserContextAttributes() throws NetconfMessageBuilderException, SAXException, IOException {
+
+        m_editConfigRequest.setTarget(m_target);
+        m_editConfigRequest.setDefaultOperation(m_defaultOperation);
+        m_editConfigRequest.setTestOption(m_testOption);
+        m_editConfigRequest.setErrorOption(m_errorOption);
+        m_editConfigRequest.setTransactionId(true);
+        m_editConfigRequest.setConfigElement(m_configElement);
+        m_editConfigRequest.setMessageId(m_messageId);
+        m_editConfigRequest.setUserContext("admin");
+        m_editConfigRequest.setContextSessionId("12345");
+        assertNotNull(m_editConfigRequest.getRequestDocument());
+        String editRequestXml = "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" " +
+                "     xmlns:ctx=\"http://www.test-company.com/solutions/netconf-extensions\"\n" +
+                "     ctx:session-id=\"12345\"\n" +
+                "     ctx:user-context=\"admin\">\n" +
+                "    <edit-config>\n" +
+                "        <config/>\n" +
+                "        <default-operation>replace</default-operation>\n" +
+                "        <error-option>continue-on-error</error-option>\n" +
+                "        <target>\n" +
+                "            <running/>\n" +
+                "        </target>\n" +
+                "        <test-option>test-only</test-option>\n" +
+                "        <with-transaction-id xmlns=\"http://tail-f.com/ns/netconf/with-transaction-id\"/>\n" +
+                "    </edit-config>\n" +
+                "</rpc>";
+        assertXMLEquals(DocumentUtils.stringToDocumentElement(editRequestXml), m_editConfigRequest.getRequestDocument().getDocumentElement());
     }
 
     @Test
@@ -118,13 +237,13 @@ public class EditConfigRequestTest {
     @Test
     public void testHashCode() {
 
-        assertEquals(1270499503, m_editConfigRequest_new.hashCode());
+        assertEquals(2129374033, m_editConfigRequest_new.hashCode());
         m_editConfigRequest.setConfigElement(m_configElement);
         m_editConfigRequest.setDefaultOperation(m_defaultOperation_null);
         m_editConfigRequest.setTarget(m_target_null);
         m_editConfigRequest.setErrorOption(m_errorOption_null);
         m_editConfigRequest.setTestOption(m_testOption_null);
-        assertEquals(58181823, m_editConfigRequest.hashCode());
+        assertEquals(1803636513, m_editConfigRequest.hashCode());
 
     }
 
@@ -164,6 +283,77 @@ public class EditConfigRequestTest {
         assertFalse(m_editConfigRequest.equals(m_editConfigRequest_null));
         
 
+    }
+
+    @Test
+    public void test_forceInstanceCreation_NotSpecified() {
+    	assertEquals(false, m_editConfigRequest.isForceInstanceCreation());
+    }
+
+    @Test(expected = NetconfMessageBuilderException.class)
+    public void test_forceInstanceCreation_EmptyValue() throws Exception {
+    	DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "    <force-instance-creation xmlns=\"http://www.test-company.com/solutions/netconf-extensions\"/>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+    }
+
+    @Test(expected = NetconfMessageBuilderException.class)
+    public void test_forceInstanceCreation_InvalidValue() throws Exception {
+    	DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "    <force-instance-creation xmlns=\"http://www.test-company.com/solutions/netconf-extensions\">dummy</force-instance-creation>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+    }
+
+    @Test
+    public void test_forceInstanceCreation_Valid_True() throws Exception {
+    	EditConfigRequest request = DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "    <force-instance-creation xmlns=\"http://www.test-company.com/solutions/netconf-extensions\">true</force-instance-creation>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+    	assertEquals(true, request.isForceInstanceCreation());
+    }
+
+    @Test
+    public void test_forceInstanceCreation_Specified_Valid_False() throws Exception {
+    	EditConfigRequest request = DocumentToPojoTransformer.getEditConfig(stringToDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <test xmlns=\"ns:ns\"/>" +
+                "    </config>\n" +
+                "    <force-instance-creation xmlns=\"http://www.test-company.com/solutions/netconf-extensions\">false</force-instance-creation>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+    	assertEquals(false, request.isForceInstanceCreation());
     }
 
 }

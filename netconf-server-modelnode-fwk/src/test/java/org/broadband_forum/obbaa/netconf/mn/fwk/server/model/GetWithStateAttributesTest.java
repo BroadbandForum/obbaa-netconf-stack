@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.getNewDocument;
@@ -15,21 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
 import javax.xml.parsers.ParserConfigurationException;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
@@ -38,7 +40,6 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
-import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
@@ -52,8 +53,25 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNo
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang.DsmJukeboxSubsystem;
+import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class GetWithStateAttributesTest {
 
     private static final String EXAMPLE_JUKEBOX_WITH_STATE_ATTRIBUTES_YANG = "/getstateattributestest/example-jukebox-with-state-attributes.yang";
@@ -85,6 +103,7 @@ public class GetWithStateAttributesTest {
 
         m_jukeBoxSystem = Mockito.mock(DsmJukeboxSubsystem.class);
         m_subSystemRegistry = new SubSystemRegistryImpl();
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_modelNodeHelperRegistry = new ModelNodeHelperRegistryImpl(m_schemaRegistry);
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry,
                 mock(ModelNodeDataStoreManager.class), m_subSystemRegistry);
@@ -92,7 +111,7 @@ public class GetWithStateAttributesTest {
                 m_subSystemRegistry, m_schemaRegistry, new InMemoryDSM(m_schemaRegistry));
         m_rootModelNodeAggregator.addModelServiceRoot(COMPONENT_ID, m_jukeBoxModelNode);
         Map<ModelNodeId, List<Element>> values = mockSubSystemResponse();
-        when(m_jukeBoxSystem.retrieveStateAttributes(Mockito.anyMap(), Mockito.any(NetconfQueryParams.class))).thenReturn(values);
+        when(m_jukeBoxSystem.retrieveStateAttributes(Mockito.anyMap(), Mockito.any(NetconfQueryParams.class), Mockito.any(StateAttributeGetContext.class))).thenReturn(values);
 
         m_server = new NetConfServerImpl(m_schemaRegistry);
         m_nbiNotificationHelper = mock(NbiNotificationHelper.class);

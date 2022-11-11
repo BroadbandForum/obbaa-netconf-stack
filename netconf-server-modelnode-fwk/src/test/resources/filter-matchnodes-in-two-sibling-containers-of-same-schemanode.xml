@@ -1,0 +1,16 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+  <library>
+    <artist>
+      <name>Lenny</name>
+      <album>
+        <name/>
+        <song>
+          <name>Are you gonne go your way</name> <!-- wrong value-->
+        </song>
+        <song>
+          <name>Fly Away</name>
+        </song>
+      </album>
+    </artist>
+  </library>
+</jukebox>

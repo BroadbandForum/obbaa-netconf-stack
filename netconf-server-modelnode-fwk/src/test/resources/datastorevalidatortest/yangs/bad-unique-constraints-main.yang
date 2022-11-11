@@ -1,0 +1,61 @@
+module bad-unique-constraints-main {
+    
+    yang-version 1.1;
+    
+    namespace "urn:org:bbf2:pma:bad-unique-constraints-main";
+    
+    prefix "badunique";
+    
+    revision "2015-12-14" {
+          description "Initial version.";
+    }
+        
+    container bad-unique-test{
+    
+    	list test-list {
+    		key id;
+    		unique "otherleaf";
+    		leaf id {
+    			type uint8;
+    		}
+    		
+    		leaf otherleaf {
+    		    type string;
+    		}
+    		
+    		leaf thirdleaf {
+    		    type string;
+    		}
+    		
+    		container ipv4 {
+    		    leaf ip-address {
+    		        type string;
+    		    }
+    		}
+    		
+    		container ipv6 {
+    		    leaf ip-address {
+    		        type string;
+    		    }
+    		}
+    		
+    		choice my-choice {
+    		    case caseA {
+    		        container caseA-container {
+    		            leaf caseA-leaf {
+    		                type string;
+    		            }
+    		        }
+    		    }
+    		    case caseB {
+    		        container caseB-container {
+    		            leaf caseB-leaf {
+    		                type string;
+    		            }
+    		        }
+    		    }
+    		}
+    	}
+    }
+}   
+        

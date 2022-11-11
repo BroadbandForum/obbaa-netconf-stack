@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<validation xmlns="urn:org:bbf:pma:validation">
+<validation xmlns="urn:org:bbf2:pma:validation">
     <choicecase>
         <name>Mixed case with non default container case</name>
         <container-case-mixed>

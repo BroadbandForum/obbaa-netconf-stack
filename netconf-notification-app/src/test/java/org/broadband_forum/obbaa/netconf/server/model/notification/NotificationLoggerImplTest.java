@@ -37,6 +37,7 @@ import org.broadband_forum.obbaa.netconf.api.server.notification.Stream;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -47,6 +48,7 @@ import org.mockito.runners.MockitoJUnitRunner;
  *
  */
 @RunWith(MockitoJUnitRunner.class)
+@Ignore
 public class NotificationLoggerImplTest {
 
 	private static final Logger LOGGER = Logger.getLogger(NotificationLoggerImplTest.class);

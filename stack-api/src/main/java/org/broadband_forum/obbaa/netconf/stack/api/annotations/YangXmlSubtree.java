@@ -33,4 +33,6 @@ public @interface YangXmlSubtree {
     String namespace() default "";
 
     String revision() default "";
+
+    boolean fetchEagerly() default false;
 }

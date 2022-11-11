@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.client.ssh;
 
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
 import org.broadband_forum.obbaa.netconf.api.util.ExecutorServiceProvider;
 import org.w3c.dom.Document;
 
@@ -27,7 +28,7 @@ public class TestSshNetconfClientSession extends SshNetconfClientSession {
     }
 
     @Override
-    public void responseRecieved(Document doc) {
-        c_lastRecievedMessage = doc;
+    public void responseRecieved(DocumentInfo documentInfo) {
+        c_lastRecievedMessage = documentInfo.getDocument();
     }
 }

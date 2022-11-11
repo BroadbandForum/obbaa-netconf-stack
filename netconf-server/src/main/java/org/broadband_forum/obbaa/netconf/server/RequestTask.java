@@ -18,10 +18,13 @@ package org.broadband_forum.obbaa.netconf.server;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
+import org.broadband_forum.obbaa.netconf.api.logger.ual.NCUserActivityLogHandler;
+import org.broadband_forum.obbaa.netconf.api.logger.ual.NetconfUALLog;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.ActionResponse;
@@ -47,37 +50,60 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
 import org.broadband_forum.obbaa.netconf.server.ssh.auth.AccessDeniedException;
 import org.broadband_forum.obbaa.netconf.server.ssh.auth.SessionNotFoundException;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.broadband_forum.obbaa.netconf.stack.logging.ual.UALLogger;
+import org.w3c.dom.Document;
+
+import com.google.common.base.Stopwatch;
 
 public class RequestTask implements Runnable {
-    private static final Logger LOGGER = Logger.getLogger(RequestTask.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(RequestTask.class, LogAppNames.NETCONF_LIB);
     public static final String CURRENT_REQ = "CURRENT_REQ";
+    public static final String CURRENT_REQ_FORCE_INSTANCE_CREATION = "CURRENT_REQ_FORCE_INSTANCE_CREATION";
     public static final String CURRENT_REQ_TYPE = "CURRENT_REQ_TYPE";
     public static final String CURRENT_REQ_MESSAGE_ID = "CURRENT_REQ_MESSAGE_ID";
     public static final String CURRENT_REQ_START_TIME = "CURRENT_REQ_START_TIME";
+    public static final String CURRENT_REQ_SHOULD_TRIGGER_SYNC_UPON_SUCCESS = "CURRENT_REQ_SHOULD_TRIGGER_SYNC_UPON_SUCCESS";
     public static final String REQ_TYPE_GET = "GET";
     public static final String REQ_TYPE_GET_CONFIG = "GET-CONFIG";
+    public static final String REQ_TYPE_EDIT_CONFIG = "EDIT-CONFIG";
     public static final String CURRENT_REQ_CONTEXT = "CURRENT_REQUEST_CONTEXT";
+    public static final String CURRENT_REQ_DOCUMENT = "CURRENT_REQ_DOCUMENT";
+    private final Stopwatch m_sw;
     private NetconfClientInfo m_clientInfo;
     private AbstractNetconfRequest m_netconfRequest;
     private ResponseChannel m_channel;
     private NetconfServerMessageListener m_serverMessageListener;
     private List<RequestTaskListener> m_listeners = new ArrayList<>();
-    private List<Notification> m_netconfConfigChangeNotifications = new ArrayList<>();
+    private List<Notification> m_netconfConfigChangeNotifications;
     private NotificationService m_notificationService;
+    private Document m_netconfRequestDocument;
     private long m_queuedTime;
     private long m_offeredTime;
     private long m_executionStartTime;
     private long m_executionEndTime;
+    private boolean m_canUalLog;
     private final NetconfLogger m_netconfLogger;
+    private final UALLogger m_ualLogger;
+    private NCUserActivityLogHandler m_ncUserActivityLogHandler;
     private RequestContext m_requestContext;
+    private RequestTaskPostRequestExecuteListener m_requestTaskPostRequestExecuteListener;
+    private Stopwatch m_enQueueTimer;
+    private Long m_queueWaitingTime;
 
     public RequestTask(NetconfClientInfo clientInfo, AbstractNetconfRequest netconfRequest, ResponseChannel channel,
-                       NetconfServerMessageListener serverMessageListener, NetconfLogger netconfLogger) {
+                       NetconfServerMessageListener serverMessageListener, NetconfLogger netconfLogger,
+                       NCUserActivityLogHandler ncUserActivityLogHandler, UALLogger ualLogger) {
         m_clientInfo = clientInfo;
         m_netconfRequest = netconfRequest;
+        m_sw = Stopwatch.createUnstarted();
+        m_enQueueTimer = Stopwatch.createUnstarted();
         m_channel = channel;
         m_serverMessageListener = serverMessageListener;
         m_netconfLogger = netconfLogger;
+        m_ncUserActivityLogHandler = ncUserActivityLogHandler;
+        m_ualLogger = ualLogger;
     }
 
     public RequestContext getRequestContext() {
@@ -110,6 +136,10 @@ public class RequestTask implements Runnable {
 
     public boolean isGetOrGetConfig() {
         return m_netconfRequest instanceof GetRequest || m_netconfRequest instanceof GetConfigRequest;
+    }
+
+    public boolean isEditConfigOrRpcOrAction(){
+        return isEditConfig() || isActionRequest() || isRpcRequest() ;
     }
 
     public boolean isEditConfig() {
@@ -165,8 +195,37 @@ public class RequestTask implements Runnable {
                     RequestScope.getCurrentScope().putInCache(CURRENT_REQ, m_netconfRequest);
                     RequestScope.getCurrentScope().putInCache(CURRENT_REQ_START_TIME, System.currentTimeMillis());
                     RequestScope.getCurrentScope().putInCache(CURRENT_REQ_MESSAGE_ID, m_netconfRequest.getMessageId());
-                    RequestScope.getCurrentScope().putInCache(CURRENT_REQ_CONTEXT, getRequestContext());
-                    doExecuteRequest();
+
+                    //keep old copies
+                    UserContext loggedInUserCtxtTL = RequestContext.getLoggedInUserCtxtTL();
+                    UserContext additionalUserCtxtTL = RequestContext.getAdditionalUserCtxtTL();
+                    AggregateContext aggregateContextTL = RequestContext.getAggregateContextTL();
+                    RequestContext requestContext = getRequestContext();
+                    RequestScope.getCurrentScope().putInCache(CURRENT_REQ_CONTEXT, requestContext);
+                    try {
+                        if(requestContext != null) {
+                            //set new TLS
+                            RequestContext.setLoggedInUserCtxtTL(requestContext.getLoggedInUserCtxt());
+                            RequestContext.setAdditionalUserCtxtTL(requestContext.getAdditionalUserCtxt());
+                            
+                            if(requestContext.getAggregateContext() != null) {
+                            	RequestContext.setAggregateContextTL(requestContext.getAggregateContext());
+                            }
+                        }
+                        if (m_netconfRequest instanceof EditConfigRequest) {
+                            RequestScope.getCurrentScope().putInCache(CURRENT_REQ_SHOULD_TRIGGER_SYNC_UPON_SUCCESS,
+                                    ((EditConfigRequest) m_netconfRequest).isTriggerSyncUponSuccess());
+                            RequestScope.getCurrentScope().putInCache(CURRENT_REQ_FORCE_INSTANCE_CREATION,
+                                    m_netconfRequest.isForceInstanceCreation());
+                        }
+                        doExecuteRequest();
+                    } finally {
+                        //restore old copies
+                        RequestContext.setLoggedInUserCtxtTL(loggedInUserCtxtTL);
+                        RequestContext.setAdditionalUserCtxtTL(additionalUserCtxtTL);
+                        RequestContext.setAggregateContextTL(aggregateContextTL);
+                    }
+
                     return null;
                 }
             });
@@ -194,72 +253,94 @@ public class RequestTask implements Runnable {
         } finally {
             setExecutionEndTime(System.currentTimeMillis());
             fireRequestDoneEvent();
-            RequestScope.resetScope();
         }
     }
 
     protected void doExecuteRequest() {
         try {
-            m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(),
-                    m_clientInfo.getUsername(), String.valueOf(m_clientInfo.getSessionId()),
-                    m_netconfRequest.getRequestDocument());
-        } catch (NetconfMessageBuilderException e) {
-            throw new RuntimeException("Cannot extract request document", e);
-        }
-        if (m_netconfRequest instanceof CreateSubscriptionRequest) {
-            // delegate to NetconfServerMessageListener to create subscription request,
-            // It also takes care of sending response for request
-            m_serverMessageListener.onCreateSubscription(m_clientInfo, (CreateSubscriptionRequest) m_netconfRequest, m_channel);
-        } else {
-            // call to NetconfServerMessageListener to process request and retrieve response
-            NetConfResponse response = new NetConfResponse();
-            response.setMessageId(m_netconfRequest.getMessageId());
-            if (m_netconfRequest instanceof CloseSessionRequest) {
-                m_serverMessageListener.onCloseSession(m_clientInfo, (CloseSessionRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof CopyConfigRequest) {
-                m_serverMessageListener.onCopyConfig(m_clientInfo, (CopyConfigRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof DeleteConfigRequest) {
-                m_serverMessageListener.onDeleteConfig(m_clientInfo, (DeleteConfigRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof EditConfigRequest) {
-                m_netconfConfigChangeNotifications = (List<Notification>) m_serverMessageListener.onEditConfig(m_clientInfo,
-                        (EditConfigRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof GetRequest) {
-                RequestScope.getCurrentScope().putInCache(CURRENT_REQ_TYPE, REQ_TYPE_GET);
-                m_serverMessageListener.onGet(m_clientInfo, (GetRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof GetConfigRequest) {
-                RequestScope.getCurrentScope().putInCache(CURRENT_REQ_TYPE, REQ_TYPE_GET_CONFIG);
-                m_serverMessageListener.onGetConfig(m_clientInfo, (GetConfigRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof KillSessionRequest) {
-                m_serverMessageListener.onKillSession(m_clientInfo, (KillSessionRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof LockRequest) {
-                m_serverMessageListener.onLock(m_clientInfo, (LockRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof UnLockRequest) {
-                m_serverMessageListener.onUnlock(m_clientInfo, (UnLockRequest) m_netconfRequest, response);
-            } else if (m_netconfRequest instanceof ActionRequest) {
-                response = new ActionResponse();
-                response.setMessageId(m_netconfRequest.getMessageId());
-                m_serverMessageListener.onAction(m_clientInfo, (ActionRequest) m_netconfRequest, (ActionResponse) response);
-            } else if (m_netconfRequest instanceof NetconfRpcRequest) {
-                response = new NetconfRpcResponse();
-                response.setMessageId(m_netconfRequest.getMessageId());
-                m_netconfConfigChangeNotifications = m_serverMessageListener.onRpc(m_clientInfo, (NetconfRpcRequest) m_netconfRequest,
-                        (NetconfRpcResponse) response);
-            }
-            sendResponseToChannel(response);
-            if ((m_netconfConfigChangeNotifications != null) && (!m_netconfConfigChangeNotifications.isEmpty()) && (m_notificationService != null)) {
-                LOGGER.debug("sending edit-config change notification on NC stream " + NetconfResources.CONFIG_CHANGE_STREAM);
-                for (Notification notification : m_netconfConfigChangeNotifications) {
-                    m_notificationService.sendNotification(NetconfResources.CONFIG_CHANGE_STREAM, notification);
-                }
-            }
-        }
+			try {
+                m_netconfRequestDocument = m_netconfRequest.getRequestDocument();
+                m_netconfLogger.setThreadLocalDeviceLogId(m_netconfRequestDocument);
+                m_ualLogger.setCanLog(m_canUalLog);
+				m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(),
+						m_clientInfo.getUsername(), String.valueOf(m_clientInfo.getSessionId()),
+                        m_netconfRequestDocument);
+			} catch (NetconfMessageBuilderException e) {
+				throw new RuntimeException("Cannot extract request document", e);
+			}
+            m_queueWaitingTime = m_enQueueTimer.isRunning()? m_enQueueTimer.elapsed(TimeUnit.MILLISECONDS): null;
+            m_sw.start();
+			if (m_netconfRequest instanceof CreateSubscriptionRequest) {
+				// delegate to NetconfServerMessageListener to create subscription request,
+				// It also takes care of sending response for request
+				m_serverMessageListener.onCreateSubscription(m_clientInfo, (CreateSubscriptionRequest) m_netconfRequest,
+						m_channel);
+			} else {
+				// call to NetconfServerMessageListener to process request and retrieve response
+				NetConfResponse response = new NetConfResponse();
+				response.setMessageId(m_netconfRequest.getMessageId());
+				if (m_netconfRequest instanceof CloseSessionRequest) {
+					m_serverMessageListener.onCloseSession(m_clientInfo, (CloseSessionRequest) m_netconfRequest,
+							response);
+				} else if (m_netconfRequest instanceof CopyConfigRequest) {
+					m_serverMessageListener.onCopyConfig(m_clientInfo, (CopyConfigRequest) m_netconfRequest, response);
+				} else if (m_netconfRequest instanceof DeleteConfigRequest) {
+					m_serverMessageListener.onDeleteConfig(m_clientInfo, (DeleteConfigRequest) m_netconfRequest,
+							response);
+				} else if (m_netconfRequest instanceof EditConfigRequest) {
+					m_netconfConfigChangeNotifications = (List<Notification>) m_serverMessageListener
+							.onEditConfig(m_clientInfo, (EditConfigRequest) m_netconfRequest, response);
+				} else if (m_netconfRequest instanceof GetRequest) {
+					RequestScope.getCurrentScope().putInCache(CURRENT_REQ_TYPE, REQ_TYPE_GET);
+					m_serverMessageListener.onGet(m_clientInfo, (GetRequest) m_netconfRequest, response);
+				} else if (m_netconfRequest instanceof GetConfigRequest) {
+					RequestScope.getCurrentScope().putInCache(CURRENT_REQ_TYPE, REQ_TYPE_GET_CONFIG);
+					m_serverMessageListener.onGetConfig(m_clientInfo, (GetConfigRequest) m_netconfRequest, response);
+				} else if (m_netconfRequest instanceof KillSessionRequest) {
+					m_serverMessageListener.onKillSession(m_clientInfo, (KillSessionRequest) m_netconfRequest,
+							response);
+				} else if (m_netconfRequest instanceof LockRequest) {
+					m_serverMessageListener.onLock(m_clientInfo, (LockRequest) m_netconfRequest, response);
+				} else if (m_netconfRequest instanceof UnLockRequest) {
+					m_serverMessageListener.onUnlock(m_clientInfo, (UnLockRequest) m_netconfRequest, response);
+				} else if (m_netconfRequest instanceof ActionRequest) {
+					response = new ActionResponse();
+					response.setMessageId(m_netconfRequest.getMessageId());
+					m_serverMessageListener.onAction(m_clientInfo, (ActionRequest) m_netconfRequest,
+							(ActionResponse) response);
+				} else if (m_netconfRequest instanceof NetconfRpcRequest) {
+					response = new NetconfRpcResponse();
+					response.setMessageId(m_netconfRequest.getMessageId());
+					m_netconfConfigChangeNotifications = m_serverMessageListener.onRpc(m_clientInfo,
+							(NetconfRpcRequest) m_netconfRequest, (NetconfRpcResponse) response);
+				}
+				sendResponseToChannel(response);
+				if ((m_netconfConfigChangeNotifications != null) && (!m_netconfConfigChangeNotifications.isEmpty())
+						&& (m_notificationService != null)) {
+					LOGGER.debug("sending edit-config change notification on NC stream "
+							+ NetconfResources.CONFIG_CHANGE_STREAM);
+					for (Notification notification : m_netconfConfigChangeNotifications) {
+						try {
+							m_notificationService.sendNotification(NetconfResources.CONFIG_CHANGE_STREAM, notification);
+						} catch (Exception e) {
+							LOGGER.error("Unable to send notification: {}",
+									LOGGER.sensitiveData(notification.notificationToPrettyString()), e);
+						}
+
+					}
+				}
+			} 
+		} finally {
+			m_netconfLogger.setThreadLocalDeviceLogId(null);
+			m_ualLogger.resetCanLog();
+		}
     }
 
     public void sendResponse(NetConfResponse response) {
         try {
             response.setMessageId(m_netconfRequest.getMessageId());
             sendResponseToChannel(response);
-        } finally {
+        }finally {
             fireRequestDoneEvent();
         }
     }
@@ -267,18 +348,67 @@ public class RequestTask implements Runnable {
     protected void sendResponseToChannel(NetConfResponse response) {
         if (!m_channel.isSessionClosed()) {
             try {
+                Long elapsed = m_sw.isRunning()? m_sw.elapsed(TimeUnit.MILLISECONDS): null;
                 m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(),
-                        new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument(), m_netconfRequest);
+                        Integer.toString(m_clientInfo.getSessionId()), response.getResponseDocument(), m_netconfRequest,
+                        elapsed);
+                if(m_requestTaskPostRequestExecuteListener !=null) {
+                    m_requestTaskPostRequestExecuteListener.postExecuteRequest(m_netconfRequest, response, m_queueWaitingTime, elapsed);
+                }
+                logUserActivity(response);
                 m_channel.sendResponse(response, m_netconfRequest);
             } catch (NetconfMessageBuilderException e) {
                 LOGGER.error("Can not send response for request: " + m_netconfRequest.requestToString(), e);
             }
-        } else {
-            if (LOGGER.isDebugEnabled()) {
+        }else {
+            if(LOGGER.isDebugEnabled()){
                 LOGGER.debug(String.format("Could not log response \n %s \n as the response channel was already closed", response.responseToString()));
             }
 
         }
+    }
+
+    private void logUserActivity(NetConfResponse response) {
+        try {
+            m_ualLogger.setCanLog(m_canUalLog);
+            // UAL should record only for edit-config, action and rpc requests and
+            // should not log if action/rpc request has ual:disabled annotation(read-only requests)
+            if (m_canUalLog && m_ualLogger.isUalLogEnabled() && isEditConfigOrRpcOrAction() && !m_ncUserActivityLogHandler.isReadOnlyRequest(m_netconfRequest)) {
+                NetconfUALLog ualLog = buildNetconfUALLog();
+                ualLog.setResult(response.getErrors().size() > 0 ? "failure" : "success");
+                m_ncUserActivityLogHandler.logUserActivity(ualLog);
+            }
+        } catch (RuntimeException e) {
+            LOGGER.error("Error while logging user activity log for request : " + m_netconfRequest.requestToString(), e);
+        }
+    }
+
+    private NetconfUALLog buildNetconfUALLog() {
+        long requestStartTime = 0;
+        Object cachedValue = RequestScope.getCurrentScope().getFromCache(CURRENT_REQ_START_TIME);
+        if(cachedValue != null){
+            requestStartTime = (long) cachedValue;
+        }
+        NetconfUALLog netconfUALLog = new NetconfUALLog()
+                .setNetconfRequest(m_netconfRequest)
+                .setInvocationTime(requestStartTime)
+                .setRequestDocument(m_netconfRequestDocument)
+                .setApplications(m_requestContext.getApplication());
+        //it is  a strict requirement that loggedIn user context is not null, if it is its a bug
+        UserContext loggedInUserCtxt = m_requestContext.getLoggedInUserCtxt();
+        UserContext additionalUserCtxt = m_requestContext.getAdditionalUserCtxt();
+
+        if(additionalUserCtxt != null){
+            //the twist, the logged inuser now is the delegate
+            netconfUALLog.setUsername(additionalUserCtxt.getUsername())
+                    .setSessionId(additionalUserCtxt.getSessionId())
+                    .setDelegateUser(loggedInUserCtxt.getUsername())
+                    .setDelegateSession(loggedInUserCtxt.getSessionId());
+        } else {
+            netconfUALLog.setUsername(loggedInUserCtxt.getUsername())
+                    .setSessionId(loggedInUserCtxt.getSessionId());
+        }
+        return netconfUALLog;
     }
 
     public NetconfClientInfo getClientInfo() {
@@ -303,6 +433,14 @@ public class RequestTask implements Runnable {
         }
     }
 
+    public void setCanLog(boolean canLog) {
+        this.m_canUalLog = canLog;
+    }
+
+    public void enqueued() {
+        m_enQueueTimer.start();
+    }
+
     public static interface RequestTaskListener {
         void requestDone();
     }
@@ -313,6 +451,14 @@ public class RequestTask implements Runnable {
 
     public long getQueuedTime() {
         return m_queuedTime;
+    }
+
+    public Stopwatch getEnQueueTimer() {
+        return m_enQueueTimer;
+    }
+
+    public Long getWaitingTimeInQueue() {
+        return m_queueWaitingTime;
     }
 
     public void setExecutionStartTime(long time) {
@@ -337,5 +483,13 @@ public class RequestTask implements Runnable {
 
     public void setOfferedTime(long offeredTime) {
         this.m_offeredTime = offeredTime;
+    }
+
+    public void setRequestTaskPostRequestListener(RequestTaskPostRequestExecuteListener requestTaskPostRequestExecuteListener) {
+        m_requestTaskPostRequestExecuteListener = requestTaskPostRequestExecuteListener;
+    }
+
+    public RequestTaskPostRequestExecuteListener getRequestTaskPostRequestExecuteListener() {
+        return m_requestTaskPostRequestExecuteListener;
     }
 }

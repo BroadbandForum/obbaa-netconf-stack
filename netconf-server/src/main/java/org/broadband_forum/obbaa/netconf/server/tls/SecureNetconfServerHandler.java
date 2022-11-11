@@ -17,10 +17,11 @@
 package org.broadband_forum.obbaa.netconf.server.tls;
 
 import static org.broadband_forum.obbaa.netconf.api.server.NetconfServerMessageListener.CLOSE_RESPONSE_TIME_OUT_SECS;
+import static org.broadband_forum.obbaa.netconf.api.util.ByteBufUtils.reInitializeByteBuf;
+import static org.broadband_forum.obbaa.netconf.api.util.ByteBufUtils.releaseByteBuf;
+import static org.broadband_forum.obbaa.netconf.api.util.ByteBufUtils.unpooledHeapByteBuf;
 import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.CHUNKED_HANDLER;
-import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.CHUNK_SIZE;
 import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.EOM_HANDLER;
-import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.MAXIMUM_SIZE_OF_CHUNKED_MESSAGES;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -28,14 +29,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.w3c.dom.Document;
-
 import org.broadband_forum.obbaa.netconf.api.LogAppNames;
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodec;
-import org.broadband_forum.obbaa.netconf.api.FrameAwareNetconfMessageCodecImpl;
-import org.broadband_forum.obbaa.netconf.api.MessageToolargeException;
-import org.broadband_forum.obbaa.netconf.api.NetconfMessageCodec;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.DocumentInfo;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.FrameAwareNetconfMessageCodecV2;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.FrameAwareNetconfMessageCodecV2Impl;
+import org.broadband_forum.obbaa.netconf.api.codec.v2.NetconfMessageCodecV2;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLoggingContext;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
@@ -58,12 +57,15 @@ import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
-import org.broadband_forum.obbaa.netconf.api.utils.SystemPropertyUtils;
 import org.broadband_forum.obbaa.netconf.server.AbstractResponseChannel;
 import org.broadband_forum.obbaa.netconf.server.AnvTracingUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
+import org.w3c.dom.Document;
 
+import com.google.common.annotations.VisibleForTesting;
+
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -74,21 +76,22 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
     private static final String HELLO_MESSAGE_NOT_RECIEVED = "hello message not received";
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(SecureNetconfServerHandler.class, LogAppNames.NETCONF_LIB);
     private NetconfServerMessageListener m_serverMessageListener;
-    private AtomicBoolean m_helloRecieved = new AtomicBoolean(false);
+    private AtomicBoolean m_helloReceived = new AtomicBoolean(false);
     private Channel m_channel;
     private int m_sessionId;
     private NetconfClientInfo m_clientInfo;
     private boolean m_closeSession = false;
     private Set<String> m_caps;
 
-    protected NetconfMessageCodec getCurrentCodec() {
+    protected NetconfMessageCodecV2 getCurrentCodec() {
         return m_currentCodec;
     }
 
-    private FrameAwareNetconfMessageCodec m_currentCodec = new FrameAwareNetconfMessageCodecImpl();
+    private FrameAwareNetconfMessageCodecV2 m_currentCodec = new FrameAwareNetconfMessageCodecV2Impl();
     protected ServerMessageHandler m_serverMessageHandler;
     protected TLSChannel m_responseChannel;
     private NetconfLogger m_netconfLogger;
+    private ByteBuf m_byteBuf;
 
     public SecureNetconfServerHandler(NetconfServerMessageListener axsNetconfServerMessageListener,
                                       ServerMessageHandler serverMessageHandler, Set<String> caps, int sessionId, NetconfLogger netconfLogger) {
@@ -99,6 +102,7 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         this.m_responseChannel = new TLSChannel();
         m_netconfLogger = netconfLogger;
         this.m_caps = caps;
+        m_byteBuf = unpooledHeapByteBuf();
     }
 
     @Override
@@ -119,53 +123,74 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         LOGGER.info("Channel inactive for " + ctx.name());
         super.channelInactive(ctx);
         invokeSessionClosed();
+        releaseByteBuf(m_byteBuf);
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        LOGGER.debug("Server incoming message:" + msg);
-        Document doc = null;
-        try{
-            doc = m_currentCodec.decode(msg);
-            if (!m_helloRecieved.get()) {
-                if (!NetconfResources.HELLO.equals(doc.getFirstChild().getNodeName())) {
-                    closeSession();
-                    ctx.flush();
-                } else {
-                    NetconfHelloMessage hello = DocumentToPojoTransformer.getHelloMessage(doc);
-                    m_helloRecieved.set(true);
-                    LOGGER.info("Server Received Hello message :" + hello.toString());
-
-                    if (hello.getCapabilities().contains(NetconfResources.NETCONF_BASE_CAP_1_1)
-                            && this.m_caps.contains(NetconfResources.NETCONF_BASE_CAP_1_1)) {
-                        ctx.pipeline().replace(EOM_HANDLER, CHUNKED_HANDLER, new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, false, NetconfDelimiters.rpcChunkMessageDelimiter()));
-                        int chunkSize = Integer.parseInt(SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(CHUNK_SIZE,"65536"));
-                        int maxSizeOfChunkMsg = Integer.parseInt(SystemPropertyUtils.getInstance().getFromEnvOrSysProperty(MAXIMUM_SIZE_OF_CHUNKED_MESSAGES,"67108864"));
-                        m_currentCodec.useChunkedFraming(maxSizeOfChunkMsg , chunkSize);
+    protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
+        m_byteBuf.writeBytes(msg.getBytes());
+        Document doc;
+        try {
+            boolean readFurther = true;
+            while (readFurther) {
+                DocumentInfo documentInfo = m_currentCodec.decode(m_byteBuf);
+                if (documentInfo != null && documentInfo.getDocument() != null) {
+                    doc = documentInfo.getDocument();
+                    if (!m_helloReceived.get()) {
+                        handleHello(ctx, doc);
+                    } else {
+                        processRequest(documentInfo);
                     }
-                    m_responseChannel.setHandler(m_currentCodec);
-                    m_serverMessageListener.onHello(m_clientInfo, hello.getCapabilities());
+                } else {
+                    readFurther = false;
                 }
-            } else {
-                processRequest(doc);
             }
-        }catch (MessageToolargeException e){
-            LOGGER.warn("Closing netconf session, incoming message too long to decode", e);
+        } catch(NetconfMessageBuilderException e) {
+            if (!m_helloReceived.get()) {
+                LOGGER.error("Closing netconf session as hello received is malformed", e);
+                closeSession();
+                ctx.flush();
+            } else {
+                LOGGER.error("Error - got malformed XML from {}", LOGGER.sensitiveData(m_channel), e);
+            }
+        } catch (Exception e){
+            LOGGER.error("Closing netconf session due to error while processing netconf message", e);
             closeSession();
             ctx.flush();
+        } finally {
+            m_byteBuf = reInitializeByteBuf(m_byteBuf);
         }
     }
 
-    private void processRequest(Document request) throws NetconfMessageBuilderException {
+    private void handleHello(ChannelHandlerContext ctx, Document doc) {
+        if (!NetconfResources.HELLO.equals(doc.getFirstChild().getNodeName())) {
+            closeSession();
+            ctx.flush();
+        } else {
+            NetconfHelloMessage hello = DocumentToPojoTransformer.getHelloMessage(doc);
+            m_helloReceived.set(true);
+            LOGGER.info("Server Received Hello message :" + hello.toString());
+            if (hello.getCapabilities().contains(NetconfResources.NETCONF_BASE_CAP_1_1)
+                    && this.m_caps.contains(NetconfResources.NETCONF_BASE_CAP_1_1)) {
+                ctx.pipeline().replace(EOM_HANDLER, CHUNKED_HANDLER, new DelimiterBasedFrameDecoder(Integer.MAX_VALUE, false, NetconfDelimiters.rpcChunkMessageDelimiter()));
+                m_currentCodec.useChunkedFraming();
+            }
+            m_responseChannel.setHandler(m_currentCodec);
+            m_serverMessageListener.onHello(m_clientInfo, hello.getCapabilities());
+        }
+    }
+
+    private void processRequest(DocumentInfo documentInfo) throws NetconfMessageBuilderException {
         NetConfResponse response = new NetConfResponse();
         AbstractNetconfRequest netconfRequest = null;
         boolean invalidRequest = false;
+        Document request = documentInfo.getDocument();
         try {
             String requestType = DocumentToPojoTransformer.getTypeOfNetconfRequest(request);
             if (AnvTracingUtil.isEmptyRequest(request, requestType)) {
                 NetconfLoggingContext.suppress();
             }
-            m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(), new Integer(m_clientInfo.getSessionId()).toString(), request);
+            m_netconfLogger.logRequest(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(), Integer.toString(m_clientInfo.getSessionId()), request);
             String messageId = DocumentUtils.getInstance().getMessageIdFromRpcDocument(request);
             if (messageId == null || messageId.isEmpty()) {
                 throw new NetconfMessageBuilderException(new NetconfRpcError(NetconfRpcErrorTag.MISSING_ATTRIBUTE, NetconfRpcErrorType.RPC,
@@ -219,7 +244,7 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
                         // Could be a special rpc request
                         netconfRequest = DocumentToPojoTransformer.getRpcRequest(request);
                 }
-
+                netconfRequest.setRequestLength(documentInfo.getLength());
                 response.setMessageId(netconfRequest.getMessageId());
             } else {
                 // Send RPC error and close the session
@@ -283,6 +308,7 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
                 }
             }
         }
+        releaseByteBuf(m_byteBuf);
     }
 
     protected void invokeSessionClosed() {
@@ -299,14 +325,19 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
         // m_serverMessageListener.sessionClosed("exception caught :"+cause.getMessage(), m_sessionId);
     }
 
+    @VisibleForTesting
+    public ByteBuf getByteBuf() {
+        return m_byteBuf;
+    }
+
     protected ResponseChannel getResponseChannel() {
         return m_responseChannel;
     }
 
     protected class TLSChannel extends AbstractResponseChannel {
-        private NetconfMessageCodec m_handler;
+        private NetconfMessageCodecV2 m_handler;
 
-        public void setHandler(NetconfMessageCodec handler) {
+        public void setHandler(NetconfMessageCodecV2 handler) {
             m_handler = handler;
         }
 
@@ -323,7 +354,7 @@ public class SecureNetconfServerHandler extends SimpleChannelInboundHandler<Stri
                         NetconfLoggingContext.suppress();
                     }
                     m_netconfLogger.logResponse(m_clientInfo.getRemoteHost(), m_clientInfo.getRemotePort(), m_clientInfo.getUsername(),
-                            new Integer(m_clientInfo.getSessionId()).toString(), response.getResponseDocument(), request);
+                            Integer.toString(m_clientInfo.getSessionId()), response.getResponseDocument(), request);
                     if (request instanceof CloseSessionRequest) {
                         if (response.isOk()) {
                             m_closeSession = true;

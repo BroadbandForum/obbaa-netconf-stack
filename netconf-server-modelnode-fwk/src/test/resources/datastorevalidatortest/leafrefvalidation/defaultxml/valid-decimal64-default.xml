@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<decimal64-type-validation7 xmlns="urn:org:bbf2:pma:validation">
+	<!--fraction1 - default value -->
+	<type-validation>
+		<id>10</id>
+	</type-validation>
+</decimal64-type-validation7>

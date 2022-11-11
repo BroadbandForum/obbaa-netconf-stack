@@ -14,7 +14,7 @@
           <name>AlbumB</name>
           <year>1995</year>
         </album-ordered-by-user>
-        <album-ordered-by-user xc:operation="create" yang:insert="before" yang:key="[name='AlbumC']">
+        <album-ordered-by-user xc:operation="merge" yang:insert="before" yang:key="[name='AlbumC']">
           <name>AlbumE</name>
           <year>1995</year>
         </album-ordered-by-user>

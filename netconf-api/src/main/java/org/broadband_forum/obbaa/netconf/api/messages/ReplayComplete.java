@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,9 +17,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package org.broadband_forum.obbaa.netconf.api.messages;
 
 import org.opendaylight.yangtools.yang.common.QName;

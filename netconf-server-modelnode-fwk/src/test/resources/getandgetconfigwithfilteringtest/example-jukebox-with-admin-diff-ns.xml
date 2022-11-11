@@ -1,0 +1,20 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox-without-admin">
+    <library>
+        <artist>
+            <name>Lenny</name>
+            <album>
+                <name>Greatest hits</name>
+                <genre xmlns:jbox="http://example.com/ns/example-jukebox-without-admin">jbox:jazz</genre>
+                <year>2000</year>
+                <ns1:admin xmlns:ns1="http://example.com/ns/example-jukebox-with-admin-ns1">
+                    <ns1:label>admin1</ns1:label>
+                    <ns1:catalogue-number>cn1</ns1:catalogue-number>
+                </ns1:admin>
+                <ns2:admin xmlns:ns2="http://example.com/ns/example-jukebox-with-admin-ns2">
+                    <ns2:label>admin2</ns2:label>
+                    <ns2:catalogue-number>cn2</ns2:catalogue-number>
+                </ns2:admin>
+            </album>
+        </artist>
+    </library>
+</jukebox>

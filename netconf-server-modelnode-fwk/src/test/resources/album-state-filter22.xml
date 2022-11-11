@@ -1,0 +1,13 @@
+<jukebox xmlns="http://example.com/ns/example-jukebox">
+    <library>
+        <artist>
+            <name/>
+            <album>
+                <name/>
+                <album-state-container>
+                    <album-state-leaf-list>value3</album-state-leaf-list> <!-- non-existing state leaf-list  -->
+                </album-state-container>
+            </album>
+        </artist>
+    </library>
+</jukebox>

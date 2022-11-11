@@ -23,7 +23,10 @@ import org.broadband_forum.obbaa.netconf.api.messages.Notification;
 
 public interface NetconfLogger {
     void logRequest(String remoteHost, String remotePort, String userName, String sessionId, Document request);
+    void logRequest(String remoteHost, String remotePort, String userName, String sessionId, AbstractNetconfRequest request);
     void logResponse(String remoteHost, String remotePort, String userName, String sessionId, Document response, AbstractNetconfRequest request);
+    void logResponse(String remoteHost, String remotePort, String userName, String sessionId, Document response,
+                     AbstractNetconfRequest request, Long responseTimeMillis);
     void logNotificationIn(String remoteHost, String remotePort, String userName, String sessionId, Document notification);
     void logNotificationOut(String stream, Notification notification);
     void setThreadLocalDeviceLogId(Document doc);

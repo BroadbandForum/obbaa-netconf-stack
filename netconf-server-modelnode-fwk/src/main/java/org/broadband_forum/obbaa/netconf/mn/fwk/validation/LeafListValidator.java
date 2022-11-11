@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.validation;
 
 import java.util.ArrayList;
@@ -22,11 +38,14 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsin
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.util.SchemaRegistryUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.GetAttributeException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNodeId;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ChildLeafListHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeHelperRegistry;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DSValidationContext;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.DataStoreConstraintValidator;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DSExpressionValidator;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationErrors;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NetconfRpcErrorUtil;
 import org.broadband_forum.obbaa.netconf.server.rpc.RequestType;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
@@ -35,7 +54,9 @@ import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ElementCountConstraint;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.InstanceIdentifierTypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.LeafrefTypeDefinition;
 import org.w3c.dom.Element;
 
 /**
@@ -123,17 +144,52 @@ public class LeafListValidator extends AbstractSchemaNodeConstraintParser implem
         }
 	}
 
-	private void validateInstanceIdentifierLeaflistValues(ModelNode modelNode) throws ValidationException {
-		if (m_leafListSchemaNode.getType() instanceof InstanceIdentifierTypeDefinition) {
-			boolean isRequired = ((InstanceIdentifierTypeDefinition)m_leafListSchemaNode.getType()).requireInstance();
-			Collection<ConfigLeafAttribute> leaflistValues = getChildLeafListFromParentNode(modelNode);
+	protected boolean validateInstanceIdentifierValue(ModelNode modelNode, TypeDefinition<?> type,
+													  ConfigLeafAttribute configLeafAttribute, DSValidationContext validationContext) throws ValidationException {
+		if (type instanceof InstanceIdentifierTypeDefinition) {
+			boolean isRequired = ((InstanceIdentifierTypeDefinition)type).requireInstance();
+			Collection<ConfigLeafAttribute> leaflistValues = new ArrayList<>();
+			if(configLeafAttribute == null){
+				leaflistValues = getChildLeafListFromParentNode(modelNode);
+			}else {
+				leaflistValues.add(configLeafAttribute);
+			}
 			for (ConfigLeafAttribute leaflistValue : leaflistValues) {
 				m_expValidator.validateInstanceIdentifierElement(modelNode, leaflistValue, isRequired,
 						m_leafListSchemaNode
-						.getQName().getLocalName(), m_leafListSchemaNode.getQName().getNamespace().toString());
+						.getQName().getLocalName(), m_leafListSchemaNode.getQName().getNamespace().toString(), validationContext);
 				
 			}
+			return true;
 		}
+		return false;
+	}
+	
+	protected boolean validateLeafRefValue(ModelNode modelNode, TypeDefinition<?> type, ConfigLeafAttribute configLeafAttribute,
+										   DSValidationContext validationContext) throws ValidationException {
+		if (type instanceof LeafrefTypeDefinition) {
+			LeafrefTypeDefinition leafRefType = (LeafrefTypeDefinition) type;
+			if (leafRefType.requireInstance()) {
+				String xpathStr = leafRefType.getPathStatement().getOriginalString();
+				Collection<ConfigLeafAttribute> leaflistValues = new ArrayList<>();;
+				if(configLeafAttribute == null){
+					leaflistValues = getChildLeafListFromParentNode(modelNode);
+				}else {
+					leaflistValues.add(configLeafAttribute);
+				}
+				for (ConfigLeafAttribute leaflistValue : leaflistValues) {
+					boolean isValid = m_expValidator.validateXPathInModelNode(xpathStr, modelNode, leaflistValue.getStringValue(),
+							modelNode, m_leafListSchemaNode, validationContext);
+					if (!isValid) {
+						ModelNodeId modelNodeId = buildModelNodeId(modelNode, m_leafListSchemaNode.getQName().getLocalName(), m_leafListSchemaNode.getQName().getNamespace().toString());
+						throw DataStoreValidationErrors.getMissingDataException(String.format("Dependency violated, '%s' must exist", leaflistValue.getStringValue()),
+								modelNodeId.xPathString(modelNode.getMountRegistry()), modelNodeId.xPathStringNsByPrefix(modelNode.getMountRegistry()));
+					}
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	private Collection<ConfigLeafAttribute> getChildLeafListFromParentNode(ModelNode parentNode) {
@@ -146,10 +202,8 @@ public class LeafListValidator extends AbstractSchemaNodeConstraintParser implem
 				LOGGER.error("Error when geting child values ChildLeafListHelper.getValue(ModelNode)", e);
 			}
 		}
-		
 		return leaflistValues;
 	}
-
 	
 	public LeafListValidator(SchemaRegistry schemaRegistry, ModelNodeHelperRegistry modelNodeHelperRegistry, LeafListSchemaNode leafListSchemaNode,
 	        DSExpressionValidator expValidator){
@@ -177,18 +231,23 @@ public class LeafListValidator extends AbstractSchemaNodeConstraintParser implem
 	 * @see DataStoreConstraintValidator#validate(org.broadband_forum.obbaa.netconf.mn.fwk.server.model.ModelNode)
 	 */
 	@Override
-	public void validate(ModelNode modelNode) throws ValidationException {
-	    validateChoiceCase(modelNode, m_leafListSchemaNode);
+	public void validate(ModelNode modelNode, DSValidationContext validationContext) throws ValidationException {
+	    validateChoiceCase(modelNode, m_leafListSchemaNode, validationContext);
+	    validateSizeRange(modelNode);
         Collection<ConfigLeafAttribute> leaflistValues = getChildLeafListFromParentNode(modelNode);
 		
 		if (!leaflistValues.isEmpty()) {
 		    for (ConfigLeafAttribute attribute:leaflistValues) {
-		        validateType(attribute, modelNode);
+		        validateType(attribute, modelNode, validationContext);
 		    }
 		}
 		
-		validateInstanceIdentifierLeaflistValues(modelNode);
-		validateSizeRange(modelNode);
+		validateInstanceIdentifierValue(modelNode, m_leafListSchemaNode.getType(), null, validationContext);
+	}
+
+	@Override
+	public void validateLeafRef(ModelNode modelNode, DSValidationContext validationContext) throws ValidationException {
+		validateLeafRefValue(modelNode, m_leafListSchemaNode.getType(), null, validationContext);
 	}
 
     @Override

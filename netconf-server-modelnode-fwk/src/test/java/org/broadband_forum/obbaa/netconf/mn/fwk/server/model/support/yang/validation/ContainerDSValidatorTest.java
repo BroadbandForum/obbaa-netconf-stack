@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.validation;
 
 import static org.junit.Assert.assertEquals;
@@ -11,8 +27,11 @@ import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorTag;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcErrorType;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.EditContainmentNode;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeInitException;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	
 	
@@ -74,7 +93,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	public void testWrongPath() throws ModelNodeInitException {
 		/// Add first leaf
 		String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				 			 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+				 			 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 				 			 "  	<arithmetic-validation> "+
 				 			 "		 	<value1>15</value1> "+
 				 			 "			<error-path-validation/>"+
@@ -90,7 +109,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		assertTrue(response1.isOk());
 		
 		String requestXml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-	 			 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+	 			 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 	 			 "  	<arithmetic-validation> "+
 	 			 "		 	<error-path-validation>"+
 	 			 "				<wrong-path-validation>"+
@@ -113,7 +132,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	public void testArithematicMustOnContainer() throws ModelNodeInitException {
 		/// Add first leaf
 		String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				 			 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+				 			 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 				 			 "  	<arithmetic-validation> "+
 				 			 "		 	<value1>15</value1> "+
 				 			 "	    </arithmetic-validation> "+
@@ -125,7 +144,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		
 		// add leaf to check + operator
 		String requestXml2 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-							 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+							 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 							 "		<arithmetic-validation> "+
 							 "			<value2>15</value2> "+
 							 "		</arithmetic-validation> "+
@@ -137,7 +156,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		
 		// add leaf to check - operator
 		String requestXml3 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+				 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 				 "		<arithmetic-validation> "+
 				 "			<value3>15</value3> "+
 				 "		</arithmetic-validation> "+
@@ -149,7 +168,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 
 		// add leaf to check * operator
 		String requestXml4 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+				 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 				 "		<arithmetic-validation> "+
 				 "			<value4>45</value4> "+
 				 "		</arithmetic-validation> "+
@@ -161,7 +180,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 
 		// add leaf to check div operator
 		String requestXml5 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+				 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 				 "		<arithmetic-validation> "+
 				 "			<value5>15</value5> "+
 				 "		</arithmetic-validation> "+
@@ -173,7 +192,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 
 		// test must on container with arithmatic and comparison
 		String requestXml6 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+				 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 				 "		<arithmetic-validation> "+
 				 "			<must-validation></must-validation> "+
 				 "		</arithmetic-validation> "+
@@ -185,7 +204,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 
 		// test failure on must with container arithmatic and comparison
 		String requestXml7 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				 "	<validation xmlns=\"urn:org:bbf:pma:validation\">"+
+				 "	<validation xmlns=\"urn:org:bbf2:pma:validation\">"+
 				 "		<arithmetic-validation> "+
 				 "			<must-validation><fail-must-validation></fail-must-validation></must-validation> "+
 				 "		</arithmetic-validation> "+
@@ -203,7 +222,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	public void testMinElementListInContainer() throws Exception {
         getModelNode();
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
                 + " <validation>mandatory</validation>" 
                 + "  <mandatory-validation-container>" 
                 + "    <leafValidation>"
@@ -220,7 +239,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         assertEquals(NetconfRpcErrorTag.OPERATION_FAILED, ncResponse.getErrors().get(0).getErrorTag());
         
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
                 + " <validation>mandatory</validation>" 
                 + "  <mandatory-validation-container>" 
                 + "    <leafValidation>"
@@ -243,7 +262,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         assertEquals(NetconfRpcErrorTag.OPERATION_FAILED, ncResponse.getErrors().get(0).getErrorTag());
 
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
                 + " <validation>mandatory</validation>" 
                 + "  <mandatory-validation-container>" 
                 + "    <leafValidation>"
@@ -266,7 +285,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         String response =  
                 "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + " <data>"
-                + "  <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + "  <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "   <validation:mandatory-validation-container>"
                 + "    <validation:leafValidation>"
                 + "     <validation:leaf1>0</validation:leaf1>"
@@ -299,7 +318,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
     public void testForParentContainerDeletionWithAttributes() throws Exception {
         getModelNode();
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
                 + " <validate-parent-container-on-when-deletion>"
                 + "  <leaf1>10</leaf1>"
                 + "  <for-container>"
@@ -314,7 +333,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         editConfig(m_server, m_clientInfo, requestXml1, true);
        
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
                 + " <validate-parent-container-on-when-deletion>"
                 + "  <leaf1>0</leaf1>"
                 + " </validate-parent-container-on-when-deletion>"
@@ -325,7 +344,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         String response = 
                 "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + " <data>"
-                + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "  <validation:validate-parent-container-on-when-deletion>"
                 + "   <validation:for-container>"
                 + "    <validation:container1/>"
@@ -344,7 +363,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
     public void testForParentContainerListDeletionWithAttributes() throws Exception {
         getModelNode();
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
                 + " <validate-parent-container-on-when-deletion>"
                 + "  <leaf1>10</leaf1>"
                 + "  <for-list>"
@@ -361,7 +380,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         editConfig(m_server, m_clientInfo, requestXml1, true);
        
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
                 + " <validate-parent-container-on-when-deletion>"
                 + "  <leaf1>0</leaf1>"
                 + " </validate-parent-container-on-when-deletion>"
@@ -372,7 +391,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         String response = 
                 "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">"
                 + " <data>"
-                + " <validation:validation xmlns:validation=\"urn:org:bbf:pma:validation\">"
+                + " <validation:validation xmlns:validation=\"urn:org:bbf2:pma:validation\">"
                 + "  <validation:validate-parent-container-on-when-deletion>"
                 + "   <validation:for-list>"
                 + "    <validation:list1>"
@@ -392,7 +411,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
     public void testForListWithSelfMustDeletion() throws Exception {
         getModelNode();
         String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
                 + " <selfOrCount>"
                 + "  <index>0</index>"
                 + " </selfOrCount>"
@@ -404,7 +423,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
         editConfig(m_server, m_clientInfo, requestXml1, true);
 
         requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-                "<validation xmlns=\"urn:org:bbf:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+                "<validation xmlns=\"urn:org:bbf2:pma:validation\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
                 + " <selfOrCount xc:operation='delete'>"
                 + "  <index>0</index>"
                 + " </selfOrCount>"
@@ -417,7 +436,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	public void testCurrentDirectlyUnderContainer() throws Exception {
 		getModelNode();
 		String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+				+ "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
 				+ " <current-usage>"
 				+ "  <current-usage>current-leafvalue</current-usage>" 
 				+ " </current-usage>" 
@@ -425,7 +444,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		editConfig(m_server, m_clientInfo, requestXml1, true);
 		
 		requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+				+ "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
 				+ " <test-profiler>"
 				+ "  <profile>profile1</profile>" 
 				+ " </test-profiler>" 
@@ -437,7 +456,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	public void testCurrentDirectlyUnderList() throws Exception {
 		getModelNode();
 		String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+				+ "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
 				+ " <current-usage>"
 				+ "  <current-usage>current-leafvalue</current-usage>" 
 				+ "  <current-usage-for-list>current-leafvalue-list</current-usage-for-list>" 
@@ -446,7 +465,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		editConfig(m_server, m_clientInfo, requestXml1, true);
 		
 		requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+				+ "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
 				+ " <test-profiler>"
 				+ "  <student>"
 				+ "		<name>StuName1</name>"
@@ -461,7 +480,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	public void testCurrentDirectlyUnderListNegativeCase() throws Exception {
 		getModelNode();
 		String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+				+ "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
 				+ " <current-usage>"
 				+ "  <current-usage>current-leafvalue</current-usage>" 
 				+ "  <current-usage-for-list>invalid-value</current-usage-for-list>" 
@@ -470,7 +489,7 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		editConfig(m_server, m_clientInfo, requestXml1, true);
 		
 		requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> "
-				+ "<validation xmlns=\"urn:org:bbf:pma:validation\">"
+				+ "<validation xmlns=\"urn:org:bbf2:pma:validation\">"
 				+ " <test-profiler>"
 				+ "  <student>"
 				+ "		<name>StuName1</name>"
@@ -491,7 +510,16 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 	public void testDuplicateContainerInList() throws Exception {
 		getModelNode();
 		String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				"<validation3 xmlns=\"urn:org:bbf:pma:validation\">"+
+				"<validation3 xmlns=\"urn:org:bbf2:pma:validation\">"+
+				"  <must-validation-with-mandatory>"+
+				"    <value>test</value>" +
+				"    <mandatory-leaf>yes</mandatory-leaf>"+
+				"  </must-validation-with-mandatory>"+
+				"  <must-validation1>"+
+				"    <key1>key</key1>" +
+				"    <value>test</value>" +
+				"    <mandatory-one>yes</mandatory-one>" +
+				"  </must-validation1>"+		        
 				"  <list1>"+
 				"    <key1>key1</key1>"+
 				"    <container2>"+
@@ -503,7 +531,16 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		editConfig(m_server, m_clientInfo, requestXml1, true); 
 
 		requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				"<validation3 xmlns=\"urn:org:bbf:pma:validation\">"+
+				"<validation3 xmlns=\"urn:org:bbf2:pma:validation\">"+
+				"  <must-validation-with-mandatory>"+
+				"    <value>test</value>" +
+				"    <mandatory-leaf>yes</mandatory-leaf>"+
+				"  </must-validation-with-mandatory>"+
+				"  <must-validation1>"+
+				"    <key1>key</key1>" +
+				"    <value>test</value>" +
+				"    <mandatory-one>yes</mandatory-one>" +
+				"  </must-validation1>"+		        
 				"  <list1>"+
 				"    <key1>key1</key1>"+
 				"    <container2>"+
@@ -521,7 +558,16 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		editConfig(m_server, m_clientInfo, requestXml1, true); 
 
 		requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				"<validation3 xmlns=\"urn:org:bbf:pma:validation\">"+
+				"<validation3 xmlns=\"urn:org:bbf2:pma:validation\">"+
+				"  <must-validation-with-mandatory>"+
+				"    <value>test</value>" +
+				"    <mandatory-leaf>yes</mandatory-leaf>"+
+				"  </must-validation-with-mandatory>"+
+				"  <must-validation1>"+
+				"    <key1>key</key1>" +
+				"    <value>test</value>" +
+				"    <mandatory-one>yes</mandatory-one>" +
+				"  </must-validation1>"+		        
 				"  <list1>"+
 				"    <key1>key1</key1>"+
 				"    <container2>"+
@@ -540,11 +586,11 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 				"</validation3>"
 				;
 		NetConfResponse response = editConfig(m_server, m_clientInfo, requestXml1, false); 
-		String expectedErrorMsg = EditContainmentNode.DUPLICATE_ELEMENTS_FOUND + "(urn:org:bbf:pma:validation?revision=2015-12-14)container2";
+		String expectedErrorMsg = EditContainmentNode.DUPLICATE_ELEMENTS_FOUND + "(urn:org:bbf2:pma:validation?revision=2015-12-14)container2";
 		assertEquals(expectedErrorMsg, response.getErrors().get(0).getErrorMessage());
-		assertEquals("/validation3/list1[key1='key1']/container2",
+		assertEquals("/validation:validation3/validation:list1[validation:key1='key1']/validation:container2",
 				response.getErrors().get(0).getErrorPath());
-		assertEquals(NetconfRpcErrorTag.OPERATION_FAILED, response.getErrors().get(0).getErrorTag());
+		assertEquals(NetconfRpcErrorTag.BAD_ELEMENT, response.getErrors().get(0).getErrorTag());
 	}
 	
 	@Test
@@ -552,7 +598,16 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		getModelNode();
 
 		String requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				"<validation3 xmlns=\"urn:org:bbf:pma:validation\">"+
+				"<validation3 xmlns=\"urn:org:bbf2:pma:validation\">"+
+				"  <must-validation-with-mandatory>"+
+				"    <value>test</value>" +
+				"    <mandatory-leaf>yes</mandatory-leaf>"+
+				"  </must-validation-with-mandatory>"+
+				"  <must-validation1>"+
+				"    <key1>key</key1>" +
+				"    <value>test</value>" +
+				"    <mandatory-one>yes</mandatory-one>" +
+				"  </must-validation1>"+		        
 				"<container1>" +
 				"    <validation3Leaf>test</validation3Leaf>"+
 				"</container1>" +
@@ -561,7 +616,16 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 		editConfig(m_server, m_clientInfo, requestXml1, true); 
 
 		requestXml1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " +
-				"<validation3 xmlns=\"urn:org:bbf:pma:validation\">"+
+				"<validation3 xmlns=\"urn:org:bbf2:pma:validation\">"+
+				"  <must-validation-with-mandatory>"+
+				"    <value>test</value>" +
+				"    <mandatory-leaf>yes</mandatory-leaf>"+
+				"  </must-validation-with-mandatory>"+
+				"  <must-validation1>"+
+				"    <key1>key</key1>" +
+				"    <value>test</value>" +
+				"    <mandatory-one>yes</mandatory-one>" +
+				"  </must-validation1>"+		        
 				"<container1>" +
 				"    <validation3Leaf>test</validation3Leaf>"+
 				"</container1>" +
@@ -571,10 +635,10 @@ public class ContainerDSValidatorTest extends AbstractDataStoreValidatorTest {
 				"</validation3>"
 				;
 		NetConfResponse response = editConfig(m_server, m_clientInfo, requestXml1, false); 
-		String expectedErrorMsg = EditContainmentNode.DUPLICATE_ELEMENTS_FOUND + "(urn:org:bbf:pma:validation?revision=2015-12-14)container1";
+		String expectedErrorMsg = EditContainmentNode.DUPLICATE_ELEMENTS_FOUND + "(urn:org:bbf2:pma:validation?revision=2015-12-14)container1";
 		assertEquals(expectedErrorMsg, response.getErrors().get(0).getErrorMessage());
-		assertEquals("/validation3/container1",
+		assertEquals("/validation:validation3/validation:container1",
 				response.getErrors().get(0).getErrorPath());
-		assertEquals(NetconfRpcErrorTag.OPERATION_FAILED, response.getErrors().get(0).getErrorTag());
+		assertEquals(NetconfRpcErrorTag.BAD_ELEMENT, response.getErrors().get(0).getErrorTag());
 	}
 }

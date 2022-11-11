@@ -1,4 +1,4 @@
-<pma xmlns="urn:org:bbf:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+<pma xmlns="urn:org:bbf2:pma" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
 	<pmadevices>
 		<pmadevice>
 			<jukebox xmlns="http://example.com/ns/example-jukebox">

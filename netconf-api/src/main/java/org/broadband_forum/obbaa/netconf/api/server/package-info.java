@@ -1,3 +1,6 @@
+/**
+ * Provides classes typically used by a netconf server;
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,7 +17,4 @@
  * limitations under the License.
  */
 
-/**
- * Provides classes typically used by a netconf server;
- */
 package org.broadband_forum.obbaa.netconf.api.server;

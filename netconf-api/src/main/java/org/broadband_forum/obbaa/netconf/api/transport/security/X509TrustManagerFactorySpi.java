@@ -26,7 +26,7 @@ import java.security.KeyStoreException;
 /**
  * A X509 TrustManagerFactory Service Provider which lets the users supply an implementation of {@link TrustManager}
  * 
- *
+ * 
  * 
  */
 public class X509TrustManagerFactorySpi extends TrustManagerFactorySpi {

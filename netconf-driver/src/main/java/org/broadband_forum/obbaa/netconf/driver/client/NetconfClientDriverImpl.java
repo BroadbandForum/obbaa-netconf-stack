@@ -1,3 +1,6 @@
+/**
+ * 
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,9 +17,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package org.broadband_forum.obbaa.netconf.driver.client;
 
 import static org.broadband_forum.obbaa.netconf.api.messages.DocumentToPojoTransformer.getCloseSession;
@@ -34,9 +34,8 @@ import static org.broadband_forum.obbaa.netconf.api.util.DocumentUtils.stringToD
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
 import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
@@ -59,6 +58,8 @@ import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
  * NetconfClientDriverImpl implements NetconfClientDriver such that allows sending seamless netconf request as xml messages.
@@ -67,7 +68,7 @@ import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
  * 
  */
 public class NetconfClientDriverImpl implements NetconfClientDriver {
-    private static final Logger LOGGER = Logger.getLogger(NetconfClientDriverImpl.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfClientDriverImpl.class, LogAppNames.NETCONF_LIB);
     private static final String ERROR_MESSAGE = "A message could not be handled because it failed to \nbe parsed correctly. For example, "
             + "the message is not \nwell-formed XML or it uses an invalid character set";
 

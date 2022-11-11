@@ -26,6 +26,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Created by keshava on 4/12/15.
  */
 @Retention(RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.METHOD})
 public @interface YangSchemaPath {
 }

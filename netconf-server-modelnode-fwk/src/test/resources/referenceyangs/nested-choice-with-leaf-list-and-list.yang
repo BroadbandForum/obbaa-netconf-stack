@@ -1,0 +1,113 @@
+module nested-choice-with-leaf-list-and-list {
+    yang-version 1.1;
+
+    namespace "urn:nested-choice-case-test";
+    prefix "nestedchoice";
+
+    description "This module contains leaf-lists and lists with ordered by user within nested choice cases";
+
+    revision 2020-01-20 {
+        description "Initial revision";
+    }
+
+    container root-container {
+
+        list level1-list {
+            key "level1-list-key";
+
+            leaf level1-list-key {
+                type string;
+            }
+        }
+
+        choice level1-choice {
+
+            case level1-case1 {
+
+                list level1-case1-list {
+                    key "level1-case1-list-key";
+
+                    leaf level1-case1-list-key {
+                        type string;
+                    }
+
+                    leaf level1-case1-list-leaf {
+                        type string;
+                    }
+                }
+
+                list level1-case1-list-ordered {
+                    key "level1-case1-list-key-ordered";
+                    ordered-by user;
+
+                    leaf level1-case1-list-key-ordered {
+                        type string;
+                    }
+
+                    leaf level1-case1-list-leaf-ordered {
+                        type string;
+                    }
+                }
+
+                choice level2-choice {
+
+                    case level2-case1 {
+                        list level2-case1-list {
+                            key "level2-case1-list-key";
+
+                            leaf level2-case1-list-key {
+                                type string;
+                            }
+
+                            leaf level2-case1-list-leaf {
+                                type string;
+                            }
+                        }
+
+                        list level2-case1-list-ordered {
+                            key "level2-case1-list-key-ordered";
+
+                            leaf level2-case1-list-key-ordered {
+                                type string;
+                            }
+
+                            leaf level2-case1-list-leaf-ordered {
+                                type string;
+                            }
+                        }
+                    }
+
+                    case level2-case2 {
+                        leaf-list level2-case2-leaf-list {
+                            type uint16;
+                        }
+                    }
+
+                    case level2-case3-with-empty-value {
+                        leaf level2-case3-with-empty-value {
+                            type empty;
+                        }
+                    }
+                }
+            }
+
+            case level1-case2 {
+                leaf-list level1-case2-leaf-list {
+                    type uint16;
+                }
+            }
+
+            case level1-case3 {
+                leaf level1-case3-leaf {
+                    type string;
+                }
+            }
+
+            case level1-case4 {
+                leaf level1-case4-leaf {
+                    type empty;
+                }
+            }
+        }
+    }
+}

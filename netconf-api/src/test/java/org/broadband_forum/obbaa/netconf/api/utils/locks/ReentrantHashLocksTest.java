@@ -16,9 +16,12 @@
 
 package org.broadband_forum.obbaa.netconf.api.utils.locks;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Assert;
 
 import junit.framework.TestCase;
 
@@ -26,126 +29,84 @@ public class ReentrantHashLocksTest extends TestCase {
 	 
     /**
      * Checks whether lock & unlock runs smoothly without any exception
-     * @throws InterruptedException 
+     * @throws Exception 
      */
-	public void testSingleLockUnlock() throws InterruptedException {
+	public void testSingleLockUnlock() throws Exception {
 		ReentrantHashLocks<Object> locks = new ReentrantHashLocks<Object>();
-		locks.lockOn(this);
-		locks.unlock(this);
+		lockObject(locks,this);
+	}
+
+	private void lockObject(ReentrantHashLocks<Object> locks, Object object) throws Exception {
+		locks.executeWithLock(object, new Callable<String>() {
+			@Override
+			public String call() throws Exception {
+				return "localString";
+			}
+		});
+	}
+	
+	private void lockStringObject(ReentrantHashLocks<String> locks, String object) throws Exception {
+		locks.executeWithLock(object, new Callable<String>() {
+			@Override
+			public String call() throws Exception {
+				return "localString";
+			}
+		});
 	}
 
     /**
      * Checks whether two locks can be acquired based on two different objects
-     * @throws InterruptedException 
+     * @throws Exception 
      */
-	public void testMultipleDifferentLocks() throws InterruptedException {
+	public void testMultipleDifferentLocks() throws Exception {
 		final ReentrantHashLocks<String> locks = new ReentrantHashLocks<String>();
 		final CountDownLatch latch = new CountDownLatch(1);
 		final AtomicInteger i = new AtomicInteger();
-		locks.lockOn("1");
+		lockStringObject(locks,"1");
 		i.incrementAndGet();
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					locks.lockOn("2");
-				} catch (InterruptedException e) {
-					
+					lockStringObject(locks,"2");
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 				i.incrementAndGet();
 				latch.countDown();
-				locks.unlock("2");
 			}
 		}).start();
 		try {
 			latch.await();
 		} catch (InterruptedException e) {
 		}
-		try {
-			assertEquals(2, i.get());
-		} finally {
-			locks.unlock("1");
-		}
+        assertEquals(2, i.get());
+		
 	}
 
-    /**
-     * Checks whether only one lock can be acquired at a time based on one
-     * object - Using two threads/requests.
-     */
-	public void testMultipleSameLocks() {
-		final String lockOn = "lockString";
-		final ReentrantHashLocks<String> locks = new ReentrantHashLocks<String>();
-		final CountDownLatch startTest = new CountDownLatch(1);
-		final CountDownLatch assertValue = new CountDownLatch(2);
-		final AtomicBoolean criticalArea = new AtomicBoolean(false);
-		final AtomicInteger i = new AtomicInteger(0);
-		Runnable testAndSetValue = new Runnable() {
-			@Override
-			public void run() {
-				boolean resetCA = false;
-				try {
-					startTest.await(); // Wait to start testing
-				} catch (InterruptedException e) {
-				}
-				try {
-					locks.lockOn(lockOn);
-					if (Math.random() < 0.5) {
-						try {
-							Thread.sleep(500); // Just some breathing time to
-							// test in case if the lock
-							// fails
-						} catch (InterruptedException e) {
-						}
-					}
-					if (criticalArea.get() == false) {
-						criticalArea.set(true);
-						resetCA = true;
-						i.incrementAndGet();
-					}
-				} catch (InterruptedException e1) {
-					
-				} finally {
-					if (resetCA)
-						criticalArea.set(false);
-					locks.unlock(lockOn);
-					assertValue.countDown();
-				}
-			}
-		};
-		new Thread(testAndSetValue).start();
-		new Thread(testAndSetValue).start();
-		startTest.countDown();
-		try {
-			assertValue.await();
-		} catch (InterruptedException e) {
-		}
-		assertEquals(2, i.get());
-	}
 
     /**
      * Checks whether a lock on an object can be obtained, when there is a lock
      * request waiting based on different object
-     * @throws InterruptedException 
+     * @throws Exception 
      */
-	public void testMultipleLocksWhileOnWait() throws InterruptedException {
+	public void testMultipleLocksWhileOnWait() throws Exception {
 		final ReentrantHashLocks<String> locks = new ReentrantHashLocks<String>();
 		final CountDownLatch startTest = new CountDownLatch(1);
-		final AtomicInteger i = new AtomicInteger();
+		final AtomicInteger atmoicInteger = new AtomicInteger();
 		final String ONE = "1";
 		final String TWO = "2";
-		locks.lockOn(ONE);
+		lockStringObject(locks,ONE);
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					startTest.countDown();
-					locks.lockOn(ONE); // Just to have a waiting lock request
-					i.set(1);
-				} catch (InterruptedException e) {
-				
-				} finally {
-					locks.unlock(ONE);
-				}
+					lockStringObject(locks,ONE); // Just to have a waiting lock request
+					atmoicInteger.set(1);
+				} catch (Exception e) {
+					e.printStackTrace();
+				} 
 			}
 		}).start();
 		try {
@@ -157,77 +118,12 @@ public class ReentrantHashLocksTest extends TestCase {
 			// added on to Q
 		} catch (InterruptedException e) {
 		}
-		try {
-			locks.lockOn(TWO);
-			assertEquals(0, i.get());
-		} finally {
-			locks.unlock(TWO);
-		}
-		locks.unlock(ONE);
+		
+		 assertEquals(1, atmoicInteger.get());
+
 	}
-	/**
-     * Checks whether same lock can be acquired at a time based on one
-     * object - Using same threads/ multiple requests.
-     */
-	public void testReentrantLocks() {
-		final String lockOn = "lockString";
-		final ReentrantHashLocks<String> locks = new ReentrantHashLocks<String>();
-		final CountDownLatch startTest = new CountDownLatch(1);
-		final CountDownLatch assertValue = new CountDownLatch(2);
-		final AtomicBoolean criticalArea = new AtomicBoolean(false);
-		final AtomicInteger i = new AtomicInteger(0);
-		final AtomicInteger j = new AtomicInteger(0);
-		final AtomicBoolean secondCriticalArea = new AtomicBoolean(false);
-		Runnable testAndSetValue = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					startTest.await(); // Wait to start testing
-				} catch (InterruptedException e) {
-				}
-				try {
-					locks.lockOn(lockOn);
-					if (Math.random() < 0.5) {
-						try {
-							Thread.sleep(500); // Just some breathing time to
-							// test in case if the lock
-							// fails
-						} catch (InterruptedException e) {
-						}
-					}
-					if (criticalArea.get() == false) {
-						criticalArea.set(true);
-						i.incrementAndGet();
-					}
-					if (secondCriticalArea.get() == false) {
-						locks.lockOn(lockOn);
-						secondCriticalArea.set(true);
-						i.incrementAndGet();
-						j.incrementAndGet();
-					}
-				} catch (InterruptedException e1) {
-				
-				} finally {
-					if (criticalArea.get() == true){
-						criticalArea.set(false);
-						locks.unlock(lockOn);
-					}
-					if (secondCriticalArea.get() == true){
-						secondCriticalArea.set(false);
-						locks.unlock(lockOn);
-					}
-					assertValue.countDown();
-				}
-			}
-		};
-		new Thread(testAndSetValue).start();
-		new Thread(testAndSetValue).start();
-		startTest.countDown();
-		try {
-			assertValue.await();
-		} catch (InterruptedException e) {
-		}
-		assertEquals(4, i.get());
-		assertEquals(2, j.get());
-	}
+	
+	
+	
+	
 }

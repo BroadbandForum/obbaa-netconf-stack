@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.emn;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants.EMPTY_NODE_ID;
@@ -10,6 +26,7 @@ import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebo
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.LIBRARY_SCHEMA_PATH;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME;
 import static org.broadband_forum.obbaa.netconf.persistence.test.entities.jukebox3.JukeboxConstants.NAME_QNAME;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.setUpUnwrap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ConfigLeafAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.GenericConfigAttribute;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.ModelNodeWithAttributes;
@@ -38,6 +56,7 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNode
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDSMRegistryImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.utils.AnnotationAnalysisException;
+import org.w3c.dom.Document;
 
 
 public class AggregatedDSMTest {
@@ -50,6 +69,7 @@ public class AggregatedDSMTest {
     private XmlModelNodeImpl m_albumModelNode;
     private ModelNodeDataStoreManager m_mnDSM3;
     private SchemaRegistry m_schemaRegistry;
+    private Document m_document;
 
     @Before
     public void setUp() throws AnnotationAnalysisException {
@@ -60,6 +80,8 @@ public class AggregatedDSMTest {
         m_aggregatedDSM = new AggregatedDSM(m_modelNodeDSMRegistry);
         m_schemaRegistry = mock(SchemaRegistry.class);
 
+        setUpUnwrap(m_schemaRegistry);
+
         m_modelNodeDSMRegistry.register("Jukebox", JUKEBOX_SCHEMA_PATH, m_mnDSM1);
         m_modelNodeDSMRegistry.register("Jukebox", ALBUM_SCHEMA_PATH, m_mnDSM2);
         m_modelNodeDSMRegistry.register("Jukebox", LIBRARY_SCHEMA_PATH, m_mnDSM3);
@@ -68,38 +90,39 @@ public class AggregatedDSMTest {
         when(m_schemaRegistry.getDataSchemaNode(JUKEBOX_SCHEMA_PATH)).thenReturn(jukeboxSchemaNode);
         DataSchemaNode albumSchemaNode = mock(ContainerSchemaNode.class);
         when(m_schemaRegistry.getDataSchemaNode(ALBUM_SCHEMA_PATH)).thenReturn(albumSchemaNode);
-        m_jukeboxModelNode = new XmlModelNodeImpl(JUKEBOX_SCHEMA_PATH, Collections.emptyMap(),null,null,null, null,null, m_schemaRegistry,null, null);
-        m_albumModelNode = new XmlModelNodeImpl(ALBUM_SCHEMA_PATH,Collections.emptyMap(),null,null,null,null,null, m_schemaRegistry,null, null);
+        m_document = DocumentUtils.createDocument();
+        m_jukeboxModelNode = new XmlModelNodeImpl(m_document, JUKEBOX_SCHEMA_PATH, Collections.emptyMap(),null,null,null, null,null, m_schemaRegistry,null, null, null, true, null);
+        m_albumModelNode = new XmlModelNodeImpl(m_document, ALBUM_SCHEMA_PATH,Collections.emptyMap(),null,null,null,null,null, m_schemaRegistry,null, null, null, true, null);
     }
 
     @Test
     public void testDSMDelegationListNodes() throws DataStoreException {
 
-        m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH);
-        verify(m_mnDSM1, times(1)).listNodes(JUKEBOX_SCHEMA_PATH);
+        m_aggregatedDSM.listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry);
+        verify(m_mnDSM1, times(1)).listNodes(JUKEBOX_SCHEMA_PATH, m_schemaRegistry);
 
-        m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH);
-        verify(m_mnDSM2, times(1)).listNodes(ALBUM_SCHEMA_PATH);
+        m_aggregatedDSM.listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry);
+        verify(m_mnDSM2, times(1)).listNodes(ALBUM_SCHEMA_PATH, m_schemaRegistry);
     }
 
     @Test
     public void testDSMDelegationListChildNodes() throws DataStoreException {
 
-        m_aggregatedDSM.listChildNodes(JUKEBOX_SCHEMA_PATH,EMPTY_NODE_ID);
-        verify(m_mnDSM1, times(1)).listChildNodes(JUKEBOX_SCHEMA_PATH,EMPTY_NODE_ID);
+        m_aggregatedDSM.listChildNodes(JUKEBOX_SCHEMA_PATH,EMPTY_NODE_ID, m_schemaRegistry);
+        verify(m_mnDSM1, times(1)).listChildNodes(JUKEBOX_SCHEMA_PATH,EMPTY_NODE_ID, m_schemaRegistry);
 
-        m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, EMPTY_NODE_ID);
-        verify(m_mnDSM2, times(1)).listChildNodes(ALBUM_SCHEMA_PATH, EMPTY_NODE_ID);
+        m_aggregatedDSM.listChildNodes(ALBUM_SCHEMA_PATH, EMPTY_NODE_ID, m_schemaRegistry);
+        verify(m_mnDSM2, times(1)).listChildNodes(ALBUM_SCHEMA_PATH, EMPTY_NODE_ID, m_schemaRegistry);
     }
 
     @Test
     public void testDSMDelegationFindNode() throws DataStoreException {
 
-        m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, null,EMPTY_NODE_ID);
-        verify(m_mnDSM1,times(1)).findNode(JUKEBOX_SCHEMA_PATH,null, EMPTY_NODE_ID);
+        m_aggregatedDSM.findNode(JUKEBOX_SCHEMA_PATH, null,EMPTY_NODE_ID, m_schemaRegistry);
+        verify(m_mnDSM1,times(1)).findNode(JUKEBOX_SCHEMA_PATH,null, EMPTY_NODE_ID, m_schemaRegistry);
 
-        m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH,null, EMPTY_NODE_ID);
-        verify(m_mnDSM2, times(1)).findNode(ALBUM_SCHEMA_PATH,null,EMPTY_NODE_ID);
+        m_aggregatedDSM.findNode(ALBUM_SCHEMA_PATH,null, EMPTY_NODE_ID, m_schemaRegistry);
+        verify(m_mnDSM2, times(1)).findNode(ALBUM_SCHEMA_PATH,null,EMPTY_NODE_ID, m_schemaRegistry);
     }
 
     @Test
@@ -154,11 +177,11 @@ public class AggregatedDSMTest {
     @Test
     public void testDSMDelegationFindNodes() throws DataStoreException {
 
-        m_aggregatedDSM.findNodes(JUKEBOX_SCHEMA_PATH, null,EMPTY_NODE_ID);
-        verify(m_mnDSM1,times(1)).findNodes(JUKEBOX_SCHEMA_PATH,null, EMPTY_NODE_ID);
+        m_aggregatedDSM.findNodes(JUKEBOX_SCHEMA_PATH, null,EMPTY_NODE_ID, m_schemaRegistry);
+        verify(m_mnDSM1,times(1)).findNodes(JUKEBOX_SCHEMA_PATH,null, EMPTY_NODE_ID, m_schemaRegistry);
 
-        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, null, EMPTY_NODE_ID);
-        verify(m_mnDSM2, times(1)).findNodes(ALBUM_SCHEMA_PATH,null,EMPTY_NODE_ID);
+        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH, null, EMPTY_NODE_ID, m_schemaRegistry);
+        verify(m_mnDSM2, times(1)).findNodes(ALBUM_SCHEMA_PATH,null,EMPTY_NODE_ID, m_schemaRegistry);
     }
 
     @Test
@@ -193,7 +216,7 @@ public class AggregatedDSMTest {
     
     @Test
     public void testIsChildTypeBigList(){
-    	m_aggregatedDSM.isChildTypeBigList(LIBRARY_SCHEMA_PATH);
+    	m_aggregatedDSM.isChildTypeBigList(LIBRARY_SCHEMA_PATH, m_schemaRegistry);
     }
 
     //@Test
@@ -212,15 +235,15 @@ public class AggregatedDSMTest {
 
         Map<QName, ConfigLeafAttribute> matchCriteria = new HashMap<>();
         matchCriteria.put(NAME_QNAME,new GenericConfigAttribute(NAME, JB_NS, "album1"));
-        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId);
-        when(m_mnDSM2.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId)).thenReturn(Collections.singletonList(albumModelNode));
+        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId, m_schemaRegistry);
+        when(m_mnDSM2.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId, m_schemaRegistry)).thenReturn(Collections.singletonList(albumModelNode));
 
-        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId);
-        verify(m_mnDSM2, times(2)).findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId);
+        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId, m_schemaRegistry);
+        verify(m_mnDSM2, times(2)).findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId, m_schemaRegistry);
 
         // subsequent calls
-        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId);
-        verify(m_mnDSM2, times(2)).findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId);
+        m_aggregatedDSM.findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId, m_schemaRegistry);
+        verify(m_mnDSM2, times(2)).findNodes(ALBUM_SCHEMA_PATH,matchCriteria,parentId, m_schemaRegistry);
 
     }
 }

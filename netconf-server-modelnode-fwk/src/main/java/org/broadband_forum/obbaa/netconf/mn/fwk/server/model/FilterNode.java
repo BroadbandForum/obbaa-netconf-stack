@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
 import java.util.ArrayList;
@@ -9,12 +25,14 @@ import org.broadband_forum.obbaa.netconf.api.server.NetconfQueryParams;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.StringUtil;
 
 public class FilterNode extends AbstractFilterNode {
+    public static final String PRUNED_SUBTREE = "pruned-subtree";
     private List<FilterNode> m_childNodes = new ArrayList<FilterNode>();
     private List<FilterMatchNode> m_matchNodes = new ArrayList<FilterMatchNode>();
     private List<FilterNode> m_selectNodes = new ArrayList<FilterNode>();
     private boolean m_isEmpty = false;
     private boolean m_mountNodeImmediateChild = false;
     private NetconfQueryParams m_params;
+    private String m_filterType = "subtree";
 
     public FilterNode(List<FilterNode> childNodes, List<FilterMatchNode> matchNodes, List<FilterNode> selectNodes, boolean isEmpty,
             String namespace, String nodeName, NetconfQueryParams params) {
@@ -25,7 +43,15 @@ public class FilterNode extends AbstractFilterNode {
         m_isEmpty = isEmpty;
         m_params = params;
     }
-    
+
+    public String getFilterType() {
+        return m_filterType;
+    }
+
+    public void setFilterType(String filterType) {
+        m_filterType = filterType;
+    }
+
     public List<FilterNode> getChildNodes() {
         return m_childNodes;
     }
@@ -71,12 +97,18 @@ public class FilterNode extends AbstractFilterNode {
 
     public FilterNode addContainmentNode(String nodeName, String namespace) {
         FilterNode node = new FilterNode(nodeName, namespace);
+        setFilterTypeOnChild(node);
         m_childNodes.add(node);
         return node;
     }
 
+    private void setFilterTypeOnChild(FilterNode node) {
+        node.setFilterType(m_filterType);
+    }
+
     public FilterNode addContainmentNode(FilterNode node) {
         m_childNodes.add(node);
+        setFilterTypeOnChild(node);
         return this;
     }
 
@@ -305,4 +337,7 @@ public class FilterNode extends AbstractFilterNode {
         }
     }
 
+    public boolean isTypePrunedSubtree() {
+        return m_filterType.equals(PRUNED_SUBTREE);
+    }
 }

@@ -214,6 +214,25 @@ module example-jukebox-with-state-container {
           description
             "Number of songs in the library";
         }
+        choice test-choice {
+            config false;
+            case case1 {
+                list case1-list {
+                    key "case1-list-key";
+                    leaf case1-list-key {
+                        type string;
+                    }
+                    leaf case1-list-leaf {
+                        type string;
+                    }
+                }
+            }
+            case case2 {
+                leaf case2-leaf {
+                    type string;
+                }
+            }
+        }
       }  // container library
 
       list playlist {

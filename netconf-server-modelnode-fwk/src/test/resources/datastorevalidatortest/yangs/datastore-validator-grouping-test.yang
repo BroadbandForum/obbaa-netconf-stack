@@ -2,7 +2,7 @@ module datastore-validator-grouping-test {
 
     yang-version 1;
 
-    namespace "urn:org:bbf:pma:load-balancer";
+    namespace "urn:org:bbf2:pma:load-balancer";
 
     prefix "lb";
 

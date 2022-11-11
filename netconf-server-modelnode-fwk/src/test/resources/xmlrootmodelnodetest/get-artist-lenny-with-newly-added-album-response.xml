@@ -1,0 +1,76 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+   <data>
+      <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+         <jbox:library>
+            <jbox:artist>
+               <jbox:name>Lenny</jbox:name>
+               <jbox:album>
+                  <jbox:name>Greatest hits</jbox:name>
+                  <jbox:password>$-0$p8WVYmLwbCEnPyXol5C3gpKvhh95G959gx3jqDZ7rYViBjWBA3Uj7MuXn6H3MgsT</jbox:password>
+                  <jbox:genre>jbox:jazz</jbox:genre>
+                  <jbox:year>2000</jbox:year>
+                  <jbox:admin>
+                     <jbox:label>Sony</jbox:label>
+                  </jbox:admin>
+                  <jbox:song>
+                     <jbox:name>Are you gonne go my way</jbox:name>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:format>mp3</jbox:format>
+                  </jbox:song>
+                  <jbox:song>
+                     <jbox:name>Fly Away</jbox:name>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:format>flac</jbox:format>
+                     <jbox:singer>Angelina</jbox:singer>
+                     <jbox:singer>Micheal</jbox:singer>
+                  </jbox:song>
+               </jbox:album>
+               <jbox:album>
+                  <jbox:name>Circus</jbox:name>
+                  <jbox:genre>jbox:rock</jbox:genre>
+                  <jbox:year>1995</jbox:year>
+                  <jbox:admin>
+                     <jbox:label>Sony</jbox:label>
+                  </jbox:admin>
+                  <jbox:song>
+                     <jbox:name>Rock and roll is dead</jbox:name>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:format>amr</jbox:format>
+                  </jbox:song>
+                  <jbox:song>
+                     <jbox:name>Circus</jbox:name>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:format>wma</jbox:format>
+                  </jbox:song>
+                  <jbox:song>
+                     <jbox:name>Beyond the 7th Sky</jbox:name>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:format>mp3</jbox:format>
+                  </jbox:song>
+               </jbox:album>
+               <jbox:album>
+                  <jbox:name>AlbumWithoutGenre</jbox:name>
+                  <jbox:year>1995</jbox:year>
+                  <jbox:admin>
+                     <jbox:label>Sony</jbox:label>
+                  </jbox:admin>
+                  <jbox:song>
+                     <jbox:name>SomeSong</jbox:name>
+                     <jbox:location>desktop/mymusic</jbox:location>
+                     <jbox:format>amr</jbox:format>
+                  </jbox:song>
+               </jbox:album>
+               <jbox:album>
+                  <jbox:name>A new song</jbox:name>
+                  <jbox:song>
+                     <jbox:name>Hi there</jbox:name>
+                  </jbox:song>
+                  <jbox:song>
+                     <jbox:name>Hi there, yet another song</jbox:name>
+                  </jbox:song>
+               </jbox:album>
+            </jbox:artist>
+         </jbox:library>
+      </jbox:jukebox>
+   </data>
+</rpc-reply>

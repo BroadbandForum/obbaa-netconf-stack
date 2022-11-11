@@ -21,8 +21,8 @@ import java.io.Serializable;
 public final class RpcName implements Serializable, Comparable<RpcName> {
     private static final long serialVersionUID = 5398411242927766414L;
 
-    static final String LEFT_PARENTHESIS = "(";
-    static final String RIGHT_PARENTHESIS = ")";
+    public static final String LEFT_PARENTHESIS = "(";
+    public static final String RIGHT_PARENTHESIS = ")";
 
     private String m_namespace;
     private String m_rpcName;

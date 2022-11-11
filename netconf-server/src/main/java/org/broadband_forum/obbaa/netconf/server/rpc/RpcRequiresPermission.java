@@ -16,25 +16,25 @@
 
 package org.broadband_forum.obbaa.netconf.server.rpc;
 
+import org.broadband_forum.obbaa.netconf.server.ssh.auth.Logical;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.broadband_forum.obbaa.netconf.server.ssh.auth.Logical;
-
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RpcRequiresPermission {
     /**
-     * The permission string used to determine if the RPC handler protected by this annotation is allowed to invoke.
+     * The scopes used to determine if the RPC handler protected by this annotation is allowed to invoke.
      */
-    String[] value();
+    Scopes[] value();
 
     /**
      * The logical operation for the permission checks in case multiple roles are specified. OR is the default
      *
      * @since 1.1.0
      */
-    Logical logical() default Logical.OR;
+    Logical logical() default Logical.AND;
 }

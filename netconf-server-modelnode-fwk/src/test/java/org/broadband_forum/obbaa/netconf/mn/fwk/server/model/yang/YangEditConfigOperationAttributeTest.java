@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils.createInMemoryModelNode;
@@ -12,15 +28,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.xml.sax.SAXException;
-
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.StandardDataStores;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaBuildException;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.schema.SchemaRegistryImpl;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.CompositeSubSystemImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.DataStore;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NbiNotificationHelper;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.NetConfServerImpl;
@@ -36,9 +49,15 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNo
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.RootModelNodeAggregatorImpl;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.inmemory.InMemoryDSM;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.LocalSubSystem;
-import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.broadband_forum.obbaa.netconf.mn.fwk.util.NoLockService;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
+import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class YangEditConfigOperationAttributeTest extends AbstractYangValidationTestSetup{
 
     private NetConfServerImpl m_server;
@@ -65,7 +84,7 @@ public class YangEditConfigOperationAttributeTest extends AbstractYangValidation
         m_schemaRegistry.loadSchemaContext("yang", Arrays.asList(TestUtil.getByteSource(EDITCONFIGOPERATIONATTRIBUTETEST_YANG_FILE_YANG), TestUtil.getByteSource(AUGMENT_FILE)), Collections.emptySet(), Collections.emptyMap());
         m_modelNodeWithAttributes = (ModelNodeWithAttributes) createInMemoryModelNode(Arrays.asList(EDITCONFIGOPERATIONATTRIBUTETEST_YANG_FILE_YANG, AUGMENT_FILE), subSystem, m_modelNodeHelperRegistry,
                 m_subSystemRegistry, m_schemaRegistry,m_modelNodeDsm);
-        
+        m_subSystemRegistry.setCompositeSubSystem(new CompositeSubSystemImpl());
         m_rootModelNodeAggregator = new RootModelNodeAggregatorImpl(m_schemaRegistry, m_modelNodeHelperRegistry, m_modelNodeDsm, m_subSystemRegistry).addModelServiceRoot(m_componentId, m_modelNodeWithAttributes);
         DataStore dataStore = new DataStore(StandardDataStores.RUNNING, m_rootModelNodeAggregator, m_subSystemRegistry);
         NbiNotificationHelper nbiNotificationHelper = mock(NbiNotificationHelper.class);
@@ -84,23 +103,7 @@ public class YangEditConfigOperationAttributeTest extends AbstractYangValidation
         assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-1.xml", response);
         verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
         
-        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-withoutnamespace-a-create-b-request.xml"), "1");
-        assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-2.xml", response);
-        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
-        
-        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-withoutnamespace-a-create-withoutnamespace-b-request.xml"), "1");
-        assertXMLEquals("/ok-response.xml", response);
-        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
-        
-        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-replace-withoutnamespace-a-replace-b-request.xml"), "1");
-        assertXMLEquals("/ok-response.xml", response);
-        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result2.xml", "1");
-        
         response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-replace-a-replace-b-request.xml"), "1");
-        assertXMLEquals("/ok-response.xml", response);
-        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
-        
-        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-merge-a-delete-withoutnamespace-b-request.xml"), "1");
         assertXMLEquals("/ok-response.xml", response);
         verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
         
@@ -114,6 +117,38 @@ public class YangEditConfigOperationAttributeTest extends AbstractYangValidation
         
         response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-c-request.xml"), "1");
         assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-3.xml", response);
+    }
+    
+    @Test
+    public void testBadAttributes() throws Exception {        
+        NetConfResponse response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-a-create-b-request.xml"), "1");
+        assertXMLEquals("/ok-response.xml", response);
+        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
+        
+        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-withoutnamespace-a-create-b-request.xml"), "1");
+        assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-2.xml", response);
+        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
+        
+        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-withoutnamespace-a-create-withoutnamespace-b-request.xml"), "1");
+        assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-2.xml", response);
+        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
+        
+        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-replace-withoutnamespace-a-replace-b-request.xml"), "1");
+        assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-2.xml", response);
+        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
+        
+        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-merge-a-delete-withoutnamespace-b-request.xml"), "1");
+        assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-4.xml", response);
+        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
+        
+        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-wrongnamespace-a-create-b-request.xml"), "1");
+        assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-5.xml", response);
+        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
+        
+        response = sendEditConfig(m_server, m_clientInfo, loadAsXml("/editconfigoperationattributetest/edit-config-create-wrongoperation-a-create-b-request.xml"), "1");
+        assertXMLEquals("/editconfigoperationattributetest/edit-config-error-response-6.xml", response);
+        verifyGetConfig(m_server, StandardDataStores.RUNNING, null, "/editconfigoperationattributetest/get-config-result1.xml", "1");
+        
     }
     
 }

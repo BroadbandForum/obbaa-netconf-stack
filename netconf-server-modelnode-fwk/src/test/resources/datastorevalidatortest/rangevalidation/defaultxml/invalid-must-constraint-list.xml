@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<validation xmlns="urn:org:bbf:pma:validation">
+<validation xmlns="urn:org:bbf2:pma:validation">
 	<must-validation>
 		<interface>
-			// violate data-id 3
+			<!-- violate data-id 3 -->
 			<data>
 				<data-id>3</data-id>
 				<data-value>10001</data-value>

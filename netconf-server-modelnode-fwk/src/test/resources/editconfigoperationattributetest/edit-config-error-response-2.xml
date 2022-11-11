@@ -1,9 +1,12 @@
 <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
   <rpc-error>
     <error-type>application</error-type>
-    <error-tag>data-exists</error-tag>
+    <error-tag>bad-attribute</error-tag>
     <error-severity>error</error-severity>
-    <error-path xmlns:pma="urn:org:bbf:pma">/pma:operation-example/pma:list-a[pma:a1='a1']/pma:list-b[pma:b1='b1']</error-path>
-    <error-message>'list-b' already exists. Create request Failed.</error-message>
+    <error-info>
+        <bad-attribute>operation</bad-attribute>
+    </error-info>
+    <error-path xmlns:pma="urn:org:bbf2:pma">/pma:operation-example/pma:list-a</error-path>
+    <error-message>Bad attribute: namespace '', attribute name 'operation'</error-message>
   </rpc-error>
 </rpc-reply>

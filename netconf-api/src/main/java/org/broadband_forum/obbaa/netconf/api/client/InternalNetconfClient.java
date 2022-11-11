@@ -18,24 +18,26 @@ package org.broadband_forum.obbaa.netconf.api.client;
 
 import java.util.concurrent.ExecutionException;
 
-import org.w3c.dom.Document;
-
 import org.broadband_forum.obbaa.netconf.api.logger.NetconfLogger;
-import org.broadband_forum.obbaa.netconf.api.messages.AbstractNetconfRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.ActionRequest;
+import org.broadband_forum.obbaa.netconf.api.messages.EditConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.GetConfigRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.GetRequest;
 import org.broadband_forum.obbaa.netconf.api.messages.NetConfResponse;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
 import org.broadband_forum.obbaa.netconf.api.server.ServerMessageHandler;
+import org.w3c.dom.Document;
 
 public interface InternalNetconfClient {
     NetConfResponse get(GetRequest request) throws InterruptedException, ExecutionException;
 
-    NetConfResponse editConfig(AbstractNetconfRequest request) throws InterruptedException, ExecutionException;
+    NetConfResponse editConfig(EditConfigRequest request) throws InterruptedException, ExecutionException;
 
     NetConfResponse rpc(NetconfRpcRequest request) throws InterruptedException, ExecutionException;
 
     NetConfResponse getConfig(GetConfigRequest request) throws InterruptedException, ExecutionException;
+    
+    NetConfResponse action(ActionRequest request) throws InterruptedException, ExecutionException;
 
     NetConfResponse sendRpcMessage(Document document) throws InterruptedException, ExecutionException;
 

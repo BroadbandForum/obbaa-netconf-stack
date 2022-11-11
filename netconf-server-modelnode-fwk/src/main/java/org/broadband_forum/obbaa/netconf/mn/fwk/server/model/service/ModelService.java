@@ -1,3 +1,19 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.service;
 
 import static org.broadband_forum.obbaa.netconf.api.util.SchemaPathBuilder.REVISION_DELIMITER;
@@ -14,18 +30,17 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
 import org.broadband_forum.obbaa.netconf.api.parser.YangParserUtil;
 import org.broadband_forum.obbaa.netconf.api.util.DocumentUtils;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystem;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
+import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
 import org.broadband_forum.obbaa.netconf.server.rpc.MultiRpcRequestHandler;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcRequestHandler;
-import org.broadband_forum.obbaa.netconf.persistence.EntityDataStoreManager;
+import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * ModelService is wrapper class that binds yang module with ModelNode, default configuration xml
@@ -51,8 +66,10 @@ public class ModelService {
     private Map<String,Set<String>> m_supportedDeviationNames = new HashMap<String,Set<String>>();
     private Map<String, SchemaPath> m_appAugmentedPaths =  new HashMap<String, SchemaPath>();
     private EntityDataStoreManager m_entityDSM;
-    
-	public ModelService(){
+    private String m_name;
+    private Map<String, String> m_rpcModuleNames = new HashMap<String, String>();
+
+    public ModelService(){
         super();
     }
     public ModelService(String moduleName, String moduleRevision, String defaultXmlPath, Map<SchemaPath, SubSystem> subSystems,
@@ -97,12 +114,19 @@ public class ModelService {
 	}
 
 	public String getName() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(m_moduleName).append(REVISION_DELIMITER).append(m_moduleRevision);
-		return sb.toString();
+	    if(m_name == null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(m_moduleName).append(REVISION_DELIMITER).append(m_moduleRevision);
+            m_name = sb.toString();
+        }
+        return m_name;
 	}
 
-	public Map<SchemaPath, SubSystem> getSubSystems() {
+    public void setName(String name) {
+        m_name = name;
+    }
+
+    public Map<SchemaPath, SubSystem> getSubSystems() {
 		return m_subSystems;
 	}
 
@@ -275,6 +299,19 @@ public class ModelService {
     }
     
     public Map<String, SchemaPath> getAppAugmentedPaths(){
-        return new HashMap<String, SchemaPath>(m_appAugmentedPaths);
+        return new HashMap<>(m_appAugmentedPaths);
     }
+
+    /* Schema is updated only when there are new schema contents */
+    public boolean updateSchema() {
+        return !getYangFilePaths().isEmpty() || !getSupportedDeviations().isEmpty() || !getSupportedFeatures().isEmpty();
+    }
+    
+	public Map<String, String> getRpcModuleNames() {
+		return m_rpcModuleNames;
+	}
+	
+	public void setRpcModuleNames(Map<String, String> rpcModuleNames) {
+		this.m_rpcModuleNames = rpcModuleNames;
+	}
 }

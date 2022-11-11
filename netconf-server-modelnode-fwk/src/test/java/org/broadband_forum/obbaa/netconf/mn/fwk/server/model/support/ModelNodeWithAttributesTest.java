@@ -1,6 +1,23 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.setUpUnwrap;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -29,8 +46,10 @@ import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.SubSystemRegistry;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeDataStoreManager;
 import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.datastore.ModelNodeKey;
 import org.broadband_forum.obbaa.netconf.mn.fwk.tests.persistence.entities.TestConstants;
+import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
@@ -40,6 +59,7 @@ import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+@RunWith(RequestScopeJunitRunner.class)
 public class ModelNodeWithAttributesTest {
 
     public static final String LEAF_1 = "leaf1";
@@ -76,6 +96,9 @@ public class ModelNodeWithAttributesTest {
         m_modelNodeHelperRegistry = mock(ModelNodeHelperRegistry.class);
         m_subsystemRegistry = mock(SubSystemRegistry.class);
         m_schemaRegistry = mock(SchemaRegistry.class);
+        setUpUnwrap(m_modelNodeHelperRegistry);
+        setUpUnwrap(m_subsystemRegistry);
+        setUpUnwrap(m_schemaRegistry);
         m_modelNodeDSM = mock(ModelNodeDataStoreManager.class);
         m_modelNodeWithAttributes = new ModelNodeWithAttributes(m_schemaPath, m_numberModelNodeId, m_modelNodeHelperRegistry, m_subsystemRegistry, m_schemaRegistry, m_modelNodeDSM);
     }
@@ -219,7 +242,7 @@ public class ModelNodeWithAttributesTest {
         ModelNodeWithAttributes abcContainerModelNode = new ModelNodeWithAttributes(abcContainerSchemaPath,new ModelNodeId("/container=abc", "testns"),
                 m_modelNodeHelperRegistry,m_subsystemRegistry,m_schemaRegistry,m_modelNodeDSM);
 
-        when(m_modelNodeDSM.findNode(Mockito.any(SchemaPath.class), Mockito.any(ModelNodeKey.class),Mockito.any(ModelNodeId.class))).thenReturn(abcContainerModelNode);
+        when(m_modelNodeDSM.findNode(Mockito.any(SchemaPath.class), Mockito.any(ModelNodeKey.class),Mockito.any(ModelNodeId.class), Mockito.any(SchemaRegistry.class))).thenReturn(abcContainerModelNode);
         String expectedDom = "<abc xmlns=\"testns\">\n" +
                                 "<xyz>\n" +
                                     "<name>qwerty</name>\n" +

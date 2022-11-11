@@ -21,13 +21,12 @@ import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import org.apache.log4j.Logger;
 import org.apache.sshd.common.channel.Channel;
 import org.apache.sshd.common.session.Session;
 import org.apache.sshd.common.session.SessionListener;
 import org.apache.sshd.server.auth.password.PasswordAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.authentication.FailureInfo;
 import org.broadband_forum.obbaa.netconf.api.authentication.PointOfFailure;
@@ -37,18 +36,20 @@ import org.broadband_forum.obbaa.netconf.api.server.auth.ClientAuthenticationInf
 import org.broadband_forum.obbaa.netconf.api.server.auth.NetconfServerAuthenticationHandler;
 import org.broadband_forum.obbaa.netconf.server.ssh.NetconfSubsystem;
 import org.broadband_forum.obbaa.netconf.server.ssh.SshChannelListener;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 /**
  * This class wraps around ssh password authenticators supplied by the netconf server. It also provides a call back to the supplied
  * AuthenticationListener when a authenticate succeeds or fails.
  * 
- *
+ * 
  * 
  */
 public final class NetconfPasswordAuthenticator implements PasswordAuthenticator {
     private final NetconfServerAuthenticationHandler m_axsNetconfAuthenticationHandler;
     private AuthenticationListener m_authenticationListener;
-    private static final Logger LOGGER = Logger.getLogger(NetconfPasswordAuthenticator.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfPasswordAuthenticator.class, LogAppNames.NETCONF_LIB);
 
     /**
      * Creates a password authenticator.
@@ -74,7 +75,7 @@ public final class NetconfPasswordAuthenticator implements PasswordAuthenticator
                     (InetSocketAddress) localAddress);
         }
         
-        LOGGER.info("Authenticating client info with authentication handler: " + m_axsNetconfAuthenticationHandler);
+        LOGGER.debug("Authenticating client info with authentication handler: " + m_axsNetconfAuthenticationHandler);
         AuthenticationResult result = m_axsNetconfAuthenticationHandler.authenticate(clientAuthInfo);
         boolean authenticated = result.isAuthenticated();
         if(result.isAuthenticated()){
@@ -90,17 +91,20 @@ public final class NetconfPasswordAuthenticator implements PasswordAuthenticator
         session.addSessionListener(new SessionListener() {
             @Override
             public void sessionClosed(Session session) {
+                LOGGER.debug("Session Closed : {}", session);
                 clearSessionData(result.getSessionId());
             }
 
             @Override
             public void sessionException(Session session, Throwable t) {
+                LOGGER.debug("Session Exception : {} occurred for the session : {}", t, session);
                 clearSessionData(result.getSessionId());
             }
         });
         session.addChannelListener(new SshChannelListener() {
             @Override
             public void channelClosed(Channel channel, Throwable reason) {
+                LOGGER.debug("Channel closed : {} with Exception : {}", channel, reason);
                 super.channelClosed(channel, reason);
                 clearSessionData(result.getSessionId());
             }
@@ -125,6 +129,7 @@ public final class NetconfPasswordAuthenticator implements PasswordAuthenticator
     }
 
     private void clearSessionData(Serializable sessionId) {
+        LOGGER.debug("Clear session data for session id : {}", sessionId);
         if (sessionId != null) {
             m_axsNetconfAuthenticationHandler.logout(sessionId);
         }

@@ -22,6 +22,22 @@ import java.lang.annotation.Target;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * YangLeafList Annotation is used to mark on the entity that
+ * represents leaf-list type in the yang model.
+ * <pre>
+ * Example:-
+ * {@code
+ *  {@literal @}YangLeafList(name="singer", namespace = "http://example.com/ns/example-jukebox", revision="2014-07-03")
+ *  public class Singer  {
+ *  ...
+ *  }
+ *
+ *  If the leaf-list is of type ordered-by user, @OrderBy("insertOrder") annotation needs to be present in the Leaf-list collection(collection should be LinkedHashSet)
+ *  specified in parent entity.
+ *  }
+ * </pre>
+ */
 @Retention(RUNTIME)
 @Target({ElementType.TYPE, ElementType.FIELD})
 public @interface YangLeafList {

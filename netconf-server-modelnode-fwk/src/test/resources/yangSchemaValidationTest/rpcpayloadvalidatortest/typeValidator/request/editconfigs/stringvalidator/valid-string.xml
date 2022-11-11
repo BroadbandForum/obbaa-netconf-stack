@@ -5,7 +5,7 @@
 		</target>
 		<test-option>set</test-option>
 		<config>
-			<validation xmlns="urn:org:bbf:pma">
+			<validation xmlns="urn:org:bbf2:pma">
                 <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
                     <id>1</id>
                     <string-type>a</string-type>
@@ -20,11 +20,11 @@
                 </type-validation>
                 <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
                     <id>4</id>
-                    <string-type>99</string-type>
+                    <string-type>33</string-type>
                 </type-validation>
                 <type-validation xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" nc:operation="create">
                     <id>5</id>
-                    <string-type>abc</string-type>
+                    <string-type>ab</string-type>
                 </type-validation>
 			</validation>
 		</config>

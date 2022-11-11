@@ -1,0 +1,244 @@
+module test {
+  yang-version "1.1";
+  namespace "urn:test";
+  prefix t;
+
+  description
+    "A YANG module with constructs that are not supported";
+
+  revision 2019-01-15 {
+    description
+      "Initial revision.";
+  }
+  
+  leaf id-leaf {
+    must "starts-with(id(), 'blabla')";
+    type string;
+  }
+  
+  container top-container {
+  
+    leaf baseleaf {
+      type string;
+    }
+    
+    leaf true-with-arg {
+      when "true(../baseleaf)";
+      type string;
+    }
+    
+    leaf false-with-arg {
+      when "false(../baseleaf)";
+      type string;
+    }
+    
+    leaf xpath-syntax-error {
+      when "current( = 3";
+      type string;
+    }
+  
+    leaf not-without-arg {
+      must "not()";
+      type string;
+    }
+    
+    leaf last-function {
+      when "baseleaf = 'somevalue' and last() = 5";
+      type string;
+    }
+  
+    leaf position-function {
+      must "../id-leaf = 'foo'";
+      must "position() = 5 and baseleaf = 'somevalue'";
+      type string;
+    }
+    
+    choice choice-with-lang {
+      when "contains(lang(), 'en')";
+      
+      case case-with-name {
+        when "parent::node()/baseleaf = 'bla' and contains(name(), 'name')";
+        
+        container inner-container {
+        
+          leaf deref-function {
+            when "deref(../../position-function) = 'somevalue'";
+            type string;
+          }
+          
+          leaf bit-is-set-function {
+            must "bit-is-set(., 'somebit')";
+            type bits {
+              bit somebit;
+              bit otherbit;
+            }
+          }
+        }
+        
+      }
+    }
+    
+    must "leaflist-with-default[0] = 'one'";
+    
+    leaf-list leaflist-with-default {
+      type string;
+      default "one";
+      default "two";
+    } 
+  }
+  
+  list top-list {
+    must ".//myleaf = 'somevalue'";
+    key "key";
+    
+    leaf key {
+      type string;
+    }
+  
+    leaf-list position-function {
+      must "../id-leaf = 'foo'";
+      must "position() = 5 and baseleaf = 'somevalue'";
+      type string;
+    }
+    
+    leaf double-error {
+      must "position() = 5 and ../top-list[key = name()]";
+      type string;
+    }
+    
+    leaf error-on-path-expression-predicate {
+      must "current()[key = name()]";
+      type string;
+    }
+    
+    container container-in-list {
+      must "descendant::myleaf = 'somevalue'";
+      must "descendant-or-self::myleaf = 'somevalue'";
+      must "ancestor-axis | ancestor-or-self-axis";
+      
+      leaf myleaf {
+        type string;
+      }
+    
+      leaf unknown-function {
+        when "unknown() = 'true'";
+        type string;
+      }
+      
+      leaf ancestor-axis {
+        when "ancestor::top-list/child::key = 'somevalue'";
+        type string;
+      }
+      
+      leaf ancestor-or-self-axis {
+        when "ancestor-or-self::top-list/child::key = 'somevalue'";
+        type string;
+      } 
+      
+      leaf attribute-axis {
+        when "attribute::name = 'somevalue'";
+        type string;
+      }
+      
+      leaf attribute-abbrev-axis {
+        when "@name = 'somevalue'";
+        type string;
+      }  
+      
+      leaf following-preceding-axis {
+        must "following::myleaf = 'somevalue'";
+        must "following-sibling::myleaf = 'somevalue'";
+        must "preceding::myleaf = 'somevalue'";
+        must "preceding-sibling::myleaf = 'somevalue'";
+        type string;
+      } 
+      
+      leaf namespace-axis {
+        must "namespace::node() = 'somevalue'";
+        type string;
+      } 
+      
+      leaf wildcard-leaf {
+        must "../*/test = 'somevalue'";
+        type string;
+      }
+      
+      leaf comment-leaf {
+        must "comment() = 'somevalue'";
+        type string;
+      }
+      
+      leaf text-leaf {
+        must "text() = 'somevalue'";
+        type string;
+      }
+      
+      leaf pi-leaf {
+        must "processing-instruction() = 'somevalue'";
+        type string;
+      }
+      
+      leaf pi2-leaf {
+        must "processing-instruction('xml') = 'somevalue'";
+        type string;
+      }
+      
+      leaf wrong-substring-index {
+        must "substring(../text-leaf, 0, 3) = 'bla'";
+        type string;
+      }
+      
+      leaf correct-substring-index {
+        must "substring(../text-leaf, 1, 3) = 'bla'";
+        type string;
+      }
+
+      action my-action {
+        input {
+          leaf error-in-action-input-leaf {
+            must "starts-with(id(), 'blabla')";
+            type string;
+          }
+        }
+    
+        output {
+          leaf error-in-action-output-leaf {
+            when "contains(lang(), 'en') or contains(lang(), 'fr')";
+            type string;
+          }
+        }
+      }
+
+      notification my-notification {
+          leaf error-in-notification-leaf {
+            must "starts-with(id(), 'blabla')";
+            type string;
+          }
+      }
+    }
+  }
+
+  rpc my-rpc {
+    input {
+      leaf error-in-rpc-input-leaf {
+        must "starts-with(id(), 'blabla')";
+        type string;
+      }
+    }
+    
+    output {
+      leaf error-in-rpc-output-leaf {
+        when "contains(lang(), 'en')";
+        type string;
+      }
+    }
+  }
+
+  notification top-notification {
+      leaf error-in-top-notification-leaf {
+        must "starts-with(id(), 'blabla')";
+        type string;
+      }
+  }
+  
+}

@@ -16,6 +16,9 @@
 
 package org.broadband_forum.obbaa.netconf.stack;
 
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 public interface NcNotificationCounterService {
 
     public static final String NUMBER_OF_NOTIFICATIONS = "number-of-notifications";
@@ -24,7 +27,9 @@ public interface NcNotificationCounterService {
 
     long getNumberOfNotifications();
 
-    void increaseNumberOfNotifications();
+    Map<String, AtomicLong> getNumberOfNotificationsMapForUsers();
+
+    void increaseNumberOfNotificationsForUsers(String userName);
 
 	long getOutNotifications(Integer sessionId);
     

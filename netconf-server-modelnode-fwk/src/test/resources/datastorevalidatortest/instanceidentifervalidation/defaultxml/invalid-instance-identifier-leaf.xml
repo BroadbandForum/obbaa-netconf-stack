@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<validation xmlns="urn:org:bbf:pma:validation">
+<validation xmlns="urn:org:bbf2:pma:validation">
    <instance-identifier-example>
    <address>
 		<national>
@@ -17,7 +17,7 @@
    	<class-name>Basic Math</class-name>
    	<number-students>30</number-students>
    </classz>
-   //missing declare leaf1
+   <!--missing declare leaf1-->
    <student>
 		<student-id>ST001</student-id>
 		<student-name>Student 1</student-name>

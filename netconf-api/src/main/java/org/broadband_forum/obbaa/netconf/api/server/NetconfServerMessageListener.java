@@ -41,7 +41,7 @@ import org.broadband_forum.obbaa.netconf.api.messages.UnLockRequest;
 /**
  * A listener to be implemented by the netconf server to listen to netconf messages from clients.
  * 
- *
+ * 
  * 
  */
 public interface NetconfServerMessageListener {

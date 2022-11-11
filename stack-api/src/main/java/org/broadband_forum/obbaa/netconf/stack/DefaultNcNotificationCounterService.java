@@ -16,21 +16,35 @@
 
 package org.broadband_forum.obbaa.netconf.stack;
 
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultNcNotificationCounterService implements NcNotificationCounterService {
     private ConcurrentHashMap<Integer, AtomicLong> m_outNotificationsMap = new ConcurrentHashMap<>();
-    private AtomicLong m_numberOfNotifications = new AtomicLong(0);
+    private Map<String,AtomicLong> m_numberOfNotificationsForUsers = new HashMap<>();
 
     @Override
     public long getNumberOfNotifications() {
-        return m_numberOfNotifications.get();
+        long result = 0l;
+        for(AtomicLong count :m_numberOfNotificationsForUsers.values()) {
+            result+=count.get();
+        }
+        return  result;
+    }
+
+    public Map<String,AtomicLong> getNumberOfNotificationsMapForUsers() {
+          return  m_numberOfNotificationsForUsers;
     }
 
     @Override
-    public void increaseNumberOfNotifications() {
-        m_numberOfNotifications.incrementAndGet();
+    public void increaseNumberOfNotificationsForUsers(String userName) {
+        if(m_numberOfNotificationsForUsers.get(userName) == null) {
+            m_numberOfNotificationsForUsers.put(userName, new AtomicLong(0));
+        }
+        m_numberOfNotificationsForUsers.get(userName).incrementAndGet();
     }
 
     @Override

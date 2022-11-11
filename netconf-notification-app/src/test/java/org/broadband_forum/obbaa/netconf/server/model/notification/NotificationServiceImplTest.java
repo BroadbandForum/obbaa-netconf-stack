@@ -47,6 +47,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientInfo;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSession;
+import org.broadband_forum.obbaa.netconf.api.client.NetconfResponseFuture;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
 import org.broadband_forum.obbaa.netconf.api.logger.DefaultNetconfLogger;
 import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
@@ -93,6 +94,7 @@ public class NotificationServiceImplTest {
     private static final String CAP_STRING_FORMAT = "%s?module=%s&revision=%s";
     private static final QName m_alarmNotificationQName = QName.create(TEST_NS, ALARM_NOTIFICATION);
     private static final String m_capsString = String.format(CAP_STRING_FORMAT, TEST_NS, TEST_MODULE, REVISION);
+    private NetconfResponseFuture m_futureResponse;
 
     @Before
     public void setup() throws NotCompliantMBeanException {
@@ -110,6 +112,7 @@ public class NotificationServiceImplTest {
         m_responseChannel = mock(ResponseChannel.class);
         when(m_responseChannel.getCloseFuture()).thenReturn(new CompletableFuture<>());
         m_notificationService = new NotificationServiceImpl(m_streamList, m_notificationLogger, m_timerManager, notifExecutor, new DefaultNetconfLogger(), m_nbiNotifInterceptor);
+        m_futureResponse = mock(NetconfResponseFuture.class);
     }
 
     @After
@@ -134,16 +137,16 @@ public class NotificationServiceImplTest {
             public boolean matches(Object argument) {
                 GetRequest createSubscriptionRequest = (GetRequest) argument;
                 assertEquals(
-                        "<rpc message-id=\"1\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                                "  <get>\n" +
-                                "    <filter type=\"subtree\">\n" +
-                                "      <system-state xmlns=\"urn:ietf:params:xml:ns:yang:ietf-system\">\n" +
-                                "        <clock>\n" +
-                                "          <current-datetime/>\n" +
-                                "        </clock>\n" +
-                                "      </system-state>\n" +
-                                "    </filter>\n" +
-                                "  </get>\n" +
+                        "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                                "   <get>\n" +
+                                "      <filter type=\"subtree\">\n" +
+                                "         <system-state xmlns=\"urn:ietf:params:xml:ns:yang:ietf-system\">\n" +
+                                "            <clock>\n" +
+                                "               <current-datetime/>\n" +
+                                "            </clock>\n" +
+                                "         </system-state>\n" +
+                                "      </filter>\n" +
+                                "   </get>\n" +
                                 "</rpc>\n", createSubscriptionRequest.requestToString());
                 return true;
             }
@@ -165,9 +168,10 @@ public class NotificationServiceImplTest {
                         "    </system-state>";
         NetConfResponse netconfResponse = new NetConfResponse();
         netconfResponse.setData(DocumentUtils.stringToDocument(response).getDocumentElement());
-        CompletableFuture<NetConfResponse> futureResponse = mock(CompletableFuture.class);
-        when(futureResponse.get()).thenReturn(netconfResponse);
-        when(clientSession.get(any(GetRequest.class))).thenReturn(futureResponse);
+
+        m_futureResponse = mock(NetconfResponseFuture.class);
+        when(m_futureResponse.get()).thenReturn(netconfResponse);
+        when(clientSession.get(any(GetRequest.class))).thenReturn(m_futureResponse);
 
         m_notificationService = new NotificationServiceImpl(m_streamList, m_notificationLogger, m_timerManager, notifExecutor, new DefaultNetconfLogger(), m_nbiNotifInterceptor);
         DeviceRefId deviceRefId = new DeviceRefId("R1.S1.LT1.PON1.ONT1");
@@ -202,9 +206,9 @@ public class NotificationServiceImplTest {
                         "    </sys:system-state>";
         NetConfResponse netconfResponse = new NetConfResponse();
         netconfResponse.setData(DocumentUtils.stringToDocument(response).getDocumentElement());
-        CompletableFuture<NetConfResponse> futureResponse = mock(CompletableFuture.class);
-        when(futureResponse.get()).thenReturn(netconfResponse);
-        when(clientSession.get(any(GetRequest.class))).thenReturn(futureResponse);
+        m_futureResponse = mock(NetconfResponseFuture.class);
+        when(m_futureResponse.get()).thenReturn(netconfResponse);
+        when(clientSession.get(any(GetRequest.class))).thenReturn(m_futureResponse);
 
         m_notificationService = new NotificationServiceImpl(m_streamList, m_notificationLogger, m_timerManager, notifExecutor, new DefaultNetconfLogger(), m_nbiNotifInterceptor);
         DeviceRefId deviceRefId = new DeviceRefId("R1.S1.LT1.PON1.ONT1");
@@ -238,9 +242,9 @@ public class NotificationServiceImplTest {
             public boolean matches(Object argument) {
                 CreateSubscriptionRequest createSubscriptionRequest = (CreateSubscriptionRequest) argument;
                 assertEquals("<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">\n" +
-                        "  <create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">\n" +
-                        "    <stream>NETCONF</stream>\n" +
-                        "  </create-subscription>\n" +
+                        "   <create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">\n" +
+                        "      <stream>NETCONF</stream>\n" +
+                        "   </create-subscription>\n" +
                         "</rpc>\n", createSubscriptionRequest.requestToString());
                 return true;
             }
@@ -569,7 +573,7 @@ public class NotificationServiceImplTest {
         String ReplayLogAgedTime = NetconfResources.DATE_TIME_WITH_TZ.print(DateTime.now());
         NetConfResponse response = createNetconfStreamsResponse(ReplayLogAgedTime);
         CompletableFuture<NetConfResponse> future = CompletableFuture.completedFuture(response);
-        when(clientSession.get(any(GetRequest.class))).thenReturn(future);
+        when(clientSession.get(any(GetRequest.class))).thenReturn(m_futureResponse);
         m_notificationService.createSubscriptionWithCallback(clientSession, startTime, subscriber, deviceRefId, true);
         verify(callBack, times(1)).resynchronize(deviceRefId);
         verifyCreateSubscriptionInvoked(clientSession);
@@ -590,8 +594,7 @@ public class NotificationServiceImplTest {
         String startTime = NetconfResources.DATE_TIME_WITH_TZ.print(DateTime.now().plusMillis(1));
 
         NetConfResponse response = createNetconfStreamsResponse(ReplayLogAgedTime);
-        CompletableFuture<NetConfResponse> future = CompletableFuture.completedFuture(response);
-        when(clientSession.get(any(GetRequest.class))).thenReturn(future);
+        when(clientSession.get(any(GetRequest.class))).thenReturn(NetconfResponseFuture.completedNetconfResponseFuture(response));
         m_notificationService.createSubscriptionWithCallback(clientSession, startTime, subscriber, deviceRefId, true);
         verify(callBack, never()).resynchronize(deviceRefId);
         verifyCreateSubscriptionInvoked(clientSession);
@@ -692,35 +695,34 @@ public class NotificationServiceImplTest {
         caps.add(NetconfResources.NETCONF_NOTIFICATION);
         when(clientSession.getServerCapabilities()).thenReturn(caps);
 
-        CompletableFuture<NetConfResponse> responseForGetRequest = mock(CompletableFuture.class);
         when(clientSession.get(argThat(new ArgumentMatcher<GetRequest>() {
 
             @Override
             public boolean matches(Object argument) {
                 return true;
             }
-        }))).thenReturn(responseForGetRequest);
+        }))).thenReturn(m_futureResponse);
 
         if (responsePathFile != null) {
             NetConfResponse getResponse = mock(NetConfResponse.class);
-            when(responseForGetRequest.get()).thenReturn(getResponse);
+            when(m_futureResponse.get()).thenReturn(getResponse);
             Document doc = DocumentUtils.loadXmlDocument(this.getClass().getResourceAsStream(responsePathFile));
             when(getResponse.getResponseDocument()).thenReturn(doc);
-        } else {
-            when(responseForGetRequest.get()).thenReturn(null);
+        }else {
+            when(m_futureResponse.get()).thenReturn(null);
         }
 
     }
 
     private void prepareForDeviceSubscriptionResponse(NetconfClientSession clientSession, boolean isOk)
             throws NetconfMessageBuilderException, InterruptedException, ExecutionException {
-        CompletableFuture<NetConfResponse> responseForSubscriptionRequest = mock(CompletableFuture.class);
-        when(clientSession.createSubscription(any(CreateSubscriptionRequest.class), any(NotificationListener.class))).thenReturn(
-                responseForSubscriptionRequest);
-        NetConfResponse deviceResponse = mock(NetConfResponse.class);
-        when(deviceResponse.isOk()).thenReturn(isOk);
-        when(responseForSubscriptionRequest.get()).thenReturn(deviceResponse);
-    }
+            when(clientSession.createSubscription(any(CreateSubscriptionRequest.class), any(NotificationListener.class))).thenReturn(
+                    m_futureResponse);
+            NetConfResponse deviceResponse = mock(NetConfResponse.class);
+            when(deviceResponse.isOk()).thenReturn(isOk);
+            when(m_futureResponse.get()).thenReturn(deviceResponse);
+        }
+
 
     private void verifyCreateSubscriptionInvoked(NetconfClientSession clientSession) throws NetconfMessageBuilderException {
         verify(clientSession).createSubscription(argThat(new ArgumentMatcher<CreateSubscriptionRequest>() {
@@ -732,8 +734,8 @@ public class NotificationServiceImplTest {
             }
         }), any(NotificationListener.class));
     }
-
-    private class DeviceRefId {
+}
+    class DeviceRefId {
         private String deviceId;
         public static final String DEVICE_ID = "device-id";
 
@@ -749,4 +751,4 @@ public class NotificationServiceImplTest {
             this.deviceId = deviceId;
         }
     }
-}
+

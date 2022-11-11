@@ -18,16 +18,20 @@ package org.broadband_forum.obbaa.netconf.api.client.util;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousChannelGroup;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
-import org.junit.Test;
-
+import org.apache.sshd.client.auth.UserAuthFactory;
+import org.apache.sshd.client.auth.password.UserAuthPasswordFactory;
+import org.apache.sshd.client.auth.pubkey.UserAuthPublicKeyFactory;
 import org.broadband_forum.obbaa.netconf.api.NetconfConfigurationBuilderException;
 import org.broadband_forum.obbaa.netconf.api.authentication.AuthenticationListener;
 import org.broadband_forum.obbaa.netconf.api.client.NetconfClientConfiguration;
@@ -35,6 +39,7 @@ import org.broadband_forum.obbaa.netconf.api.client.NetconfClientSessionListener
 import org.broadband_forum.obbaa.netconf.api.client.NetconfLoginProvider;
 import org.broadband_forum.obbaa.netconf.api.client.NotificationListener;
 import org.broadband_forum.obbaa.netconf.api.transport.api.NetconfTransport;
+import org.junit.Test;
 
 import io.netty.channel.EventLoopGroup;
 
@@ -65,7 +70,7 @@ public class NetconfClientConfigurationBuilderTest {
         assertEquals(clientSessListener, config.getClientSessionListener());
         assertEquals(evl, config.getEventLoopGroup());
         assertEquals(asycChannelGroup, config.getAsynchronousChannelGroup());
-
+        assertNull(config.getUserAuthFactories());
     }
     
     @Test
@@ -99,4 +104,28 @@ public class NetconfClientConfigurationBuilderTest {
         assertEquals(expectedCaps, actualCaps);
     }
 
+    @Test
+    public void testConfigurationBuild_WithUserAuthFactories(){
+        NetconfClientConfigurationBuilder builder = new NetconfClientConfigurationBuilder();
+        NetconfLoginProvider loginProvider = mock(NetconfLoginProvider.class);
+        AuthenticationListener authListener = mock(AuthenticationListener.class);
+        NetconfTransport transport = mock(NetconfTransport.class);
+        Set<String> caps = mock(Set.class);
+        List<UserAuthFactory> userAuthFactories = new ArrayList<>();
+        userAuthFactories.add(mock(UserAuthPasswordFactory.class));
+        userAuthFactories.add(mock(UserAuthPublicKeyFactory.class));
+        builder.setNetconfLoginProvider(loginProvider)
+                .setTransport(transport)
+                .setAuthenticationListener(authListener)
+                .setConnectionTimeout(1000L)
+                .setCapabilities(caps)
+                .setUserAuthFactories(userAuthFactories);
+
+        NetconfClientConfiguration config = builder.build();
+        assertEquals(loginProvider, config.getNetconfLoginProvider());
+        assertEquals(authListener, config.getAuthenticationListener());
+        assertEquals(transport, config.getTransport());
+        assertEquals(caps, config.getCaps());
+        assertEquals(userAuthFactories, config.getUserAuthFactories());
+    }
 }

@@ -21,13 +21,15 @@ import static org.broadband_forum.obbaa.netconf.api.util.TestXML.loadAsXml;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
+
 import java.io.IOException;
+
+import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 
-public class CopyConfigRequestTest {
+public class CopyConfigRequestTest extends RpcTypeTest {
 
     private CopyConfigRequest m_copyConfigRequest = new CopyConfigRequest();
     private static final String TEST_SOURCE = "https://user:password@example.com/cfg/new.txt";
@@ -39,6 +41,10 @@ public class CopyConfigRequestTest {
     private String m_messageId = "101";
     private Element m_sourceConfigElement = mock(Element.class);
 
+    public CopyConfigRequestTest() {
+        super(new CopyConfigRequest().setTargetRunning().setSource("xx", false));
+    }
+
     @Test
     public void testGetRequestDocument() throws NetconfMessageBuilderException, SAXException, IOException {
 
@@ -47,10 +53,25 @@ public class CopyConfigRequestTest {
         m_copyConfigRequest.setTargetRunning();
         m_copyConfigRequest.setSourceConfigElement(m_sourceConfigElement);
         m_copyConfigRequest.setMessageId(m_messageId);
+        m_copyConfigRequest.setTransactionId(false);
         assertNotNull(m_copyConfigRequest.getRequestDocument());
         assertXMLEquals(loadAsXml("copyConfig.xml"), m_copyConfigRequest.getRequestDocument().getDocumentElement());
 
     }
+
+    @Test
+    public void testGetRequestDocumentWithTxId() throws NetconfMessageBuilderException, SAXException, IOException {
+
+        m_copyConfigRequest.setSource(m_source, true);
+        m_copyConfigRequest.setTarget(m_target, true);
+        m_copyConfigRequest.setTargetRunning();
+        m_copyConfigRequest.setSourceConfigElement(m_sourceConfigElement);
+        m_copyConfigRequest.setMessageId(m_messageId);
+        m_copyConfigRequest.setTransactionId(true);
+        assertNotNull(m_copyConfigRequest.getRequestDocument());
+        assertXMLEquals(loadAsXml("copyConfigWithTxId.xml"), m_copyConfigRequest.getRequestDocument().getDocumentElement());
+    }
+
 
     @Test
     public void testSetAndGetSource() {

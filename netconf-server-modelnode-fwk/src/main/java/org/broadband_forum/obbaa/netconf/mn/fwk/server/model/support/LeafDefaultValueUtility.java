@@ -1,9 +1,27 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support;
 
 import java.math.BigInteger;
 import java.util.Optional;
 
-import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.YangTypeToClassConverter;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.type.builtin.TypeValidatorUtil;
+import org.broadband_forum.obbaa.netconf.mn.fwk.schema.constraints.payloadparsing.typevalidators.ValidationException;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.TransformerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
@@ -14,6 +32,8 @@ import org.opendaylight.yangtools.yang.model.api.type.Int16TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.Int32TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.Int64TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.Int8TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.type.RangeConstraint;
+import org.opendaylight.yangtools.yang.model.api.type.RangeRestrictedTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.Uint16TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.Uint32TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.Uint64TypeDefinition;
@@ -26,7 +46,7 @@ public class LeafDefaultValueUtility {
     
     private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(LeafDefaultValueUtility.class, LogAppNames.NETCONF_STACK);
     
-    public static String getDefaultValue(LeafSchemaNode leafSchemaNode)  {
+    public static String getDefaultValue(LeafSchemaNode leafSchemaNode)  throws ValidationException {
         String defaultValue = getSchemaDefaultValue(leafSchemaNode);
         if (defaultValue != null) {
             LOGGER.debug("Schema default value is {}",defaultValue);
@@ -44,8 +64,7 @@ public class LeafDefaultValueUtility {
             String transformedDefaultValue = null;
             for (TypeDefinition<?> memberType : ((UnionTypeDefinition) yangType).getTypes()) {
                 try {
-                    Class<?> javaType = YangTypeToClassConverter.getClass(memberType);
-                    transformedDefaultValue = StringToObjectTransformer.transform(defaultValue, javaType).toString();
+                    transformedDefaultValue = String.valueOf(TransformerUtil.convert(memberType,defaultValue));
                 } catch (TransformerException e) {
                     // should be ignored here, unless no member type matches
                 }
@@ -57,8 +76,7 @@ public class LeafDefaultValueUtility {
         }
         else {
             try {
-                Class<?> javaType = YangTypeToClassConverter.getClass(yangType);
-                return StringToObjectTransformer.transform(defaultValue, javaType).toString();
+                return String.valueOf(TransformerUtil.convert(yangType,defaultValue));
             } catch (TransformerException e) {
                 LOGGER.warn("could not transform default value " + defaultValue + " for LeafSchemaNode " + leafSchemaNode, e);
                 return null;
@@ -66,7 +84,7 @@ public class LeafDefaultValueUtility {
         }
     }
 
-    private static String getSchemaDefaultValue(LeafSchemaNode leafSchemaNode) {
+    private static String getSchemaDefaultValue(LeafSchemaNode leafSchemaNode)  throws ValidationException {
         String defaultValue = null;
         TypeDefinition<?> type = leafSchemaNode.getType();
         if(type instanceof EmptyTypeDefinition){
@@ -85,7 +103,7 @@ public class LeafDefaultValueUtility {
         return defaultValue;
     }
 
-    private static String transformToDecimal(TypeDefinition<?> type, String defaultValue) {
+    private static String transformToDecimal(TypeDefinition<?> type, String defaultValue)  throws ValidationException {
         boolean negative = false;
         if(defaultValue.startsWith("+")) {
             defaultValue = defaultValue.substring(1);
@@ -105,52 +123,61 @@ public class LeafDefaultValueUtility {
         return defaultValue;
     }
 
-    private static String transformHexToDecimal(TypeDefinition<?> type, String defaultValue, boolean negative) {
+    private static String transformHexToDecimal(TypeDefinition<?> type, String defaultValue, boolean negative)  throws ValidationException {
         if(isSigned(type) && negative) {
             defaultValue = "-" + defaultValue;
         }
-        
-        if (type instanceof Int8TypeDefinition) {
-            return ((Byte)Byte.parseByte(defaultValue, 16)).toString();
-        } else if (type instanceof Int16TypeDefinition) {
-            return ((Short)Short.parseShort(defaultValue, 16)).toString();
-        } else if (type instanceof Int32TypeDefinition) {
-            return ((Integer)Integer.parseInt(defaultValue, 16)).toString();
-        } else if (type instanceof Int64TypeDefinition) {
-            return((Long)Long.parseLong(defaultValue, 16)).toString();
-        } else if (type instanceof Uint8TypeDefinition) {
-            return ((Short)Short.parseShort(defaultValue, 16)).toString();
-        } else if (type instanceof Uint16TypeDefinition) {
-            return ((Integer)Integer.parseInt(defaultValue, 16)).toString();
-        } else if (type instanceof Uint32TypeDefinition) {
-            return((Long)Long.parseLong(defaultValue, 16)).toString();
-        } else if (type instanceof Uint64TypeDefinition) {
-            return new BigInteger(defaultValue, 16).toString();
+
+        try {
+            if (type instanceof Int8TypeDefinition) {
+                return ((Byte) Byte.parseByte(defaultValue, 16)).toString();
+            } else if (type instanceof Int16TypeDefinition) {
+                return ((Short) Short.parseShort(defaultValue, 16)).toString();
+            } else if (type instanceof Int32TypeDefinition) {
+                return ((Integer) Integer.parseInt(defaultValue, 16)).toString();
+            } else if (type instanceof Int64TypeDefinition) {
+                return ((Long) Long.parseLong(defaultValue, 16)).toString();
+            } else if (type instanceof Uint8TypeDefinition) {
+                return ((Short) Short.parseShort(defaultValue, 16)).toString();
+            } else if (type instanceof Uint16TypeDefinition) {
+                return ((Integer) Integer.parseInt(defaultValue, 16)).toString();
+            } else if (type instanceof Uint32TypeDefinition) {
+                return ((Long) Long.parseLong(defaultValue, 16)).toString();
+            } else if (type instanceof Uint64TypeDefinition) {
+                return new BigInteger(defaultValue, 16).toString();
+            }
+        } catch (NumberFormatException e) {
+            throw TypeValidatorUtil.getOutOfRangeException(defaultValue, (RangeConstraint) ((RangeRestrictedTypeDefinition) type).getRangeConstraint().get());
         }
+
         return defaultValue;
     }
 
-    private static String transformOctalToDecimal(TypeDefinition<?> type, String defaultValue, boolean negative) {
+    private static String transformOctalToDecimal(TypeDefinition<?> type, String defaultValue, boolean negative) throws ValidationException {
         if(isSigned(type) && negative) {
             defaultValue = "-" + defaultValue;
         }
-        
-        if (type instanceof Int8TypeDefinition) {
-            return ((Byte)Byte.parseByte(defaultValue, 8)).toString();
-        } else if (type instanceof Int16TypeDefinition) {
-            return ((Short)Short.parseShort(defaultValue, 8)).toString();
-        } else if (type instanceof Int32TypeDefinition) {
-            return ((Integer)Integer.parseInt(defaultValue, 8)).toString();
-        } else if (type instanceof Int64TypeDefinition) {
-            return((Long)Long.parseLong(defaultValue, 8)).toString();
-        } else if (type instanceof Uint8TypeDefinition) {
-            return ((Short)Short.parseShort(defaultValue, 8)).toString();
-        } else if (type instanceof Uint16TypeDefinition) {
-            return ((Integer)Integer.parseInt(defaultValue, 8)).toString();
-        } else if (type instanceof Uint32TypeDefinition) {
-            return((Long)Long.parseLong(defaultValue, 8)).toString();
-        } else if (type instanceof Uint64TypeDefinition) {
-            return new BigInteger(defaultValue, 8).toString();
+
+        try {
+            if (type instanceof Int8TypeDefinition) {
+                return ((Byte) Byte.parseByte(defaultValue, 8)).toString();
+            } else if (type instanceof Int16TypeDefinition) {
+                return ((Short) Short.parseShort(defaultValue, 8)).toString();
+            } else if (type instanceof Int32TypeDefinition) {
+                return ((Integer) Integer.parseInt(defaultValue, 8)).toString();
+            } else if (type instanceof Int64TypeDefinition) {
+                return ((Long) Long.parseLong(defaultValue, 8)).toString();
+            } else if (type instanceof Uint8TypeDefinition) {
+                return ((Short) Short.parseShort(defaultValue, 8)).toString();
+            } else if (type instanceof Uint16TypeDefinition) {
+                return ((Integer) Integer.parseInt(defaultValue, 8)).toString();
+            } else if (type instanceof Uint32TypeDefinition) {
+                return ((Long) Long.parseLong(defaultValue, 8)).toString();
+            } else if (type instanceof Uint64TypeDefinition) {
+                return new BigInteger(defaultValue, 8).toString();
+            }
+        } catch (NumberFormatException e) {
+            throw TypeValidatorUtil.getOutOfRangeException(defaultValue, (RangeConstraint) ((RangeRestrictedTypeDefinition) type).getRangeConstraint().get());
         }
         return defaultValue;
     }

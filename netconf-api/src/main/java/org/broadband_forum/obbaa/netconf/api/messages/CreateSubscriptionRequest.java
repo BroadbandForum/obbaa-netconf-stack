@@ -16,6 +16,8 @@
 
 package org.broadband_forum.obbaa.netconf.api.messages;
 
+import static org.broadband_forum.obbaa.netconf.api.util.NetconfResources.CREATE_SUBSCRIPTION;
+
 import java.text.ParseException;
 
 import org.joda.time.DateTime;
@@ -167,5 +169,10 @@ public class CreateSubscriptionRequest extends NetconfRpcRequest {
     public String toString() {
         return "Create Subscription [Stream: " + m_stream + ", Filter: " + m_filter + ", Start Time: " + m_startTime + ", Stop Time: "
                 + m_stopTime + "]";
+    }
+
+    @Override
+    public String getRpcType() {
+        return CREATE_SUBSCRIPTION;
     }
 }

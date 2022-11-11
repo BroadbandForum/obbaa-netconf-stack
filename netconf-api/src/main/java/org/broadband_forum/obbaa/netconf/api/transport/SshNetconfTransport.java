@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 public class SshNetconfTransport extends NetconfTransport {
     private InetSocketAddress m_socketAddr;
     private String m_hostKeyPath;
+    private String m_hostKeyPassword;
     private int m_heartBeatIntervalSecs = 0;
 
     /**
@@ -64,6 +65,15 @@ public class SshNetconfTransport extends NetconfTransport {
 
     public SshNetconfTransport setHostKeyPath(String hostKeyPath) {
         this.m_hostKeyPath = hostKeyPath;
+        return this;
+    }
+
+    public String getHostKeyPassword() {
+        return this.m_hostKeyPassword;
+    }
+
+    public SshNetconfTransport setHostKeyPassword(String hostKeyPassword) {
+        this.m_hostKeyPassword = hostKeyPassword;
         return this;
     }
 }

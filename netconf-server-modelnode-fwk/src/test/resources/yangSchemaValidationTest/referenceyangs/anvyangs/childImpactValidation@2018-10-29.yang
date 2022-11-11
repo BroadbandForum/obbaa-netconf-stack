@@ -34,7 +34,7 @@ module childImpactValidation{
         }  
         
         leaf when-leaf{
-          when "../parent-list[current()]/inner-list1[current()]/type = 'test'";
+          must "../parent-list[current()]/inner-list1[current()]/type = 'test'";
             type string;
         }       
         

@@ -15,17 +15,18 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
         <groupId>org.broadband-forum.obbaa.netconf</groupId>
         <artifactId>parent-pom</artifactId>
-        <version>5.0.0</version>
+        <version>5.1.0</version>
     </parent>
     <!-- All API/SPI Bundles must be listed here. BOM to help Application/SP Development. -->
     <modelVersion>4.0.0</modelVersion>
     <artifactId>bom</artifactId>
     <packaging>pom</packaging>
-    <name>netconf-lib/bom</name>
+    <name>netconf-fwk/bom</name>
     <properties>
         <!-- To be used within this POM only. -->
         <!-- Exceptionally, can be used for other reporting purposes by child & importers; strictly DO NOT use for dependency version management directly outside this pom. -->
@@ -82,34 +83,35 @@
                 <artifactId>stack-logging-api</artifactId>
                 <version>${netconf-lib.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.broadband-forum.obbaa.netconf</groupId>
-                <artifactId>netconf-server-modelnode-fwk</artifactId>
-                <version>${netconf-lib.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.broadband-forum.obbaa.netconf</groupId>
-                <artifactId>netconf-server-modelnode-fwk</artifactId>
-                <version>${netconf-lib.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.broadband-forum.obbaa.netconf</groupId>
-                <artifactId>netconf-persistence-app</artifactId>
-                <version>${netconf-lib.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.broadband-forum.obbaa.netconf</groupId>
-                <artifactId>netconf-persistence-app</artifactId>
-                <version>${netconf-lib.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${flatten-maven-plugin.version}</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>bom</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- Enforce Dependency Version Check -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

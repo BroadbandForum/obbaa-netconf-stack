@@ -2,7 +2,7 @@ module alu-pma {
  
 	yang-version 1;
 	
-    namespace "urn:org:bbf:pma";
+    namespace "urn:org:bbf2:pma";
     prefix "pma";
     
     import ietf-yang-types { prefix yang; }
@@ -234,7 +234,16 @@ module alu-pma {
     }
  
 	container pma {
-	
+
+	    container inner-container {
+
+	        leaf name {
+                type string;
+                default "";
+            }
+
+	    }
+
 		leaf-list pma-leaf-list {
 			type string;
 			ordered-by user;
@@ -293,7 +302,9 @@ module alu-pma {
                 }
 
                 leaf hardware-type {
-                    type string;
+                    type string {
+                      length "1..50";
+                    }
                     mandatory true;
                     description
                                         "A string that uniquely identify the hardware type of device.
@@ -302,7 +313,9 @@ module alu-pma {
                                         shall have no effect on the device type";
                 }
                 leaf interface-version {
-                    type string;
+                    type string {
+                        length "1..50";
+                    }
                     mandatory true;
                     description
                                         "The interface-version is used to identify the version of the

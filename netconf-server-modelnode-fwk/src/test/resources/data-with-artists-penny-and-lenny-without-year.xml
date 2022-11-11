@@ -1,0 +1,40 @@
+<jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+    <jbox:library>
+        <jbox:artist>
+            <jbox:name>Penny</jbox:name>
+            <jbox:album>
+                <jbox:name>Inspire</jbox:name>
+                <jbox:song>
+                    <jbox:name>Dont let me down</jbox:name>
+                </jbox:song>
+                <jbox:song>
+                    <jbox:name>Closer</jbox:name>
+                </jbox:song>
+            </jbox:album>
+        </jbox:artist>
+        <jbox:artist>
+            <jbox:name>Lenny</jbox:name>
+            <jbox:album>
+                <jbox:name>Greatest hits</jbox:name>
+                <jbox:song>
+                    <jbox:name>Are you gonne go my way</jbox:name>
+                </jbox:song>
+                <jbox:song>
+                    <jbox:name>Fly Away</jbox:name>
+                </jbox:song>
+            </jbox:album>
+            <jbox:album>
+                <jbox:name>Circus</jbox:name>
+                <jbox:song>
+                    <jbox:name>Rock and roll is dead</jbox:name>
+                </jbox:song>
+                <jbox:song>
+                    <jbox:name>Circus</jbox:name>
+                </jbox:song>
+                <jbox:song>
+                    <jbox:name>Beyond the 7th Sky</jbox:name>
+                </jbox:song>
+            </jbox:album>
+        </jbox:artist>
+   </jbox:library>
+</jbox:jukebox>

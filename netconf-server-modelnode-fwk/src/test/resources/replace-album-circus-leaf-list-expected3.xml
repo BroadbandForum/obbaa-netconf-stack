@@ -1,0 +1,66 @@
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <jukebox xmlns="http://example.com/ns/example-jukebox-with-singer">
+      <library>
+        <artist>
+          <name>Lenny</name>
+          <album>
+            <name>Greatest hits</name>
+            <genre>jbox:jazz</genre>
+            <year>2000</year>
+            <song>
+              <name>Are you gonne go my way</name>
+              <format>mp3</format>
+              <length>320</length>
+              <location>desktop/mymusic</location>
+              <singer>Michael</singer>
+              <singer>Anderson</singer>
+              <singer>Jackson</singer>
+            </song>
+            <song>
+              <name>Fly Away</name>
+              <format>flac</format>
+              <length>480</length>
+              <location>desktop/mymusic</location>
+              <singer>Jackson</singer>
+              <singer>Madona</singer>
+            </song>
+            <admin>
+              <catalogue-number>521</catalogue-number>
+              <label>Sony</label>
+            </admin>
+          </album>
+          <album>
+            <name>Circus</name>
+            <genre xmlns:jbox="http://example.com/ns/example-jukebox-with-singer">jbox:rock</genre>
+            <year>1995</year>
+            <admin>
+              <label>Sony</label>
+              <catalogue-number>8421</catalogue-number>
+            </admin>
+            <song>
+              <name>Rock and roll is dead</name>
+              <location>desktop/mymusic</location>
+              <format>amr</format>
+              <length>600</length>
+              <singer>Peter</singer>
+            </song>
+            <song>
+              <name>Circus</name>
+              <location>downloads/songs</location>
+              <singer>Michel</singer>
+              <singer>George</singer>
+            </song>
+            <song>
+              <name>Beyond the 7th Sky</name>
+              <location>desktop/mymusic</location>
+              <format>mp3</format>
+              <length>420</length>
+              <singer>Julie</singer>
+            </song>
+          </album>
+        </artist>
+      </library>
+    </jukebox>
+  </data>
+</rpc-reply>

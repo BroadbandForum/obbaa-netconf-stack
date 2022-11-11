@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<validation-yang11 xmlns="urn:org:bbf:pma:validation-yang11">
+<validation-yang11 xmlns="urn:org:bbf2:pma:validation-yang11">
    <identity-leaf>identity3</identity-leaf>
 </validation-yang11>

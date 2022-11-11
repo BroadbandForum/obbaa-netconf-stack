@@ -1,0 +1,24 @@
+<rpc-reply message-id="1" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+    <data>
+        <mm:root xmlns:mm="ns:ns">
+            <mp xmlns="ns:ns">
+                <jbox:jukebox xmlns:jbox="http://example.com/ns/example-jukebox">
+                    <jbox:library>
+                        <jbox:system-security>
+                            <jbox:server-identity>
+                                <jbox:host-key>
+                                    <name xmlns="http://example.com/ns/example-jukebox">ssh-dss</name>
+                                    <jbox:public-key>
+                                        <jbox:local-definition>
+                                            <jbox:algorithm>dsa1024</jbox:algorithm>
+                                        </jbox:local-definition>
+                                    </jbox:public-key>
+                                </jbox:host-key>
+                            </jbox:server-identity>
+                        </jbox:system-security>
+                    </jbox:library>
+                </jbox:jukebox>
+            </mp>
+        </mm:root>
+    </data>
+</rpc-reply>

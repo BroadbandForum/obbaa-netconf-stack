@@ -1,6 +1,6 @@
 <jukebox xmlns="http://example.com/ns/example-jukebox">
     <library>
-        <song-count>5</song-count>
-        <album-count>2</album-count>
+        <song-count>7</song-count>
+        <album-count>3</album-count>
     </library>
 </jukebox>

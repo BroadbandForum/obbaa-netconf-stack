@@ -1,4 +1,24 @@
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.mn.fwk.util;
+
+import static org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations.DELETE;
+import static org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations.REMOVE;
+import static org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations.REPLACE;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -6,13 +26,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
-import org.broadband_forum.obbaa.netconf.api.messages.EditConfigDefaultOperations;
 import org.broadband_forum.obbaa.netconf.api.messages.EditConfigOperations;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.constraints.validation.util.DataStoreValidationUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.broadband_forum.obbaa.netconf.stack.logging.LogAppNames;
@@ -52,21 +69,11 @@ public class OperationAttributeUtil {
                 break;
             }
         }
-        //we are at the rpc node, select the default-operation node
-        XPath xPath = XPathFactory.newInstance().newXPath();
-        xPath.setNamespaceContext(c_namespaceContext);
-        try {
-            String defaultOperation = xPath.evaluate(NC_DEFAULT_OPERATION_XPATH_STR, element);
-            if (defaultOperation != null && !defaultOperation.isEmpty()) {
-                return defaultOperation;
-            }
-        } catch (XPathExpressionException e) {
-            LOGGER.error("Error while evaluating xpath to select default-operation node", e);
-        }
-        return EditConfigDefaultOperations.MERGE;
+
+        return DataStoreValidationUtil.getDefaultEditConfigOperationInCache();
     }
 
-    private static Attr getOperationAttributeOnNode(Element element) {
+    public static Attr getOperationAttributeOnNode(Element element) {
         return element.getAttributeNodeNS(NetconfResources.NETCONF_RPC_NS_1_0, NetconfResources
                 .OPERATION);
     }
@@ -122,6 +129,80 @@ public class OperationAttributeUtil {
         return false;
     }
 
+    public static boolean isRemoveOperation(Element element) {
+        String operation = getOperationAttribute(element);
+        return isRemoveOperation(operation);
+    }
+
+    private static boolean isRemoveOperation(String operation) {
+        return operation.equals(REMOVE) || operation.equals(DELETE);
+    }
+
+    public static boolean isReplaceOperation(Element element) {
+        String operation = getOperationAttribute(element);
+        return isReplaceOperation(operation);
+    }
+
+    private static boolean isReplaceOperation(String operation) {
+        return operation.equals(REPLACE);
+    }
+
+    public static boolean isRemoveOrReplaceOperation(Element element) {
+        String operation = getOperationAttribute(element);
+        return isRemoveOperation(operation)  || isReplaceOperation(operation);
+    }
+    
+    public static boolean isAggregatedEditOperationAllowed(String operation1, String operation2) {
+        switch (operation1){
+            case EditConfigOperations.CREATE:
+                switch (operation2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return false;
+                    case EditConfigOperations.DELETE: return false;
+                    case EditConfigOperations.REMOVE: return false;
+                    case EditConfigOperations.MERGE: return false;
+                }
+                break;
+            case EditConfigOperations.REPLACE:
+                switch (operation2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return true;
+                    case EditConfigOperations.DELETE: return false;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return false;
+                }
+                break;
+            case EditConfigOperations.DELETE:
+                switch (operation2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return false;
+                    case EditConfigOperations.DELETE: return false;
+                    case EditConfigOperations.REMOVE: return false;
+                    case EditConfigOperations.MERGE: return false;
+                }
+                break;
+            case EditConfigOperations.REMOVE:
+                switch (operation2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return true;
+                    case EditConfigOperations.DELETE: return false;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return false;
+                }
+                break;
+            case EditConfigOperations.MERGE:
+                switch (operation2){
+                    case EditConfigOperations.CREATE: return false;
+                    case EditConfigOperations.REPLACE: return false;
+                    case EditConfigOperations.DELETE: return false;
+                    case EditConfigOperations.REMOVE: return true;
+                    case EditConfigOperations.MERGE: return true;
+                }
+                break;
+        }
+        return false;
+    }
+    
     private static class SimpleNamespaceContext implements NamespaceContext {
         private final Map<String, String> m_map;
 

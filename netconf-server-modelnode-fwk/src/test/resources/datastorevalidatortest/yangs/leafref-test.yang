@@ -1,0 +1,341 @@
+module leafref-test {
+    
+    yang-version 1.1;
+    
+    namespace "urn:org:bbf2:pma:leafref:test";
+    
+    prefix "leafrefTest";
+    
+    revision "2015-12-14" {
+          description "Initial version.";
+    }
+    
+    feature test-feature-1 {
+        description
+          "This feature means that the systems support test-feature-1";
+    }
+    
+    feature test-feature-2 {
+        description
+          "This feature means that the systems support test-feature-1";
+    }
+        
+    container leafref-test{
+    
+    	list mustTest{
+    		key id;
+    		leaf id {
+    			type uint8;
+    		}
+			leaf mustWithSameNodeInConstraint { 
+    			type leafref {
+    				path "../id";
+    			}
+    			must "count(/leafrefTest:leafref-test/leafrefTest:mustTest[leafrefTest:mustWithSameNodeInConstraint = current()])<2";
+    		}
+    		
+    	}
+    
+        leaf leafref-with-must-referring-to-self{
+            must " . != 'test'";
+            type leafref{
+                path "../leaf-for-leafref";
+            }
+        }
+        
+        leaf leafref-with-must-referring-to-self2{
+            must " . != 'test'";
+            must "../leaf-for-leafref";            
+            type leafref{
+                path "../leaf-for-leafref";
+            }
+        }
+        
+        leaf leafref-with-must-referring-to-self3{
+            must " . != 'test'";
+            must "../leafref-to-leafref1";            
+            type leafref{
+                path "../leaf-for-leafref";
+            }
+        }
+        
+        leaf leafref-with-must-referring-to-self4{
+            must " . != 'test'";
+            must "../leafref-to-leafref1";            
+            type leafref{
+                path "../leaf-for-leafref";
+            }
+        }
+        
+        leaf leaf-for-leafref{
+            type leafref{
+                path "../leafref-with-must-referring-to-self4";
+            }
+        }
+    
+        leaf leafref-to-leafref1{
+            type leafref{
+            path "../leafref-to-leafref2";
+            }   
+        }
+        
+        leaf leafref-to-leafref2{
+            type leafref{
+            path "../leafref-to-leafref1";
+            }   
+        }
+        
+        leaf leafref-to-when{
+            type leafref{
+            path "../when-leaf-level1";
+            }
+        }
+        
+        leaf when-leaf-level1{
+            when "../leafref-to-when";
+            type string;
+        }
+        
+        leaf leafref-to-must{
+            type leafref{
+            path "../must-leaf-level1";
+            }
+        }
+        
+        leaf must-leaf-level1{
+            must "../leafref-to-must";
+            type string;
+        }
+        
+        container level2a{
+            
+            leaf leafref-c2a-c2b-leafref{
+                type leafref{
+                    path "../../level2b/leafref-c2b-c2a-leafref"; 
+                }
+            }
+            
+            leaf leafref-c2a-c2b-when{
+                type leafref{
+                    path "../../level2b/when-leaf";
+                }
+            }
+            
+            leaf must-leaf{
+                must "../../level2b/leafref-c2b-c2a-must";
+                type string;
+            }
+            
+        }
+        
+        leaf when-leaf-for-level3{
+            when "../level2b/level3/leafref-level3-when";
+            type string;
+        }
+        
+        leaf must-leaf-for-level3{
+            must "../level2b/level3/leafref-level3-must";
+            type string;
+        }
+        
+        container level2b{
+            leaf leafref-c2b-c2a-leafref{
+                type leafref{
+                    path "../../level2a/leafref-c2a-c2b-leafref";
+                }
+            }
+            
+            leaf when-leaf{
+                when "../../level2a/leafref-c2a-c2b-when";
+                type string;
+            }
+            
+            leaf leafref-c2b-c2a-must{
+                type leafref{
+                    path "../../level2a/must-leaf";
+                }
+            }
+            
+            container level3{
+            
+                leaf leafref-level3-when{
+                    type leafref{
+                        path "../../when-leaf-for-level3";
+                    }
+                }
+                
+                leaf leafref-level3-must{
+                    type leafref{
+                        path "../../must-leaf-for-level3";
+                    }
+                }
+            }
+        }
+        
+        leaf leafref-container-when{
+            type leafref{
+                path "../container-when/level2-parent-when";
+            }
+        }
+        
+        leaf leafref-container-when2{
+            type leafref{
+                path "../container-when/container-when2/level3-parent-when";
+            }
+        }
+        
+        container container-when{
+            when "../leafref-container-when";
+            
+            leaf level2-parent-when{
+                type string;
+            }
+            
+            container container-when2{
+            when "../../leafref-container-when2";
+                leaf level3-parent-when{
+                    type string;
+                }
+            }
+        }
+        
+        container container-when-with-if-feature{           
+            
+            leaf leafref-if-feature1{
+                if-feature test-feature-1;
+                type leafref{
+                path "../when-for-feature";
+                }
+            }
+                        
+            leaf when-for-feature{
+                when "../leafref-if-feature1";
+                type string;
+            }
+    
+        }
+        
+        leaf-list leaf-list-with-leafref1{
+            type leafref{
+                path "../leaf-list-with-leafref2";
+            }
+        }
+        
+        leaf-list leaf-list-with-leafref2{
+            type leafref{
+                path "../leaf-list-with-leafref1";
+            }
+        }
+        
+        leaf leaf-for-choice{
+            type leafref{
+                path "../choice-case/leafref-under-case1";
+            }
+        }
+        
+        leaf leaf-for-choice-with-must{
+            must "../choice-case/leafref-under-case2-for-must";
+            type string;
+        }
+        
+        leaf leaf-for-choice-with-when{
+            when "../choice-case/leafref-under-case2-for-when";
+            type string;
+        }
+        
+        container choice-case{
+            choice choice1{
+                case case1{
+                
+                    leaf leafref-under-case1{
+                        type leafref{
+                            path "../../leaf-for-choice";
+                        }
+                    }
+                }
+                
+                case case2{
+                    leaf leafref-under-case2-for-when{
+                        type leafref{
+                            path "../../leaf-for-choice-with-when";
+                        }
+                    }
+                    
+                    leaf leafref-under-case2-for-must{
+                        type leafref{
+                            path "../../leaf-for-choice-with-must";
+                        }
+                    }
+                }
+            }   
+        }
+        
+        leaf leaf-for-leafref-inside-list{
+            type leafref{
+                path "../list-test-for-leafref[name=current()/../leaf-for-leafref-inside-list]/leafref-inside-list";
+            }
+        }
+
+        leaf-list leaflist-to-leaf{
+            type leafref{
+                path "../leaf-to-leaflist";
+            }
+        }
+        
+        leaf leaf-to-leaflist{
+            when "../leaflist-to-leaf";
+            type string;
+        }
+        
+        
+        list list-test-for-leafref{
+            key "name";
+            
+            leaf name{
+                type string;
+            }
+            
+            leaf leafref-inside-list{
+                type leafref{
+                    path "../../leaf-for-leafref-inside-list";
+                }
+            }
+        }
+        
+        leaf leafref-for-union-type{
+            type union{
+                type string;
+                type leafref{
+                    path "../leafref-for-union-type2";
+                }
+            }
+        }
+        
+        leaf leafref-for-union-type2{
+            type union{
+                type leafref{
+                    path "../leafref-for-union-type";
+                }
+                type string;
+            }
+        }
+        
+        leaf leafref-for-union-type3{
+            type union{
+                type leafref{
+                    path "../leafref-to-leaf-with-union";
+                }
+                type string;
+            }
+        }
+        
+        leaf leafref-to-leaf-with-union{
+            type leafref{
+                path "../leafref-for-union-type3";
+            }
+        }
+        
+        
+    }
+}   
+        

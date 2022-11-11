@@ -1,0 +1,148 @@
+module anv-ual-test {
+
+	yang-version 1.1;
+
+	namespace "urn:org:bbf:anv:ual";
+	prefix "ual";
+
+	import nc-stack-extensions {
+	    prefix "ncext";
+	   }
+	   	revision "2020-09-04" {
+           	      description "Initial version.";
+           	}
+
+	container device-manager {
+        list device {
+            key "device-id";
+            leaf device-id {
+                type string;
+            }
+
+            container device-specific-data {
+                container forwarders {
+                    list forwarder {
+                        ncext:ual-application "Forwarder Manager";
+                        key key;
+                        leaf key {
+                            type string;
+                        }
+                    }
+                }
+
+                container interfaces {
+                    ncext:ual-application "Interfaces Manager";
+                    list interface {
+                        ncext:ual-application "Interface Manager"; // This node also
+                        key "name";
+                        leaf name {
+                            type string;
+                        }
+
+                    }
+                }
+
+                container scheduler-nodes{
+                    list scheduler-node {
+                        key "node-name";
+
+                        leaf node-name {
+                            type string;
+                        }
+                        list child-scheduler-node {
+                            key "name";
+                            ncext:ual-application "child-scheduler-node Manager"; // this node will not be processed
+                            leaf name {
+                                type string;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        list device-multikey {
+            ncext:ual-application "Device Manager";
+            key "hardware-type interface-version";
+
+            leaf hardware-type {
+                type string;
+            }
+
+            leaf interface-version {
+                type string;
+            }
+        }
+	}
+
+	container users {
+	    ncext:ual-application "User Manager";
+	    list user {
+	        key "first-name last-name";
+	        leaf first-name {
+	            type string;
+	        }
+	        leaf last-name {
+	            type string;
+	        }
+	        leaf password {
+	            type string;
+	        }
+	    }
+	}
+
+	container platform {
+	    container loggers {
+	       ncext:ual-application "Logger Manager";
+	       list logger-config {
+	            key "application-name";
+	            leaf application-name {
+	                type string;
+	            }
+	       }
+	    }
+	}
+
+	rpc retrieve-devices-summary {
+	    ncext:ual-application "Device Manager";
+	    input {
+	        leaf device-id {
+	            type string;
+	        }
+	    }
+	}
+
+	rpc retrieve-devices-info {
+	    ncext:ual-disabled;
+	    input {
+	        leaf device-id {
+	            type string;
+	        }
+	    }
+	}
+
+	container softwares {
+	    list software {
+	        key "name";
+	        leaf name {
+	            type string;
+	        }
+
+	        action add {
+	            ncext:ual-application "Software Manager";
+	            input {
+	                leaf file {
+	                    type string;
+	                }
+	            }
+	        }
+            action delete {
+	            ncext:ual-disabled;
+	            input {
+	                leaf file {
+	                    type string;
+	                }
+	            }
+	        }
+	    }
+	}
+}

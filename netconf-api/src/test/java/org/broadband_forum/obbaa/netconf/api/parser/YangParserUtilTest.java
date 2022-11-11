@@ -14,16 +14,34 @@
  * limitations under the License.
  */
 
+/*
+ * Copyright 2018 Broadband Forum
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.broadband_forum.obbaa.netconf.api.parser;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,8 +51,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.opendaylight.yangtools.yang.common.QName;
@@ -56,11 +76,13 @@ public class YangParserUtilTest {
 
 	private static final String[] IETF_YANG_PATH_LIST = { "/yangs/ietf/ietf-inet-types.yang",
 			"/yangs/ietf/ietf-yang-types.yang" };
+	private static final String[] WRONG_YANG_PATH_LIST = { "/wrongYangs/ietf-yang-types.yang" };
 
 	private static final String IETF_YANG_PATH = "/yangs/ietf/ietf-yang-types.yang";
     private static final String IETF_YANG_FILE_NAME = "ietf-yang-types.yang";
 	
 	private List<YangTextSchemaSource> m_yangschemaSources = new ArrayList<YangTextSchemaSource>();
+	private List<YangTextSchemaSource> m_wrongYangSchemaSources = new ArrayList<>();
 	private List<File> m_yangFileList = new ArrayList<File>();
 
 	@Before
@@ -68,6 +90,9 @@ public class YangParserUtilTest {
 		for (String yangPath : IETF_YANG_PATH_LIST) {
 			m_yangFileList.add(new File(YangParserUtilTest.class.getResource(yangPath).getPath()));
 			m_yangschemaSources.add(YangParserUtil.getYangSource(YangParserUtilTest.class.getResource(yangPath)));
+		}
+		for (String yangPath : WRONG_YANG_PATH_LIST) {
+		    m_wrongYangSchemaSources.add(YangParserUtil.getYangSource(YangParserUtilTest.class.getResource(yangPath)));
 		}
 	}
 	
@@ -77,7 +102,7 @@ public class YangParserUtilTest {
             String directory = args[0];
             Collection<File> files = FileUtils.listFiles(new File(directory), FileFilterUtils.suffixFileFilter(".yang"), TrueFileFilter.INSTANCE);
             List<File> fileList = new ArrayList<File>(files);
-            SchemaContext context = YangParserUtil.parseFiles("test", fileList);
+            SchemaContext context = YangParserUtil.parseFiles("test", fileList, null, null);
             System.out.println("Context is: "+ context);
         }
     }	
@@ -85,7 +110,7 @@ public class YangParserUtilTest {
 	@Test
 	public void testParseSchemaSources() {
 		SchemaContext context = YangParserUtil.parseSchemaSources(YangParserUtilTest.class.getName(),
-				m_yangschemaSources);
+				m_yangschemaSources, null, null);
 		assertNotNull(context);
 	}
 
@@ -100,7 +125,6 @@ public class YangParserUtilTest {
 
 	@Test
 	public void testGetYangSource_URL() {
-
 		YangTextSchemaSource schemaSource = YangParserUtil
 				.getYangSource(YangParserUtilTest.class.getResource(IETF_YANG_PATH));
 		assertNotNull(schemaSource);
@@ -113,15 +137,28 @@ public class YangParserUtilTest {
 	}
 
 	@Test
+	public void test_getYangSourceFromContent_Success() throws IOException {
+		try (InputStream is = getClass().getResourceAsStream(IETF_YANG_PATH)) {
+			String yangContent = IOUtils.toString(is);
+			String moduleNameAndRevision = "ietf-yang-types@2013-07-15";
+			YangTextSchemaSource result = YangParserUtil.getYangSourceFromContent(moduleNameAndRevision, yangContent);
+			assertNotNull(result);
+			assertEquals("ietf-yang-types", result.getIdentifier().getName());
+			assertTrue(result.getIdentifier().getRevision().isPresent());
+			assertEquals("2013-07-15", result.getIdentifier().getRevision().get().toString());
+		}
+	}
+
+	@Test
 	public void testParseFiles() {
-		SchemaContext context = YangParserUtil.parseFiles(YangParserUtilTest.class.getName(), m_yangFileList);
+		SchemaContext context = YangParserUtil.parseFiles(YangParserUtilTest.class.getName(), m_yangFileList, null, null);
 		assertNotNull(context);
 	}
 	
 	@Test
 	public void testGetParsedModule() {
 		SchemaContext context = YangParserUtil.parseSchemaSources(YangParserUtilTest.class.getName(),
-				m_yangschemaSources);
+				m_yangschemaSources, null, null);
 		assertNotNull(context);
 
 		Module module = YangParserUtil.getParsedModule(context,
@@ -274,4 +311,15 @@ public class YangParserUtilTest {
         assertTrue(context.findModule("test-xdsl-dev", Revision.of("2017-07-05")).isPresent());
 	}
 
+	@Test
+	public void testParserError() {
+        try {
+            YangParserUtil.parseSchemaSources(YangParserUtilTest.class.getName(), m_wrongYangSchemaSources, null, null);
+            fail("Exception expected");
+        } catch (Exception e) {
+            assertTrue(e instanceof RuntimeException);
+            assertEquals("Error parsing files: patter is not a YANG statement or use of extension. [at ietf-yang-types.yang:293:8]", e.getMessage());
+        }
+	    
+	}
 }

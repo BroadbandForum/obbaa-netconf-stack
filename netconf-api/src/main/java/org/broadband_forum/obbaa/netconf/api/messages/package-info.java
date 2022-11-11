@@ -1,3 +1,6 @@
+/**
+ * Provides classes to prepare netconf messages like edit-config, get-config etc.
+ */
 /*
  * Copyright 2018 Broadband Forum
  *
@@ -14,7 +17,4 @@
  * limitations under the License.
  */
 
-/**
- * Provides classes to prepare netconf messages like edit-config, get-config etc.
- */
 package org.broadband_forum.obbaa.netconf.api.messages;

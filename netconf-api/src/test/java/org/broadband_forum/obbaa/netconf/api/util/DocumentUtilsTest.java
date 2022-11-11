@@ -31,17 +31,19 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.broadband_forum.obbaa.netconf.api.messages.CreateSubscriptionRequest;
-import org.broadband_forum.obbaa.netconf.api.messages.NetconfFilter;
 import org.broadband_forum.obbaa.netconf.api.messages.NetconfRpcRequest;
+import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import junit.framework.TestCase;
 
 public class DocumentUtilsTest {
 
@@ -101,6 +103,21 @@ public class DocumentUtilsTest {
         assertEquals("ietf-ip-aug-sub1", submoduleNameElt.getTextContent());
     }
 
+    @Test
+    public void testGetDirectChildElementsWithNamespace() throws Exception {
+        String input = getDirectChildElementsWithNamespaceInput();
+        Document document = DocumentUtils.stringToDocument(input);
+        Node availableFile = DocumentUtils.getChildNodeByName(document.getDocumentElement(), "available-file", "http://www.test-company.com/solutions/anv-software");
+
+        List<Element> detectedHardwareTypes = DocumentUtils.getDirectChildElements(availableFile, "detected-hardware-type", "http://www.test-company.com/solutions/anv-software");
+        assertEquals(2, detectedHardwareTypes.size());
+        assertEquals("DF-16GW", detectedHardwareTypes.get(0).getTextContent());
+        assertEquals("DPU-CFAS-H", detectedHardwareTypes.get(1).getTextContent());
+
+        List<Element> releases = DocumentUtils.getDirectChildElements(availableFile, "release", "http://www.test-company.com/solutions/anv-software");
+        assertEquals(1, releases.size());
+        assertEquals("20A.04", releases.get(0).getTextContent());
+    }
 
     @Test
     public void testGetElement() throws NetconfMessageBuilderException {
@@ -113,7 +130,7 @@ public class DocumentUtilsTest {
         Node childNode2 = DocumentUtils.getElement(document, "data2", "test-namespace", "test", childNode1);
         String dataToString2 = DocumentUtils.documentToPrettyString(childNode2);
         String expected = "<test:data2 xmlns:test=\"test-namespace\">\n"
-                + "<test:data1>test</test:data1>\n"
+                + "   <test:data1>test</test:data1>\n"
                 + "</test:data2>\n";
         assertEquals(expected, dataToString2);
 
@@ -184,34 +201,6 @@ public class DocumentUtilsTest {
         subscriptionRequest = DocumentUtils.getInstance().getSubscriptionRequest(request);
         assertEquals(NetconfResources.NETCONF, subscriptionRequest.getStream());
     }
-    
-    @Test
-    public void testGetSubscriptionRequestWithFilter() throws DOMException, ParseException, NetconfMessageBuilderException {
-        NetconfRpcRequest request = new NetconfRpcRequest();
-        String rpcInput = "<create-subscription xmlns=\"urn:ietf:params:xml:ns:netconf:notification:1.0\">\n" +
-                "          <filter type=\"subtree\">\n" +
-                "               <test:data2 xmlns:test=\"test-namespace\">\n" +
-                "                   <test:data1>value1</test:data1>\n" +
-                "               </test:data2>\n" +
-                "               <test:data2 xmlns:test=\"test-namespace\">\n" +
-                "                   <test:data1>value2</test:data1>\n" +
-                "               </test:data2>\n" +
-                "               <test:data4 xmlns:test=\"test-namespace\">\n" +
-                "                   <test:data3>value3</test:data3>\n" +
-                "               </test:data4>\n" +
-                "          </filter>\n" +
-                "          </create-subscription>";
-        Element element = DocumentUtils.stringToDocument(rpcInput).getDocumentElement();
-        request.setRpcInput(element);
-        CreateSubscriptionRequest subscriptionRequest = DocumentUtils.getInstance().getSubscriptionRequest(request);
-
-        NetconfFilter filter = subscriptionRequest.getFilter();
-        List<Element> elements = filter.getXmlFilterElements();
-        assertEquals(3, elements.size());
-        assertEquals("value1", elements.get(0).getChildNodes().item(1).getTextContent());
-        assertEquals("value2", elements.get(1).getChildNodes().item(1).getTextContent());
-        assertEquals("value3", elements.get(2).getChildNodes().item(1).getTextContent());
-    }
 
     @Test
     public void testGetRpcNode() throws NetconfMessageBuilderException {
@@ -246,6 +235,17 @@ public class DocumentUtilsTest {
     }
 
     @Test
+    public void testDocumentWithDTDAndExpandingReferencesThrowsError(){
+        try{
+            DocumentUtils.stringToDocument(getInputStringWithDTD());
+            TestCase.fail();
+        }catch (Exception e){
+            Assert.assertEquals(e.getCause() instanceof SAXParseException, true);
+            Assert.assertEquals(e.getCause().getMessage(), "DOCTYPE is disallowed when the feature \"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
+        }
+    }
+
+    @Test
     public void testGetRpcOtherAttributes() throws NetconfMessageBuilderException {
         String rpcString = getSampleRPC();
         Document document = DocumentUtils.stringToDocument(rpcString);
@@ -260,6 +260,25 @@ public class DocumentUtilsTest {
         assertNotNull(document);
     }
 
+    @Test
+    public void testIsResponseWithRpcError() throws NetconfMessageBuilderException {
+        String response = getDirectChildElementsWithNamespaceInput();
+        assertFalse(DocumentUtils.isResponseWithRpcError(DocumentUtils.stringToDocument(response)));
+
+        response = "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"20\">\n" 
+                + "<rpc-error>\n"
+                + "<error-type>application</error-type>\n" 
+                + "<error-tag>invalid-value</error-tag>\n"
+                + "<error-severity>error</error-severity>\n" 
+                + "<error-path>/blah-blah</error-path>\n"
+                + "<error-message>test message</error-message>\n"
+                + "</rpc-error>\n" + "</rpc-reply>\n";
+
+        assertTrue(DocumentUtils.isResponseWithRpcError(DocumentUtils.stringToDocument(response)));
+        
+        assertFalse(DocumentUtils.isResponseWithRpcError(null));
+    }
+    
     private String getSampleRPC() {
         return "<rpc message-id=\"101\" xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"><get-config><source><running /></source></get-config></rpc>";
     }
@@ -291,6 +310,15 @@ public class DocumentUtilsTest {
                 "        </nc:source>\n" +
                 "    </nc:get-config>\n" +
                 "</nc:rpc>";
+    }
+
+    private String getInputStringWithDTD(){
+        return "<!DOCTYPE lolz [\\n\" +\n" +
+                "            \"<!ENTITY lol \\\"lol\\\" >\\n\" +\n" +
+                "            \"<!ENTITY lol1 \\\"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\\\">\\n\" +\n" +
+                "            \"<!ENTITY lol2 \\\"&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;&lol1;\\\">\\n\" +\n" +
+                "            \"<!ENTITY lol3 \\\"&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;\\\">\\n\" +\n" +
+                "            \"<!ENTITY lol4 \\\"&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;&lol3;\\\">]><license:license-key xmlns:xc=\\\"urn:ietf:params:xml:ns:netconf:base:1.0\\\" xmlns:license=\\\"http://www.test-company.com/solutions/license-management\\\"><license:license-name>test&lol4;</license:license-name><license:key-string>AC4wLAIUBASWkSspEsH+sdMzsWU5rhi</license:key-string></license:license-key>";
     }
 
     private String getInvalidEdit() {
@@ -332,6 +360,31 @@ public class DocumentUtilsTest {
                 "    </modules-state>\n" +
                 "  </data>\n" +
                 "</rpc-reply>"
+                ;
+    }
+
+    private String getDirectChildElementsWithNamespaceInput() {
+        return "<rpc-reply xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"1\">\n" +
+                "  <data>\n" +
+                "    <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\">\n" +
+                "      <swmgmt:software-management xmlns:swmgmt=\"http://www.test-company.com/solutions/anv-software\">\n" +
+                "        <swmgmt:device-software-files-on-server>\n" +
+                "          <swmgmt:available-file>\n" +
+                "            <swmgmt:file-server>test</swmgmt:file-server>\n" +
+                "            <swmgmt:file-name>L6GQAI62.505</swmgmt:file-name>\n" +
+                "            <swmgmt:sub-directory>DF-16GW/L6GQAI62.505</swmgmt:sub-directory>\n" +
+                "            <swmgmt:missing-from-server>false</swmgmt:missing-from-server>\n" +
+                "            <swmgmt:release>20A.04</swmgmt:release>\n" +
+                "            <swmgmt:detected-hardware-type>DF-16GW</swmgmt:detected-hardware-type>\n" +
+                "            <swmgmt:detected-hardware-type>DPU-CFAS-H</swmgmt:detected-hardware-type>\n" +
+                "            <swmgmt:onu-software-mappings/>\n" +
+                "          </swmgmt:available-file>\n" +
+                "          <swmgmt:number-of-available-files>1</swmgmt:number-of-available-files>\n" +
+                "        </swmgmt:device-software-files-on-server>\n" +
+                "      </swmgmt:software-management>\n" +
+                "    </anv:device-manager>\n" +
+                "  </data>\n" +
+                "</rpc-reply>\n"
                 ;
     }
 
@@ -414,5 +467,26 @@ public class DocumentUtilsTest {
 
         String failurePath = "/hardware-state/component/software/software/name/download/software-downloaded";
         assertFalse(DocumentUtils.matchingXmlNotification(failurePath, documentNotification));
+    }
+    
+    @Test
+    public void testGetCtxValuesFromRpcDocument() throws NetconfMessageBuilderException {
+        String editRequest = "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"3\" xmlns:ctx=\"http://www.test-company.com/solutions/netconf-extensions\" ctx:user-context=\"user1\" ctx:session-id=\"044703a6-e04b\" ctx:application=\"testApp\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\">\n" +
+                "      </anv:device-manager>\n" +
+                "    </config>\n" +
+                "  </edit-config>\n" +
+                "</rpc>\n";
+
+        Document editDoc = DocumentUtils.stringToDocument(editRequest);
+        Element rpcNode = editDoc.getDocumentElement();
+        assertEquals("user1", DocumentUtils.getInstance().getUserContextFromRpcDocument(rpcNode));
+        assertEquals("044703a6-e04b", DocumentUtils.getInstance().getSessionIdFromRpcDocument(rpcNode));
+        assertEquals("testApp", DocumentUtils.getInstance().getApplicationFromRpcDocument(rpcNode));
     }
 }

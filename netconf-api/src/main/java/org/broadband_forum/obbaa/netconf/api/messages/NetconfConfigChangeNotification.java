@@ -19,16 +19,17 @@ package org.broadband_forum.obbaa.netconf.api.messages;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.w3c.dom.Element;
-
+import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfMessageBuilderException;
 import org.broadband_forum.obbaa.netconf.api.util.NetconfResources;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
+import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 
 public class NetconfConfigChangeNotification extends NetconfNotification {
 
-    private static final Logger LOGGER = Logger.getLogger(NetconfConfigChangeNotification.class);
+    private static final AdvancedLogger LOGGER = AdvancedLoggerUtil.getGlobalDebugLogger(NetconfConfigChangeNotification.class, LogAppNames.NETCONF_LIB);
     public static final QName TYPE = QName.create(NetconfResources.IETF_NOTIFICATION_NS, "netconf-config-change");
     private String m_datastore = StandardDataStores.RUNNING;
     private List<EditInfo> m_editList = new ArrayList<EditInfo>();

@@ -1,0 +1,21 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	elementFormDefault="qualified"
+	xmlns:extn="http://www.test-company.com/solutions/netconf-extensions"
+	targetNamespace="http://www.test-company.com/solutions/netconf-extensions">
+	<!-- synchronize element -->
+	<xs:simpleType name="SynchronizeType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="true" />
+			<xs:enumeration value="false" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:element name="trigger-sync-upon-success" type="extn:SynchronizeType" />
+	<!-- force-instance-creation element -->
+	<xs:simpleType name="ForceInstanceCreationType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="true" />
+			<xs:enumeration value="false" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:element name="force-instance-creation" type="extn:ForceInstanceCreationType" />
+</xs:schema>
