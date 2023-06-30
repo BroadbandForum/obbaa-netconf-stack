@@ -66,7 +66,7 @@
         <joda.time.version>2.8</joda.time.version>
         <mina.version>2.4.0</mina.version>
         <woodstox.core.asl.version>4.4.1</woodstox.core.asl.version>
-        <guava.version>27.1-jre</guava.version>
+        <guava.version>32.0.0-jre</guava.version>
         <scala.version>2.11.12</scala.version>
         <zk.version>0.10</zk.version>
         <osgi.core.version>6.0.0</osgi.core.version>
