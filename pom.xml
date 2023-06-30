@@ -55,7 +55,7 @@
         <junit.addons.version>1.4</junit.addons.version>
         <mockito.version>1.10.19</mockito.version>
         <maven.jar.plugin.version>2.6</maven.jar.plugin.version>
-        <netty.version>4.1.68.Final</netty.version>
+        <netty.version>4.1.94.Final</netty.version>
         <netty-tcnative.version>2.0.34.Final</netty-tcnative.version>
         <tcnative.classifier>linux-x86_64-fedora</tcnative.classifier>
         <tcnative.classifier.ubuntu>linux-x86_64</tcnative.classifier.ubuntu>
