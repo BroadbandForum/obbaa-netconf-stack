@@ -29,7 +29,6 @@ import org.broadband_forum.obbaa.netconf.api.LogAppNames;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLogger;
 import org.broadband_forum.obbaa.netconf.stack.logging.AdvancedLoggerUtil;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -263,7 +262,6 @@ public class DynamicX509TrustManagerImplTest {
     }
 
     @Test
-    @Ignore
     public void testInitializationFromFile() throws TrustManagerInitException {
         // A CA whose Subject is as follows "CN=127.0.0.1, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN"
         // A CA whose Subject is as follows "CN=CA2, OU=CA2, O=CA2, L=BLR, ST=KA, C=IN"
@@ -300,14 +298,14 @@ public class DynamicX509TrustManagerImplTest {
 
         X509Certificate[] acceptedIssuers = dynamicX509TrustManager.getAcceptedIssuers();
         assertEquals(2, acceptedIssuers.length);
-        
+
         assertContainsCertificate("CN=CA2, OU=CA2, O=CA2, L=BLR, ST=KA, C=IN", acceptedIssuers);
         assertContainsCertificate("CN=127.0.0.1, OU=FNBL, O=ALU, L=BLR, ST=KA, C=IN", acceptedIssuers);
     }
-    
+
     /**
      * assert that actual certificate array contains expected certificate DN.
-     * 
+     *
      * Note:- javax.net.ssl.X509TrustManager implementation does not need to guarantee ordering.
      * @param expectedCertDN
      * @param actualCertificates
@@ -324,7 +322,6 @@ public class DynamicX509TrustManagerImplTest {
     }
 
     @Test
-    @Ignore
     public void testTrustManagerValidatesServerCertificates() throws CertificateException {
 
         try {
@@ -375,7 +372,6 @@ public class DynamicX509TrustManagerImplTest {
     }
 
     @Test
-    @Ignore
     public void testCertificateChain() throws TrustManagerInitException {
         String rootCACertificate = "MIIDwTCCAqmgAwIBAgIJAObvpCoyTSy0MA0GCSqGSIb3DQEBBQUAMHcxCzAJBgNV\n"
                 + "BAYTAklOMQswCQYDVQQIDAJLQTESMBAGA1UEBwwJQmFuZ2Fsb3JlMRcwFQYDVQQK\n"
@@ -508,7 +504,6 @@ public class DynamicX509TrustManagerImplTest {
     }
 
     @Test
-    @Ignore
     public void testReinitialisingTrustManagerWorksForServer() throws TrustManagerInitException {
         // Lets re-initialise the trust manager with a 3rd CA (removing the old ones)
         List<String> caCerts = new ArrayList<>();
@@ -627,7 +622,6 @@ public class DynamicX509TrustManagerImplTest {
     }
 
     @Test
-    @Ignore
     public void testTrustManagerWorksWithExtensions() throws TrustManagerInitException {
         List<String> caCerts = new ArrayList<>();
         caCerts.add(CA_CERTIFICATE_WITH_EXTENSION);

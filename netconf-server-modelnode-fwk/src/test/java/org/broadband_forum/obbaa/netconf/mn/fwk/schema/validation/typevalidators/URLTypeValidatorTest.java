@@ -47,7 +47,6 @@ public class URLTypeValidatorTest extends AbstractTypeValidatorTest {
 
     }
 
-    @Ignore
 	@Test
 	public void testCustomUrl() throws NetconfMessageBuilderException {
 		String validCustomReq1 = "<custom-url-type>ftp://abc:123456@192.168.95.174/test/abc.txt</custom-url-type>";

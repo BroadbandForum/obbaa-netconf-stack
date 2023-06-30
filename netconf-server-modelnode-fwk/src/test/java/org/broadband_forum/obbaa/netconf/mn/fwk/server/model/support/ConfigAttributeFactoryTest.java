@@ -187,7 +187,7 @@ public class ConfigAttributeFactoryTest {
         assertEquals("value3" , configLeafAttribute.getStringValue());
     }
 
-    @Ignore
+    @Ignore("assertTrue needs to be fixed")
     @Test
     public void testGetGenericConfigWithCDATASection() throws ParserConfigurationException, SAXException, IOException, InvalidIdentityRefException, NetconfMessageBuilderException {
 
@@ -202,7 +202,9 @@ public class ConfigAttributeFactoryTest {
          */
         LeafSchemaNode leafSchemaNode = mock(LeafSchemaNode.class);
         when(m_schemaRegistry.getDataSchemaNode(m_childSchemaPath)).thenReturn(leafSchemaNode);
-        when(leafSchemaNode.getType()).thenReturn((TypeDefinition)mock(StringTypeDefinition.class));
+        TypeDefinition typdeDef = mock(StringTypeDefinition.class);
+        when(leafSchemaNode.getType()).thenReturn(typdeDef);
+        when(typdeDef.getQName()).thenReturn(m_dummyBaseTypeDefQname);
         QName childQname =QName.create("parentNs","2017-02-10","child");
         when(m_schemaRegistry.getDescendantSchemaPath(m_parentSchemaPath,childQname)).thenReturn(m_childSchemaPath);
 

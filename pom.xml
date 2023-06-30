@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.broadband-forum.obbaa.netconf</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>5.1.0</version>
+    <version>6.0.0</version>
     <packaging>pom</packaging>
     <name>netconf-fwk/parent-pom</name>
     <modules>
@@ -38,7 +38,7 @@
         <module>bom</module>
     </modules>
     <properties>
-        <obbaa-nc-stack.version>5.1.0</obbaa-nc-stack.version>
+        <obbaa-nc-stack.version>6.0.0</obbaa-nc-stack.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.source.version>1.8</java.source.version>
         <!-- Dependency versions-->
@@ -111,6 +111,7 @@
         <code.coverage.project.folder>${basedir}/../</code.coverage.project.folder>
         <code.coverage.overall.data.folder>${basedir}/target/</code.coverage.overall.data.folder>
         <bouncy.castle.version>1.67</bouncy.castle.version>
+        <bouncy.castle.version.for.netconf-api>1.60</bouncy.castle.version.for.netconf-api>
     </properties>
     <dependencyManagement>
         <dependencies>

@@ -17,6 +17,7 @@
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model.yang;
 
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.support.yang.util.YangUtils.loadXmlDataIntoServer;
+import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.assertXMLEquals;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.loadAsXml;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.sendEditConfig;
 import static org.broadband_forum.obbaa.netconf.server.util.TestUtil.verifyGetConfigWithPassword;
@@ -52,7 +53,6 @@ import org.broadband_forum.obbaa.netconf.server.RequestScopeJunitRunner;
 import org.broadband_forum.obbaa.netconf.server.rpc.RpcPayloadConstraintParser;
 import org.broadband_forum.obbaa.netconf.server.util.TestUtil;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
@@ -103,7 +103,6 @@ public class PasswordHandlingTest {
         m_schemaRegistry.setYinAnnotationService(yinAnnotationService);
     }
 
-    @Ignore
     @Test
     public void testPasswordCreation_AsListKey() throws Exception {
         loadXmlDataIntoServer(m_server,PasswordHandlingTest.class.getResource("/passwordhandlingtest/create-password-under-artist.xml").getPath());
@@ -111,10 +110,9 @@ public class PasswordHandlingTest {
 
         // Not working case
         NetConfResponse failedResponse = sendEditConfig(m_server, m_clientInfo, loadAsXml("/passwordhandlingtest/create-password-under-artist-samekey.xml"), MESSAGE_ID);
-       // assertXMLEquals("/data-exists-error-album.xml", failedResponse);
+        assertXMLEquals("/data-exists-error-album-with-password.xml", failedResponse);
     }
 
-    @Ignore
     @Test
     public void testPasswordDeletion_WithLeafValueSpecified() throws Exception {
         loadXmlDataIntoServer(m_server,PasswordHandlingTest.class.getResource("/passwordhandlingtest/create-password-under-album.xml").getPath());
@@ -125,7 +123,6 @@ public class PasswordHandlingTest {
         verifyGetConfigWithPassword(m_server, null, "/passwordhandlingtest/delete-password-under-album-response.xml", MESSAGE_ID);
     }
 
-    @Ignore
     @Test
     public void testPasswordDeletion_WithLeafNotSpecified() throws Exception {
         loadXmlDataIntoServer(m_server,PasswordHandlingTest.class.getResource("/passwordhandlingtest/create-password-under-album.xml").getPath());
@@ -136,7 +133,6 @@ public class PasswordHandlingTest {
         verifyGetConfigWithPassword(m_server, null, "/passwordhandlingtest/delete-password-under-album-response.xml", MESSAGE_ID);
     }
 
-    @Ignore
     @Test
     public void testPasswordCreationDeletion_AsLeafList() throws Exception {
         loadXmlDataIntoServer(m_server,PasswordHandlingTest.class.getResource("/passwordhandlingtest/create-password-leaflists-under-album.xml").getPath());
@@ -151,7 +147,6 @@ public class PasswordHandlingTest {
         verifyGetConfigWithPassword(m_server, null, "/passwordhandlingtest/delete-password-leaflist-under-album-response.xml", MESSAGE_ID);
     }
 
-    @Ignore
     @Test
     public void testGetConfig_PasswordAsAnnotation() throws Exception {
         loadXmlDataIntoServer(m_server,PasswordHandlingTest.class.getResource("/passwordhandlingtest/create-password-annotation-under-album.xml").getPath());

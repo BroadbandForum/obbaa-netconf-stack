@@ -48,7 +48,6 @@ import org.mockito.runners.MockitoJUnitRunner;
  *
  */
 @RunWith(MockitoJUnitRunner.class)
-@Ignore
 public class NotificationLoggerImplTest {
 
 	private static final Logger LOGGER = Logger.getLogger(NotificationLoggerImplTest.class);
@@ -99,6 +98,7 @@ public class NotificationLoggerImplTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testGetReplayLogAgedTime() throws NotCompliantMBeanException {
 		
 		//prepare test  notification sample 1
@@ -121,6 +121,7 @@ public class NotificationLoggerImplTest {
 	}
 	
 	@Test
+	@Ignore
 	public void testRetrieveNotifications() throws NotCompliantMBeanException {
 		//prepare test notification sample 1
 		Notification notification1 = new NetconfNotification();
@@ -158,6 +159,7 @@ public class NotificationLoggerImplTest {
 	}
 
 	@Test
+	@Ignore
 	public void testLogBufferCapacityWithDifferentTime() throws NotCompliantMBeanException {
 
 		DateTime startTime = DateTime.now();
@@ -174,6 +176,7 @@ public class NotificationLoggerImplTest {
 	}
 
 	@Test
+	@Ignore
 	public void testLogBufferCapacityWithSameTime() throws NotCompliantMBeanException {
 
 		DateTime startTime = DateTime.now();

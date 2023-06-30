@@ -1,0 +1,22 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:ietf:params:xml:ns:yang:1"
+           elementFormDefault="qualified"
+           targetNamespace="urn:ietf:params:xml:ns:yang:1">
+
+    <!-- yang11RpcOperationType: used as a base type for all NETCONF operations defined as part of yang 1.1(rfc7950) -->
+    <xs:complexType name="yang11RpcOperationType"/>
+    <xs:element name="yang11RpcOperation" type="yang11RpcOperationType" abstract="true"/>
+
+    <xs:complexType name="actionType">
+        <xs:complexContent>
+            <xs:extension base="yang11RpcOperationType">
+                <xs:sequence>
+                    <xs:any maxOccurs="unbounded" processContents="lax"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:element name="action" type="actionType" substitutionGroup="yang11RpcOperation"/>
+
+</xs:schema>

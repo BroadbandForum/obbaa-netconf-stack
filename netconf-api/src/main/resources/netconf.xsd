@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+           xmlns:yang="urn:ietf:params:xml:ns:yang:1"
            xmlns:wtx="http://tail-f.com/ns/netconf/with-transaction-id"
            xmlns:extn="http://www.test-company.com/solutions/netconf-extensions"
            targetNamespace="urn:ietf:params:xml:ns:netconf:base:1.0"
@@ -27,6 +28,7 @@
 
     <xs:import namespace="http://tail-f.com/ns/netconf/with-transaction-id" schemaLocation="with-tx.xsd"/>
     <xs:import namespace="http://www.test-company.com/solutions/netconf-extensions" schemaLocation="netconf-extensions.xsd"/>
+    <xs:import namespace="urn:ietf:params:xml:ns:yang:1" schemaLocation="yang11.xsd"/>
 
     <!-- message-id attribute -->
     <xs:simpleType name="messageIdType">
@@ -38,7 +40,10 @@
     <!-- <rpc> element -->
     <xs:complexType name="rpcType">
         <xs:sequence>
-            <xs:element ref="rpcOperation"/>
+            <xs:choice>
+                <xs:element ref="rpcOperation"/>
+                <xs:element ref="yang:yang11RpcOperation"/>
+            </xs:choice>
         </xs:sequence>
         <xs:attribute name="message-id" type="messageIdType"/>
         <!-- Arbitrary attributes can be supplied with <rpc> element. -->

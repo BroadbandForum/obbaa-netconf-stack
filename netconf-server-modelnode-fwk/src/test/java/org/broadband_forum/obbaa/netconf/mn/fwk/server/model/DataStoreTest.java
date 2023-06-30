@@ -16,6 +16,7 @@
 
 package org.broadband_forum.obbaa.netconf.mn.fwk.server.model;
 
+import static org.broadband_forum.obbaa.netconf.api.messages.EditConfigTestOptions.TEST_ONLY;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NotifSwitchUtil.ENABLE_NEW_NOTIF_STRUCTURE;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NotifSwitchUtil.resetSystemProperty;
 import static org.broadband_forum.obbaa.netconf.mn.fwk.server.model.util.NotifSwitchUtil.setSystemPropertyAndReturnResetValue;
@@ -95,6 +96,7 @@ public class DataStoreTest extends AbstractValidationTestSetup {
     private DynamicDataStoreValidator m_dsDynamicValidator;
     Map<SubSystem, IndexedNotifList> m_subMap = new HashMap<>();
     private List<EditContainmentNode> m_editTrees;
+    private AbstractSubSystem m_abstractSubSystem;
 
     @Before
     public void setUp() throws EditConfigException {
@@ -137,9 +139,10 @@ public class DataStoreTest extends AbstractValidationTestSetup {
     }
 
     @Test
-    @Ignore
+    @Ignore("byPassAuthorization() is set to true for OBBAA")
     public void testEditRequestThrowsException() throws Exception {
         m_request = new EditConfigRequest();
+        m_abstractSubSystem = new AbstractSubSystem() {};
         m_request.setRpcElement(DocumentUtils.stringToDocumentElement("<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"  xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"6\">\n" +
                 "  <edit-config>\n" +
@@ -184,6 +187,43 @@ public class DataStoreTest extends AbstractValidationTestSetup {
         m_dataStore.setLockOwner(1);
         m_dataStore.setconfirmedCommitPending(true);
         m_dataStore.lock(2);
+    }
+
+    @Test
+    public void testEditRequestThrowsExceptionForTestOnlySetOption() throws Exception {
+        m_request = new EditConfigRequest();
+        m_request.setRpcElement(DocumentUtils.stringToDocumentElement("<?xml version='1.0' encoding='UTF-8'?>\n" +
+                "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\"  xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" message-id=\"6\">\n" +
+                "  <edit-config>\n" +
+                "    <target>\n" +
+                "      <running/>\n" +
+                "    </target>\n" +
+                "    <config>\n" +
+                "      <anv:device-manager xmlns:anv=\"http://www.test-company.com/solutions/anv\">\n" +
+                "        <adh:device xmlns:adh=\"http://www.test-company.com/solutions/anv-device-holders\" xmlns:xc=\"urn:ietf:params:xml:ns:netconf:base:1.0\" xc:operation=\"replace\">\n" +
+                "          <adh:device-id>R1.S1.LT1.PON1.ONT1</adh:device-id>\n" +
+                "          <adh:hardware-type>DPU-CFAS-H</adh:hardware-type>\n" +
+                "          <adh:interface-version>20A.03</adh:interface-version>\n" +
+                "          <adh:duid>MAC-FC12-32AC-23DE</adh:duid>\n" +
+                "        </adh:device>\n" +
+                "        </anv:device-manager>\n" +
+                "    </config>\n" +
+                "  </edit-config>\n" +
+                "</rpc>"));
+        AuthorizationHandler authorizationHandler = new DefaultAuthorizationHandler();
+        Map<SubSystem, Map<SchemaPath, List<ChangeTreeNode>>> changeTreeNodeMap = new HashMap<>();
+        changeTreeNodeMap.put(new DummySubSystem(authorizationHandler), new HashMap<>());
+        Map<SubSystem, IndexedNotifList> notificationMap = new HashMap<>();
+        notificationMap.put(new DummySubSystem(authorizationHandler), mock(IndexedNotifList.class));
+        when(m_editNotifcationExecutor.getSubSystemChangeTreeNodeMap(null, false, m_clientInfo)).thenReturn(changeTreeNodeMap);
+        when(m_editNotifcationExecutor.getSubSystemNotificationMap("running", new ArrayList<>(), m_request)).thenReturn(notificationMap);
+        try {
+            m_request.setTestOption(TEST_ONLY);
+            m_dataStore.edit(m_request, m_response, m_clientInfo);
+            fail("EditConfigException expected");
+        } catch (EditConfigException e) {
+            assertEquals("Can do only test-option set only", e. getMessage());
+        }
     }
 
     @Test(expected = LockedByOtherSessionException.class)

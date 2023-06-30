@@ -1160,7 +1160,9 @@ public abstract class HelperDrivenModelNode implements ModelNode {
                                               ModelNodeId modelNodeId, List<QName> stateAttributes, List<FilterNode> stateSubtrees, NetconfQueryParams params) {
         for (Entry<SubSystem, Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>>> entry : stateContext.getSubSystems().entrySet()) {
             SubSystem subSystem = entry.getKey();
-            if (subSystem.getClass().getName().equals(system.getClass().getName())) {
+            String nameFromSubSystem = subSystem.getClass().getName();
+            String nameFromSystem = system.getClass().getName();
+            if (nameFromSystem.equals(nameFromSubSystem)) {
                 Map<ModelNodeId, Pair<List<QName>, List<FilterNode>>> map = entry.getValue();
                 if (!map.containsKey(modelNodeId)) {
                     Pair<List<QName>, List<FilterNode>> pair = new Pair<List<QName>, List<FilterNode>>(stateAttributes, stateSubtrees);

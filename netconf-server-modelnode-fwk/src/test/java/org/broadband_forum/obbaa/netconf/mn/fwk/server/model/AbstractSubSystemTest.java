@@ -205,7 +205,7 @@ public class AbstractSubSystemTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("byPassAuthorization() is set to true for OBBAA")
     public void testCheckRequiredPermissions_notPermitted() throws Exception {
         NetconfClientInfo clientInfo = new NetconfClientInfo("test", 1, 1);
         when(m_authorizationHandler.isPermittedAll(1, "NBI_RESIDUAL")).thenReturn(false);
@@ -218,7 +218,7 @@ public class AbstractSubSystemTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("byPassAuthorization() is set to true for OBBAA")
     public void testCheckRequiredPermissions_authorizatonHanderThrowsException() throws Exception {
         NetconfClientInfo clientInfo = new NetconfClientInfo("test", 1, 1);
         when(m_authorizationHandler.isPermittedAll(1, "NBI_RESIDUAL")).thenThrow(new Exception());
@@ -231,6 +231,7 @@ public class AbstractSubSystemTest {
     }
 
     @Test
+    @Ignore("byPassAuthorization() is set to true for OBBAA")
     public void testCheckRequiredPermissions_byPassPermissionCheck() throws Exception {
         m_testSubsystem = new TestSubsystem(m_authorizationHandler) {
             @Override

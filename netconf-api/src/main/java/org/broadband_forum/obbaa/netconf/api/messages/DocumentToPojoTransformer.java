@@ -270,7 +270,12 @@ public class DocumentToPojoTransformer {
     }
 
     public static ActionRequest getAction(Document request) throws NetconfMessageBuilderException {
-    	ActionRequest actionRequest = new ActionRequest();
+        try {
+            XmlValidator.validateXmlMessage(new DOMSource(request));
+        } catch (Exception e) {
+            throw new NetconfMessageBuilderException(e.getMessage());
+        }
+        ActionRequest actionRequest = new ActionRequest();
         DocumentUtils docUtils = DocumentUtils.getInstance();
         Element rpcNode = request.getDocumentElement();
         Node actionNode = docUtils.getChildNodeByName(request, NetconfResources.ACTION, NetconfResources.NETCONF_YANG_1);
@@ -295,7 +300,7 @@ public class DocumentToPojoTransformer {
         if (forceInstanceCreationElement != null && forceInstanceCreationElement.size() == 1) {
             actionRequest.setForceInstanceCreation(Boolean.parseBoolean(forceInstanceCreationElement.get(0).getTextContent()));
         }
-        return actionRequest;        
+        return actionRequest;
     }
     
     public static DeleteConfigRequest getDeleteConfig(Document document) throws NetconfMessageBuilderException {
@@ -813,6 +818,9 @@ public class DocumentToPojoTransformer {
                 break;
             case NetconfResources.CREATE_SUBSCRIPTION:
                 axsNetconfRequest = DocumentToPojoTransformer.getCreateSubscriptionRequest(request);
+                break;
+            case NetconfResources.ACTION:
+                axsNetconfRequest = DocumentToPojoTransformer.getAction(request);
                 break;
             default:
                 // Could be a special rpc request

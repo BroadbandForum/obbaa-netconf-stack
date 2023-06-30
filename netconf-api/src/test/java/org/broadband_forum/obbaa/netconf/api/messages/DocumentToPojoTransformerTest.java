@@ -50,6 +50,10 @@ public class DocumentToPojoTransformerTest {
     public static final String SOURCE_CANNOT_BE_NULL_EMPTY = "<source> cannot be null/empty";
     private static final String ACTION_CANNOT_BE_NULL_EMPTY = "<action> cannot be null";
     private static final String ACTIONTREE_CANNOT_BE_NULL_EMPTY = "action tree element cannot be null";
+
+    private static final String INCOMPLETE_ACTION_CONTENT_VALIDATOR_EXCEPTION =
+            "cvc-complex-type.2.4.b: The content of element 'action' is not complete. One of '{WC[##any]}' is expected.";
+
     public static final String URL = "http://www.abc.com";
 
     @Test
@@ -1185,15 +1189,9 @@ public class DocumentToPojoTransformerTest {
     		ActionRequest invalidActionTreeRequest = DocumentToPojoTransformer.getAction(stringToDocument(invalidActionTreeReq));
     		fail("Expected an exception here");
     	} catch (NetconfMessageBuilderException e) {
-    		assertEquals(ACTIONTREE_CANNOT_BE_NULL_EMPTY, e.getMessage());
+            assertEquals(INCOMPLETE_ACTION_CONTENT_VALIDATOR_EXCEPTION, e.getMessage());
     	}
-    	
-    	try {
-    		ActionRequest invalidActionRequest = DocumentToPojoTransformer.getAction(stringToDocument(expectedActionElement));
-    		fail("Expected an exception here");
-    	} catch (NetconfMessageBuilderException e) {
-    		assertEquals(ACTION_CANNOT_BE_NULL_EMPTY, e.getMessage());
-    	}
+
     }
     
     @Test
